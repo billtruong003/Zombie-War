@@ -66,8 +66,11 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 
-# Claude Code local session state
-.claude/
+# Claude Code local/session state - but NOT .claude/skills/, which is project-scoped
+# knowledge (e.g. billgamecore) meant to travel with the repo, same as TOSSZONE does it.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/shell-snapshots/
 
 # VSCode Local History extension cache
 .lh/
