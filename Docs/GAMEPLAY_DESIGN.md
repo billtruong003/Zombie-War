@@ -35,7 +35,9 @@
 
 ## 2. Camera & Control
 
-**Camera:** 1 `CinemachineCamera` (Cinemachine 3.x, thêm qua manifest ở B2), `Follow` = player, `Body` = Framing Transposer/top-down preset, `Rotation` = Do Nothing, góc nghiêng cố định ~60-70° (isometric-ish, không phải thẳng đứng 90° vì đề bài nói "trên xuống" nhưng vẫn cần thấy được model soldier/zombie/gun cho đẹp — thuần 90° sẽ chỉ thấy đỉnh đầu, phí công polish model). 1 `CinemachineImpulseSource` global cho camera shake (bắn súng mạnh, bom nổ) — dùng built-in, không viết shake code tay.
+> **Đổi hướng (sau B4):** bạn yêu cầu đổi từ Cinemachine sang **1 script camera custom tự viết**. Lưu ý: đề bài gốc ghi rõ yêu cầu #1 "dùng Cinemachine follow nhân vật" — đây là lựa chọn có chủ đích khác với đề, note lại để bạn cân nhắc khi phỏng vấn (có thể giải thích lý do chọn custom: kiểm soát chặt hơn, không cần phụ thuộc package cho một tính năng đơn giản). Đã gỡ `com.unity.cinemachine` khỏi manifest vì không còn dùng.
+
+**Camera:** 1 `CameraFollow.cs` gắn lên Main Camera — giữ offset cố định phía trên/sau player (góc nghiêng ~60-70°, không thẳng đứng 90° để vẫn thấy rõ model soldier/zombie/gun), dùng `Vector3.SmoothDamp` để đuổi theo vị trí player mỗi `LateUpdate`, rotation set 1 lần (cố định, không đổi theo player). Camera shake (bắn súng mạnh, bom nổ) viết tay bằng kỹ thuật **trauma-based shake** (decay theo thời gian, offset random scale theo trauma) ngay trong cùng script — rẻ, không cần Cinemachine Impulse.
 
 **Control:** đề bài chỉ nói **1 joystick ảo điều khiển soldier** (không nói joystick bắn riêng) → quyết định: **auto-aim vào zombie gần nhất trong tầm bắn**, thân player xoay theo joystick di chuyển, riêng "điểm ngắm"/gun xoay theo hướng zombie gần nhất (nếu không có zombie trong tầm, gun xoay theo hướng di chuyển). Đây là lựa chọn rẻ nhất, đúng chuẩn skill (1 joystick → 1 input đọc trực tiếp, không thêm input provider layer), và hợp lý vì zombie tràn từ 4 phía nên auto-aim tránh việc người chơi phải xoay tay bằng joystick thứ 2 không tồn tại.
 
