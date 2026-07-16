@@ -10,14 +10,14 @@ namespace ZombieWar
         [SerializeField] private float smoothTime = 0.15f;
 
         [Header("Shake")]
+        [SerializeField] private Texture2D noiseTexture;
         [SerializeField] private float traumaDecayPerSecond = 1.5f;
         [SerializeField] private float maxShakeOffset = 0.5f;
         [SerializeField] private float shakeFrequency = 25f;
 
         private Vector3 _velocity;
         private float _trauma;
-        private float _shakeSeedX;
-        private float _shakeSeedY;
+        private float _noiseSeed;
 
         public Transform Target
         {
@@ -28,8 +28,7 @@ namespace ZombieWar
         private void Awake()
         {
             transform.rotation = Quaternion.Euler(lookEulerAngles);
-            _shakeSeedX = Random.value * 100f;
-            _shakeSeedY = Random.value * 100f;
+            _noiseSeed = Random.value * 100f;
         }
 
         public void Shake(float amount)
@@ -55,9 +54,8 @@ namespace ZombieWar
         private Vector3 GetShakeOffset()
         {
             float shake = _trauma * _trauma;
-            float x = (Mathf.PerlinNoise(_shakeSeedX, Time.time * shakeFrequency) * 2f - 1f) * maxShakeOffset * shake;
-            float y = (Mathf.PerlinNoise(_shakeSeedY, Time.time * shakeFrequency) * 2f - 1f) * maxShakeOffset * shake;
-            return new Vector3(x, y, 0f);
+            Vector2 noise = NoiseTextureSampler.Sample(noiseTexture, Time.time * shakeFrequency, _noiseSeed);
+            return new Vector3(noise.x * maxShakeOffset * shake, noise.y * maxShakeOffset * shake, 0f);
         }
     }
 }
