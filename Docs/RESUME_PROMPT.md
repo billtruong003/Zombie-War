@@ -9,6 +9,9 @@ Việc đầu tiên: đọc kỹ 3 file sau trước khi làm gì cả, đừng 
   zombie AI, gun, bomb, level/world-gen, audio/juice, cách làm IK). Đọc mục 11 để biết cái gì đã chốt.
 - Docs/EDITOR_SETUP_CHECKLIST.md — checklist lắp Editor cho Phase 1 (Player) + Phase 2 (Weapon/Bomb),
   làm theo đúng thứ tự nếu cần lắp scene/prefab.
+- Docs/TASK_BREAKDOWN.md — bản đầy đủ B6, có sub-task `[x]`/`[ ]` cho cả 7 phase (không chỉ tóm tắt
+  1 dòng như dưới đây) — đây là nguồn sự thật cho "cái gì đã xong, cái gì chưa", cập nhật checkbox
+  mỗi khi làm xong 1 mục.
 - `git log --oneline` — xem full lịch sử quyết định qua từng commit (mỗi commit đều có message giải
   thích lý do, không chỉ liệt kê thay đổi).
 
