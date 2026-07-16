@@ -15,28 +15,30 @@
 - [x] `Systems/ITargetable.cs`, `Systems/TargetRegistry.cs`, `Systems/NoiseTextureSampler.cs`
 
 **Editor assembly (chưa làm — xem `Docs/EDITOR_SETUP_CHECKLIST.md` mục 1-2, 4, 6):**
-- [ ] Chọn 1 character prefab từ `Assets/ThirdParty/Layer Lab/3D Casual Character/3D Characters Pro - Fantasy/Prefabs/` làm soldier
+- [ ] Chọn 1 character prefab từ `Assets/ThirdParty/Layer Lab/3D Casual Character/3D Characters Pro - Fantasy/Prefabs/` làm soldier, set Avatar = **Humanoid** để retarget animation Malbers
+- [ ] Import animation từ `Assets/ThirdParty/MalbersHumanAnims/` — set Animation Type = Humanoid trên từng .fbx: `Locomotion/Strafe/*` (8-hướng walk/jog), `Idle/Idle_Combat.fbx` (aim-idle), `Hit/*`, `Deaths/*` (player hit/death feedback, yêu cầu #3)
 - [ ] Player GameObject: Rigidbody + Animator + Health + PlayerMovement + Weapon + BombThrower, wiring đầy đủ field
-- [ ] Animator Controller 2 layer: Base (Locomotion Idle/Run theo `Speed`) + UpperBody (Avatar Mask loại chân, Aim/Fire state)
-- [ ] Animation Rigging: RigBuilder + Two-Bone IK tay phải/trái + Multi-Aim Constraint (aim theo `PlayerMovement.AimDirection`) + `WeaponIKTargetUpdater.cs` (script mới, subscribe `Weapon.OnWeaponEquipped` để đổi IK target khi switch súng)
-- [ ] Foot IK — có thể hoãn tới khi làm Level 2 (dốc), Level 1 phẳng không bắt buộc
+- [ ] Animator Controller 2 layer: Base (Locomotion — blend 8-hướng strafe theo `Speed`+hướng di chuyển) + UpperBody (Avatar Mask loại chân, `Idle_Combat`/Aim-Fire state)
+- [ ] Animation Rigging: RigBuilder + Two-Bone IK tay phải/trái (theo quy ước pistol=1 điểm chung / rifle=2 điểm riêng, xem `GAMEPLAY_DESIGN.md` mục 8) + Multi-Aim Constraint (aim theo `PlayerMovement.AimDirection`) + `WeaponIKTargetUpdater.cs` (script mới, subscribe `Weapon.OnWeaponEquipped` để đổi IK target khi switch súng)
+- [ ] Chân: Two-Bone IK Constraint + raycast xuống đất, **luôn bật** (không chỉ khi có dốc) — đảm bảo chân luôn chạm đất
 - [ ] Main Camera: gắn `CameraFollow.cs`, gán Target + Noise Texture (`Assets/_Project/Art/Textures/Noise/Noise_Perlin_01.png`)
-- [ ] Canvas + VirtualJoystick UI (background/handle Image)
+- [ ] Canvas + VirtualJoystick UI (background/handle Image) — có thể dùng sprite từ `Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/` cho đẹp hơn Image trắng trơn
 
 ---
 
 ## Phase 2 — Weapons (gun + bomb)
 
 **Code (đã viết):**
-- [x] `Gameplay/WeaponData.cs`, `WeaponGripPoints.cs`, `Weapon.cs` (hitscan + smoke trail particle + noise recoil), `Bomb.cs`, `BombThrower.cs`
+- [x] `Gameplay/WeaponData.cs`, `WeaponGripPoints.cs`, `Weapon.cs` (hitscan + smoke trail particle + noise recoil), `Bomb.cs`, `BombThrower.cs` (throw animation trigger + `releaseDelay` trước khi bomb thực sự spawn)
 
 **Editor assembly (chưa làm — xem `Docs/EDITOR_SETUP_CHECKLIST.md` mục 3, 5):**
 - [ ] 2 `WeaponData` asset (`WD_Pistol`, `WD_AR`) — số liệu khác rõ rệt (fireRate/damage/range)
-- [ ] 2 weapon prefab từ `Low Poly Pistol Weapon Pack 1` + `Low Poly Weapon Pack 4_MW_1` (hoặc ShotGun/VOL.1), mỗi cái thêm `WeaponGripPoints.cs` + 3 child Transform (RightHandGrip/LeftHandGrip/MuzzlePoint)
-- [ ] 3 ParticleSystem prefab: muzzle flash, smoke trail (stretched theo trục Z), impact
-- [ ] `Bomb` prefab (Bomb.cs + explosion ParticleSystem)
+- [ ] Weapon prefab pistol (`Low Poly Pistol Weapon Pack 1`): `WeaponGripPoints.cs` với `rightHandGrip` VÀ `leftHandGrip` trỏ **cùng 1 Transform** (2 tay cùng cầm 1 điểm)
+- [ ] Weapon prefab AR/rifle (`Low Poly Weapon Pack 4_MW_1` hoặc ShotGun/VOL.1): `WeaponGripPoints.cs` với `rightHandGrip`/`leftHandGrip` là **2 Transform riêng** (tay súng + tay đỡ báng trước)
+- [ ] 3 ParticleSystem prefab (dùng particle từ `Assets/ThirdParty/Epic Toon FX/`, **không dựng mesh**): muzzle flash, smoke trail (stretched theo trục Z), impact
+- [ ] `Bomb` prefab (`Bomb.cs` + explosion `ParticleSystem` từ Epic Toon FX — bắt buộc particle-only, xem `GAMEPLAY_DESIGN.md` mục 6), gán Animator trên player + trigger name khớp `BombThrower.throwAnimTrigger` ("Throw"), dùng animation `Assets/ThirdParty/MalbersHumanAnims/Weapons/Throwable/H_Throw_N.fbx` (hoặc chọn hướng phù hợp) làm base, tune `releaseDelay` khớp frame buông tay
 - [ ] Đăng ký SFX key vào `AudioService`: `gun_fire` (x2 nếu muốn âm khác nhau theo súng), `bomb_explode`
-- [ ] UI: nút bắn (giữ để bắn liên tục), nút switch súng, nút ném bomb — gọi đúng method (`Weapon.TryFire`, `Weapon.SwitchWeapon`, `BombThrower.TryThrow`)
+- [ ] UI: dùng sprite/button từ `Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/` — **không có nút bắn** (auto-fire, xem `Weapon.TryAutoFire()`), chỉ cần nút switch súng (`Weapon.SwitchWeapon`) và nút bomb (`BombThrower.TryThrow`)
 
 ---
 
@@ -50,10 +52,11 @@ Toàn bộ **chưa viết code**. Thứ tự làm:
 - [ ] 1 `ZombieData` riêng cho boss trỏ `VATEnemy/Boss/SM_Chr_Kaiju_01/02/04_VAT_Data.asset` (dùng ở Phase 6, tạo asset từ bây giờ luôn cho tiện)
 - [ ] Dissolve-on-death: material dùng shader Dissolve từ `stylized-toon-world-kit`, animate `_DissolveAmount` qua `BillTween` khi `Health.OnDeath` fire, xong mới trả về pool
 - [ ] Pooling: `PoolService.Register()` mỗi `ZombieData` prefab lúc khởi tạo level, `Spawn`/`Return` thay `Instantiate`/`Destroy`
-- [ ] `Gameplay/ZombieManager.cs` — quản lý tier theo khoảng cách:
-  - Tier xa (ngoài active radius): lerp thẳng về điểm gần player, KHÔNG NavMeshAgent, KHÔNG animation crossfade tốn, throttle update (không mỗi frame)
-  - Tier gần: bật full `ZombieAI` Update (NavMeshAgent, animation, attack check)
-  - 1 vòng lặp trung tâm kiểm tra khoảng cách toàn bộ zombie theo interval, KHÔNG để mỗi zombie tự check
+- [ ] `Gameplay/ZombieManager.cs` — quản lý 3 tier (xem `GAMEPLAY_DESIGN.md` mục 4):
+  - Tier 1 (gần): bật full `ZombieAI` Update (NavMeshAgent, animation, attack check)
+  - Tier 2 (xa nhưng còn trong chunk active): lerp thẳng về điểm gần player, KHÔNG NavMeshAgent, KHÔNG animation crossfade tốn, throttle update (không mỗi frame)
+  - Tier 3 (ngoài chunk active — player đã đi xa): `SetActive(false)`/trả về pool, KHÔNG chạy logic gì — cần biết zombie thuộc chunk nào để so với lưới 3×3 hiện tại của `WorldStreamer` (Phase 4)
+  - 1 vòng lặp trung tâm kiểm tra khoảng cách + trạng thái chunk toàn bộ zombie theo interval, KHÔNG để mỗi zombie tự check
 - [ ] Hit reaction: flash material 1-2 frame + particle máu + nhẹ knockback lùi lại
 - [ ] Bake NavMesh cho Level 1 (cần dựng xong ground/obstacle ở Phase 4 trước, hoặc bake tạm trên 1 plane test)
 
@@ -75,10 +78,11 @@ Toàn bộ **chưa viết code**.
 
 - [ ] Hit-stop: coroutine `Time.timeScale = 0.05f` trong ~0.05-0.08s (dùng `WaitForSecondsRealtime`), gọi khi player/zombie trúng đòn nặng
 - [ ] Damage popup: `DamagePopup.cs` (TextMeshPro + BillTween di chuyển lên + fade), pool dùng chung 1 prefab
-- [ ] HUD: health bar (bind `Health.OnDamaged`), ammo/bomb count (bind `BombThrower.BombsRemaining`), level timer, wave/zombie-count indicator
-- [ ] Win/Lose screen (Panel bật khi hết giờ / player chết)
+- [ ] HUD: dùng UI kit `Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/` — health bar (bind `Health.OnDamaged`), ammo/bomb count (bind `BombThrower.BombsRemaining`), level timer, wave/zombie-count indicator
+- [ ] Win/Lose screen (Panel từ GUI Pro, bật khi hết giờ / player chết)
 - [ ] SFX đầy đủ qua `AudioService`: nhạc nền loop, switch súng, zombie chết, player trúng đòn
-- [ ] Polish particle: tinh chỉnh máu/muzzle/explosion cho "rẻ nhưng đã tay" theo skill
+- [ ] Polish particle: dùng thêm variant từ `Assets/ThirdParty/Epic Toon FX/` cho máu/muzzle/explosion, tinh chỉnh cho "rẻ nhưng đã tay" theo skill
+- [ ] (Tuỳ chọn, điểm cộng nếu còn thời gian) Tính năng modular character: đổi trang phục/bộ phận cho soldier bằng parts trong Layer Lab pack — tham khảo cách `My project (1)/Assets/Scripts/ModularUtils/CharacterModularApplier.cs` consume đúng format này (không bắt buộc theo đề bài)
 
 ---
 

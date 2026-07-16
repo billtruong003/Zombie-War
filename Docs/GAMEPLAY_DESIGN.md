@@ -28,6 +28,10 @@
 | `TOSSZONE` — súng | Không có package súng nào trong `manifest.json` (đã kiểm tra kỹ — không tồn tại "gun package qua manifest" như giả định ban đầu). Súng thực chất là các asset-store folder thô (`Low Poly Pistol/AR/ShotGun Weapon Pack...`) + code riêng `Assets/_Game/Scripts/Guns/` (`Gun.cs` abstract, `HitscanGun.cs`, `GunConfig.cs` SO, `GunCatalog.cs`), namespace `TossZone.Guns`, gate bởi `#if PHOTON_FUSION`. | **Mang model súng (Low Poly Weapon Pack) sang làm visual**, và **học kiến trúc `Gun.cs`/`HitscanGun.cs`/`GunConfig.cs`** (đúng pattern skill khuyên: 1 class `Weapon.cs` + `WeaponData` SO, không tạo class con cho từng súng) — viết lại bản không phụ thuộc Fusion. |
 | `stylized-toon-world-kit` (GitHub) | UPM git package, URP 17 / Unity 6, HLSL thuần (không Shader Graph). 31 shader: toon lit + outline, environment (nước, cỏ, foliage, terrain blend), VFX (dissolve, teleport, force field...), material, anime NPR. Proprietary/không redistribute qua Asset Store — nhưng **cài qua Package Manager bằng git URL**, không phải copy file, nên không vi phạm gì khi thêm vào `manifest.json` của chính dự án đang làm cho công ty. | **Thêm vào `manifest.json`** dạng git package (B2): `"com.billtruong.stylized-toon-world-kit": "https://github.com/billtruong003/stylized-toon-world-kit.git"`. Dùng: **toon lit + outline** cho soldier/zombie/gun, **Dissolve** cho hiệu ứng zombie biến mất khi chết (yêu cầu #4), **terrain/grass** cho ground chunk nếu kịp thời gian. |
 | `unity-mcp` (CoplayDev) | Git package `https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main`, hỗ trợ Unity 2021.3→6.x, cần Python 3.10+ (qua `uv`) cho server, cấu hình client bằng menu `Window → MCP for Unity → Configure All Detected Clients`. | Thêm vào `manifest.json` (B2) để dùng skill `unity-skills` (unity_automation MCP) điều khiển Editor trực tiếp trong các bước sau. |
+| `ShadersLab-BillShader` — animation | `Malbers Animations/Common/Human Anims` — bộ animation Humanoid thuần, xác nhận `animationType: 3` toàn bộ clip kiểm tra. Có đủ locomotion 8-hướng, aim-idle, animation cầm súng lục/rifle riêng biệt, animation ném 4 hướng, hit/death. | **Copy các folder cần dùng** (không lấy nguyên 192MB `Human Anims`) vào `Assets/ThirdParty/MalbersHumanAnims/` (~46MB) — xem mục 8. |
+| "3D Characters Pro - Fantasy" (Layer Lab, `.unitypackage` người dùng tải) | Character pack modular (rig + parts, KHÔNG có animation đi kèm). | Đã tự giải nén `.unitypackage` (gzip-tar, không cần mở Editor) vào `Assets/ThirdParty/Layer Lab/3D Casual Character/`. Dùng làm model soldier. **Cân nhắc tính năng modular character** (đổi trang phục/bộ phận) làm điểm cộng visual nếu còn thời gian ở Phase 7 — xem cách `My project (1)/Scripts/ModularUtils/CharacterModularApplier.cs` consume đúng format Layer Lab này (rebind SkinnedMeshRenderer theo skeleton chung) nếu muốn làm, không bắt buộc theo đề bài. |
+| "Epic Toon FX" v1.82 (`.unitypackage` người dùng tải) | Bộ particle VFX phong cách toon (nổ, máu, phép thuật, hit effect...). | Giải nén tương tự vào `Assets/ThirdParty/Epic Toon FX/` (~547MB). Dùng cho: muzzle flash, smoke trail, impact particle (yêu cầu #5), particle nổ bomb (yêu cầu #6 — **bắt buộc particle-only, không mesh**, xem mục 6), particle máu zombie trúng đạn (yêu cầu #4). |
+| "GUI Pro - Super Casual" v1.0 (`.unitypackage` người dùng tải) | Bộ UI kit casual (button, panel, popup, icon...). | Giải nén vào `Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/` (~161MB, cùng vendor Layer Lab nên lồng chung thư mục). Dùng cho HUD/menu ở Phase 5, thay vì tự vẽ UI từ đầu. |
 
 **Rủi ro version đã kiểm tra:** ZombieWar = `6000.3.10f1`, TOSSZONE = `6000.3.8f1`, ShadersLab = `6000.2.7f2` — tất cả đều Unity 6.x cùng thế hệ URP 17.x, rủi ro lệch version thấp nhưng vẫn cần build-test lại (B4) vì asset copy thủ công giữa các minor version Unity 6 đôi khi lệch shader serialization nhẹ.
 
@@ -40,6 +44,8 @@
 **Camera:** 1 `CameraFollow.cs` gắn lên Main Camera — giữ offset cố định phía trên/sau player (góc nghiêng ~60-70°, không thẳng đứng 90° để vẫn thấy rõ model soldier/zombie/gun), dùng `Vector3.SmoothDamp` để đuổi theo vị trí player mỗi `LateUpdate`, rotation set 1 lần (cố định, không đổi theo player). Camera shake (bắn súng mạnh, bom nổ) viết tay bằng kỹ thuật **trauma-based shake** (decay theo thời gian, offset random scale theo trauma) ngay trong cùng script — rẻ, không cần Cinemachine Impulse.
 
 **Control:** đề bài chỉ nói **1 joystick ảo điều khiển soldier** (không nói joystick bắn riêng) → quyết định: **auto-aim vào zombie gần nhất trong tầm bắn**, thân player xoay theo joystick di chuyển, riêng "điểm ngắm"/gun xoay theo hướng zombie gần nhất (nếu không có zombie trong tầm, gun xoay theo hướng di chuyển). Đây là lựa chọn rẻ nhất, đúng chuẩn skill (1 joystick → 1 input đọc trực tiếp, không thêm input provider layer), và hợp lý vì zombie tràn từ 4 phía nên auto-aim tránh việc người chơi phải xoay tay bằng joystick thứ 2 không tồn tại.
+
+**Bắn — auto-fire, KHÔNG có nút bắn (chốt sau B7):** đi vào tầm súng (`WeaponData.range`) tự động bắn, không cần input bắn thủ công. `Weapon.cs` tự kiểm tra `PlayerMovement.HasTarget` + khoảng cách mỗi frame (gated bởi cooldown fire rate sẵn có, không tốn thêm chi phí). UI chỉ còn joystick di chuyển + nút switch súng + nút bomb — đúng tinh thần tối giản input cho mobile.
 
 **Effort ước lượng:** 0.5–1 ngày (theo skill).
 
@@ -61,13 +67,13 @@
 - **Render/animation:** dùng VAT (`VAT_Animator.CrossFade()`) thay Animator Controller truyền thống — lý do: hàng chục/hàng trăm zombie cùng lúc từ 4 phía, VAT rẻ hơn nhiều so với Animator instance per-zombie (không cần Mecanim runtime cho từng con). **Đã có sẵn data bake thật** (`Assets/ThirdParty/VATEnemy/`) cho ~7 loại quái (Batty, Cute_Spider/King, Whispa, Prizon, Lusif) — dùng thẳng làm zombie thường, không cần tự bake.
 - **Zombie khổng lồ (Level 2) đã có sẵn asset, không cần làm mới:** `VATEnemy/Boss/SM_Chr_Kaiju_01/02/04_VAT_Data.asset` — baked Kaiju boss, dùng thẳng cho yêu cầu #7 "zombie khổng lồ", chỉ cần scale + AC_Run_F.controller đi kèm đã có sẵn trong cùng thư mục.
 - **Hiệu ứng trúng đạn + biến mất (yêu cầu #4):** flash hit + particle máu tại điểm trúng đạn, khi hết máu → Dissolve shader (từ `stylized-toon-world-kit`) chạy dissolve ~0.5-1s rồi trả về pool (không `Destroy`).
-- **Pooling + gating theo khoảng cách (theo đúng hướng bạn note):**
+- **Pooling + gating theo khoảng cách — 3 tier (chốt thêm sau B7, không chỉ 2 tier như bản đầu):**
   - Object pool cố định (BillGameCore `PoolService`) cho từng `ZombieData` type.
-  - Spawn ngoài rìa camera view quanh player (vòng tròn bán kính > far frustum).
-  - **2 tier logic theo khoảng cách tới player:**
-    - *Xa (ngoài "active radius")*: chỉ di chuyển "ngáo ngơ" rẻ tiền — lerp thẳng về 1 điểm gần player (không NavMesh, không tìm target, không animation crossfade tốn — hoặc animation chạy tần suất thấp), throttle Update mỗi N frame qua 1 manager trung tâm chứ không mỗi zombie tự Update (tránh hàng trăm Update() riêng lẻ).
-    - *Gần (trong "active radius", trong hoặc sát camera)*: bật full logic — NavMeshAgent.SetDestination, animation crossfade đúng nhịp, attack check, hit reaction (giật lùi khi bị bắn theo note của bạn), âm thanh.
-  - Việc chuyển tier chỉ là 1 check khoảng cách trong 1 manager trung tâm (`ZombieManager.cs`) chạy theo interval, KHÔNG phải mỗi zombie tự kiểm tra — đúng nguyên tắc "if chặn logic nặng" bạn đề cập, tránh N zombie × N check/frame.
+  - Spawn **luôn ngoài phạm vi màn hình** quanh player (vòng tròn bán kính > far frustum) rồi chạy vào — tạo cảm giác đông mà không cần render/tính toán full ngay từ đầu.
+  - **Tier 1 — Gần (trong active radius / gần hoặc trong camera):** full logic — NavMeshAgent.SetDestination, animation crossfade đúng nhịp, attack check, hit reaction (giật lùi khi bị bắn), âm thanh.
+  - **Tier 2 — Xa (ngoài active radius nhưng vẫn trong chunk đang active):** logic "ngáo ngơ" cực rẻ — lerp thẳng về 1 điểm gần player (KHÔNG NavMesh, KHÔNG tìm target, KHÔNG animation crossfade tốn), throttle update mỗi N frame qua `ZombieManager.cs` trung tâm.
+  - **Tier 3 — Ngoài chunk active (player đã di chuyển xa sang chunk khác):** **tự tắt hẳn** — `gameObject.SetActive(false)` hoặc trả thẳng về pool, KHÔNG chạy bất kỳ logic gì (kể cả tier 2). Zombie thuộc chunk đã rời khỏi lưới 3×3 quanh player (xem mục 7 World Generation) không tồn tại về mặt xử lý cho tới khi chunk đó active trở lại.
+  - Việc chuyển tier chỉ là 1 check khoảng cách + trạng thái chunk trong 1 manager trung tâm (`ZombieManager.cs`) chạy theo interval, KHÔNG phải mỗi zombie tự kiểm tra — đúng nguyên tắc "if chặn logic nặng" bạn đề cập, tránh N zombie × N check/frame.
 - **Zombie khổng lồ (Level 2, điểm cộng):** 1 `ZombieData` asset riêng trỏ vào Kaiju VAT data đã có sẵn (xem trên) — HP/damage cao, field `isBoss` bật thêm VFX/SFX đặc biệt khi xuất hiện — dùng chung `ZombieAI.cs`, không cần class riêng, đúng nguyên tắc data-driven variety của skill.
 
 **Effort ước lượng:** Zombie AI + pooling/gating ~ 1.5 ngày (cao hơn ước lượng mặc định của skill vì có thêm tier logic theo khoảng cách).
@@ -88,6 +94,8 @@
 ## 6. Bomb
 
 - 1 `Bomb.cs`: player ném ra trước mặt (theo hướng aim hiện tại — tái dùng hướng auto-aim ở mục 2, không cần cơ chế ném quỹ đạo vật lý phức tạp cho MVP), delay ngòi nổ N giây, nổ = `Physics.OverlapSphere` gây damage vật lý đúng yêu cầu #6, kèm particle nổ + `CameraFollow.Shake()` (custom, xem mục 2) + SFX.
+- **Hiệu ứng nổ — BẮT BUỘC particle-only, không mesh:** `explosionPrefab` là `ParticleSystem` (đã ép kiểu trong `Bomb.cs`, không nhận GameObject có mesh renderer thường). Dùng particle từ **Epic Toon FX** (đã import vào `Assets/ThirdParty/Epic Toon FX/`) cho vùng nổ — không dựng mesh cầu/sphere giả nổ.
+- **Animation ném:** `BombThrower.cs` bắn `Animator.SetTrigger("Throw")` ngay khi bấm nút, bomb thực sự spawn sau `releaseDelay` (mặc định 0.3s, tune lại theo đúng frame "buông tay" của animation ném thật khi có clip) — khớp cảm giác ném thay vì bomb bay ra tức thì không có anim.
 - Input: 1 button riêng (UI) để ném bomb, có cooldown/số lượng giới hạn hiển thị trên HUD.
 
 **Effort ước lượng:** ~0.5 ngày.
@@ -121,13 +129,25 @@
 - **`My project (1)`:** `LocomotionModular/` chỉ là state machine di chuyển thuần (Dash/Fall/Grounded/Jump) — không liên quan tay/súng/IK. `CharacterModularApplier.cs` là hệ thống đổi trang phục/bộ phận cơ thể (rebind SkinnedMeshRenderer theo skeleton chung), không phải hệ animation/IK. Animation Rigging **đã cài nhưng chưa dùng ở đâu cả** trong project này.
 - **`TOSSZONE`:** súng cầm trên tay chỉ bằng **bone-parenting thuần** (parent thẳng vào wrist transform, không IK) cho phần cosmetic; phần tương tác thật dùng Autohand (VR grab, không áp dụng được cho top-down non-VR).
 
-**Quyết định (bạn chốt trực tiếp):** **không dùng TopDownEngine** (tránh kéo theo cả framework character/ability riêng của nó) — **tự viết bằng Animation Rigging package** (`com.unity.animation.rigging`, đã có sẵn trong manifest từ B2). Cụ thể:
-- Tay: **Two-Bone IK Constraint** cho mỗi tay, target bám theo 1 transform "grip point" định nghĩa riêng trên mỗi prefab súng (mỗi `WeaponData` có field `Transform rightHandGrip`/`leftHandGrip` trỏ vào prefab đó) — khi switch súng, chỉ đổi target của constraint, không đổi logic.
+**Quyết định (bạn chốt trực tiếp):** **không dùng TopDownEngine** (tránh kéo theo cả framework character/ability riêng của nó) — **tự viết bằng Animation Rigging package** (`com.unity.animation.rigging`, đã có sẵn trong manifest từ B2). Code đã viết ở `Weapon.cs`/`WeaponGripPoints.cs`, phần Rig dựng trong Editor (xem `Docs/EDITOR_SETUP_CHECKLIST.md`):
+- **Tay — quy ước cầm súng theo loại (chốt thêm sau B7):**
+  - **Súng 1 tay có thể cầm 2 tay kiểu "cup and saucer" (súng lục):** `WeaponGripPoints.rightHandGrip` VÀ `leftHandGrip` trỏ **cùng 1 Transform** (điểm cầm duy nhất) — cả 2 Two-Bone IK Constraint tay đều nhắm vào đúng 1 điểm đó.
+  - **Súng 2 tay (AR/rifle):** `rightHandGrip`/`leftHandGrip` là **2 Transform riêng biệt** (tay súng + tay đỡ nòng/báng trước) — không cần đổi code, chỉ là cách đặt Transform khác nhau trên từng prefab súng.
+  - Khi switch súng, `Weapon.OnWeaponEquipped` (đã có sẵn) bắn ra `WeaponGripPoints` mới để 1 script nhỏ ở Editor cập nhật lại target của 2 Two-Bone IK Constraint.
 - Hướng ngắm: **Multi-Aim Constraint** trên xương thân trên (spine/chest), target = điểm auto-aim (zombie gần nhất hoặc hướng di chuyển, theo mục 2).
-- Chân: Two-Bone IK Constraint + raycast xuống đất cho foot placement, cần khi có dốc ở Level 2.
+- **Chân: Two-Bone IK Constraint + raycast xuống đất, LUÔN bật** (không chỉ khi có dốc) — đảm bảo chân luôn chạm đất kể cả trên nền phẳng có chênh lệch nhỏ (obstacle, mép chunk), bắt buộc rõ hơn cho Level 2 dốc.
 - Toàn bộ chạy qua 1 `RigBuilder` + `Rig` layer trên Animator, weight điều chỉnh qua code khi cần tắt IK (VD: lúc chết).
 
-**Effort ước lượng:** Rig setup (RigBuilder + constraints cơ bản) ~0.5 ngày, tune theo từng súng + chân IK trên dốc ~0.5-1 ngày tuỳ độ phức tạp model súng.
+**Animation nguồn — ĐÃ CHỐT:** Layer Lab character pack không có animation nào đi kèm (chỉ có rig + modular parts). Đã khảo sát cả 3 project — `My project (1)` và `TOSSZONE` không có animation Humanoid nào dùng được (chỉ có code, không có file .fbx/.anim). **`ShadersLab-BillShader` có sẵn `Malbers Animations/Common/Human Anims`** — bộ animation Humanoid thuần (không phải animal-specific dù tên gói), xác nhận `animationType: 3` (Humanoid) trên toàn bộ clip đã kiểm tra, khớp gần như hoàn hảo với nhu cầu:
+- `Locomotion/Strafe/` — bộ 8 hướng strafe walk/jog đầy đủ (N/NE/E/SE/S/SW/W/NW) + turn-in-place — đúng chuẩn top-down.
+- `Idle/Idle_Combat.fbx` — pose aim-idle/sẵn sàng chiến đấu.
+- `Weapons/Pistol/H_Weapon_Pistol_AimFire.FBX` + `Weapons/Rifle/S_Rifle_Aim.fbx` — animation cầm/ngắm riêng theo loại súng (khớp đúng quy ước 1 tay/2 tay ở trên).
+- `Weapons/Throwable/H_Throw_N/E/S/W.fbx` — 4 animation ném theo hướng, dùng cho bomb.
+- `Hit/`, `Deaths/` — hit reaction + death animation cho player (yêu cầu #3 "hiệu ứng mất máu").
+
+Đã copy các folder này vào `Assets/ThirdParty/MalbersHumanAnims/` (~46MB, chỉ lấy phần cần dùng, không copy nguyên `Human Anims` 192MB gồm cả Sword/Axe/Bow/Spear/Swim/Climb không liên quan). Import vào Editor với **Animation Type = Humanoid** trên từng .fbx để retarget lên rig Layer Lab.
+
+**Effort ước lượng:** Rig setup (RigBuilder + constraints cơ bản) ~0.5 ngày, tune theo từng súng + chân IK ~0.5-1 ngày tuỳ độ phức tạp model súng.
 
 ---
 

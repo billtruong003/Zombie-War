@@ -38,6 +38,19 @@ namespace ZombieWar
         private void Update()
         {
             if (_fireCooldown > 0f) _fireCooldown -= Time.deltaTime;
+
+            TryAutoFire();
+        }
+
+        // No fire button - walking a zombie into weapon range is the only thing that triggers
+        // shooting. TryFire's own cooldown gate makes this safe to call every frame.
+        private void TryAutoFire()
+        {
+            var player = PlayerMovement.Instance;
+            if (player == null || !player.HasTarget) return;
+            if (player.AimTargetDistance > Current.range) return;
+
+            TryFire(player.AimDirection);
         }
 
         public void SwitchWeapon()

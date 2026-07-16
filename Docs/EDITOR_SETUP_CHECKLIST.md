@@ -11,16 +11,17 @@ Code cho Phase 1/2 đã viết xong (`Assets/_Project/Scripts/Runtime/Gameplay/`
 
 ## 2. Player GameObject
 
+0. **Import animation trước:** chọn 1 character prefab từ `Assets/ThirdParty/Layer Lab/3D Casual Character/3D Characters Pro - Fantasy/Prefabs/`, set Rig → Animation Type = **Humanoid**, Apply. Trên từng .fbx trong `Assets/ThirdParty/MalbersHumanAnims/` (Locomotion/Strafe, Idle/Idle_Combat, Hit, Deaths, Weapons/Pistol, Weapons/Rifle, Weapons/Throwable) cũng set Animation Type = Humanoid, Apply — Unity sẽ tự retarget lên rig soldier dù khác rig gốc.
 1. Tạo empty GameObject `Player` tại gốc scene, thêm:
    - `Rigidbody` (Freeze Rotation X/Z, Use Gravity tuỳ địa hình — top-down nên có thể tắt gravity + constrain Y nếu muốn nhân vật không rơi qua dốc).
-   - `Animator` (Controller sẽ tạo ở bước 2b).
+   - `Animator` (Controller sẽ tạo ở bước 2b, Avatar = character prefab ở bước 0).
    - `Health.cs`
    - `PlayerMovement.cs` — kéo `VirtualJoystick` (bước 5) vào field `Joystick`, kéo `Animator` vào field `Animator`.
    - `Weapon.cs` — field `Weapon Socket` = 1 child Transform rỗng đặt đúng vị trí tay cầm súng (tạm thời, IK sẽ tinh chỉnh sau ở bước 6); field `Weapons` = danh sách 2 `WeaponData` asset (bước 3); field `Recoil Noise Texture` = texture ở bước 1.
-   - `BombThrower.cs` — field `Bomb Prefab` = prefab Bomb (bước 3d), field `Throw Origin` = child Transform trước ngực/tay player.
-2. **Animator Controller** (2 layer theo yêu cầu #3):
-   - Layer 0 "Base" (full body): Blend Tree hoặc 2 state Idle/Run theo param `Speed` (float, `PlayerMovement.cs` đã set giá trị này mỗi frame).
-   - Layer 1 "UpperBody" (Avatar Mask loại trừ chân, weight = 1): state Aim/Fire — trigger animation bắn khi `Weapon.TryFire()` được gọi (thêm 1 dòng `animator.SetTrigger("Fire")` trong `Weapon.cs` nếu muốn — hiện code chưa có, dễ thêm sau).
+   - `BombThrower.cs` — field `Bomb Prefab` = prefab Bomb (bước 3d), field `Throw Origin` = child Transform trước ngực/tay player, field `Animator` = Animator của player, `Throw Anim Trigger` khớp tên trigger tạo ở bước 2b.
+2. **Animator Controller** (2 layer theo yêu cầu #3), dùng animation từ `MalbersHumanAnims`:
+   - Layer 0 "Base" (full body): Blend Tree 8-hướng dùng `Locomotion/Strafe/S_Strafe_Jog_N/NE/E/SE/S/SW/W/NW.fbx` (+ `S_Strafe_Idle.fbx` khi đứng yên) theo param `Speed` + hướng di chuyển (`PlayerMovement.cs` đã set `Speed` mỗi frame; hướng lấy từ `joystick.Direction` hoặc thêm 2 param `MoveX`/`MoveZ` nếu muốn blend tree 2D).
+   - Layer 1 "UpperBody" (Avatar Mask loại trừ chân, weight = 1): state `Idle_Combat.fbx` làm base aim-idle. Thêm 1 trigger `"Fire"` — cần thêm 1 dòng `animator?.SetTrigger("Fire")` vào `Weapon.TryFire()` (chưa có trong code, dễ thêm). Thêm state riêng cho `"Throw"` trigger (đã có sẵn trong `BombThrower.cs`) dùng `Weapons/Throwable/H_Throw_N.fbx` (hoặc chọn hướng khớp aim).
 3. Input tạm thời (chưa có UI button thật): có thể test bằng 1 script debug gọi `weapon.TryFire(playerMovement.AimDirection)` khi bấm phím, trước khi nối vào UI thật ở bước 5.
 
 ## 3. Weapon assets
@@ -42,7 +43,7 @@ Code cho Phase 1/2 đã viết xong (`Assets/_Project/Scripts/Runtime/Gameplay/`
 
 1. Canvas (Screen Space - Overlay) + EventSystem (Unity tự tạo nếu chưa có).
 2. Joystick: 1 `Image` nền (background) + 1 `Image` con (handle), gắn `VirtualJoystick.cs` lên background, kéo 2 RectTransform vào field tương ứng.
-3. Nút bắn: có thể dùng `OnPointerDown`/`OnPointerUp` custom hoặc đơn giản 1 `Button` gọi `Weapon.TryFire(playerMovement.AimDirection)` liên tục khi giữ (cần 1 script nhỏ kiểm tra "đang giữ" — hoặc tạm thời cho bắn tự động khi có zombie trong tầm, tuỳ bạn quyết định UX).
+3. **Không có nút bắn** — đã chốt auto-fire: `Weapon.cs` tự bắn khi `PlayerMovement.HasTarget` = true và mục tiêu nằm trong `Current.range` (xem `TryAutoFire()`), không cần input gì cho việc bắn.
 4. Nút switch súng: `Button.onClick` → `Weapon.SwitchWeapon()`.
 5. Nút bomb: `Button.onClick` → `BombThrower.TryThrow(playerMovement.AimDirection)`.
 

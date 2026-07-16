@@ -20,6 +20,11 @@ namespace ZombieWar
         // the two-axis feel is what makes strafing-while-shooting read correctly.
         public Vector3 AimDirection { get; private set; } = Vector3.forward;
 
+        // Weapon.cs auto-fires off these instead of a fire button - no manual shoot input at all,
+        // moving into weapon range is what triggers firing.
+        public bool HasTarget { get; private set; }
+        public float AimTargetDistance { get; private set; } = float.MaxValue;
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
@@ -46,15 +51,19 @@ namespace ZombieWar
         private void UpdateAimDirection(Vector3 moveDirection)
         {
             var nearest = TargetRegistry.FindNearest(transform.position, aimRange);
+            HasTarget = nearest != null;
+
             if (nearest != null)
             {
                 Vector3 toTarget = nearest.Transform.position - transform.position;
                 toTarget.y = 0f;
+                AimTargetDistance = toTarget.magnitude;
                 if (toTarget.sqrMagnitude > 0.0001f) AimDirection = toTarget.normalized;
             }
-            else if (moveDirection.sqrMagnitude > 0.01f)
+            else
             {
-                AimDirection = moveDirection.normalized;
+                AimTargetDistance = float.MaxValue;
+                if (moveDirection.sqrMagnitude > 0.01f) AimDirection = moveDirection.normalized;
             }
         }
     }
