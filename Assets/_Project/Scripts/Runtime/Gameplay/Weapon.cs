@@ -27,7 +27,7 @@ namespace ZombieWar
 
         private void Awake()
         {
-            _recoilNoiseSeed = Random.value * 100f;
+            _recoilNoiseSeed = UnityEngine.Random.value * 100f;
         }
 
         private void Start()
