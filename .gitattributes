@@ -29,3 +29,7 @@
 *.hdr filter=lfs diff=lfs merge=lfs -text
 *.cubemap filter=lfs diff=lfs merge=lfs -text
 *.unitypackage filter=lfs diff=lfs merge=lfs -text
+
+# Baked VAT data assets embed Texture2D sub-assets directly in the .asset file
+# (1-40MB+ each) - override the generic *.asset text rule above for this path.
+Assets/ThirdParty/VATEnemy/**/*.asset filter=lfs diff=lfs merge=lfs -text

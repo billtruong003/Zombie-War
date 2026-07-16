@@ -17,7 +17,6 @@ public class VAT_AnimationData : ScriptableObject
 
     public Mesh bakedMesh;
     public Texture2D positionTexture;
-    public Texture2D normalTexture;
     public Vector3 positionMinBounds;
     public Vector3 positionMaxBounds;
     public List<ClipInfo> animationClips = new List<ClipInfo>();
@@ -28,11 +27,20 @@ public class VAT_AnimationData : ScriptableObject
 
     public bool TryGetClipInfo(string clipName, out ClipInfo clipInfo)
     {
-        if (_clipLookup == null || _clipLookup.Count != animationClips.Count) InitializeLookup();
+        if (_clipLookup == null || _clipLookup.Count != animationClips.Count)
+        {
+            InitializeLookup();
+        }
         return _clipLookup.TryGetValue(clipName, out clipInfo);
     }
 
-    public bool IsValid() => bakedMesh != null && positionTexture != null && animationClips.Count > 0;
+    public bool IsValid()
+    {
+        return bakedMesh != null && positionTexture != null && animationClips.Count > 0;
+    }
 
-    private void InitializeLookup() => _clipLookup = animationClips.ToDictionary(c => c.name);
+    private void InitializeLookup()
+    {
+        _clipLookup = animationClips.ToDictionary(c => c.name);
+    }
 }
