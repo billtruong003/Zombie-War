@@ -77,9 +77,9 @@
 ## 5. Gun
 
 - Kiến trúc data: `WeaponData`/`GunConfig` ScriptableObject (tên, fireRate, damage, range, bulletVFX prefab, muzzleFx, fireSfx, recoil params) — reuse pattern từ `TOSSZONE/Gun.cs` nhưng bỏ Photon Fusion gate.
-- **Bắn: hitscan** (Physics.Raycast) — rẻ, khớp nhịp game dồn dập, đúng khuyến nghị mặc định của skill cho horde lớn. "Particle đạn nổ" trong yêu cầu #5 = muzzle flash + tracer/impact particle tại điểm raycast trúng (không phải projectile vật lý bay).
+- **Bắn: hitscan** (Physics.Raycast) — rẻ, khớp nhịp game dồn dập, đúng khuyến nghị mặc định của skill cho horde lớn. "Particle đạn nổ" trong yêu cầu #5 = muzzle flash + **particle khói mô tả đường đạn** (1 particle kéo dài dọc theo tia raycast, từ nòng súng đến điểm trúng — dùng Line/Trail-style particle hoặc đơn giản là 1 particle burst kéo dài theo hướng bắn) + impact particle tại điểm raycast trúng (không phải projectile vật lý bay).
 - **≥2 loại súng + switch:** `List<WeaponData>` 2 phần tử trên player + button switch tăng index modulo — dùng model từ Low Poly Weapon Pack (TOSSZONE) làm visual (vd: Pistol + AR/SMG — khác rõ rệt về fire rate/recoil để "cảm" được sự khác biệt khi switch).
-- **Hiệu ứng súng giật (recoil):** dùng `BillTween` (đã có sẵn, không viết tween riêng) để giật procedural nhẹ vị trí/rotation của gun model mỗi phát bắn, trả về vị trí gốc bằng ease-out — rẻ, không cần animation clip riêng cho recoil.
+- **Hiệu ứng súng giật (recoil) — noise-based cho cảm giác tự nhiên/"satisfying":** dùng `BillTween` để kick vị trí/rotation gun model theo 1 offset **random theo noise** (Perlin hoặc `Random.Range` trong 1 cone góc nhỏ, không phải offset cố định lặp lại y hệt mỗi phát) rồi ease-out về vị trí gốc — mỗi phát bắn giật hơi khác nhau (giống kỹ thuật trauma-based đã dùng cho `CameraFollow.Shake()`), tránh cảm giác máy móc lặp lại của 1 tween cố định.
 
 **Effort ước lượng:** ~1 ngày (theo skill, 2 súng + switch).
 
