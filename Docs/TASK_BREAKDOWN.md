@@ -44,20 +44,20 @@
 
 ## Phase 3 — Zombie AI + VAT rendering + pooling
 
-Toàn bộ **chưa viết code**. Thứ tự làm:
+**Code (đã viết, `Assets/_Project/Scripts/Runtime/Gameplay/`):**
+- [x] `ZombieData.cs` (ScriptableObject: maxHealth, damage, moveSpeed, attackRange, attackCooldown, `VAT_AnimationData` reference, tên clip Idle/Move/Attack/Hit/Death, `bool isBoss`)
+- [x] `ZombieAI.cs` — state machine Idle/Chase/Attack/Dead (bám theo pattern EchoMage `EnemyBase.cs`, tối giản hoá), implements `IDamageable` + `ITargetable`, dùng `VAT_Animator.CrossFade()`/`Play()` khi đổi state, dùng lại `Health.cs` (reuse với player) thay vì viết HP riêng, dissolve qua property `_Dissolve` (đã tra đúng tên trong shader nguồn `StylizedDissolve.shader`, không phải `_DissolveAmount` như đoán ban đầu), hit reaction có knockback lùi
+- [x] `ZombieManager.cs` — 3 tier (Full/Cheap/Inactive) theo bán kính từ player, re-evaluate theo interval (không mỗi frame), Cheap tier chạy qua `CheapTick()` do manager gọi trực tiếp (không qua Update() riêng của từng zombie)
+  - **Lưu ý quan trọng:** Tier "Inactive" KHÔNG dùng `gameObject.SetActive(false)` (sẽ trigger `OnDisable()` → tự unregister khỏi manager → không bao giờ được đánh thức lại) — thay vào đó tắt component (`NavMeshAgent`, `VAT_Animator`, `Renderer`) để đạt cùng hiệu quả "cực kỳ nhẹ" mà vẫn giữ đăng ký. `SetActive(false)` chỉ dùng khi pool thật sự trả về lúc chết.
+  - **Hiện tại tier dựa theo bán kính đơn giản** (`fullTierRadius`/`cheapTierRadius`), CHƯA gắn với chunk thật của `WorldStreamer` (Phase 4 chưa viết) — khi Phase 4 xong, cân nhắc thay bằng check "zombie thuộc chunk nào" cho đúng yêu cầu "tự tắt khi player ra chunk xa", hiện tại bán kính lớn đóng vai trò xấp xỉ.
 
-- [ ] `Gameplay/ZombieData.cs` (ScriptableObject: maxHealth, damage, moveSpeed, attackRange, attackCooldown, `VAT_AnimationData` reference, tên clip Idle/Move/Attack/Hit/Death, `bool isBoss`)
-- [ ] `Gameplay/ZombieAI.cs` — state machine Idle/Chase/Attack/Dead (bám theo pattern EchoMage `EnemyBase.cs` đã ghi trong `GAMEPLAY_DESIGN.md` mục 4, nhưng tối giản), implements `IDamageable` + `ITargetable` (để player auto-aim tìm thấy), dùng `VAT_Animator.CrossFade()` khi đổi state
+**Chưa làm (cần Editor hoặc Phase 4):**
 - [ ] Wire 5 `ZombieData` asset trỏ vào baked data có sẵn: `Batty_*`, `Cute_Spider_*`/`Cute_Spider_King_*`, `Whispa_*`, `Prizon_*`, `Lusif*` (`Assets/ThirdParty/VATEnemy/`)
 - [ ] 1 `ZombieData` riêng cho boss trỏ `VATEnemy/Boss/SM_Chr_Kaiju_01/02/04_VAT_Data.asset` (dùng ở Phase 6, tạo asset từ bây giờ luôn cho tiện)
-- [ ] Dissolve-on-death: material dùng shader Dissolve từ `stylized-toon-world-kit`, animate `_DissolveAmount` qua `BillTween` khi `Health.OnDeath` fire, xong mới trả về pool
-- [ ] Pooling: `PoolService.Register()` mỗi `ZombieData` prefab lúc khởi tạo level, `Spawn`/`Return` thay `Instantiate`/`Destroy`
-- [ ] `Gameplay/ZombieManager.cs` — quản lý 3 tier (xem `GAMEPLAY_DESIGN.md` mục 4):
-  - Tier 1 (gần): bật full `ZombieAI` Update (NavMeshAgent, animation, attack check)
-  - Tier 2 (xa nhưng còn trong chunk active): lerp thẳng về điểm gần player, KHÔNG NavMeshAgent, KHÔNG animation crossfade tốn, throttle update (không mỗi frame)
-  - Tier 3 (ngoài chunk active — player đã đi xa): `SetActive(false)`/trả về pool, KHÔNG chạy logic gì — cần biết zombie thuộc chunk nào để so với lưới 3×3 hiện tại của `WorldStreamer` (Phase 4)
-  - 1 vòng lặp trung tâm kiểm tra khoảng cách + trạng thái chunk toàn bộ zombie theo interval, KHÔNG để mỗi zombie tự check
-- [ ] Hit reaction: flash material 1-2 frame + particle máu + nhẹ knockback lùi lại
+- [ ] Material zombie dùng shader Dissolve từ `stylized-toon-world-kit` (`StylizedDissolve.shader`, property `_Dissolve`)
+- [ ] Pooling: `PoolService.Register()` mỗi `ZombieData` prefab lúc khởi tạo level (code `ZombieAI` đã gọi `Bill.Pool?.Return()` khi chết, nhưng chưa có chỗ nào gọi `Bill.Pool.Spawn()`/`Register()` — cần `WaveSpawner.cs` ở Phase 4 làm việc này)
+- [ ] 1 `ZombieManager` GameObject đặt trong scene (script tự chạy, không cần config gì thêm ngoài 2 bán kính)
+- [ ] Particle máu khi trúng đạn (gắn ở nơi gọi `TakeDamage`, có thể thêm vào `Weapon.cs` khi raycast trúng `IDamageable`)
 - [ ] Bake NavMesh cho Level 1 (cần dựng xong ground/obstacle ở Phase 4 trước, hoặc bake tạm trên 1 plane test)
 
 ---
