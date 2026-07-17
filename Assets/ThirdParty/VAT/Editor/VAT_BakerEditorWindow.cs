@@ -16,6 +16,31 @@ public class VAT_BakerEditorWindow : EditorWindow
         GetWindow<VAT_BakerEditorWindow>("VAT Baker (Batch)");
     }
 
+    /// <summary>Programmatic entry point (used by ZombieWar's bake automation) — bakes each source
+    /// GameObject into <paramref name="projectRelativeDir"/> (e.g. "Assets/_Project/Art/VAT") without
+    /// opening the window or prompting for a folder. Returns the number successfully baked.</summary>
+    public static int BakeObjects(IEnumerable<GameObject> sources, string projectRelativeDir)
+    {
+        var win = CreateInstance<VAT_BakerEditorWindow>();
+        int baked = 0;
+        try
+        {
+            foreach (var src in sources)
+            {
+                if (src == null) continue;
+                if (win.BakeSingleObject(src, projectRelativeDir)) baked++;
+            }
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            DestroyImmediate(win);
+        }
+        return baked;
+    }
+
     private void OnGUI()
     {
         GUILayout.Label("Vertex Animation Texture Baker (Batch Mode)", EditorStyles.boldLabel);

@@ -35,5 +35,13 @@ namespace ZombieWar
         {
             _current = maxHealth;
         }
+
+        // Lets a data-driven owner (e.g. a pooled zombie whose stats come from a ZombieData asset)
+        // make that data the source of truth for max HP instead of the inspector value.
+        public void Configure(float max)
+        {
+            maxHealth = max;
+            _current = max;
+        }
     }
 }

@@ -55,6 +55,15 @@ namespace ZombieWar
         {
             float shake = _trauma * _trauma;
             Vector2 noise = NoiseTextureSampler.Sample(noiseTexture, Time.time * shakeFrequency, _noiseSeed);
+            // NoiseTextureSampler returns zero when no texture is assigned (the scene-built camera has
+            // none) - fall back to procedural Perlin so shake is never silently dead. Centered to [-1,1].
+            if (noise == Vector2.zero)
+            {
+                float t = Time.time * shakeFrequency;
+                noise = new Vector2(
+                    Mathf.PerlinNoise(_noiseSeed, t) * 2f - 1f,
+                    Mathf.PerlinNoise(_noiseSeed + 37f, t) * 2f - 1f);
+            }
             return new Vector3(noise.x * maxShakeOffset * shake, noise.y * maxShakeOffset * shake, 0f);
         }
     }

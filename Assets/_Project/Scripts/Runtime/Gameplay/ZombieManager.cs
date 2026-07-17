@@ -12,15 +12,20 @@ namespace ZombieWar
         [SerializeField] private float cheapTierRadius = 60f;
         [SerializeField] private float tierReevaluateInterval = 0.25f;
 
-        private static readonly List<ZombieAI> _zombies = new();
+        private static readonly List<ZombieBase> _zombies = new();
         private float _reevaluateTimer;
 
-        public static void Register(ZombieAI zombie)
+        // Single source of truth for "how many zombies are alive right now". A zombie leaves this
+        // list the moment it is returned to the pool (OnDisable -> Unregister), so the wave director
+        // can poll this to know when a wave is cleared - no separate bookkeeping needed.
+        public static int AliveCount => _zombies.Count;
+
+        public static void Register(ZombieBase zombie)
         {
             if (!_zombies.Contains(zombie)) _zombies.Add(zombie);
         }
 
-        public static void Unregister(ZombieAI zombie)
+        public static void Unregister(ZombieBase zombie)
         {
             _zombies.Remove(zombie);
         }

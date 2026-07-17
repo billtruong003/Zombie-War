@@ -3,7 +3,7 @@ using BillGameCore;
 
 namespace ZombieWar
 {
-    public class Bomb : MonoBehaviour
+    public class Bomb : PooledObject
     {
         [SerializeField] private float fuseTime = 1.5f;
         [SerializeField] private float explosionRadius = 4f;
@@ -19,6 +19,13 @@ namespace ZombieWar
         private void Awake()
         {
             _fuseTimer = fuseTime;
+        }
+
+        // Pooled reuse skips Awake, so reset fuse/exploded state every time we're spawned.
+        public override void OnSpawnedFromPool()
+        {
+            _fuseTimer = fuseTime;
+            _exploded = false;
         }
 
         private void Update()
@@ -38,14 +45,15 @@ namespace ZombieWar
                 hit.GetComponentInParent<IDamageable>()?.TakeDamage(damage);
 
             if (explosionPrefab != null)
-                Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+                FxPool.Play(explosionPrefab, transform.position, Quaternion.identity);
 
             Bill.Audio?.Play(explosionSfxKey, transform.position);
 
             if (Camera.main != null && Camera.main.TryGetComponent(out CameraFollow cameraFollow))
                 cameraFollow.Shake(cameraShakeAmount);
 
-            Destroy(gameObject);
+            if (Bill.Pool != null) ReturnToPool();
+            else Destroy(gameObject);
         }
     }
 }

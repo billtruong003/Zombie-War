@@ -22,8 +22,5 @@ namespace ZombieWar
         public string attackClip = "Attack";
         public string hitClip = "Hit";
         public string deathClip = "Death";
-
-        [Header("Boss (Level 2)")]
-        public bool isBoss;
     }
 }

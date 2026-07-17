@@ -19,10 +19,16 @@ namespace ZombieWar
         Inactive
     }
 
-    [RequireComponent(typeof(NavMeshAgent), typeof(Health), typeof(VAT_Animator))]
-    public class ZombieAI : MonoBehaviour, IDamageable, ITargetable
+    // Shared machinery for EVERY zombie type: tiered LOD, NavMesh chase, VAT animation, health/
+    // damage, knockback, dissolve + pool return. Concrete subtypes only override the two things that
+    // actually differ between zombies - HOW they approach the player (Chase) and HOW they attack
+    // (PerformAttack) - so adding a new variant is a small focused subclass, not a fork of the FSM.
+    // VAT_Animator lives on a child "Visual" GameObject (not required on the root) so the mesh can be
+    // rotated/offset independently without disturbing the root's collider + NavMeshAgent orientation.
+    [RequireComponent(typeof(NavMeshAgent), typeof(Health))]
+    public abstract class ZombieBase : MonoBehaviour, IDamageable, ITargetable
     {
-        private enum State { Idle, Chase, Attack, Dead }
+        protected enum State { Idle, Chase, Attack, Dead }
 
         [SerializeField] private ZombieData data;
         [SerializeField] private Renderer bodyRenderer;
@@ -46,6 +52,15 @@ namespace ZombieWar
         public ZombieData Data => data;
         public ZombieTier Tier => _tier;
 
+        protected NavMeshAgent Agent => _agent;
+        protected Health Health => _health;
+        protected VAT_Animator Vat => _vatAnimator;
+        protected State CurrentState => _state;
+
+        // Distance at which the zombie stops chasing and switches to attacking. Melee uses the
+        // data's attack range; ranged types widen this so they open fire from well outside it.
+        protected virtual float EngageRange => data.attackRange;
+
         Transform ITargetable.Transform => transform;
         bool ITargetable.IsTargetable => _state != State.Dead;
 
@@ -53,7 +68,10 @@ namespace ZombieWar
         {
             _agent = GetComponent<NavMeshAgent>();
             _health = GetComponent<Health>();
-            _vatAnimator = GetComponent<VAT_Animator>();
+            // VAT_Animator lives on the child "Visual" mesh, not the root - search children (incl. inactive).
+            _vatAnimator = GetComponentInChildren<VAT_Animator>(true);
+            if (_vatAnimator == null)
+                Debug.LogError($"[{name}] VAT_Animator missing in children - zombie animation disabled.", this);
             _dissolvePropertyBlock = new MaterialPropertyBlock();
         }
 
@@ -64,12 +82,17 @@ namespace ZombieWar
             _health.OnDamaged += HandleDamaged;
             _health.OnDeath += HandleDeath;
 
-            _health.ResetHealth();
+            // Data is the source of truth for a type's stats - push them into the shared components
+            // on (re)spawn so pooled instances don't keep the previous occupant's tuning.
+            _health.Configure(data.maxHealth);
+            _agent.speed = data.moveSpeed;
             _state = State.Idle;
             _tier = ZombieTier.Full;
+            _attackCooldownTimer = 0f;
             _agent.isStopped = false;
             if (TryGetComponent(out Collider col)) col.enabled = true;
             SetDissolve(0f);
+            OnSpawned();
         }
 
         private void OnDisable()
@@ -79,15 +102,21 @@ namespace ZombieWar
             _health.OnDamaged -= HandleDamaged;
             _health.OnDeath -= HandleDeath;
             StopAllCoroutines();
+            OnDespawned();
         }
+
+        // Per-type spawn/despawn hooks (reset special-attack timers, etc.). Run after the base has
+        // reset the shared state, so overrides see a clean slate.
+        protected virtual void OnSpawned() { }
+        protected virtual void OnDespawned() { }
 
         public void TakeDamage(float amount) => _health.TakeDamage(amount);
 
         // Deliberately never calls gameObject.SetActive(false) here - that would fire OnDisable(),
         // which unregisters from ZombieManager, and an Inactive zombie would then never be found
         // again to reactivate when the player comes back. Instead, Inactive disables the actually
-        // expensive components (agent, VAT playback, rendering) while the ZombieAI behaviour itself
-        // (and its registration) stays alive - true SetActive(false) is reserved for the pool-return
+        // expensive components (agent, VAT playback, rendering) while the behaviour itself (and its
+        // registration) stays alive - true SetActive(false) is reserved for the pool-return
         // lifecycle in DissolveAndReturn(), a separate concern from tiering.
         public void SetTier(ZombieTier tier)
         {
@@ -132,9 +161,17 @@ namespace ZombieWar
             if (_attackCooldownTimer > 0f) _attackCooldownTimer -= Time.deltaTime;
 
             float distance = Vector3.Distance(transform.position, player.transform.position);
-            SwitchState(distance <= data.attackRange ? State.Attack : State.Chase);
-            RunCurrentState(player.transform);
+            SwitchState(distance <= EngageRange ? State.Attack : State.Chase);
+
+            if (_state == State.Chase) Chase(player.transform);
+            else FaceAndAttack(player.transform);
+
+            OnFullTick(player.transform, distance);
         }
+
+        // Extra per-frame behaviour for Full-tier zombies (e.g. a boss's special-attack timer).
+        // Runs after the base FSM so overrides can rely on the current state being resolved.
+        protected virtual void OnFullTick(Transform player, float distance) { }
 
         private void SwitchState(State next)
         {
@@ -153,26 +190,29 @@ namespace ZombieWar
             }
         }
 
-        private void RunCurrentState(Transform target)
+        // Default approach: NavMesh pathfind straight at the player. Runners override to lunge;
+        // ranged types override to hold their distance.
+        protected virtual void Chase(Transform target)
         {
-            switch (_state)
-            {
-                case State.Chase:
-                    _agent.SetDestination(target.position);
-                    break;
-                case State.Attack:
-                    transform.rotation = Quaternion.LookRotation(FlattenY(target.position - transform.position));
-                    TryAttack(target);
-                    break;
-            }
+            if (_agent.enabled) _agent.SetDestination(target.position);
         }
 
-        private void TryAttack(Transform target)
+        private void FaceAndAttack(Transform target)
         {
+            transform.rotation = Quaternion.LookRotation(FlattenY(target.position - transform.position));
             if (_attackCooldownTimer > 0f) return;
 
             _attackCooldownTimer = data.attackCooldown;
             _vatAnimator.CrossFade(data.attackClip, stateCrossFadeDuration);
+            PerformAttack(target);
+        }
+
+        // The actual hit. Melee deals contact damage; ranged spawns a projectile; boss adds AoE.
+        protected abstract void PerformAttack(Transform target);
+
+        // Shared helper for melee-style subtypes.
+        protected void DealContactDamage(Transform target)
+        {
             target.GetComponentInParent<IDamageable>()?.TakeDamage(data.damage);
         }
 
@@ -235,7 +275,7 @@ namespace ZombieWar
             bodyRenderer.SetPropertyBlock(_dissolvePropertyBlock);
         }
 
-        private static Vector3 FlattenY(Vector3 v)
+        protected static Vector3 FlattenY(Vector3 v)
         {
             v.y = 0f;
             return v;

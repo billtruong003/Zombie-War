@@ -1,4 +1,5 @@
 using UnityEngine;
+using BillGameCore;
 
 namespace ZombieWar
 {
@@ -48,8 +49,20 @@ namespace ZombieWar
 
         private void ReleaseBomb()
         {
+            if (bombPrefab == null) return;
+
             Vector3 spawnPosition = throwOrigin.position + _pendingThrowDirection * throwDistance;
-            Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
+
+            var pool = Bill.Pool;
+            if (pool == null)
+            {
+                Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
+                return;
+            }
+
+            string key = "bomb_" + bombPrefab.GetInstanceID();
+            pool.Register(key, bombPrefab);
+            pool.Spawn(key, spawnPosition, Quaternion.identity);
         }
     }
 }
