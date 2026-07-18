@@ -44,6 +44,14 @@ namespace ZombieWar
             var movement = Current.GetComponent<PlayerMovement>();
             if (movement != null && joystick != null) movement.SetJoystick(joystick);
 
+            // Loadout chon o menu -> ghi vao Weapon slots truoc khi vao tran.
+            var weapon = Current.GetComponentInChildren<Weapon>();
+            if (weapon != null) LoadoutState.ApplyTo(weapon);
+
+            // Costume chon o menu -> ap modular parts len skeleton player.
+            var costume = Current.GetComponentInChildren<CharacterModularApplier>();
+            if (costume != null) costume.ApplySavedParts();
+
             return Current;
         }
 

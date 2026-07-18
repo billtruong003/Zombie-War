@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 3569728924041252436}
   - component: {fileID: 7772684060613672855}
   - component: {fileID: 5027399815479909194}
+  - component: {fileID: 3476368919433124477}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -145,6 +146,25 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c3e18ba78e9386c42b6ad33d757920e2, type: 2}
   - {fileID: 11400000, guid: 96ada70baa88a2c479a948b97350391a, type: 2}
   - {fileID: 11400000, guid: 5e7f501296d04af4daef58ec1fd0f5cc, type: 2}
+  - {fileID: 11400000, guid: e0720726b9059614ba29fcfeead961f1, type: 2}
+  - {fileID: 11400000, guid: 07bb574cf39559242813b4f9232a84cf, type: 2}
+  - {fileID: 11400000, guid: 4c2d4db8fb554a144b0506e9c22f02d2, type: 2}
+  - {fileID: 11400000, guid: 373898d771e3eb149b095510bbfb5272, type: 2}
+  - {fileID: 11400000, guid: b791d3723268e8744a72925cab598382, type: 2}
+  - {fileID: 11400000, guid: 3cdc668852a56dd44a5289537c954610, type: 2}
+  - {fileID: 11400000, guid: a80e7bb07ff9da347a00cda0e385b668, type: 2}
+  - {fileID: 11400000, guid: c74ed9a44005fcf43a5efe2912c0b76e, type: 2}
+  - {fileID: 11400000, guid: 877929d5ffbbf7747bd9f35b9c9ee83a, type: 2}
+  - {fileID: 11400000, guid: 2f74f05b332b9c343a040be3badbf056, type: 2}
+  - {fileID: 11400000, guid: 3217fcb3678d04d4da7e5b82aec17939, type: 2}
+  - {fileID: 11400000, guid: 0f155a5206a66b842a4b541bc280478a, type: 2}
+  - {fileID: 11400000, guid: 882b6388cad2c2d4c8aa338c5e9295e7, type: 2}
+  - {fileID: 11400000, guid: fa0fb0ad674e7e74b85aa72f9e75a468, type: 2}
+  - {fileID: 11400000, guid: 8531089df69f2034583e0eb200e5cb72, type: 2}
+  - {fileID: 11400000, guid: 2697d52d5ae793b43906bbc0af670fe3, type: 2}
+  - {fileID: 11400000, guid: 76d646e5718d4e941817c4fdd6d3623d, type: 2}
+  - {fileID: 11400000, guid: 074c1f8b73f41c74cb1a6856a74e38c2, type: 2}
+  - {fileID: 11400000, guid: 7fdb532fb7307254f926bef1a584502f, type: 2}
   weaponSocket: {fileID: 5164720530382129933}
   hitMask:
     serializedVersion: 2
@@ -152,6 +172,10 @@ MonoBehaviour:
   recoilNoiseTexture: {fileID: 2800000, guid: 57dcf758e23be234c818d8d56c4df55d, type: 3}
   cameraShakeOnFire: 0.25
   recoilPivot: {fileID: 0}
+  useSlotSystem: 0
+  pistolSlot: {fileID: 0}
+  longSlotA: {fileID: 0}
+  longSlotB: {fileID: 0}
   drawGizmos: 1
   gizmoAimLength: 6
 --- !u!114 &8598557128601071783
@@ -166,12 +190,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae02010291b6b4f4fab25d1eb33cc807, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.BombThrower
-  bombPrefab: {fileID: 0}
+  bombPrefab: {fileID: 6907578888685939689, guid: 4dfa7ae59177ae9409a493de2804a030, type: 3}
   throwOrigin: {fileID: 0}
-  throwDistance: 3
+  throwHorizontalSpeed: 9
+  throwUpSpeed: 4.5
   cooldown: 3
   maxBombs: 3
-  animator: {fileID: 0}
+  animator: {fileID: 3569728924041252436}
   throwAnimTrigger: Throw
   releaseDelay: 0.3
 --- !u!95 &3569728924041252436
@@ -229,6 +254,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.PlayerController
   disableOnDeath: []
+--- !u!114 &3476368919433124477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44b82eb880c32c74c9ae3a7daf5b40d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.CharacterModularApplier
+  catalog: {fileID: 11400000, guid: afa195913535b064c883d69c26b80b45, type: 2}
+  skeletonRoot: {fileID: 0}
+  attachRoot: {fileID: 0}
 --- !u!1 &1610907586400478597
 GameObject:
   m_ObjectHideFlags: 0

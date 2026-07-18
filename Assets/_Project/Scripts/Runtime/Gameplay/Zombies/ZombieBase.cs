@@ -38,6 +38,8 @@ namespace ZombieWar
         [SerializeField] private float returnToPoolDelay = 1.5f;
         [SerializeField] private float knockbackDistance = 0.3f;
         [SerializeField] private float knockbackDuration = 0.15f;
+        [Tooltip("World height above the zombie's origin where the floating damage number pops.")]
+        [SerializeField] private float damageNumberHeight = 1.7f;
 
         private static readonly int DissolveID = Shader.PropertyToID("_Dissolve");
 
@@ -219,6 +221,10 @@ namespace ZombieWar
         private void HandleDamaged(float amount)
         {
             if (_state == State.Dead) return;
+
+            // Floating damage number at chest height. Covers every source (guns, bomb, contact)
+            // since it hangs off Health.OnDamaged rather than any single weapon.
+            DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight);
 
             _vatAnimator.Play(data.hitClip);
             StartCoroutine(Knockback());

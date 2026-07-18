@@ -21,6 +21,13 @@ namespace ZombieWar
                  "targets ride the weapon grips, kicking the mount recoils the gun AND both hands together.")]
         [SerializeField] private Transform recoilPivot;
 
+        [Header("Slots (3 o loadout: 0=pistol bat buoc, 1-2=sung dai; bom co nut rieng)")]
+        [Tooltip("Bat = switch cycle qua 3 slot (pistol luon co). Tat = cycle ca kho `weapons` (debug/test).")]
+        [SerializeField] private bool useSlotSystem = false;
+        [SerializeField] private WeaponData pistolSlot;
+        [SerializeField] private WeaponData longSlotA;
+        [SerializeField] private WeaponData longSlotB;
+
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
         [SerializeField] private float gizmoAimLength = 6f;
@@ -30,6 +37,8 @@ namespace ZombieWar
         public event Action<WeaponGripPoints> OnWeaponEquipped;
 
         private int _currentIndex;
+        private int _slotIndex;           // 0=pistol, 1=longA, 2=longB (slot mode)
+        private WeaponData _currentData;  // nguon su that cua Current (ca 2 mode)
         private GameObject _currentInstance;
         private WeaponGripPoints _currentGripPoints;
         private Vector3 _weaponRestLocalPosition;
@@ -48,11 +57,16 @@ namespace ZombieWar
         private float _recoilPitch, _recoilPitchVel;
         private float _recoilYaw, _recoilYawVel;
 
-        public WeaponData Current => weapons.Count > 0 ? weapons[_currentIndex] : null;
+        public WeaponData Current => _currentData != null ? _currentData : (weapons.Count > 0 ? weapons[_currentIndex] : null);
 
         // Grips of the currently-equipped weapon instance (null until first Equip). Lets late-enabling
         // listeners (e.g. WeaponIKController) sync their state without waiting for the next equip event.
         public WeaponGripPoints CurrentGrips => _currentGripPoints;
+
+        /// Full roster + current index for HUD selection / pose tuning. Data-driven: shrink the
+        /// `weapons` list to limit what the roster shows - HUD rebuilds from this automatically.
+        public System.Collections.Generic.IReadOnlyList<WeaponData> Weapons => weapons;
+        public int CurrentIndex => _currentIndex;
 
         // HUD readouts.
         public int AmmoInMag => _ammoInMag;
@@ -87,6 +101,8 @@ namespace ZombieWar
         // Pivot ngoi GIUA weaponSocket va gun model. Sung + grip + muzzle deu la con cua no.
         // Rest = identity (0,0,0 / no rotation) nen spring luon keo ve DUNG rest, khong troi.
         // Neu chua gan trong editor thi tao runtime duoi weaponSocket.
+        private bool _pivotRestCaptured;
+
         private void EnsureRecoilPivot()
         {
             if (recoilPivot == null && weaponSocket != null)
@@ -97,16 +113,39 @@ namespace ZombieWar
                 recoilPivot.localPosition = Vector3.zero;
                 recoilPivot.localRotation = Quaternion.identity;
             }
-            if (recoilPivot != null)
+            // Chi capture rest pose MOT LAN. Neu capture lai moi lan equip thi offset recoil
+            // dang do (spring chua hoi ve 0) bi nuong vao rest => moi lan doi sung lech them 1 ti.
+            if (recoilPivot != null && !_pivotRestCaptured)
             {
                 _pivotRestPos = recoilPivot.localPosition;
                 _pivotRestRot = recoilPivot.localRotation;
+                _pivotRestCaptured = true;
+            }
+        }
+
+        // Xoa sach trang thai spring + snap pivot ve dung rest (goi khi doi sung).
+        private void ResetRecoil()
+        {
+            _recoilPos = Vector3.zero; _recoilPosVel = Vector3.zero;
+            _recoilPitch = 0f; _recoilPitchVel = 0f;
+            _recoilYaw = 0f; _recoilYawVel = 0f;
+            if (recoilPivot != null)
+            {
+                recoilPivot.localPosition = _pivotRestPos;
+                recoilPivot.localRotation = _pivotRestRot;
             }
         }
 
         private void Start()
         {
-            EquipWeapon(0);
+            if (useSlotSystem)
+            {
+                // Slot 0 bat buoc co pistol: tu-fill khau 1-tay dau tien trong kho neu chua gan.
+                if (pistolSlot == null)
+                    pistolSlot = weapons.Find(w => w != null && !w.twoHanded);
+                EquipSlot(0);
+            }
+            else EquipWeapon(0);
         }
 
         private void Update()
@@ -163,9 +202,65 @@ namespace ZombieWar
             if (!string.IsNullOrEmpty(Current.reloadSfxKey)) Bill.Audio?.Play(Current.reloadSfxKey);
         }
 
-public void SwitchWeapon()
+        public void SwitchWeapon()
         {
+            if (useSlotSystem)
+            {
+                // Cycle qua cac slot CO sung (pistol luon co => khong bao gio ket).
+                for (int step = 1; step <= 3; step++)
+                {
+                    int next = (_slotIndex + step) % 3;
+                    if (GetSlot(next) != null) { EquipSlot(next); return; }
+                }
+                return;
+            }
             EquipWeapon((_currentIndex + 1) % weapons.Count);
+        }
+
+        // ===== Slot API (3 o: 0=pistol bat buoc, 1-2=sung dai; bom co nut/slot rieng) =====
+        public bool UseSlotSystem => useSlotSystem;
+        public int CurrentSlot => _slotIndex;
+        public WeaponData GetSlot(int slot) => slot == 0 ? pistolSlot : slot == 1 ? longSlotA : longSlotB;
+
+        /// Gan sung vao slot. Slot 0 CHI nhan pistol (1 tay) va KHONG nhan null (chi thay, khong thao).
+        /// Slot 1-2 chi nhan sung dai (2 tay), null = thao. Tra ve false neu vi pham rule.
+        public bool EquipToSlot(int slot, WeaponData data)
+        {
+            if (slot == 0)
+            {
+                if (data == null || data.twoHanded) return false; // pistol bat buoc, khong thao
+                pistolSlot = data;
+            }
+            else if (slot == 1 || slot == 2)
+            {
+                if (data != null && !data.twoHanded) return false; // sung dai only
+                if (slot == 1) longSlotA = data; else longSlotB = data;
+            }
+            else return false;
+
+            // Slot vua doi la slot dang cam: refresh; neu vua thao -> fallback pistol.
+            if (useSlotSystem && _slotIndex == slot)
+                EquipSlot(GetSlot(slot) != null ? slot : 0);
+            return true;
+        }
+
+        /// Thao sung dai (slot 1-2). Pistol (slot 0) khong thao duoc.
+        public bool UnequipSlot(int slot) => slot != 0 && EquipToSlot(slot, null);
+
+        public void EquipSlot(int slot)
+        {
+            var data = GetSlot(slot);
+            if (data == null) { slot = 0; data = pistolSlot; } // slot trong -> fallback pistol
+            if (data == null) return;
+            _slotIndex = slot;
+            EquipData(data);
+        }
+
+        /// Jump directly to a weapon by index (HUD roster / pose tuning). Play-mode only.
+        public void EquipIndex(int index)
+        {
+            if (!Application.isPlaying || weapons == null || index < 0 || index >= weapons.Count) return;
+            EquipWeapon(index);
         }
 
         public void TryFire(Vector3 aimDirection)
@@ -226,18 +321,96 @@ public void SwitchWeapon()
 
         private void FireRay(WeaponData data, Vector3 muzzlePosition, Vector3 direction)
         {
+            // PiercingLine (sniper/railgun): bắn 1 đường xuyên hết zombie. Docs/WEAPON_DESIGN.md §3.
+            if (data.fireMode == FireMode.PiercingLine)
+            {
+                FireRayPiercing(data, muzzlePosition, direction);
+                return;
+            }
+
+            // SingleHitscan / MultiPelletHitscan: dừng ở target đầu tiên.
             Vector3 hitPoint = muzzlePosition + direction * data.range;
 
             if (Physics.Raycast(muzzlePosition, direction, out RaycastHit hit, data.range, hitMask))
             {
                 hitPoint = hit.point;
-                hit.collider.GetComponentInParent<IDamageable>()?.TakeDamage(data.damage);
-                if (data.impactPrefab != null)
-                    FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
+                ApplyHit(data, hit.collider.GetComponentInParent<IDamageable>(), hit, muzzlePosition, 1f);
             }
 
             SpawnTracer(data, muzzlePosition, hitPoint);
             SpawnSmokeTrail(data, muzzlePosition, hitPoint);
+        }
+
+        // Áp damage (range falloff + dmgMult) + impact FX + knockback cho 1 hit.
+        private void ApplyHit(WeaponData data, IDamageable dmg, RaycastHit hit, Vector3 origin, float dmgMult)
+        {
+            if (dmg != null)
+            {
+                float dist01 = data.range > 0f ? Vector3.Distance(origin, hit.point) / data.range : 0f;
+                dmg.TakeDamage(data.damage * dmgMult * data.RangeFalloff(dist01));
+            }
+            if (data.impactPrefab != null)
+                FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
+            ApplyKnockback(data, hit);
+        }
+
+        // Đẩy zombie có Rigidbody động (an toàn với NavMeshAgent kinematic => bỏ qua).
+        private void ApplyKnockback(WeaponData data, RaycastHit hit)
+        {
+            if (data.knockback <= 0f) return;
+            var rb = hit.collider.attachedRigidbody;
+            if (rb != null && !rb.isKinematic)
+                rb.AddForce((hit.point - transform.position).normalized * data.knockback, ForceMode.Impulse);
+        }
+
+        // PiercingLine — RaycastAll dọc 1 đường: damage TẤT CẢ zombie, dừng khi gặp tường (vật
+        // không có IDamageable). pierceCount = -1 xuyên vô hạn (railgun). Docs/WEAPON_DESIGN.md §3,§7.
+        private static readonly RaycastHit[] _pierceBuf = new RaycastHit[64];
+        private void FireRayPiercing(WeaponData data, Vector3 muzzlePosition, Vector3 direction)
+        {
+            int count = Physics.RaycastNonAlloc(muzzlePosition, direction, _pierceBuf, data.range, hitMask);
+            Vector3 endPoint = muzzlePosition + direction * data.range;
+
+            if (count > 0)
+            {
+                // RaycastNonAlloc không sort => sort theo cự ly để falloff xuyên áp đúng thứ tự.
+                Array.Sort(_pierceBuf, 0, count, RaycastDistanceComparer.Instance);
+
+                int maxTargets = data.pierceCount < 0 ? int.MaxValue : data.pierceCount + 1;
+                float dmgMult = 1f;
+                int hitTargets = 0;
+
+                for (int i = 0; i < count; i++)
+                {
+                    RaycastHit hit = _pierceBuf[i];
+                    var dmg = hit.collider.GetComponentInParent<IDamageable>();
+                    if (dmg == null)
+                    {
+                        // Tường/vật cản chặn đạn => tracer dừng tại đây.
+                        endPoint = hit.point;
+                        break;
+                    }
+
+                    ApplyHit(data, dmg, hit, muzzlePosition, dmgMult);
+                    dmgMult *= data.pierceDamageFalloff;
+                    hitTargets++;
+                    if (hitTargets >= maxTargets)
+                    {
+                        endPoint = hit.point;
+                        break;
+                    }
+                }
+            }
+
+            SpawnTracer(data, muzzlePosition, endPoint);
+            SpawnSmokeTrail(data, muzzlePosition, endPoint);
+        }
+
+        // So sánh RaycastHit theo cự ly cho Array.Sort (generic => không box struct).
+        private sealed class RaycastDistanceComparer : IComparer<RaycastHit>
+        {
+            public static readonly RaycastDistanceComparer Instance = new();
+            public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
         }
 
         // Random direction inside a cone of full angle coneAngleDeg around forward (shotgun spread).
@@ -254,10 +427,14 @@ public void SwitchWeapon()
 
         private void EquipWeapon(int index)
         {
-            if (_currentInstance != null) Destroy(_currentInstance);
-
             _currentIndex = index;
-            var data = weapons[_currentIndex];
+            EquipData(weapons[index]);
+        }
+
+        private void EquipData(WeaponData data)
+        {
+            if (_currentInstance != null) Destroy(_currentInstance);
+            _currentData = data;
 
             // Nap day bang khi doi sung - khong bat dau bang mot lan reload kho hieu.
             _ammoInMag = data.magazineSize;
@@ -266,6 +443,7 @@ public void SwitchWeapon()
 
             // Sung + grip + muzzle deu la con cua recoilPivot => recoil kick pivot la ca cum theo.
             EnsureRecoilPivot();
+            ResetRecoil(); // doi sung giua luc recoil chua hoi => phai snap pivot ve rest, khong de lech ton dong
             _currentInstance = Instantiate(data.weaponPrefab, recoilPivot != null ? recoilPivot : weaponSocket);
             _currentInstance.transform.localPosition = data.gripLocalPosition;
             _currentInstance.transform.localRotation = Quaternion.Euler(data.gripLocalEuler);

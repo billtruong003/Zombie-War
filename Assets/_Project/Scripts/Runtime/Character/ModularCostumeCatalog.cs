@@ -23,6 +23,15 @@ namespace ZombieWar
             public string name;
             public string assetPath;
             public string guid;
+            public GameObject prefab; // direct ref de runtime instantiate (menu preview + in-game apply)
+
+            // ---- Skinned binding (extract tu scene Demo cua Layer Lab) ----
+            // Mesh skinned nam trong FBX/Character/Characters.fbx; bones remap theo ten
+            // len skeleton QuickRigCharacter2_* cua Player luc runtime.
+            public Mesh skinnedMesh;
+            public Material[] materials;
+            public string[] boneNames;   // thu tu PHAI khop bindposes cua skinnedMesh
+            public string rootBoneName;
         }
 
         [Serializable]

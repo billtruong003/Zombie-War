@@ -7,7 +7,10 @@ namespace ZombieWar
     {
         [SerializeField] private GameObject bombPrefab;
         [SerializeField] private Transform throwOrigin;
-        [SerializeField] private float throwDistance = 3f;
+        [Tooltip("Horizontal launch speed along aim; combined with throwUpSpeed makes the arc.")]
+        [SerializeField] private float throwHorizontalSpeed = 9f;
+        [Tooltip("Upward launch speed - higher = taller lob.")]
+        [SerializeField] private float throwUpSpeed = 4.5f;
         [SerializeField] private float cooldown = 3f;
         [SerializeField] private int maxBombs = 3;
 
@@ -23,6 +26,7 @@ namespace ZombieWar
         private Vector3 _pendingThrowDirection;
 
         public int BombsRemaining => _bombsRemaining;
+        public int MaxBombs => maxBombs;
         public float CooldownRemaining => Mathf.Max(0f, _cooldownTimer);
 
         private void Awake()
@@ -51,18 +55,30 @@ namespace ZombieWar
         {
             if (bombPrefab == null) return;
 
-            Vector3 spawnPosition = throwOrigin.position + _pendingThrowDirection * throwDistance;
+            // Spawn from the hand/origin and lob along the (flattened) aim so it arcs instead of
+            // dropping straight down. Vertical component + gravity give the parabola; the bomb's
+            // Rigidbody + bouncy PhysicMaterial handle the tumble/bounce on landing.
+            Vector3 originPos = throwOrigin != null ? throwOrigin.position : transform.position;
+            Vector3 flatDir = _pendingThrowDirection;
+            flatDir.y = 0f;
+            flatDir = flatDir.sqrMagnitude > 0.0001f ? flatDir.normalized : transform.forward;
+            Vector3 launchVelocity = flatDir * throwHorizontalSpeed + Vector3.up * throwUpSpeed;
 
+            GameObject spawned;
             var pool = Bill.Pool;
             if (pool == null)
             {
-                Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
-                return;
+                spawned = Instantiate(bombPrefab, originPos, Quaternion.identity);
+            }
+            else
+            {
+                string key = "bomb_" + bombPrefab.GetInstanceID();
+                pool.Register(key, bombPrefab);
+                spawned = pool.Spawn(key, originPos, Quaternion.identity);
             }
 
-            string key = "bomb_" + bombPrefab.GetInstanceID();
-            pool.Register(key, bombPrefab);
-            pool.Spawn(key, spawnPosition, Quaternion.identity);
+            if (spawned != null && spawned.TryGetComponent(out Bomb bomb))
+                bomb.Launch(launchVelocity);
         }
     }
 }
