@@ -23,4 +23,9 @@ namespace ZombieWar
     /// <summary>Fired once when the player's health reaches zero. The game-over screen,
     /// audio stinger and wave system all react to this through Bill.Events.</summary>
     public readonly struct PlayerDiedEvent : IEvent { }
+
+    /// <summary>Fired after the player's death sequence (anim + FX + delay) finishes.
+    /// The lose screen and zombie/pool cleanup react to THIS, not to PlayerDiedEvent,
+    /// so the corpse gets its on-screen moment before the UI takes over.</summary>
+    public readonly struct GameOverEvent : IEvent { }
 }

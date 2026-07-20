@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Zombie-War** (4763 symbols, 8381 relationships, 230 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Zombie-War** (22977 symbols, 28877 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -42,3 +42,21 @@ This project is indexed by GitNexus as **Zombie-War** (4763 symbols, 8381 relati
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Claude Task Prompt Footer
+
+Whenever writing a prompt that delegates implementation work to Claude, append the following footer verbatim. Do not run the notification while merely creating the prompt; Claude runs it only after the delegated task finishes or becomes blocked.
+
+```markdown
+## Completion notification
+
+After the task is genuinely complete and verified:
+
+1. Use the `simplifier-vi` skill at Level 1 to reduce the final report to the outcome, verification performed, and any important remaining issue.
+2. Rewrite that summary in natural English using no more than 80 words.
+3. Run:
+
+   python Tools\notify_done.py "<English summary>" --repeat 2
+
+If the task is blocked or fails, run the same command with a short English explanation of the blocker. Report any notification-script failure in the written response.
+```

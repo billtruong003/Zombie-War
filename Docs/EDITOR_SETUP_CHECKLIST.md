@@ -1,66 +1,44 @@
-# Editor Assembly Checklist — Phase 1 & 2 (Player + Weapons)
+# ZombieWar — Current Editor Checklist
 
-Code cho Phase 1/2 đã viết xong (`Assets/_Project/Scripts/Runtime/Gameplay/` + `Systems/` + `UI/`). Phần này liệt kê chính xác những gì cần lắp trong Unity Editor để chạy được — không cần đọc code trước, làm theo thứ tự là chạy.
+> Updated 2026-07-20. The old manual Phase 1/2 assembly instructions are obsolete; Player, weapon rig,
+> weapon assets, UI prefabs and scenes are already authored. Do not recreate them by hand.
 
-## 1. Noise texture cho Shake/Recoil (làm trước tiên — 2 script đang chờ field này)
+## Open/test
 
-- Import 1 texture noise (Perlin/Simplex strip, RGB) vào `Assets/_Project/Art/Textures/`.
-- Gán vào field `Noise Texture` trên:
-  - `CameraFollow.cs` (sẽ gắn ở bước 4)
-  - `Weapon.cs` → field `Recoil Noise Texture` (bước 3)
+1. Open `Assets/_Project/Scenes/Bootstrap.unity`.
+2. Confirm Unity 6000.3.10f1 has finished import and compile.
+3. Run `ZombieWar/UI/Authoring/Validate All UI References`.
+4. Enter Play Mode from Bootstrap and verify Menu → Map_Level1.
+5. Check Console for C# errors, missing references and repeated runtime exceptions.
 
-## 2. Player GameObject
+## Weapon pose authoring
 
-0. **Import animation trước:** chọn 1 character prefab từ `Assets/ThirdParty/Layer Lab/3D Casual Character/3D Characters Pro - Fantasy/Prefabs/`, set Rig → Animation Type = **Humanoid**, Apply. Trên từng .fbx trong `Assets/ThirdParty/MalbersHumanAnims/` (Locomotion/Strafe, Idle/Idle_Combat, Hit, Deaths, Weapons/Pistol, Weapons/Rifle, Weapons/Throwable) cũng set Animation Type = Humanoid, Apply — Unity sẽ tự retarget lên rig soldier dù khác rig gốc.
-1. Tạo empty GameObject `Player` tại gốc scene, thêm:
-   - `Rigidbody` (Freeze Rotation X/Z, Use Gravity tuỳ địa hình — top-down nên có thể tắt gravity + constrain Y nếu muốn nhân vật không rơi qua dốc).
-   - `Animator` (Controller sẽ tạo ở bước 2b, Avatar = character prefab ở bước 0).
-   - `Health.cs`
-   - `PlayerMovement.cs` — kéo `VirtualJoystick` (bước 5) vào field `Joystick`, kéo `Animator` vào field `Animator`.
-   - `Weapon.cs` — field `Weapon Socket` = 1 child Transform rỗng đặt đúng vị trí tay cầm súng (tạm thời, IK sẽ tinh chỉnh sau ở bước 6); field `Weapons` = danh sách 2 `WeaponData` asset (bước 3); field `Recoil Noise Texture` = texture ở bước 1.
-   - `BombThrower.cs` — field `Bomb Prefab` = prefab Bomb (bước 3d), field `Throw Origin` = child Transform trước ngực/tay player, field `Animator` = Animator của player, `Throw Anim Trigger` khớp tên trigger tạo ở bước 2b.
-2. **Animator Controller** (2 layer theo yêu cầu #3), dùng animation từ `MalbersHumanAnims`:
-   - Layer 0 "Base" (full body): Blend Tree 8-hướng dùng `Locomotion/Strafe/S_Strafe_Jog_N/NE/E/SE/S/SW/W/NW.fbx` (+ `S_Strafe_Idle.fbx` khi đứng yên) theo param `Speed` + hướng di chuyển (`PlayerMovement.cs` đã set `Speed` mỗi frame; hướng lấy từ `joystick.Direction` hoặc thêm 2 param `MoveX`/`MoveZ` nếu muốn blend tree 2D).
-   - Layer 1 "UpperBody" (Avatar Mask loại trừ chân, weight = 1): state `Idle_Combat.fbx` làm base aim-idle. Thêm 1 trigger `"Fire"` — cần thêm 1 dòng `animator?.SetTrigger("Fire")` vào `Weapon.TryFire()` (chưa có trong code, dễ thêm). Thêm state riêng cho `"Throw"` trigger (đã có sẵn trong `BombThrower.cs`) dùng `Weapons/Throwable/H_Throw_N.fbx` (hoặc chọn hướng khớp aim).
-3. Input tạm thời (chưa có UI button thật): có thể test bằng 1 script debug gọi `weapon.TryFire(playerMovement.AimDirection)` khi bấm phím, trước khi nối vào UI thật ở bước 5.
+1. Enter Play Mode and equip the weapon to tune.
+2. Select spawned Player → `WeaponPoseAuthoring`.
+3. Use Manual Mode; place weapon and right/left targets.
+4. Click `CAPTURE ALL -> WEAPON DATA + PLAYER IK`.
+5. Switch away and back to verify init restore.
 
-## 3. Weapon assets
+Grip positions are per WeaponData. Target rotations are global Player-rig data. Never move hand bones
+directly and never re-parent GunMount/targets without reading `PlayerRigSocketIncident.md`.
 
-1. Tạo 2 `WeaponData` asset: `Assets/_Project/ScriptableObjects/Configs/WD_Pistol.asset`, `WD_AR.asset` (`Create > ZombieWar > Weapon Data`).
-2. Với mỗi asset: gán `Weapon Prefab` = 1 prefab súng lấy từ `Assets/ThirdParty/Low Poly Pistol Weapon Pack 1/` hoặc `Low Poly Weapon Pack 4_MW_1/` (chọn 2 model khác biệt rõ fire rate/recoil).
-3. Trên **mỗi prefab súng**, thêm component `WeaponGripPoints.cs` + tạo 3 child Transform rỗng đặt đúng vị trí: `RightHandGrip`, `LeftHandGrip` (dùng cho IK ở bước 6), `MuzzlePoint` (đầu nòng, dùng để bắn raycast + spawn muzzle flash).
-4. Set số liệu (`fireRate`, `damage`, `range`) khác nhau rõ rệt giữa 2 súng để cảm nhận được sự khác biệt khi switch.
-5. Gán `Muzzle Flash Prefab` / `Smoke Trail Prefab` / `Impact Prefab` — 3 `ParticleSystem` prefab riêng (particle khói mô tả đường đạn = 1 particle system kéo dài theo scale Z, `Weapon.cs` tự set `localScale.z` theo khoảng cách bắn trúng, chỉ cần dựng particle dạng "kéo dài theo trục Z" trong Editor, VD: 1 stretched billboard/quad hoặc trail-shaped particle).
-6. Tạo prefab `Bomb` riêng: GameObject rỗng + `Bomb.cs`, gán `Explosion Prefab` (particle nổ), set `Explosion Sfx Key`/`Fuse Time`/`Radius`/`Damage`. Gán prefab này vào `BombThrower.Bomb Prefab` ở Player.
+## UI authoring
 
-## 4. Camera
+- Edit existing prefabs under `Assets/_Project/UI/Prefabs` for ordinary visual tuning.
+- Use contract/validation menu commands for reference repair.
+- Use `Generate Item Thumbnails` after catalog/icon changes.
+- Use destructive rebuild commands only intentionally and review every prefab/scene diff.
+- Capture ScreenSpaceOverlay evidence with `ScreenCapture.CaptureScreenshot`, not camera RenderTexture.
 
-1. Trên Main Camera: thêm `CameraFollow.cs`.
-2. `Target` = Player transform, `Noise Texture` = texture ở bước 1.
-3. Chỉnh `Offset`/`Look Euler Angles` trong Scene view cho tới khi thấy rõ player + đủ tầm nhìn zombie xung quanh (mặc định `(0,12,-8)` + góc `60°` — chỉ là điểm khởi đầu, cần tune bằng mắt).
+## Map authoring
 
-## 5. UI Canvas (virtual joystick + nút bắn/switch/bomb)
+- Current Map_Level1 is a functional test arena.
+- Modify geometry/spawn layout in the scene, then re-bake its `NavMeshSurface`.
+- Validate camera bounds, spawn distances and all enemy paths before balance testing.
 
-1. Canvas (Screen Space - Overlay) + EventSystem (Unity tự tạo nếu chưa có).
-2. Joystick: 1 `Image` nền (background) + 1 `Image` con (handle), gắn `VirtualJoystick.cs` lên background, kéo 2 RectTransform vào field tương ứng.
-3. **Không có nút bắn** — đã chốt auto-fire: `Weapon.cs` tự bắn khi `PlayerMovement.HasTarget` = true và mục tiêu nằm trong `Current.range` (xem `TryAutoFire()`), không cần input gì cho việc bắn.
-4. Nút switch súng: `Button.onClick` → `Weapon.SwitchWeapon()`.
-5. Nút bomb: `Button.onClick` → `BombThrower.TryThrow(playerMovement.AimDirection)`.
+## Never do
 
-## 6. Animation Rigging (IK — theo quyết định B5, mục 8 trong GAMEPLAY_DESIGN.md)
-
-Chưa có script tự động cho phần này (đúng theo quyết định: tự làm trong Editor bằng package có sẵn, không viết code custom):
-
-1. Player Animator cần **Humanoid hoặc Generic rig** đã có sẵn từ model soldier.
-2. Thêm `Rig Builder` component trên Player (hoặc trên 1 child object chứa rig), tạo 1 `Rig` con.
-3. Trong `Rig`: thêm `Two-Bone IK Constraint` cho tay phải (Root=Upper Arm, Mid=Forearm, Tip=Hand, Target = `WeaponGripPoints.RightHandGrip` của súng đang cầm), tương tự cho tay trái. `Weapon.cs` đã có `event Action<WeaponGripPoints> OnWeaponEquipped` bắn ra mỗi khi đổi súng — viết 1 script nhỏ `WeaponIKTargetUpdater.cs` subscribe event này, gán `rightHandConstraint.data.target = gripPoints.RightHandGrip` (tương tự left) mỗi lần đổi súng.
-4. Thêm `Multi-Aim Constraint` trên xương spine/chest, source object = 1 Transform trống di chuyển theo `PlayerMovement.AimDirection` (cần 1 script nhỏ đặt vị trí target đó = `transform.position + AimDirection * const`, hoặc dùng ngay Transform của zombie/aim point).
-5. Chân: `Two-Bone IK Constraint` + `Rig` riêng, nếu chưa làm Level 2 (dốc) thì có thể để sau — không bắt buộc cho Level 1 mặt phẳng.
-
-## 7. NavMesh
-
-Bake NavMesh cho scene Level 1 (`Window > AI > Navigation`) trước khi test `NavMeshAgent` trên zombie (Phase 3, chưa viết).
-
----
-
-Sau khi lắp xong theo checklist này, chạy thử: player di chuyển bằng joystick, xoay đúng hướng, bắn ra particle khói + tiếng súng + giật nhẹ theo noise, ném bomb nổ có damage/shake. Báo lại nếu có lỗi hoặc chỗ nào chưa rõ.
+- Do not create old `WP_*`/generic `WD_*` assets; use canonical `WPN_*` and current `WD_<Family>_<Model>` assets.
+- Do not restore a right-hand WeaponSocket ownership model; the weapon is mounted under WeaponRig/GunMount.
+- Do not introduce DOTween.
+- Do not migrate to Addressables/Resources during UI wiring/map blockout.

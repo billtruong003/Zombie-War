@@ -32,10 +32,19 @@ namespace ZombieWar
 
         private void OnEnable()
         {
+            Bill.Events?.Subscribe<PlayerDiedEvent>(OnPlayerDied);
             if (autoStart) StartRun();
         }
 
-        private void OnDisable() => StopRun();
+        private void OnDisable()
+        {
+            Bill.Events?.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+            StopRun();
+        }
+
+        // Dead players don't get more waves - halt the loop mid-flight so nothing else spawns
+        // while the death sequence / lose screen plays out.
+        private void OnPlayerDied(PlayerDiedEvent e) => StopRun();
 
         private void Update()
         {

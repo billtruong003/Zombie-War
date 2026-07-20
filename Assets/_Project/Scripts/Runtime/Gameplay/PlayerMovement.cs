@@ -19,6 +19,8 @@ namespace ZombieWar
         [SerializeField] private float aimMinDwell = 0.2f;
         [Tooltip("Seconds between target recomputes (cheap: not every frame).")]
         [SerializeField] private float aimRecomputeInterval = 0.1f;
+        [Tooltip("Zombies inside this radius are an immediate threat: the nearest one ALWAYS wins the aim lock, ignoring dwell/stickiness.")]
+        [SerializeField] private float aimDangerRadius = 7f;
 
         private Rigidbody _rb;
         private ITargetable _aimTarget;
@@ -114,13 +116,20 @@ namespace ZombieWar
                     _aimTarget = nearest;
                     _dwellTimer = 0f;
                 }
-                else if (nearest != null && nearest != _aimTarget && _dwellTimer >= aimMinDwell)
+                else if (nearest != null && nearest != _aimTarget)
                 {
-                    // Steal aim only if the new zombie is meaningfully closer than the current lock.
                     float curDist = (_aimTarget.Transform.position - transform.position).magnitude;
                     float newDist = (nearest.Transform.position - transform.position).magnitude;
-                    if (newDist < curDist - aimStickiness)
+
+                    if (newDist <= aimDangerRadius)
                     {
+                        // Point-blank threat: always shoot the zombie in our face - no dwell, no stickiness.
+                        _aimTarget = nearest;
+                        _dwellTimer = 0f;
+                    }
+                    else if (_dwellTimer >= aimMinDwell && newDist < curDist - aimStickiness)
+                    {
+                        // Steal aim only if the new zombie is meaningfully closer than the current lock.
                         _aimTarget = nearest;
                         _dwellTimer = 0f;
                     }

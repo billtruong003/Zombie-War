@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieWar
@@ -34,6 +36,26 @@ namespace ZombieWar
     {
         public string weaponName = "Weapon";
         public GameObject weaponPrefab;
+
+        // ─────────────────────────────────────────────────────────────────
+        // STABLE IDENTITY (roster migration, see Docs/WeaponRosterMapping.json)
+        // weaponId is the PERSISTENT save/equip key — immutable once shipped, independent of
+        // asset path/filename/display name. catalogOrder is presentation/debug order ONLY
+        // (shop grid, HUD roster, Weapon.EquipIndex) — never persisted as equipment identity.
+        // ─────────────────────────────────────────────────────────────────
+        [Header("Stable Identity (do not hand-edit after ship — see WeaponRosterMigration)")]
+        [Tooltip("Immutable save/equip key. Format: weapon.<family>.<model>, lowercase ascii dot notation.")]
+        [SerializeField] private string weaponId = "";
+        [Tooltip("Presentation/debug order only (shop grid, HUD roster). NOT a persistent identity.")]
+        [SerializeField] private int catalogOrder = -1;
+        [Tooltip("Previous asset names this WeaponData was known as, oldest first. Renaming the asset " +
+            "does NOT change these — LoadoutState.Resolve falls back to them so pre-migration saves " +
+            "(which stored the old asset name as the equip id) keep resolving after a rename.")]
+        [SerializeField] private string[] legacyAliases = Array.Empty<string>();
+
+        public string WeaponId => weaponId;
+        public int CatalogOrder => catalogOrder;
+        public IReadOnlyList<string> LegacyAliases => legacyAliases;
 
         // ─────────────────────────────────────────────────────────────────
         // IDENTITY / SHOP (Docs/WEAPON_DESIGN.md §2,§5,§6,§9)
@@ -168,11 +190,22 @@ namespace ZombieWar
                  "= 0 => khong lech ngang.")]
         public float recoilSideKickAngle = 2f;
 
-        [Header("Hold offset (local to hand WeaponSocket, tuned in aim pose)")]
-        // Aligns the prefab's RightHandGrip into the palm and the barrel (+Z) with the aim
-        // direction. Defaults are tuned for the Low-Poly Pistol on the QuickRig hand.
+        [Header("Hold offset (local to GunMount/RecoilPivot inside WeaponRig, tuned in aim pose)")]
+        // Model TRS under the rig's RecoilPivot. The hands IK toward the grips this transform
+        // places (see WeaponIKController) - the hands never carry the weapon.
         public Vector3 gripLocalPosition = new Vector3(0.00428f, -0.06307f, 0.00193f);
         public Vector3 gripLocalEuler = new Vector3(15.425f, 110.259f, 176.855f);
+        [Tooltip("Uniform-friendly per-axis scale applied to the instantiated weapon root.")]
+        public Vector3 gripLocalScale = Vector3.one;
+
+        [Header("Authored hand grips (local to instantiated weapon root)")]
+        [Tooltip("When enabled, Weapon restores the captured grip positions before notifying the IK rig. " +
+                 "When disabled, the grip markers authored in the weapon prefab remain the fallback.")]
+        public bool useAuthoredGripPositions;
+        [Tooltip("Captured RightHandTarget position expressed in weapon-root local space.")]
+        public Vector3 rightHandGripRootPosition;
+        [Tooltip("Captured LeftHandTarget position expressed in weapon-root local space. Used by two-handed weapons.")]
+        public Vector3 leftHandGripRootPosition;
 
         // ─────────────────────────────────────────────────────────────────
         // HELPERS

@@ -1,5 +1,8 @@
 # Zombie War — Gameplay Design Document (B1)
 
+> **Design history, not current implementation status.** Architecture intent remains useful, but
+> counts, phase labels and setup statements may be obsolete. Use `HANDOFF.md` for current facts.
+
 > Trạng thái: **DRAFT — chờ duyệt.** Tài liệu này chốt xong mới sang B2 (setup project + push git).
 > Triết lý xuyên suốt: **Simple is Key** (topdown-zombie-survival-designer skill) — chọn giải pháp ít component nhất, ít class nhất, ưu tiên built-in Unity/Cinemachine, chỉ dùng ScriptableObject khi thực sự cần data-driven (súng, zombie type).
 
@@ -55,7 +58,9 @@
 
 - **Animation:** Animator Controller với 2 **Animation Layer** tách biệt — Layer 0 (Base, full body) = Locomotion (Idle/Run theo `Speed` param từ joystick magnitude), Layer 1 (Upper Body, mask chỉ phần thân trên + tay, weight luôn = 1 khi cầm súng) = Aim/Fire, dùng Avatar Mask loại trừ chân. Đây là cách rẻ nhất đáp ứng đúng yêu cầu #3 "animation layer tách riêng chạy và bắn" mà không cần blend tree phức tạp.
 - **Máu / hit feedback:** `Health.cs` đơn giản (currentHP, `TakeDamage()`, sự kiện `OnDamaged`/`OnDeath` qua `IEventBus` của BillGameCore) + flash trắng material 1-2 frame + hit-stop ngắn khi trúng đòn nặng (theo `juice-vfx-shader.md`) + UI health bar world-space hoặc HUD.
-- **Súng trên tay + xoay đúng hướng + IK chân — đây là phần cần R&D, xem mục 8 (B5).** Ghi nhận rõ trong doc này: **chưa chốt kỹ thuật**, sẽ nghiên cứu 2 hướng (Animation Rigging IK vs simple bone-parent) ở B5 trước khi code, đúng theo note của bạn.
+- **Current implementation:** weapon handling uses Unity Animation Rigging with a persistent
+  GunMount/RecoilPivot and two-bone hand IK. The historical R&D alternatives in mục 8 are retained
+  only as decision history; see `PlayerRigSocketIncident.md` for the accepted architecture.
 
 **Effort ước lượng:** animation layer + health/hit feedback ~ 1 ngày (chưa tính phần súng+IK, xem mục 8).
 
@@ -126,7 +131,9 @@
 Đã khảo sát cả 3 project nguồn để tìm giải pháp có sẵn trước khi tự viết (nguyên tắc "tìm trước khi viết" của expert-developer skill):
 
 - **`ShadersLab-BillShader`:** `Malbers Animations` chỉ là animal/creature controller — không có gì liên quan súng/IK/tay. Nhưng project này có cài **MoreMountains TopDownEngine** (asset trả phí) — có sẵn `WeaponIK.cs` (Animator IK Pass, `SetIKPosition/Rotation` cho tay theo target transform mỗi súng), `WeaponAim3D.cs` (xoay thân trên theo hướng ngắm), `CharacterHandleWeapon.cs` (switch nhiều súng, mỗi súng có điểm cầm riêng) — **giải pháp drop-in hoàn chỉnh, có demo lính cầm súng trường chạy thật**.
-- **`My project (1)`:** `LocomotionModular/` chỉ là state machine di chuyển thuần (Dash/Fall/Grounded/Jump) — không liên quan tay/súng/IK. `CharacterModularApplier.cs` là hệ thống đổi trang phục/bộ phận cơ thể (rebind SkinnedMeshRenderer theo skeleton chung), không phải hệ animation/IK. Animation Rigging **đã cài nhưng chưa dùng ở đâu cả** trong project này.
+- **`My project (1)`:** `LocomotionModular/` chỉ là state machine di chuyển thuần
+  (Dash/Fall/Grounded/Jump). `CharacterModularApplier.cs` handles modular body parts. Animation
+  Rigging is now actively used by the Player weapon rig; it is not sourced from that old project.
 - **`TOSSZONE`:** súng cầm trên tay chỉ bằng **bone-parenting thuần** (parent thẳng vào wrist transform, không IK) cho phần cosmetic; phần tương tác thật dùng Autohand (VR grab, không áp dụng được cho top-down non-VR).
 
 **Quyết định (bạn chốt trực tiếp):** **không dùng TopDownEngine** (tránh kéo theo cả framework character/ability riêng của nó) — **tự viết bằng Animation Rigging package** (`com.unity.animation.rigging`, đã có sẵn trong manifest từ B2). Code đã viết ở `Weapon.cs`/`WeaponGripPoints.cs`, phần Rig dựng trong Editor (xem `Docs/EDITOR_SETUP_CHECKLIST.md`):

@@ -1,53 +1,59 @@
 using BillGameCore;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ZombieWar
 {
     /// <summary>
-    /// Screen-space HUD. Holds zero references to gameplay systems for wave/health (event bus only).
-    /// The weapon slot is the one exception: it needs the live Weapon to switch + read reload progress,
-    /// so it lazily resolves the runtime-spawned player. Wired up by SceneFlowBuilder; every field is
-    /// optional so a missing widget never NREs.
+    /// HUD in-run (spec §4.6, Sheet B): HP pill TL + Wave pill TC + Coin pill TR + Pause TR,
+    /// Bomb + Weapon slot bên phải trong thumb-zone. Auto-aim/auto-fire — KHÔNG có nút bắn/reload.
+    /// Wave/health qua Bill.Events (không tham chiếu gameplay trực tiếp); riêng weapon slot cần
+    /// Weapon sống để switch + đọc đạn nên lazily resolve player spawn lúc runtime.
+    /// Mọi field optional — thiếu widget không NRE. Widgets do HudInstaller dựng sẵn trong scene.
     /// </summary>
     public class HudController : MonoBehaviour
     {
-        [Header("Wave")]
-        [SerializeField] private Text waveLabel;          // "WAVE 3 / 5"
-        [SerializeField] private Text zombieLabel;        // "ZOMBIES: 12"
+        [Header("Top pills")]
+        [SerializeField] private RectTransform healthFillRect;  // fill pill — scale theo anchorMax.x
+        [SerializeField] private TMP_Text healthLabel;          // "100"
+        [SerializeField] private TMP_Text wavePill;             // "Wave 3 — 12"
+        [SerializeField] private TMP_Text coinPill;             // coin in-run (backend chưa có — giữ 0)
+        [SerializeField] private Image healthFillImage;         // đổi màu khi <30%
 
-        [Header("Health")]
-        [SerializeField] private Image healthFill;        // horizontal fill (Filled image)
-        [SerializeField] private Text healthLabel;        // "100 / 100"
+        [Header("Buttons")]
+        [SerializeField] private Button pauseButton;
+        [SerializeField] private Button bombButton;
+        [SerializeField] private TMP_Text bombLabel;            // "x3" / cooldown
+        [SerializeField] private Button weaponButton;           // tap = switch weapon
+        [SerializeField] private Image weaponIcon;              // xoay 1 vòng khi reload
+        [SerializeField] private TMP_Text weaponLabel;          // "Rifle 30/30"
+        [SerializeField] private Image ammoRing;                // ring radial fill = đạn còn
 
-        [Header("Weapon")]
-        [SerializeField] private Button weaponButton;     // tap = switch to next weapon
-        [SerializeField] private Image weaponIcon;        // placeholder icon; spins 1 full turn while reloading
-        [SerializeField] private Text weaponLabel;        // "Rifle\n30/30" (name + ammo)
-
-        [Header("Overlays")]
+        [Header("Overlays (legacy — thay ở đợt overlay screens)")]
         [SerializeField] private GameObject gameOverPanel;
         [SerializeField] private GameObject victoryPanel;
 
-        private int _totalWaves;
+        [Header("Prototype data (icon súng cho weapon slot)")]
+        [SerializeField] private ZombieWar.UI.UIPrototypeCatalog prototypeCatalog;
+
+        private int _wave, _alive;
         private Weapon _weapon;
         private BombThrower _bomb;
         private PlayerMovement _player;
+        private WeaponData _iconBound;
+        private float _hp01 = 1f;
 
-        [Header("Bomb / Weapon roster (built at runtime)")]
-        [SerializeField] private bool buildBombButton = true;
-        [SerializeField] private bool buildWeaponRoster = true;   // data-driven from Weapon.Weapons
-        private Button _bombButton;
-        private Text _bombLabel;
-        private RectTransform _rosterBar;
-        private readonly System.Collections.Generic.List<Button> _rosterButtons = new();
-        private int _rosterBuiltCount = -1;
+        /// <summary>Phase Pause/GameOver wire vào đây (PauseOverlay). Null → nút pause log fail-safe.</summary>
+        public System.Action PauseRequested;
 
         private void OnEnable()
         {
             if (gameOverPanel) gameOverPanel.SetActive(false);
             if (victoryPanel) victoryPanel.SetActive(false);
             if (weaponButton) weaponButton.onClick.AddListener(OnWeaponPressed);
+            if (bombButton) bombButton.onClick.AddListener(OnBombPressed);
+            if (pauseButton) pauseButton.onClick.AddListener(OnPausePressed);
 
             var bus = Bill.Events;
             if (bus == null) return;
@@ -57,11 +63,14 @@ namespace ZombieWar
             bus.Subscribe<ZombieCountChangedEvent>(OnZombieCountChanged);
             bus.Subscribe<PlayerDamagedEvent>(OnPlayerDamaged);
             bus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+            bus.Subscribe<GameOverEvent>(OnGameOver);
         }
 
         private void OnDisable()
         {
             if (weaponButton) weaponButton.onClick.RemoveListener(OnWeaponPressed);
+            if (bombButton) bombButton.onClick.RemoveListener(OnBombPressed);
+            if (pauseButton) pauseButton.onClick.RemoveListener(OnPausePressed);
 
             var bus = Bill.Events;
             if (bus == null) return;
@@ -71,14 +80,10 @@ namespace ZombieWar
             bus.Unsubscribe<ZombieCountChangedEvent>(OnZombieCountChanged);
             bus.Unsubscribe<PlayerDamagedEvent>(OnPlayerDamaged);
             bus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+            bus.Unsubscribe<GameOverEvent>(OnGameOver);
         }
 
-        private void Start()
-        {
-            if (buildBombButton) BuildBombButton();
-        }
-
-        // ------------------------------------------------------------------ weapon slot
+        // ------------------------------------------------------------------ weapon/bomb slot
 
         private void Update()
         {
@@ -87,28 +92,36 @@ namespace ZombieWar
                 _weapon = FindFirstObjectByType<Weapon>();
                 if (_weapon == null) return;
             }
-
             if (_bomb == null) _bomb = _weapon.GetComponent<BombThrower>();
             if (_player == null) _player = PlayerMovement.Instance;
-            EnsureRoster();
-            RefreshRosterHighlight();
-            if (_bombLabel != null && _bomb != null)
-                _bombLabel.text = _bomb.CooldownRemaining > 0.05f
-                    ? $"BOMB\n{_bomb.CooldownRemaining:0.0}s"
-                    : $"BOMB x{_bomb.BombsRemaining}";
+
+            if (bombLabel != null && _bomb != null)
+                bombLabel.text = _bomb.CooldownRemaining > 0.05f
+                    ? $"{_bomb.CooldownRemaining:0.0}s"
+                    : $"x{_bomb.BombsRemaining}";
 
             if (weaponIcon)
             {
-                // Image-style reload: the icon rotates exactly one full turn over the reload duration.
+                // reload đọc bằng icon xoay đúng 1 vòng — không có nút reload
                 float z = _weapon.IsReloading ? -360f * _weapon.ReloadProgress : 0f;
                 var e = weaponIcon.rectTransform.localEulerAngles;
                 weaponIcon.rectTransform.localEulerAngles = new Vector3(e.x, e.y, z);
+
+                if (_weapon.Current != _iconBound && prototypeCatalog != null)
+                {
+                    _iconBound = _weapon.Current;
+                    var s = prototypeCatalog.GetWeaponIcon(_iconBound);
+                    if (s != null) { weaponIcon.sprite = s; weaponIcon.color = Color.white; }
+                }
             }
+
+            if (ammoRing && _weapon.MagazineSize > 0)
+                ammoRing.fillAmount = (float)_weapon.AmmoInMag / _weapon.MagazineSize;
 
             if (weaponLabel)
             {
                 var d = _weapon.Current;
-                weaponLabel.text = d != null ? $"{d.weaponName}\n{_weapon.AmmoInMag}/{_weapon.MagazineSize}" : "";
+                weaponLabel.text = d != null ? $"{_weapon.AmmoInMag}" : "";
             }
         }
 
@@ -118,48 +131,6 @@ namespace ZombieWar
             if (_weapon != null) _weapon.SwitchWeapon();
         }
 
-        // ------------------------------------------------------------------ handlers
-
-        private void OnWaveStarted(WaveStartedEvent e)
-        {
-            _totalWaves = e.TotalWaves;
-            if (waveLabel) waveLabel.text = $"WAVE {e.WaveNumber} / {e.TotalWaves}";
-            if (zombieLabel) zombieLabel.text = $"ZOMBIES: {e.ZombiesInWave}";
-        }
-
-        private void OnWaveCleared(WaveClearedEvent e)
-        {
-            if (waveLabel) waveLabel.text = _totalWaves > 0
-                ? $"WAVE {e.WaveNumber} CLEARED"
-                : "WAVE CLEARED";
-        }
-
-        private void OnAllWavesCleared(AllWavesClearedEvent e)
-        {
-            if (waveLabel) waveLabel.text = "ALL WAVES CLEARED";
-            if (victoryPanel) victoryPanel.SetActive(true);
-        }
-
-        private void OnZombieCountChanged(ZombieCountChangedEvent e)
-        {
-            if (zombieLabel) zombieLabel.text = $"ZOMBIES: {e.AliveCount}";
-        }
-
-        private void OnPlayerDamaged(PlayerDamagedEvent e)
-        {
-            if (healthFill) healthFill.fillAmount = e.Normalized;
-            if (healthLabel) healthLabel.text = $"{Mathf.CeilToInt(e.Current)} / {Mathf.CeilToInt(e.Max)}";
-        }
-
-        private void OnPlayerDied(PlayerDiedEvent e)
-        {
-            if (healthFill) healthFill.fillAmount = 0f;
-            if (healthLabel) healthLabel.text = "0";
-            if (gameOverPanel) gameOverPanel.SetActive(true);
-        }
-
-        // ------------------------------------------------------------------ runtime-built UI
-
         private void OnBombPressed()
         {
             if (_bomb == null) return;
@@ -167,93 +138,69 @@ namespace ZombieWar
             _bomb.TryThrow(aim);
         }
 
-        private void BuildBombButton()
+        private void OnPausePressed()
         {
-            _bombButton = MakeButton("BombButton", transform,
-                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 190f),
-                new Vector2(220f, 110f), "BOMB", out _bombLabel);
-            _bombButton.onClick.AddListener(OnBombPressed);
+            if (PauseRequested != null) PauseRequested();
+            else Debug.Log("[HudController] Pause: overlay chưa wire (đợt overlay screens).");
         }
 
-        // Rebuilds only when roster size changes, so shrinking Weapon.weapons later just works.
-        private void EnsureRoster()
+        // ------------------------------------------------------------------ handlers
+
+        private void OnWaveStarted(WaveStartedEvent e)
         {
-            if (!buildWeaponRoster || _weapon == null) return;
-            int count = _weapon.Weapons != null ? _weapon.Weapons.Count : 0;
-            if (count == _rosterBuiltCount) return;
-            _rosterBuiltCount = count;
-
-            if (_rosterBar != null) Destroy(_rosterBar.gameObject);
-            _rosterButtons.Clear();
-            if (count == 0) return;
-
-            const float bw = 150f, bh = 70f, gap = 10f;
-            float totalW = count * bw + (count - 1) * gap;
-
-            var barGo = new GameObject("WeaponRoster", typeof(RectTransform));
-            _rosterBar = barGo.GetComponent<RectTransform>();
-            _rosterBar.SetParent(transform, false);
-            _rosterBar.anchorMin = _rosterBar.anchorMax = _rosterBar.pivot = new Vector2(0.5f, 0f);
-            _rosterBar.anchoredPosition = new Vector2(0f, 40f);
-            _rosterBar.sizeDelta = new Vector2(totalW, bh);
-
-            for (int i = 0; i < count; i++)
-            {
-                int idx = i;
-                var wd = _weapon.Weapons[i];
-                string nm = wd != null ? wd.weaponName : ("#" + i);
-                float x = -totalW / 2f + bw / 2f + i * (bw + gap);
-                var b = MakeButton("W" + i, _rosterBar,
-                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0f),
-                    new Vector2(bw, bh), nm, out _);
-                b.onClick.AddListener(() => { if (_weapon != null) _weapon.EquipIndex(idx); });
-                _rosterButtons.Add(b);
-            }
+            _wave = e.WaveNumber; _alive = e.ZombiesInWave;
+            RefreshWavePill();
         }
 
-        private void RefreshRosterHighlight()
+        private void OnWaveCleared(WaveClearedEvent e)
         {
-            if (_weapon == null || _rosterButtons.Count == 0) return;
-            int cur = _weapon.CurrentIndex;
-            for (int i = 0; i < _rosterButtons.Count; i++)
-            {
-                var img = _rosterButtons[i].targetGraphic as Image;
-                if (img != null)
-                    img.color = i == cur ? new Color(0.85f, 0.55f, 0.1f, 0.9f)
-                                         : new Color(0f, 0f, 0f, 0.55f);
-            }
+            if (wavePill) wavePill.text = $"Wave {e.WaveNumber} ✓";
         }
 
-        private static Button MakeButton(string name, Transform parent, Vector2 anchorMin,
-            Vector2 anchorMax, Vector2 anchoredPos, Vector2 size, string text, out Text label)
+        private void OnAllWavesCleared(AllWavesClearedEvent e)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer),
-                typeof(Image), typeof(Button));
-            var rt = go.GetComponent<RectTransform>();
-            rt.SetParent(parent, false);
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.pivot = anchorMin;
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = size;
-            go.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+            if (wavePill) wavePill.text = "ALL CLEAR";
+            if (victoryPanel) victoryPanel.SetActive(true);
+        }
 
-            var txtGo = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
-            var trt = txtGo.GetComponent<RectTransform>();
-            trt.SetParent(rt, false);
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.offsetMin = Vector2.zero;
-            trt.offsetMax = Vector2.zero;
-            label = txtGo.GetComponent<Text>();
-            label.text = text;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = Color.white;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.resizeTextForBestFit = true;
-            label.resizeTextMinSize = 8;
-            label.resizeTextMaxSize = 40;
-            return go.GetComponent<Button>();
+        private void OnZombieCountChanged(ZombieCountChangedEvent e)
+        {
+            _alive = e.AliveCount;
+            RefreshWavePill();
+        }
+
+        private void RefreshWavePill()
+        {
+            if (wavePill) wavePill.text = $"Wave {_wave} — {_alive}";
+        }
+
+        private void OnPlayerDamaged(PlayerDamagedEvent e)
+        {
+            SetHp(e.Normalized, e.Current);
+        }
+
+        private void OnPlayerDied(PlayerDiedEvent e)
+        {
+            // HP về 0 ngay; màn thua đợi GameOverEvent cho death anim/FX kịp diễn.
+            SetHp(0f, 0f);
+        }
+
+        private void SetHp(float normalized, float current)
+        {
+            _hp01 = normalized;
+            if (healthFillRect)
+                healthFillRect.anchorMax = new Vector2(Mathf.Clamp01(normalized), 1f);
+            // Compact format (12.3K) — label nằm TRONG vùng HP bar, số dài không được tràn sang Wave pill
+            if (healthLabel) healthLabel.text = ZombieWar.UI.CurrencyClusterWidget.Format(Mathf.CeilToInt(current));
+            if (healthFillImage)
+                healthFillImage.color = normalized < 0.3f
+                    ? new Color(0.898f, 0.282f, 0.302f)   // danger khi <30% (Sheet C "Low HP")
+                    : new Color(0.298f, 0.686f, 0.431f);
+        }
+
+        private void OnGameOver(GameOverEvent e)
+        {
+            if (gameOverPanel) gameOverPanel.SetActive(true);
         }
     }
 }

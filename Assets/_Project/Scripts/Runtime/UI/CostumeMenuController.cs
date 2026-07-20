@@ -32,8 +32,21 @@ namespace ZombieWar
             if (previewApplier != null) previewApplier.ApplySavedParts();
 
             BuildCanvas();
-            BuildToggleButton();
+            if (!hideToggleButton) BuildToggleButton();
             BuildPanel();
+            RefreshSlotLabels();
+        }
+
+        /// <summary>An nut toggle goc man (HUB dock se goi Open() thay the).</summary>
+        public bool hideToggleButton;
+
+        /// <summary>Mo panel costume (goi tu HUB dock).</summary>
+        public void Open()
+        {
+            if (_panel == null) return;
+            if (_picker != null) { Destroy(_picker); _picker = null; }
+            _panel.SetActive(true);
+            if (previewApplier != null) previewApplier.gameObject.SetActive(true);
             RefreshSlotLabels();
         }
 

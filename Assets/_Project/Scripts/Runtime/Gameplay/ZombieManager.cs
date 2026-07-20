@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using BillGameCore;
 
 namespace ZombieWar
 {
@@ -28,6 +29,42 @@ namespace ZombieWar
         public static void Unregister(ZombieBase zombie)
         {
             _zombies.Remove(zombie);
+        }
+
+        private void OnEnable()
+        {
+            var bus = Bill.Events;
+            if (bus == null) return;
+            bus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+            bus.Subscribe<GameOverEvent>(OnGameOver);
+        }
+
+        private void OnDisable()
+        {
+            var bus = Bill.Events;
+            if (bus == null) return;
+            bus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
+            bus.Unsubscribe<GameOverEvent>(OnGameOver);
+        }
+
+        // The corpse is not a target: everyone drops to Idle the moment the player dies.
+        // (PlayerMovement disables itself on death -> Instance goes null -> Update() above
+        // stops ticking cheap movement/tiers too.)
+        private void OnPlayerDied(PlayerDiedEvent e)
+        {
+            for (int i = 0; i < _zombies.Count; i++)
+                _zombies[i].OnPlayerLost();
+        }
+
+        // Once the lose screen takes over, the field is cleared - every zombie goes straight
+        // back to the pool (Return -> OnDisable -> Unregister prunes the list as we walk it).
+        private void OnGameOver(GameOverEvent e)
+        {
+            for (int i = _zombies.Count - 1; i >= 0; i--)
+            {
+                var zombie = _zombies[i];
+                if (zombie != null) Bill.Pool?.Return(zombie.gameObject);
+            }
         }
 
         private void Update()

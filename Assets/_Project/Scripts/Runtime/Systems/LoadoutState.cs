@@ -6,7 +6,9 @@ namespace ZombieWar
 {
     /// Loadout nguoi choi chon o MENU (3 slot sung + modular parts), persist PlayerPrefs JSON.
     /// Gameplay KHONG doc PlayerPrefs truc tiep - PlayerSpawner goi ApplyTo(weapon) sau khi spawn.
-    /// Weapon id = ten asset WeaponData (unique, khong doi khi rename weaponName hien thi).
+    /// Weapon id = WeaponData.WeaponId (stable, immutable — xem WeaponRosterMigration). Save cu
+    /// (truoc migration) luu ten asset (vd "WD_Pistol") - Resolve fallback sang ten de khong mat save,
+    /// ApplyTo tu dong ghi lai id chuan vao lan save ke tiep.
     public static class LoadoutState
     {
         [Serializable]
@@ -68,36 +70,64 @@ namespace ZombieWar
             Save();
         }
 
-        /// Tim WeaponData theo ten asset trong arsenal (list weapons cua player prefab).
+        /// Tim WeaponData trong arsenal. Uu tien WeaponId (stable) - fallback LegacyAliases (ten asset
+        /// TRUOC KHI rename, vd "WD_Pistol") de khong mat loadout nguoi choi da luu truoc migration.
+        /// KHONG dung arsenal[i].name lam fallback: AssetDatabase.MoveAsset doi luon .name, nen sau
+        /// migration khong con asset nao con giu ten cu de so khop.
         public static WeaponData Resolve(string id, IReadOnlyList<WeaponData> arsenal)
         {
             if (string.IsNullOrEmpty(id) || arsenal == null) return null;
             for (int i = 0; i < arsenal.Count; i++)
-                if (arsenal[i] != null && arsenal[i].name == id) return arsenal[i];
+                if (arsenal[i] != null && arsenal[i].WeaponId == id) return arsenal[i];
+            for (int i = 0; i < arsenal.Count; i++)
+            {
+                var aliases = arsenal[i]?.LegacyAliases;
+                if (aliases == null) continue;
+                for (int j = 0; j < aliases.Count; j++)
+                    if (aliases[j] == id) return arsenal[i];
+            }
             return null;
         }
 
-        /// Ghi loadout da luu vao Weapon slot API ngay sau khi spawn player.
+        /// Ghi loadout da luu vao Weapon slot API ngay sau khi spawn player. Neu save cu resolve
+        /// qua legacy ten asset (khong khop WeaponId), tu dong nang cap id trong save len WeaponId
+        /// chuan va ghi lai (migrate-on-load, mot lan la xong vinh vien cho save do).
         public static void ApplyTo(Weapon weapon)
         {
             if (weapon == null || !weapon.UseSlotSystem || !HasSave) return;
 
             var arsenal = weapon.Weapons;
+            bool migrated = false;
 
             var pistol = Resolve(Data.pistol, arsenal);
             if (pistol != null && !pistol.twoHanded)
+            {
                 weapon.EquipToSlot(0, pistol);
+                migrated |= MigrateId(ref Data.pistol, pistol);
+            }
 
-            ApplyLongSlot(weapon, 1, Data.longA, arsenal);
-            ApplyLongSlot(weapon, 2, Data.longB, arsenal);
+            migrated |= ApplyLongSlot(weapon, 1, ref Data.longA, arsenal);
+            migrated |= ApplyLongSlot(weapon, 2, ref Data.longB, arsenal);
+
+            if (migrated) Save();
         }
 
-        private static void ApplyLongSlot(Weapon weapon, int slot, string id, IReadOnlyList<WeaponData> arsenal)
+        private static bool ApplyLongSlot(Weapon weapon, int slot, ref string id, IReadOnlyList<WeaponData> arsenal)
         {
-            if (string.IsNullOrEmpty(id)) { weapon.UnequipSlot(slot); return; }
+            if (string.IsNullOrEmpty(id)) { weapon.UnequipSlot(slot); return false; }
             var data = Resolve(id, arsenal);
-            if (data != null && data.twoHanded) weapon.EquipToSlot(slot, data);
-            // id co ma khong resolve duoc (asset doi ten/xoa) -> giu nguyen default, khong pha.
+            if (data == null) return false; // id co ma khong resolve duoc (asset doi/xoa) -> giu nguyen, khong pha.
+            weapon.EquipToSlot(slot, data);
+            return MigrateId(ref id, data);
+        }
+
+        /// True neu id luu trong save khac WeaponId chuan cua data da resolve (tuc resolve qua legacy
+        /// fallback) - ghi de id ve dang chuan, bao caller can Save().
+        private static bool MigrateId(ref string id, WeaponData data)
+        {
+            if (string.IsNullOrEmpty(data.WeaponId) || id == data.WeaponId) return false;
+            id = data.WeaponId;
+            return true;
         }
 
         // ===== Modular costume parts =====

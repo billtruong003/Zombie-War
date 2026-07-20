@@ -20,7 +20,7 @@ namespace _Project.EditorTools
         const string CtrlPath   = "Assets/_Project/Animations/PlayerAnimator.controller";
         const string AimFbx     = "Assets/ThirdParty/MalbersHumanAnims/Weapons/Pistol/H_Weapon_Pistol_AimFire.FBX";
         const string PlayerPrefab = "Assets/_Project/Prefabs/Player.prefab";
-        const string WdPistol   = "Assets/_Project/Data/Weapons/WD_Pistol.asset";
+        const string PistolWeaponId = "weapon.sidearm.pistol_a";
 
         const string MuzzleFx = "Assets/ThirdParty/Epic Toon FX/Prefabs/Combat/Muzzleflash/BulletMuzzle/BulletMuzzleFire.prefab";
         const string ImpactFx = "Assets/ThirdParty/Epic Toon FX/Prefabs/Combat/Explosions/BulletExplosion/BulletExplosionFire.prefab";
@@ -77,10 +77,11 @@ namespace _Project.EditorTools
             Debug.Log(log.ToString());
         }
 
-        [MenuItem("ZombieWar/Weapon/2. Repoint WD_Pistol FX -> Epic Toon FX")]
+        [MenuItem("ZombieWar/Weapon/2. Repoint Starter Pistol FX -> Epic Toon FX")]
         public static void RepointFx()
         {
-            var wd = AssetDatabase.LoadAssetAtPath<ScriptableObject>(WdPistol);
+            var wd = FindByWeaponId(PistolWeaponId);
+            if (wd == null) { Debug.LogError($"No WeaponData with weaponId '{PistolWeaponId}' found."); return; }
             var so = new SerializedObject(wd);
             var muzzle = AssetDatabase.LoadAssetAtPath<GameObject>(MuzzleFx);
             var impact = AssetDatabase.LoadAssetAtPath<GameObject>(ImpactFx);
@@ -92,7 +93,19 @@ namespace _Project.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(wd);
             AssetDatabase.SaveAssets();
-            Debug.Log($"WD_Pistol FX repointed. muzzle={(muzzle!=null)} impact={(impact!=null)}");
+            Debug.Log($"{wd.name} FX repointed. muzzle={(muzzle!=null)} impact={(impact!=null)}");
+        }
+
+        /// Resolve canonical WeaponData by stable weaponId (survives asset rename/move) instead of a
+        /// hardcoded path — see WeaponRosterMigration.
+        static ZombieWar.WeaponData FindByWeaponId(string weaponId)
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:WeaponData"))
+            {
+                var wd = AssetDatabase.LoadAssetAtPath<ZombieWar.WeaponData>(AssetDatabase.GUIDToAssetPath(guid));
+                if (wd != null && wd.WeaponId == weaponId) return wd;
+            }
+            return null;
         }
     }
 }

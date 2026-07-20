@@ -50,6 +50,7 @@ namespace ZombieWar
         private State _state;
         private ZombieTier _tier = ZombieTier.Full;
         private float _attackCooldownTimer;
+        private Coroutine _hitReactRoutine;
 
         public ZombieData Data => data;
         public ZombieTier Tier => _tier;
@@ -91,6 +92,7 @@ namespace ZombieWar
             _state = State.Idle;
             _tier = ZombieTier.Full;
             _attackCooldownTimer = 0f;
+            _hitReactRoutine = null; // coroutines died with the pooled deactivation
             _agent.isStopped = false;
             if (TryGetComponent(out Collider col)) col.enabled = true;
             SetDissolve(0f);
@@ -226,8 +228,54 @@ namespace ZombieWar
             // since it hangs off Health.OnDamaged rather than any single weapon.
             DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight);
 
-            _vatAnimator.Play(data.hitClip);
+            // One-shot hit react: while the hit anim is still playing, further bullets only
+            // deal damage/spawn numbers - they do NOT restart the anim or re-knockback, so
+            // rapid fire can't lock the zombie into a looping flinch.
+            if (_hitReactRoutine != null) return;
+            _hitReactRoutine = StartCoroutine(HitReact());
             StartCoroutine(Knockback());
+        }
+
+        private IEnumerator HitReact()
+        {
+            _vatAnimator.Play(data.hitClip);
+
+            float duration = 0.4f;
+            if (_vatAnimator.animationData != null &&
+                _vatAnimator.animationData.TryGetClipInfo(data.hitClip, out var clip) &&
+                clip.duration > 0f)
+                duration = clip.duration;
+
+            yield return new WaitForSeconds(duration);
+            _hitReactRoutine = null;
+
+            // Hit clips are baked looping like everything else in the VAT, so once the react
+            // window ends we must hand the animator back to whatever the FSM is doing.
+            if (_state == State.Dead) yield break;
+            ResumeStateClip();
+        }
+
+        private void ResumeStateClip()
+        {
+            if (_vatAnimator == null || !_vatAnimator.enabled) return;
+            switch (_state)
+            {
+                case State.Chase:
+                    _vatAnimator.CrossFade(data.moveClip, stateCrossFadeDuration);
+                    break;
+                default:
+                    _vatAnimator.CrossFade(data.idleClip, stateCrossFadeDuration);
+                    break;
+            }
+        }
+
+        /// <summary>Called by ZombieManager when the player dies - stop hunting the corpse.</summary>
+        public void OnPlayerLost()
+        {
+            if (_state == State.Dead) return;
+            _state = State.Idle;
+            if (_agent.enabled && _agent.isOnNavMesh) _agent.isStopped = true;
+            ResumeStateClip();
         }
 
         private IEnumerator Knockback()
@@ -250,6 +298,13 @@ namespace ZombieWar
 
         private void HandleDeath()
         {
+            // Kill any pending hit react so it can't crossfade over the death anim.
+            if (_hitReactRoutine != null)
+            {
+                StopCoroutine(_hitReactRoutine);
+                _hitReactRoutine = null;
+            }
+
             _state = State.Dead;
             _agent.isStopped = true;
             if (TryGetComponent(out Collider col)) col.enabled = false;

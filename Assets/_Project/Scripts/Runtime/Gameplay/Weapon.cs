@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using BillGameCore;
 
 namespace ZombieWar
@@ -8,7 +9,12 @@ namespace ZombieWar
     public class Weapon : MonoBehaviour
     {
         [SerializeField] private List<WeaponData> weapons = new();
-        [SerializeField] private Transform weaponSocket;
+
+        [Tooltip("GunMount inside WeaponRig - follows the chest via a MultiParentConstraint " +
+            "(in-stream, see WeaponIKController). NOT a child of either hand: the hands IK toward " +
+            "the weapon's grips, so a hand-descendant mount would be a circular dependency.")]
+        [FormerlySerializedAs("weaponSocket")]
+        [SerializeField] private Transform weaponMount;
         [SerializeField] private LayerMask hitMask = ~0;
         [SerializeField] private Texture2D recoilNoiseTexture;
 
@@ -17,8 +23,9 @@ namespace ZombieWar
         [SerializeField] private float cameraShakeOnFire = 0.25f;
         private CameraFollow _cameraFollow;
 
-        [Tooltip("Transform kicked on fire (spring). Default = weaponSocket. Because the IK hand " +
-                 "targets ride the weapon grips, kicking the mount recoils the gun AND both hands together.")]
+        [Tooltip("Transform kicked on fire (spring), child of GunMount. The hand IK targets are " +
+                 "children of this pivot inside the rig stream, so kicking it recoils the gun AND " +
+                 "both hands together in the same frame.")]
         [SerializeField] private Transform recoilPivot;
 
         [Header("Slots (3 o loadout: 0=pistol bat buoc, 1-2=sung dai; bom co nut rieng)")]
@@ -83,12 +90,18 @@ namespace ZombieWar
         public Transform EditorInstanceTransform => _currentInstance != null ? _currentInstance.transform : null;
 
         // Push tuned values onto the live instance so the user sees the change in Play Mode before saving.
-        public void EditorApplyGrip(Vector3 localPos, Vector3 localEuler)
+        public void EditorApplyGrip(Vector3 localPos, Vector3 localEuler, Vector3 localScale)
         {
             if (_currentInstance == null) return;
             _currentInstance.transform.localPosition = localPos;
             _currentInstance.transform.localRotation = Quaternion.Euler(localEuler);
+            _currentInstance.transform.localScale = localScale;
             _weaponRestLocalPosition = localPos;
+        }
+
+        public void EditorApplyAuthoredGripPositions()
+        {
+            ApplyAuthoredGripPositions(Current, EditorInstanceTransform, CurrentGrips);
         }
 #endif
 
@@ -98,18 +111,18 @@ namespace ZombieWar
             EnsureRecoilPivot();
         }
 
-        // Pivot ngoi GIUA weaponSocket va gun model. Sung + grip + muzzle deu la con cua no.
+        // Pivot ngoi GIUA weaponMount va gun model. Sung + grip + muzzle deu la con cua no.
         // Rest = identity (0,0,0 / no rotation) nen spring luon keo ve DUNG rest, khong troi.
-        // Neu chua gan trong editor thi tao runtime duoi weaponSocket.
+        // PlayerRigBuilder tao san RecoilPivot duoi GunMount; day chi la fallback runtime.
         private bool _pivotRestCaptured;
 
         private void EnsureRecoilPivot()
         {
-            if (recoilPivot == null && weaponSocket != null)
+            if (recoilPivot == null && weaponMount != null)
             {
                 var go = new GameObject("RecoilPivot");
                 recoilPivot = go.transform;
-                recoilPivot.SetParent(weaponSocket, false);
+                recoilPivot.SetParent(weaponMount, false);
                 recoilPivot.localPosition = Vector3.zero;
                 recoilPivot.localRotation = Quaternion.identity;
             }
@@ -444,13 +457,31 @@ namespace ZombieWar
             // Sung + grip + muzzle deu la con cua recoilPivot => recoil kick pivot la ca cum theo.
             EnsureRecoilPivot();
             ResetRecoil(); // doi sung giua luc recoil chua hoi => phai snap pivot ve rest, khong de lech ton dong
-            _currentInstance = Instantiate(data.weaponPrefab, recoilPivot != null ? recoilPivot : weaponSocket);
+            _currentInstance = Instantiate(data.weaponPrefab, recoilPivot != null ? recoilPivot : weaponMount);
             _currentInstance.transform.localPosition = data.gripLocalPosition;
             _currentInstance.transform.localRotation = Quaternion.Euler(data.gripLocalEuler);
+            _currentInstance.transform.localScale = data.gripLocalScale;
             _weaponRestLocalPosition = _currentInstance.transform.localPosition;
             _currentGripPoints = _currentInstance.GetComponent<WeaponGripPoints>();
 
+            // Restore authored marker positions before IK receives the equipped-weapon event.
+            // Prefab marker positions remain the fallback for weapons that have not been captured yet.
+            ApplyAuthoredGripPositions(data, _currentInstance.transform, _currentGripPoints);
+
             OnWeaponEquipped?.Invoke(_currentGripPoints);
+        }
+
+        private static void ApplyAuthoredGripPositions(
+            WeaponData data, Transform weaponRoot, WeaponGripPoints grips)
+        {
+            if (data == null || !data.useAuthoredGripPositions || weaponRoot == null || grips == null)
+                return;
+
+            if (grips.RightHandGrip != null)
+                grips.RightHandGrip.position = weaponRoot.TransformPoint(data.rightHandGripRootPosition);
+
+            if (data.twoHanded && grips.LeftHandGrip != null)
+                grips.LeftHandGrip.position = weaponRoot.TransformPoint(data.leftHandGripRootPosition);
         }
 
         private static void SpawnMuzzleFlash(WeaponData data, Vector3 position, Vector3 direction)

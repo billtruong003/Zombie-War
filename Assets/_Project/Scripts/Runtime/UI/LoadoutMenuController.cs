@@ -19,12 +19,24 @@ namespace ZombieWar
         GameObject _picker;
         readonly Text[] _slotValues = new Text[3];
 
+        /// <summary>An nut toggle goc man (HUB dock se goi Open() thay the).</summary>
+        public bool hideToggleButton;
+
         void Start()
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var canvas = BuildCanvas();
-            BuildToggleButton(canvas);
+            if (!hideToggleButton) BuildToggleButton(canvas);
             BuildPanel(canvas);
+            RefreshSlots();
+        }
+
+        /// <summary>Mo panel loadout (goi tu HUB dock).</summary>
+        public void Open()
+        {
+            if (_panel == null) return;
+            if (_picker != null) { Destroy(_picker); _picker = null; }
+            _panel.SetActive(true);
             RefreshSlots();
         }
 

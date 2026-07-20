@@ -1,5 +1,8 @@
 # Core Wiring Directive (Phase 1-3 completion + BillGameCore integration)
 
+> **Historical directive.** Core wiring described here has already been executed. Use `HANDOFF.md`
+> and `TASK_BREAKDOWN.md` for current status; retain this file only for BillGameCore constraints.
+
 Captured from the user's directive so no requirement is lost across sessions. This
 governs the "finish Phase 1/2/3 + wire" work, not just nice-to-have.
 

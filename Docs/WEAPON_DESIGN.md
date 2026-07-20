@@ -2,7 +2,8 @@
 
 > Bản thiết kế vũ khí modular + shop. Mục tiêu: **chọn súng = chọn một lối build**, mỗi loại súng trả lời một câu hỏi tactical khác nhau, mở rộng vô hạn mà không phá cân bằng.
 >
-> Trạng thái: `[SPEC]` = đã thiết kế, chưa code · `[WIP]` = đang code · `[DONE]` = đã có trong game.
+> Trạng thái: setup/prefab/pose/icon hoàn tất cho roster 25 khẩu. Các fire mode đặc biệt và balance
+> economy vẫn là `[SPEC]` cho phase sau; xem `WeaponRosterMapping.json` và `HANDOFF.md` cho trạng thái thật.
 
 ---
 
@@ -130,29 +131,20 @@ Một khẩu súng "hay" = có **ít nhất 1 trục cực đoan** (bản sắc)
 
 ---
 
-## 7. ROSTER (danh sách súng)
+## 7. ROSTER hiện tại `[DONE SETUP]`
 
-### Đang có `[DONE]`
-| # | Tên | Class | FireMode | Tier | Ghi chú |
-|---|-----|-------|----------|------|---------|
-| 1 | **Low-Poly Pistol** | Sidearm | SingleHitscan | Common | Khởi đầu, 1 tay |
-| 2 | **SMG** | SMG | SingleHitscan (auto) | Common | Mag lớn, firerate cao |
-| 3 | **Assault Rifle** | AR | SingleHitscan (auto) | Uncommon | Cân bằng |
-| 4 | **Shotgun** | Shotgun | MultiPelletHitscan | Uncommon | Pellet cone |
-| 5 | **Sniper (WD_Sniper)** | Marksman | SingleHitscan | Rare | Sẽ nâng lên PiercingLine |
-| 6 | **LMG** | LMG | SingleHitscan (auto) | Rare | Mag khổng lồ |
+Nguồn định danh chính xác là `WeaponRosterMapping.json`. Hiện có 25 WeaponData + 25 prefab + 25 icon,
+đều có stable ID, muzzle/grip marker và authored pose. Thứ tự catalog 0–24:
 
-### Roster mới `[SPEC]` — thêm trong đợt này
-| # | Tên | Class | FireMode | Tier | Bản sắc (trục cực đoan) | Điểm yếu |
-|---|-----|-------|----------|------|------------------------|----------|
-| 7 | **Railgun "Longbow"** | Railgun | PiercingLine (∞) | Epic | Xuyên VÔ HẠN cả hàng dọc, sạc điện | Charge chậm, mag 3, đắt |
-| 8 | **Marksman Rifle "Lancer"** | Marksman | PiercingLine (3) | Rare | Xuyên 3 con + headshot crit | Fire rate thấp |
-| 9 | **Laser "Prism"** | Laser | ContinuousBeam | Legendary | Tia liên tục, dí = ramp melt | Overheat khoá, đắt nhất |
-| 10 | **Tesla "Arc"** | Tesla | ChainLightning | Legendary | Sét lan 5 con | Damage thấp mỗi hop |
-| 11 | **Flamethrower "Cinder"** | Flamethrower | ContinuousBeam (cone) | Epic | Cone lửa, burn stack | Cực gần, ăn fuel |
-| 12 | **Rocket "Maul"** | Rocket | Projectile (AoE) | Legendary | Xoá nguyên cụm | Đạn 1 viên, self-knockback |
+| Order | Nhóm | Asset |
+|---:|---|---|
+| 0–5 | Generic baseline | PistolA, SMG Generic, AssaultRifle Generic, Shotgun Generic, Sniper Generic, LMG Generic |
+| 6–14 | Sidearm | Glock19, P226, M1911, BerettaM9, USP45, DesertEagle, FiveSeven, Makarov, Python357 |
+| 15–19 | Shotgun | BenelliM4, Mossberg500, SPAS12, DoubleBarrel, AA12 |
+| 20–24 | Assault rifle | M4A1, AK47, SCARL, FAMAS, G36C |
 
-> **Longbow railgun** chính là súng người dùng mô tả: *"loại mà ko bị stop bởi 1 viên đạn mà nó xuyên qua hết những con quái luôn — bắn 1 đường là tụi nó ăn đạn hết."* → `FireMode.PiercingLine`, `pierceCount = -1`.
+Các concept Railgun/Laser/Tesla/Flamethrower/Rocket bên dưới là định hướng content tương lai, không phải
+asset/runtime đã hoàn thành. Không đưa chúng vào UI ownership/economy của phase hiện tại.
 
 ---
 
@@ -238,3 +230,26 @@ Theo kỹ thuật chung (không copy asset gốc):
 8. Model/prefab + grip pose (grip tuner).
 
 > Nếu trả lời được cả 8 → súng có bản sắc, không phải "reskin số to hơn".
+
+---
+
+## ADDENDUM v2.0 — Rarity 5 màu + Sao + Nội tại (sync ECONOMY_DESIGN.md §4)
+
+### Hệ thống
+- Rarity = field `tier` (regrade lại theo 5 màu): ⬜Xám → 🟩Xanh lá → 🟦Xanh biển → 🟪Tím → 🟧Cam.
+- Sao ★2/★3 = +15%/+15% damage (mọi súng). Nội tại = CHỈ Tím/Cam, theo họ, có từ lúc sở hữu (bảng ECONOMY §4.3).
+- Skin dùng chung 5 màu → 1 ngôn ngữ rarity toàn game.
+
+### Chia màu roster (đề xuất design — chưa phải balance cuối)
+
+| Họ | ⬜ Xám | 🟩 Xanh lá | 🟦 Xanh biển | 🟪 Tím | 🟧 Cam |
+|---|---|---|---|---|---|
+| Pistol (9) | Makarov, Glock 19 | P226, Beretta M9 | M1911, USP-45 | Five-seveN, Desert Eagle | Python .357 |
+| Rifle/AR (5) | M4A1 | AK-47 | SCAR-L, FAMAS | G36C | *(chờ model)* |
+| Shotgun (5) | Remington 870 | Mossberg 500, Double Barrel | SPAS-12 | AA-12 | *(hoặc AA-12 lên Cam)* |
+
+### Trạng thái data 2026-07-20
+
+1. Stable identity, class, canonical prefab path, icon, muzzle/grip and authored pose are complete for 25/25.
+2. SMG/Sniper/LMG currently have one Generic entry each; this is a content-depth gap, not a broken placeholder path.
+3. Tier/price/combat stats still require a holistic balance pass before Shop wiring is considered final.

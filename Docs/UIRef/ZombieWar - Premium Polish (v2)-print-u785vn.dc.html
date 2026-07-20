@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style data-omelette-print-defaults>
+@media print {
+  @page { margin: 0.5in; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+  figure, table, pre, blockquote, img, svg, tr, [class~="card" i] { break-inside: avoid; }
+  img, svg { max-width: 100%; }
+  p { orphans: 3; widows: 3; }
+}
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0D18;}
+.zh{font-family:'Baloo 2',sans-serif;}
+.zb{font-family:'Nunito',sans-serif;}
+.zm{font-family:'JetBrains Mono',monospace;}
+.grad-h{background:linear-gradient(180deg,#FFFFFF,#C4CBDB);-webkit-background-clip:text;background-clip:text;color:transparent;}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes heartbeat{0%,100%{opacity:.85}50%{opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes skel{0%{background-position:-160px 0}100%{background-position:160px 0}}
+::-webkit-scrollbar{height:10px}
+::-webkit-scrollbar-thumb{background:#2A3152;border-radius:8px}
+</style>
+</helmet>
+
+<div class="zb" style="background:radial-gradient(circle at 30% 0%,#12172A,#0A0D18 60%);min-height:100vh;padding:56px 56px 120px 56px;box-sizing:border-box;">
+  <div style="margin-bottom:42px;max-width:1400px;">
+    <div class="zh grad-h" style="font-size:34px;font-weight:800;letter-spacing:-0.5px;">ZOMBIEWAR — PREMIUM MOBILE ARCADE · v2 POLISH</div>
+    <div style="font-size:13px;color:#8b92a8;margin-top:8px;line-height:1.6;">15 màn + 3 sheet hệ thống · Depth phân lớp, bevel 3D, rarity glow, glass pill, floating dock · Palette khoá (#141821 · #E5484D · coin #F5B841 · KC cyan) · Rarity 5 màu Xám→Xanh lá→Xanh biển→Tím→Cam</div>
+  </div>
+
+  <div style="display:flex;gap:34px;overflow-x:auto;padding-bottom:24px;align-items:flex-start;">
+
+    <!-- ===== 1. HUB ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">01 · HUB</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,#181D33,#181D33 12px,#141821 12px,#141821 24px);opacity:.6;"></div>
+        <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(168,92,242,0.14),transparent 55%);"></div>
+        <!-- top bar -->
+        <div style="position:absolute;top:14px;left:16px;display:flex;align-items:center;gap:8px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(160deg,#3E8EF7,#274d8f);border:2px solid rgba(255,255,255,0.2);position:relative;box-shadow:0 3px 8px rgba(0,0,0,0.4);"><div style="position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;background:#5FD068;border:2px solid #141821;animation:pulse 2s infinite;"></div></div>
+        </div>
+        <div style="position:absolute;top:14px;right:16px;display:flex;gap:6px;">
+          <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:4px 9px;"><div style="width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE08A,#F5B841);box-shadow:0 0 5px rgba(245,184,65,0.6);"></div><div class="zm" style="font-size:11px;color:#F5B841;">8,450</div></div>
+          <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:4px 9px;"><div style="width:12px;height:12px;transform:rotate(45deg);background:radial-gradient(circle at 35% 30%,#9BF3FF,#4DD9E8);box-shadow:0 0 6px rgba(77,217,232,0.8);"></div><div class="zm" style="font-size:11px;color:#4DD9E8;">50</div></div>
+        </div>
+        <div class="zb" style="position:absolute;top:62px;left:16px;font-size:11px;color:#5a6072;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">⚙ · Kỷ lục Wave 12</div>
+        <!-- stage -->
+        <div style="position:absolute;top:120px;left:35px;width:320px;height:388px;display:flex;align-items:flex-end;justify-content:center;">
+          <div style="position:absolute;bottom:20px;width:220px;height:60px;border-radius:50%;background:radial-gradient(ellipse,rgba(168,92,242,0.35),transparent 70%);"></div>
+          <div style="position:absolute;bottom:0;width:200px;height:32px;border-radius:50%;background:linear-gradient(180deg,#2b3350,#161b2c);border:2px solid rgba(255,255,255,0.08);"></div>
+          <div style="width:220px;height:300px;border:3px dashed #3a4260;border-radius:20px;background:repeating-linear-gradient(45deg,#191F38,#191F38 10px,#232A47 10px,#232A47 20px);display:flex;align-items:center;justify-content:center;margin-bottom:26px;animation:floaty 4s ease-in-out infinite;"><div class="zb" style="font-size:11px;color:#8b92a8;text-align:center;">Nhân vật 3D<br/>auto-rotate</div></div>
+        </div>
+        <!-- PLAY -->
+        <div style="position:absolute;top:520px;left:24px;width:342px;height:68px;border-radius:20px;background:linear-gradient(180deg,#FFCE4D,#FF9500);border:3px solid #FFD700;box-shadow:inset 0 2px 0 rgba(255,255,255,0.5),0 7px 0 #C96A08,0 10px 18px rgba(255,149,0,0.35);display:flex;align-items:center;justify-content:center;animation:breathe 2.4s ease-in-out infinite;"><div class="zh" style="font-size:26px;font-weight:800;color:#5A2E00;text-shadow:0 1px 0 rgba(255,255,255,0.4);">PLAY</div></div>
+        <!-- floating dock -->
+        <div style="position:absolute;bottom:16px;left:16px;width:358px;height:66px;background:rgba(26,31,46,0.9);border:1px solid rgba(255,255,255,0.08);border-radius:24px;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:flex;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;"><div style="font-size:19px;">🔫</div><div class="zb" style="font-size:9px;color:#8b92a8;font-weight:700;">LOADOUT</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;"><div style="position:absolute;top:8px;width:22px;height:3px;border-radius:2px;background:#5FD068;box-shadow:0 0 6px #5FD068;"></div><div style="font-size:19px;">🛒</div><div class="zb" style="font-size:9px;color:#5FD068;font-weight:800;">SHOP</div><div style="position:absolute;top:6px;right:16px;width:9px;height:9px;border-radius:50%;background:#E5484D;animation:pulse 1.6s infinite;"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;"><div style="font-size:19px;">👕</div><div class="zb" style="font-size:9px;color:#8b92a8;font-weight:700;">COSTUME</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;"><div style="font-size:19px;">🎫</div><div class="zb" style="font-size:9px;color:#8b92a8;font-weight:700;">PASS</div><div style="position:absolute;top:6px;right:14px;width:9px;height:9px;border-radius:50%;background:#E5484D;animation:pulse 1.6s infinite;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 2. LOADOUT ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">02 · LOADOUT</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;top:14px;left:16px;width:38px;height:38px;border-radius:12px;background:linear-gradient(180deg,#4A9BFF,#3E8EF7);border:2px solid #0D2C4F;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 4px 0 #1F5BA8;display:flex;align-items:center;justify-content:center;color:#fff;">←</div>
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">LOADOUT</div>
+        <!-- perspective slot row -->
+        <div style="position:absolute;top:70px;left:0;width:390px;height:150px;display:flex;align-items:center;justify-content:center;gap:12px;perspective:800px;">
+          <div style="width:88px;height:110px;background:linear-gradient(180deg,#222a44,#1a1f2e);border:3px solid #A85CF2;border-radius:16px;transform:rotateY(18deg);box-shadow:0 0 16px rgba(168,92,242,0.45),0 8px 20px rgba(0,0,0,0.4);display:flex;flex-direction:column;align-items:center;justify-content:center;"><div style="font-size:26px;">🔫</div><div class="zb" style="font-size:8px;color:#8b92a8;">Slot 1 🔒</div></div>
+          <div style="width:118px;height:140px;background:linear-gradient(180deg,#242c48,#1a1f2e);border:3px solid #3E8EF7;border-radius:18px;box-shadow:0 0 20px rgba(62,142,247,0.5),0 10px 24px rgba(0,0,0,0.5);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><div style="font-size:34px;">🔫</div><div class="zb" style="font-size:10px;font-weight:800;color:#F4F6F8;">Rifle</div><div style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#E5484D;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.4);">✕</div></div>
+          <div style="width:88px;height:110px;border:3px dashed #3a4260;border-radius:16px;transform:rotateY(-18deg);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#3a4260;"><div style="font-size:24px;animation:pulse 1.8s infinite;">+</div><div class="zb" style="font-size:8px;">Slot 3</div></div>
+        </div>
+        <!-- expanded stats popup -->
+        <div style="position:absolute;top:236px;left:24px;width:342px;background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding:14px;box-sizing:border-box;">
+          <div class="zh" style="font-size:14px;font-weight:800;color:#F4F6F8;margin-bottom:8px;">Rifle · <span style="color:#3E8EF7;">RARE</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;align-items:center;gap:8px;"><div class="zb" style="font-size:10px;color:#5a6072;width:56px;text-transform:uppercase;">DPS</div><div style="flex:1;height:8px;background:#0f1320;border-radius:4px;"><div style="width:72%;height:100%;background:linear-gradient(90deg,#5FD068,#8BE896);border-radius:4px;"></div></div></div>
+            <div style="display:flex;align-items:center;gap:8px;"><div class="zb" style="font-size:10px;color:#5a6072;width:56px;text-transform:uppercase;">Tốc bắn</div><div style="flex:1;height:8px;background:#0f1320;border-radius:4px;"><div style="width:55%;height:100%;background:linear-gradient(90deg,#F5B841,#FFCE4D);border-radius:4px;"></div></div></div>
+            <div style="display:flex;align-items:center;gap:8px;"><div class="zb" style="font-size:10px;color:#5a6072;width:56px;text-transform:uppercase;">Băng đạn</div><div style="flex:1;height:8px;background:#0f1320;border-radius:4px;"><div style="width:40%;height:100%;background:linear-gradient(90deg,#3E8EF7,#6BA7FF);border-radius:4px;"></div></div></div>
+          </div>
+        </div>
+        <!-- bomb -->
+        <div style="position:absolute;top:400px;left:24px;display:flex;align-items:center;gap:12px;"><div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(180deg,#2a3150,#1a1f2e);border:3px solid #8A93A8;box-shadow:inset 0 2px 0 rgba(255,255,255,0.1),0 4px 0 #5B6478;display:flex;align-items:center;justify-content:center;position:relative;">💣<div style="position:absolute;bottom:-4px;right:-4px;background:#F5B841;border:2px solid #C98A12;color:#22283D;font-size:10px;font-weight:800;border-radius:10px;padding:1px 6px;">x3</div></div><div class="zb" style="font-size:11px;color:#8b92a8;">Bom — 1 loại (v1)</div></div>
+        <!-- picker -->
+        <div class="zb" style="position:absolute;top:486px;left:24px;font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">Súng dài đang sở hữu</div>
+        <div style="position:absolute;top:508px;left:24px;width:342px;display:grid;grid-template-columns:repeat(3,110px);gap:12px;">
+          <div style="height:110px;background:#1a1f2e;border:2px solid #5FD068;border-radius:14px;box-shadow:0 0 12px rgba(95,208,104,0.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;"><div style="font-size:24px;">🔫</div><div class="zb" style="font-size:10px;font-weight:800;color:#F4F6F8;">SMG</div></div>
+          <div style="height:110px;background:#1a1f2e;border:2px solid #3E8EF7;border-radius:14px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;"><div style="position:absolute;top:3px;right:3px;background:#5FD068;color:#12172A;font-size:7px;font-weight:800;padding:2px 4px;border-radius:4px;">ĐANG DÙNG</div><div style="font-size:24px;">🔫</div><div class="zb" style="font-size:10px;font-weight:800;color:#F4F6F8;">Rifle</div></div>
+          <div style="height:110px;background:#141821;border:2px solid #262d40;border-radius:14px;opacity:.5;display:flex;align-items:center;justify-content:center;font-size:22px;">🔒</div>
+        </div>
+        <div class="zb" style="position:absolute;bottom:22px;left:0;width:100%;text-align:center;font-size:11px;color:#8b92a8;">Chưa có súng? <span style="color:#5FD068;font-weight:800;border-bottom:2px solid #5FD068;">Tới Shop →</span></div>
+      </div>
+    </div>
+
+    <!-- ===== 3. COSTUME ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">03 · COSTUME</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;top:14px;left:16px;width:38px;height:38px;border-radius:12px;background:linear-gradient(180deg,#4A9BFF,#3E8EF7);border:2px solid #0D2C4F;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 4px 0 #1F5BA8;display:flex;align-items:center;justify-content:center;color:#fff;">←</div>
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">COSTUME</div>
+        <div style="position:absolute;top:64px;left:16px;width:358px;height:320px;background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:18px;box-shadow:inset 0 20px 40px rgba(0,0,0,0.3);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;">
+          <div style="position:absolute;bottom:24px;width:150px;height:26px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,0.5),transparent 70%);"></div>
+          <div style="width:150px;height:250px;border:3px dashed #3a4260;border-radius:16px;background:repeating-linear-gradient(45deg,#191F38,#191F38 10px,#232A47 10px,#232A47 20px);margin-bottom:34px;display:flex;align-items:center;justify-content:center;"><div class="zb" style="font-size:11px;color:#8b92a8;text-align:center;">Mannequin<br/>kéo xoay</div></div>
+        </div>
+        <!-- segmented control -->
+        <div style="position:absolute;top:398px;left:16px;width:358px;height:40px;background:#0f1320;border-radius:14px;padding:4px;box-sizing:border-box;display:flex;gap:4px;">
+          <div style="flex:1;border-radius:10px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 0 10px rgba(95,208,104,0.4);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:12px;font-weight:800;color:#12251a;">Đầu</div></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;"><div class="zb" style="font-size:12px;color:#8b92a8;font-weight:700;">Thân</div></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;"><div class="zb" style="font-size:12px;color:#8b92a8;font-weight:700;">Chân</div></div>
+        </div>
+        <div style="position:absolute;top:454px;left:16px;width:358px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <div style="aspect-ratio:1;background:#1a1f2e;border:2px solid #8A93A8;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;">Mặc định</div>
+          <div style="aspect-ratio:1;background:#1a1f2e;border:3px solid #3E8EF7;border-radius:14px;box-shadow:0 0 14px rgba(62,142,247,0.4);position:relative;display:flex;align-items:center;justify-content:center;font-size:30px;">🎩<div style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#5FD068;border:2px solid #141821;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;">✓</div></div>
+          <div style="aspect-ratio:1;background:#1a1f2e;border:3px solid #A85CF2;border-radius:14px;box-shadow:0 0 14px rgba(168,92,242,0.4);display:flex;align-items:center;justify-content:center;font-size:30px;">👒</div>
+          <div style="aspect-ratio:1;background:#1a1f2e;border:3px solid #8A93A8;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🧢</div>
+          <div style="aspect-ratio:1;background:#141821;border:3px solid #FF8A3D;border-radius:14px;opacity:.55;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:18px;">🔒</div><div class="zm" style="font-size:9px;color:#4DD9E8;">💎90</div></div>
+          <div style="aspect-ratio:1;background:#141821;border:3px solid #A85CF2;border-radius:14px;opacity:.55;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:18px;">🔒</div><div class="zm" style="font-size:9px;color:#4DD9E8;">💎40</div></div>
+        </div>
+        <div style="position:absolute;bottom:22px;left:0;width:100%;text-align:center;"><div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,#FFCE4D,#F5B841);border:2px solid #C98A12;box-shadow:inset 0 2px 0 rgba(255,255,255,0.4),0 4px 0 #A8720C;padding:8px 18px;border-radius:16px;"><div class="zh" style="font-size:13px;font-weight:800;color:#5A3E00;">🎲 Ngẫu nhiên</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===== 4. SHOP WEAPONS ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">04 · SHOP — WEAPONS</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">SHOP</div>
+        <div style="position:absolute;top:56px;left:16px;width:358px;height:38px;background:#0f1320;border-radius:14px;padding:4px;box-sizing:border-box;display:flex;gap:4px;">
+          <div style="flex:1;border-radius:10px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 0 10px rgba(95,208,104,0.4);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:10px;font-weight:800;color:#12251a;">WEAPONS</div></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">GACHA</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">COSTUME</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">UPGRADES</div>
+        </div>
+        <div class="zb" style="position:absolute;top:104px;left:16px;font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">Pistol</div>
+        <div style="position:absolute;top:124px;left:16px;width:358px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+          <div style="background:#1a1f2e;border:2px solid #8A93A8;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:10px;box-sizing:border-box;position:relative;">
+            <div style="height:66px;border-radius:10px;background:#0f1320;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:6px;">🔫</div>
+            <div class="zh" style="font-size:13px;font-weight:800;color:#F4F6F8;">P-9</div><div class="zb" style="font-size:9px;color:#5a6072;">DPS 40</div>
+            <div style="margin-top:6px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 3px 0 #2E7A3B;color:#12251a;font-size:11px;font-weight:800;border-radius:10px;text-align:center;padding:5px;">🟡 120</div>
+          </div>
+          <div style="background:#1a1f2e;border:2px solid #A85CF2;border-radius:16px;box-shadow:0 0 16px rgba(168,92,242,0.3),0 6px 20px rgba(0,0,0,0.35);padding:10px;box-sizing:border-box;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:8px;right:-24px;transform:rotate(45deg);background:#E5484D;color:#fff;font-size:8px;font-weight:800;padding:2px 24px;">NEW</div>
+            <div style="height:66px;border-radius:10px;background:#0f1320;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:6px;">🔫</div>
+            <div class="zh" style="font-size:13px;font-weight:800;color:#F4F6F8;">P-Void</div><div class="zb" style="font-size:9px;color:#A85CF2;">Xuyên 2 mục tiêu</div>
+            <div style="margin-top:6px;background:linear-gradient(180deg,#D89A2E,#C9821A);box-shadow:inset 0 1px 0 rgba(255,255,255,0.3),0 3px 0 #7A4E0C;color:#fff;font-size:11px;font-weight:800;border-radius:10px;text-align:center;padding:5px;">💰 500</div>
+          </div>
+        </div>
+        <div class="zb" style="position:absolute;top:340px;left:16px;font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">SMG</div>
+        <div style="position:absolute;top:360px;left:16px;width:358px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+          <div style="background:#1a1f2e;border:2px solid #5FD068;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:10px;box-sizing:border-box;">
+            <div style="height:66px;border-radius:10px;background:#0f1320;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:6px;">🔫</div>
+            <div class="zh" style="font-size:13px;font-weight:800;color:#F4F6F8;">SMG-K</div><div class="zb" style="font-size:9px;color:#5a6072;">12/20 🧩</div>
+            <div style="margin-top:6px;background:#262d40;color:#8b92a8;font-size:11px;font-weight:800;border-radius:10px;text-align:center;padding:5px;">ĐÃ CÓ · Lên sao</div>
+          </div>
+          <div style="background:#1a1f2e;border:2px solid #FF8A3D;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:10px;box-sizing:border-box;">
+            <div style="height:66px;border-radius:10px;background:#0f1320;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:6px;">🔫</div>
+            <div class="zh" style="font-size:13px;font-weight:800;color:#F4F6F8;">SMG-Nova</div><div class="zb" style="font-size:9px;color:#FF8A3D;">Cháy lan</div>
+            <div style="margin-top:6px;background:#2a1512;border:1px solid #5c2529;color:#E5484D;font-size:11px;font-weight:800;border-radius:10px;text-align:center;padding:5px;">⚠ Thiếu 200 💰</div>
+          </div>
+        </div>
+      </div>
+      <div class="zb" style="width:390px;font-size:11px;color:#8b92a8;line-height:1.5;">Card lift on hover, giá đủ tiền = gradient gold, thiếu = shake + đỏ; NEW ribbon góc phải</div>
+    </div>
+
+    <!-- ===== 5. SHOP GACHA ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">05 · SHOP — GACHA</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">SHOP</div>
+        <div style="position:absolute;top:56px;left:16px;width:358px;height:38px;background:#0f1320;border-radius:14px;padding:4px;box-sizing:border-box;display:flex;gap:4px;">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">WEAPONS</div>
+          <div style="flex:1;border-radius:10px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 0 10px rgba(95,208,104,0.4);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:10px;font-weight:800;color:#12251a;">GACHA</div></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">COSTUME</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">UPGRADES</div>
+        </div>
+        <div style="position:absolute;top:106px;left:16px;width:358px;height:308px;background:#1a1f2e;border:3px solid #C9821A;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding:14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;">
+          <div class="zh" style="font-size:15px;font-weight:800;color:#F4F6F8;">🔫 Súng Gacha</div>
+          <div style="flex:1;border-radius:12px;background:radial-gradient(circle at 50% 40%,#2a3150,#12172A);border:2px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;"><div style="width:70px;height:90px;border-radius:40px 40px 12px 12px;background:linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.02));border:2px solid rgba(255,255,255,0.15);"></div><div style="position:absolute;top:14px;left:40px;font-size:12px;">✨</div><div style="position:absolute;bottom:20px;right:50px;font-size:10px;">✨</div></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div class="zb" style="font-size:9px;color:#8b92a8;">Còn <b style="color:#A85CF2;">27</b> lượt chắc Tím+ ✨</div></div>
+          <div style="height:9px;background:#0f1320;border-radius:5px;position:relative;"><div style="width:62%;height:100%;background:linear-gradient(90deg,#3E8EF7,#A85CF2);border-radius:5px;"></div><div style="position:absolute;left:33%;top:-2px;width:5px;height:13px;border-radius:3px;background:#5a6072;"></div><div style="position:absolute;left:66%;top:-2px;width:5px;height:13px;border-radius:3px;background:#5a6072;"></div><div style="position:absolute;left:90%;top:-2px;width:5px;height:13px;border-radius:3px;background:#A85CF2;"></div></div>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;background:linear-gradient(180deg,#D89A2E,#C9821A);box-shadow:inset 0 1px 0 rgba(255,255,255,0.3),0 4px 0 #7A4E0C;border-radius:12px;text-align:center;padding:8px 0;"><div class="zh" style="font-size:11px;font-weight:800;color:#fff;">Quay 1 · 💰100</div></div>
+            <div style="flex:1;border-radius:12px;padding:2px;background:linear-gradient(90deg,#F5B841,#A85CF2,#3E8EF7,#F5B841);background-size:200% 100%;animation:shimmer 3s linear infinite;box-shadow:0 4px 0 #5A3708;"><div style="background:linear-gradient(180deg,#D89A2E,#C9821A);border-radius:10px;text-align:center;padding:6px 0;"><div class="zh" style="font-size:11px;font-weight:800;color:#fff;">Quay 10 · 💰900</div></div></div>
+          </div>
+        </div>
+        <div style="position:absolute;top:430px;left:16px;width:358px;height:290px;background:#1a1f2e;border:3px solid #4DD9E8;border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding:14px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;">
+          <div class="zh" style="font-size:15px;font-weight:800;color:#F4F6F8;">👕 Skin Gacha</div>
+          <div style="flex:1;border-radius:12px;background:radial-gradient(circle at 50% 40%,#173d47,#12172A);border:2px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;"><div style="width:70px;height:90px;border-radius:40px 40px 12px 12px;background:linear-gradient(180deg,rgba(77,217,232,0.2),rgba(77,217,232,0.02));border:2px solid rgba(77,217,232,0.25);"></div></div>
+          <div class="zb" style="font-size:9px;color:#8b92a8;">Còn <b style="color:#4DD9E8;">14</b> lượt chắc Tím+</div>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;background:linear-gradient(180deg,#5EE6F5,#4DD9E8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 4px 0 #1F6B72;border-radius:12px;text-align:center;padding:8px 0;"><div class="zh" style="font-size:11px;font-weight:800;color:#0a3339;">Quay 1 · 💎10</div></div>
+            <div style="flex:1;background:linear-gradient(180deg,#5EE6F5,#4DD9E8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 4px 0 #1F6B72;border-radius:12px;text-align:center;padding:8px 0;"><div class="zh" style="font-size:11px;font-weight:800;color:#0a3339;">Quay 10 · 💎90</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 6. SHOP COSTUME ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">06 · SHOP — COSTUME</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">SHOP</div>
+        <div style="position:absolute;top:56px;left:16px;width:358px;height:38px;background:#0f1320;border-radius:14px;padding:4px;box-sizing:border-box;display:flex;gap:4px;">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">WEAPONS</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">GACHA</div>
+          <div style="flex:1;border-radius:10px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 0 10px rgba(95,208,104,0.4);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:10px;font-weight:800;color:#12251a;">COSTUME</div></div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">UPGRADES</div>
+        </div>
+        <div style="position:absolute;top:104px;left:16px;width:358px;height:138px;background:#1a1f2e;border:3px solid #A85CF2;border-radius:18px;box-shadow:0 0 18px rgba(168,92,242,0.3),0 8px 32px rgba(0,0,0,0.4);padding:12px;box-sizing:border-box;display:flex;gap:12px;">
+          <div style="width:110px;border-radius:12px;background:repeating-linear-gradient(45deg,#191F38,#191F38 8px,#232A47 8px,#232A47 16px);display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;text-align:center;">Full-body</div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;"><div class="zh" style="font-size:15px;font-weight:800;color:#F4F6F8;">Bộ Sát Thủ Bóng Đêm</div><div class="zb" style="font-size:10px;color:#8b92a8;">5 món · tiết kiệm 30%</div><div class="zb" style="font-size:10px;color:#5a6072;text-decoration:line-through;">💎 720</div><div style="background:linear-gradient(180deg,#5EE6F5,#4DD9E8);box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 3px 0 #1F6B72;color:#0a3339;font-size:12px;font-weight:800;border-radius:10px;text-align:center;padding:6px;">💎 500</div></div>
+        </div>
+        <div class="zb" style="position:absolute;top:256px;left:16px;font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">Item lẻ</div>
+        <div style="position:absolute;top:278px;left:16px;width:358px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+          <div style="aspect-ratio:1;background:#1a1f2e;border:2px solid #8A93A8;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:22px;">🧢</div><div class="zb" style="font-size:8px;color:#5FD068;font-weight:800;">Free</div></div>
+          <div style="aspect-ratio:1;background:#1a1f2e;border:2px solid #3E8EF7;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:22px;">🎩</div><div class="zb" style="font-size:8px;color:#8b92a8;font-weight:700;">ĐÃ CÓ</div></div>
+          <div style="aspect-ratio:1;background:#1a1f2e;border:2px solid #A85CF2;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:22px;">👒</div><div class="zm" style="font-size:8px;color:#4DD9E8;">💎40</div></div>
+          <div style="aspect-ratio:1;background:#141821;border:2px solid #FF8A3D;border-radius:14px;opacity:.55;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:18px;">🔒</div><div class="zm" style="font-size:8px;color:#4DD9E8;">💎90</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 7. SHOP UPGRADES ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">07 · SHOP — UPGRADES</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">SHOP</div>
+        <div style="position:absolute;top:56px;left:16px;width:358px;height:38px;background:#0f1320;border-radius:14px;padding:4px;box-sizing:border-box;display:flex;gap:4px;">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">WEAPONS</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">GACHA</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8b92a8;font-size:10px;font-weight:700;">COSTUME</div>
+          <div style="flex:1;border-radius:10px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 0 10px rgba(95,208,104,0.4);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:10px;font-weight:800;color:#12251a;">UPGRADES</div></div>
+        </div>
+        <div style="position:absolute;top:108px;left:0;width:100%;display:flex;flex-direction:column;align-items:center;gap:2px;"><div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;">Tổng sức mạnh</div><div class="zh" style="font-size:34px;font-weight:800;color:#5FD068;text-shadow:0 0 16px rgba(95,208,104,0.5);">+42%</div></div>
+        <div style="position:absolute;top:190px;left:16px;width:358px;display:flex;flex-direction:column;gap:12px;">
+          <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#2a1512;border:2px solid #E5484D;display:flex;align-items:center;justify-content:center;font-size:20px;">⚔</div>
+            <div style="flex:1;"><div class="zh" style="font-size:14px;font-weight:800;color:#F4F6F8;">Sát thương</div><div style="display:flex;gap:5px;margin-top:5px;"><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;display:flex;align-items:center;justify-content:center;font-size:9px;">👑</div></div></div>
+            <div style="text-align:right;"><div class="zm" style="font-size:10px;color:#F5B841;">🟡300</div><div style="margin-top:4px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 3px 0 #2E7A3B;color:#12251a;font-size:11px;font-weight:800;border-radius:10px;padding:5px 14px;">NÂNG</div></div>
+          </div>
+          <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#2a1512;border:2px solid #E5484D;display:flex;align-items:center;justify-content:center;font-size:20px;">❤</div>
+            <div style="flex:1;"><div class="zh" style="font-size:14px;font-weight:800;color:#F4F6F8;">Máu</div><div style="display:flex;gap:5px;margin-top:5px;"><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#F5B841;display:flex;align-items:center;justify-content:center;font-size:9px;">👑</div></div></div>
+            <div style="background:linear-gradient(180deg,#FFCE4D,#F5B841);color:#5A3E00;font-size:12px;font-weight:800;border-radius:10px;padding:6px 14px;">MAX</div>
+          </div>
+          <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.35);padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:#2a2412;border:2px solid #F5B841;display:flex;align-items:center;justify-content:center;font-size:20px;">⚡</div>
+            <div style="flex:1;"><div class="zh" style="font-size:14px;font-weight:800;color:#F4F6F8;">Tốc bắn</div><div style="display:flex;gap:5px;margin-top:5px;"><div style="width:14px;height:14px;border-radius:50%;background:#5FD068;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;"></div><div style="width:14px;height:14px;border-radius:50%;background:#0f1320;border:1px solid #2a3150;display:flex;align-items:center;justify-content:center;font-size:9px;">👑</div></div></div>
+            <div style="text-align:right;"><div class="zm" style="font-size:10px;color:#F5B841;">🟡150</div><div style="margin-top:4px;background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 3px 0 #2E7A3B;color:#12251a;font-size:11px;font-weight:800;border-radius:10px;padding:5px 14px;">NÂNG</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="zb" style="width:390px;font-size:11px;color:#8b92a8;">Confetti burst khi nâng thành công · đúng 3 dòng</div>
+    </div>
+
+    <!-- ===== 8. BATTLE PASS ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">08 · BATTLE PASS</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div class="zh grad-h" style="position:absolute;top:16px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;">BATTLE PASS</div>
+        <div class="zb" style="position:absolute;top:60px;left:16px;font-size:10px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;">Miễn phí</div>
+        <div style="position:absolute;top:80px;left:16px;width:358px;height:104px;display:flex;gap:10px;overflow-x:auto;align-items:center;">
+          <div style="min-width:78px;height:88px;background:#1a1f2e;border:2px solid #5FD068;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;"><div style="font-size:22px;">🪙</div><div style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:#5FD068;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;">✓</div></div>
+          <div style="min-width:78px;height:88px;background:#1a1f2e;border:3px solid #F5B841;box-shadow:0 0 16px rgba(245,184,65,0.5);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;animation:heartbeat 1.6s infinite;"><div style="font-size:22px;">🎫</div><div class="zb" style="font-size:9px;color:#F5B841;font-weight:800;">Nhận</div></div>
+          <div style="min-width:78px;height:88px;background:#141821;border:2px solid #2a3150;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;opacity:.6;"><div style="font-size:22px;">🧩</div><div style="font-size:11px;">🔒</div></div>
+          <div style="min-width:78px;height:88px;background:#141821;border:2px solid #2a3150;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;opacity:.6;"><div style="font-size:22px;">💰</div><div style="font-size:11px;">🔒</div></div>
+        </div>
+        <div style="position:absolute;top:196px;left:16px;width:358px;height:80px;background:#1a1f2e;border:2px solid #C9821A;border-radius:14px;opacity:.55;display:flex;align-items:center;justify-content:center;gap:8px;"><div style="font-size:16px;">👑</div><div class="zb" style="font-size:12px;color:#C9821A;font-weight:800;">Premium Pass 🔒 [PLACEHOLDER]</div></div>
+        <div class="zh" style="position:absolute;top:296px;left:16px;font-size:15px;font-weight:800;color:#F4F6F8;">Nhiệm vụ hôm nay</div>
+        <div style="position:absolute;top:326px;left:16px;width:358px;display:flex;flex-direction:column;gap:10px;">
+          <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px;"><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;margin-bottom:6px;">Giết 200 zombie</div><div style="height:10px;background:#0f1320;border-radius:5px;"><div style="width:60%;height:100%;background:linear-gradient(90deg,#5FD068,#8BE896);border-radius:5px;"></div></div><div class="zm" style="font-size:9px;color:#8b92a8;margin-top:4px;">120 / 200</div></div>
+          <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center;"><div><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;">Sống sót wave 5</div><div class="zm" style="font-size:9px;color:#5FD068;">3 / 3 ✓</div></div><div style="background:linear-gradient(180deg,#6FE07A,#5FD068);box-shadow:0 3px 0 #2E7A3B;color:#12251a;font-size:11px;font-weight:800;padding:6px 14px;border-radius:10px;animation:breathe 1.4s infinite;">CLAIM</div></div>
+        </div>
+        <div class="zb" style="position:absolute;bottom:22px;left:0;width:100%;text-align:center;font-size:11px;color:#5FD068;font-weight:800;border-bottom:2px solid #5FD068;width:fit-content;left:50%;transform:translateX(-50%);">Quay Gacha →</div>
+      </div>
+    </div>
+
+    <!-- ===== 9. HUD IN-RUN ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">09 · HUD IN-RUN</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,#191F38 0px,#191F38 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#191F38 0px,#191F38 1px,transparent 1px,transparent 40px);opacity:.6;"></div>
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 52%,rgba(229,72,77,0.34) 100%);animation:heartbeat 1s infinite;"></div>
+        <!-- gameplay: player centered + zombies + loot -->
+        <div style="position:absolute;top:355px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:1;">
+          <div style="width:64px;height:8px;background:#3D0F0C;border:2px solid #16321C;border-radius:5px;overflow:hidden;"><div style="width:70%;height:100%;background:#5FD068;"></div></div>
+          <div style="width:56px;height:56px;border-radius:16px;background:radial-gradient(circle at 40% 32%,#6BA7FF,#3E8EF7);border:3px solid #F4F6F8;box-shadow:0 6px 14px rgba(0,0,0,0.5);position:relative;"><div style="position:absolute;top:16px;left:12px;width:8px;height:8px;border-radius:50%;background:#12172A;"></div><div style="position:absolute;top:16px;right:12px;width:8px;height:8px;border-radius:50%;background:#12172A;"></div></div>
+          <div style="width:70px;height:14px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,0.45),transparent 70%);margin-top:-4px;"></div>
+        </div>
+        <div style="position:absolute;top:210px;left:96px;width:38px;height:40px;border-radius:12px 12px 10px 10px;background:#4a7a3c;border:2px solid #2d4d24;z-index:1;"></div>
+        <div style="position:absolute;top:250px;right:80px;width:34px;height:36px;border-radius:12px 12px 10px 10px;background:#4a7a3c;border:2px solid #2d4d24;z-index:1;"></div>
+        <div style="position:absolute;top:470px;left:120px;width:36px;height:38px;border-radius:12px 12px 10px 10px;background:#5a6a3c;border:2px solid #35401f;z-index:1;"></div>
+        <div style="position:absolute;top:300px;right:120px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE08A,#F5B841);box-shadow:0 0 8px rgba(245,184,65,0.7);z-index:1;"></div>
+        <div style="position:absolute;top:430px;left:200px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE08A,#F5B841);box-shadow:0 0 8px rgba(245,184,65,0.7);z-index:1;"></div>
+        <!-- HP segmented -->
+        <div style="position:absolute;top:14px;left:16px;width:150px;height:16px;background:#0f1320;border:2px solid #16321C;border-radius:8px;display:flex;gap:2px;padding:2px;box-sizing:border-box;overflow:hidden;">
+          <div style="flex:1;background:linear-gradient(90deg,#5FD068,#8BE896);border-radius:2px;"></div><div style="flex:1;background:#F5B841;border-radius:2px;"></div><div style="flex:1;background:#E5484D;border-radius:2px;animation:heartbeat 0.8s infinite;"></div><div style="flex:1;background:#2a1012;border-radius:2px;"></div><div style="flex:1;background:#2a1012;border-radius:2px;"></div>
+        </div>
+        <div style="position:absolute;top:34px;left:16px;width:150px;height:6px;background:#0f1320;border:1px solid #454C5E;border-radius:3px;overflow:hidden;"><div style="width:40%;height:100%;background:#A85CF2;"></div></div>
+        <div class="zb" style="position:absolute;top:12px;left:0;width:100%;text-align:center;font-size:13px;font-weight:800;color:#F4F6F8;text-shadow:0 2px 3px #000;">Wave 3 — 12 👤</div>
+        <div style="position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:3px 8px;"><div style="width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE08A,#F5B841);"></div><div class="zm" style="font-size:12px;color:#F5B841;">842</div></div>
+        <div style="position:absolute;top:44px;right:16px;width:36px;height:36px;border-radius:10px;background:linear-gradient(180deg,#4A9BFF,#3E8EF7);border:2px solid #0D2C4F;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 4px 0 #1F5BA8;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">⏸</div>
+        <!-- kill streak -->
+        <div style="position:absolute;top:120px;left:16px;display:flex;align-items:center;gap:5px;z-index:2;"><div style="font-size:16px;">🔥</div><div class="zh" style="font-size:15px;font-weight:800;color:#FF8A3D;text-shadow:0 2px 4px rgba(0,0,0,0.6);">x5 KILL STREAK!</div></div>
+        <div class="zb" style="position:absolute;top:232px;left:104px;font-size:15px;color:#E5484D;font-weight:800;text-shadow:0 2px 3px #000;z-index:2;">-24</div>
+        <div class="zh" style="position:absolute;top:282px;right:52px;font-size:22px;color:#F5B841;font-weight:800;text-shadow:0 2px 4px #000;z-index:2;">-88!</div>
+        <!-- joystick -->
+        <div style="position:absolute;left:32px;bottom:56px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2a2f3e,#1a1f2e);border:2px solid rgba(255,255,255,0.08);box-shadow:inset 0 4px 14px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:3;"><div style="position:absolute;width:44px;height:44px;border-radius:50%;border:1px dashed rgba(255,255,255,0.15);"></div><div style="width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#718096,#4a5568);box-shadow:0 0 12px rgba(113,128,150,0.6),0 4px 8px rgba(0,0,0,0.4);"></div></div>
+        <!-- action buttons: weapon-switch above, bomb below (bottom-right) -->
+        <div style="position:absolute;right:34px;bottom:150px;width:60px;height:60px;border-radius:16px;background:linear-gradient(180deg,#4A9BFF,#3E8EF7);border:3px solid #0D2C4F;box-shadow:inset 0 2px 0 rgba(255,255,255,0.25),0 5px 0 #1F5BA8;display:flex;align-items:center;justify-content:center;z-index:3;"><div style="font-size:22px;">🔫</div><div class="zm" style="position:absolute;bottom:2px;right:6px;font-size:8px;color:#fff;">24</div></div>
+        <div style="position:absolute;right:20px;bottom:56px;width:88px;height:88px;border-radius:50%;background:linear-gradient(180deg,#6FE07A,#5FD068);border:3px solid #16321C;box-shadow:inset 0 3px 0 rgba(255,255,255,0.25),0 6px 0 #2E7A3B;display:flex;align-items:center;justify-content:center;z-index:3;"><div style="font-size:34px;">💣</div><div class="zb" style="position:absolute;top:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:#F5B841;border:2px solid #C98A12;color:#22283D;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;">3</div></div>
+      </div>
+      <div class="zb" style="width:390px;font-size:11px;color:#8b92a8;line-height:1.5;">HP segmented + heartbeat khi &lt;30%, crit vàng to, kill-streak fire, coin fly-up. KHÔNG nút bắn/nạp.</div>
+    </div>
+
+    <!-- ===== 10. LEVEL-UP ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">10 · LEVEL-UP PERK</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,#191F38 0px,#191F38 1px,transparent 1px,transparent 40px);opacity:.25;filter:blur(1px);"></div>
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.7);"></div>
+        <div class="zh" style="position:absolute;top:170px;left:0;width:100%;text-align:center;font-size:44px;font-weight:800;background:linear-gradient(180deg,#FFE08A,#FF9500);-webkit-background-clip:text;background-clip:text;color:transparent;animation:floaty 2.8s ease-in-out infinite;">LEVEL UP!</div>
+        <div style="position:absolute;top:310px;left:0;width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <div style="width:290px;height:82px;background:#1a1f2e;border:3px solid #3E8EF7;border-radius:16px;box-shadow:0 0 18px rgba(62,142,247,0.4);display:flex;align-items:center;gap:12px;padding:0 16px;"><div style="font-size:32px;">⚡</div><div><div class="zh" style="font-size:15px;font-weight:800;color:#F4F6F8;">Tốc bắn</div><div class="zb" style="font-size:11px;color:#8b92a8;">+15% tốc bắn</div></div></div>
+          <div style="width:300px;height:88px;background:#1a1f2e;border:3px solid #A85CF2;border-radius:16px;box-shadow:0 0 28px rgba(168,92,242,0.6);transform:scale(1.04);display:flex;align-items:center;gap:12px;padding:0 16px;position:relative;"><div style="position:absolute;top:6px;right:10px;font-size:12px;">✨</div><div style="font-size:34px;">🛡️</div><div><div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">Giáp</div><div class="zb" style="font-size:11px;color:#8b92a8;">+10% giáp</div></div></div>
+          <div style="width:290px;height:82px;background:#1a1f2e;border:3px solid #8A93A8;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px;"><div style="font-size:32px;">👟</div><div><div class="zh" style="font-size:15px;font-weight:800;color:#F4F6F8;">Tốc chạy</div><div class="zb" style="font-size:11px;color:#8b92a8;">+8% tốc chạy</div></div></div>
+        </div>
+        <div style="position:absolute;bottom:170px;left:45px;width:300px;height:6px;background:#0f1320;border-radius:3px;overflow:hidden;"><div style="width:60%;height:100%;background:linear-gradient(90deg,#5FD068,#F5B841,#E5484D);border-radius:3px;"></div></div>
+        <div class="zb" style="position:absolute;bottom:145px;left:0;width:100%;text-align:center;font-size:10px;color:#5a6072;">Chọn card giữa = anchor (scale 1.05, glow). Countdown 10s.</div>
+      </div>
+    </div>
+
+    <!-- ===== 11. PAUSE ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">11 · PAUSE</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);"></div>
+        <div style="position:absolute;top:270px;left:35px;width:320px;background:rgba(20,24,33,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 16px 48px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.08);padding:26px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;">
+          <div class="zh grad-h" style="font-size:24px;font-weight:800;text-align:center;">TẠM DỪNG</div>
+          <div style="height:54px;border-radius:16px;background:linear-gradient(180deg,#6FE07A,#5FD068);border:2px solid #16321C;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 5px 0 #2E7A3B;display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:16px;font-weight:800;color:#12251a;">TIẾP TỤC</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:13px;color:#F4F6F8;font-weight:700;">🔊 Âm thanh</div><div style="width:46px;height:26px;border-radius:13px;background:#5FD068;box-shadow:0 0 8px rgba(95,208,104,0.5);position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;right:3px;box-shadow:0 1px 2px rgba(0,0,0,0.3);"></div></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:13px;color:#F4F6F8;font-weight:700;">📳 Rung</div><div style="width:46px;height:26px;border-radius:13px;background:#3a4260;position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:3px;"></div></div></div>
+          <div style="height:46px;border-radius:16px;background:linear-gradient(180deg,#F0685F,#E5484D);border:2px solid #3D0F0C;box-shadow:inset 0 2px 0 rgba(255,255,255,0.2),0 4px 0 #A8241E;display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:13px;font-weight:800;color:#fff;">BỎ TRẬN</div></div>
+        </div>
+        <div class="zb" style="position:absolute;bottom:170px;left:0;width:100%;text-align:center;font-size:10px;color:#5a6072;">"Tiếp tục" → countdown 3…2…1 trước khi resume · Bỏ trận → confirm modal</div>
+      </div>
+    </div>
+
+    <!-- ===== 12. REVIVE ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">12 · REVIVE</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.78);"></div>
+        <div style="position:absolute;top:280px;left:50%;transform:translateX(-50%);width:140px;height:180px;border:3px dashed #3a4260;border-radius:16px;opacity:.25;background:repeating-linear-gradient(45deg,#191F38,#191F38 10px,#232A47 10px,#232A47 20px);"></div>
+        <div style="position:absolute;top:250px;left:45px;width:300px;height:280px;background:rgba(20,24,33,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px;box-sizing:border-box;">
+          <div class="zh grad-h" style="font-size:22px;font-weight:800;">HỒI SINH?</div>
+          <div style="position:relative;width:88px;height:88px;"><div style="position:absolute;inset:0;border-radius:50%;border:6px solid #0f1320;"></div><div style="position:absolute;inset:0;border-radius:50%;border:6px solid #F5B841;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(45deg);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:44px;font-weight:800;color:#F5B841;animation:pulse 1s infinite;">5</div></div></div>
+          <div style="width:100%;height:50px;border-radius:16px;background:linear-gradient(180deg,#6FE07A,#5FD068);border:2px solid #16321C;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 5px 0 #2E7A3B;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;"><div class="zh" style="font-size:14px;font-weight:800;color:#12251a;">📺 Xem quảng cáo</div><div style="position:absolute;top:-8px;right:10px;background:#F5B841;border:2px solid #C98A12;color:#5A3E00;font-size:9px;font-weight:800;padding:1px 7px;border-radius:8px;">⚡FREE</div></div>
+          <div class="zb" style="font-size:12px;color:#5a6072;">Thôi</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 13. GAME OVER ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">13 · GAME OVER</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 48%,rgba(229,72,77,0.24) 100%);"></div>
+        <div class="zh" style="position:absolute;top:54px;left:0;width:100%;text-align:center;font-size:30px;font-weight:800;background:linear-gradient(180deg,#F0685F,#FF8A3D);-webkit-background-clip:text;background-clip:text;color:transparent;">HẾT TRẬN</div>
+        <div style="position:absolute;top:98px;left:0;width:100%;text-align:center;"><div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(180deg,#FFCE4D,#F5B841);border:2px solid #C98A12;box-shadow:0 0 14px rgba(245,184,65,0.5);color:#5A3E00;font-size:12px;font-weight:800;padding:5px 16px;border-radius:14px;">✨ KỶ LỤC MỚI! Wave 7</div></div>
+        <div style="position:absolute;top:148px;left:24px;width:342px;background:#1a1f2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.4);padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:12px;color:#8b92a8;">🪙 Nhặt trong trận</div><div class="zm" style="font-size:13px;color:#F5B841;">+1,250</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:12px;color:#8b92a8;">🌊 Thưởng wave</div><div class="zm" style="font-size:13px;color:#F5B841;">+350</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:12px;color:#8b92a8;">⭐ Thưởng lần đầu</div><div class="zm" style="font-size:13px;color:#F5B841;">+500</div></div>
+          <div style="height:1px;background:#2a3150;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zh" style="font-size:14px;font-weight:800;color:#F4F6F8;">Tổng</div><div class="zm" style="font-size:18px;color:#F5B841;">2,100</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:11px;color:#4DD9E8;">💎 KC nhặt ✨</div><div class="zm" style="font-size:12px;color:#4DD9E8;">+5</div></div>
+        </div>
+        <div style="position:absolute;top:360px;left:24px;width:342px;"><div class="zb" style="font-size:10px;color:#5a6072;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Battle Pass XP</div><div style="height:12px;background:#0f1320;border:1px solid #2a3150;border-radius:6px;overflow:hidden;"><div style="width:55%;height:100%;background:linear-gradient(90deg,#A85CF2,#C79BF5);border-radius:6px;"></div></div></div>
+        <div class="zb" style="position:absolute;top:410px;left:0;width:100%;text-align:center;"><span style="font-size:11px;color:#5FD068;font-weight:800;border-bottom:2px solid #5FD068;padding-bottom:1px;">Súng mới ở Shop →</span></div>
+        <div style="position:absolute;top:596px;left:24px;width:342px;height:60px;border-radius:18px;background:linear-gradient(180deg,#FFCE4D,#FF9500);border:3px solid #FFD700;box-shadow:inset 0 2px 0 rgba(255,255,255,0.5),0 6px 0 #C96A08,0 9px 16px rgba(255,149,0,0.3);display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:19px;font-weight:800;color:#5A2E00;">CHƠI LẠI</div></div>
+        <div style="position:absolute;top:668px;left:24px;width:342px;height:46px;border-radius:14px;background:transparent;border:2px solid #3a4260;display:flex;align-items:center;justify-content:center;"><div class="zh" style="font-size:15px;font-weight:800;color:#8b92a8;">VỀ NHÀ</div></div>
+      </div>
+      <div class="zb" style="width:390px;font-size:11px;color:#8b92a8;">Số nảy từng dòng + tiếng, confetti canvas khi phá kỷ lục, XP animate 0→hiện tại</div>
+    </div>
+
+    <!-- ===== 14. SETTINGS ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">14 · SETTINGS</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);"></div>
+        <div style="position:absolute;top:210px;left:35px;width:320px;background:rgba(20,24,33,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 16px 48px rgba(0,0,0,0.6);padding:26px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;">
+          <div class="zh grad-h" style="font-size:22px;font-weight:800;">CÀI ĐẶT</div>
+          <div><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;margin-bottom:8px;">🎵 Nhạc nền</div><div style="height:10px;background:#0f1320;border-radius:5px;position:relative;"><div style="width:60%;height:100%;background:linear-gradient(90deg,#5FD068,#8BE896);border-radius:5px;"></div><div style="position:absolute;left:57%;top:-5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(95,208,104,0.6),0 2px 4px rgba(0,0,0,0.4);"></div></div></div>
+          <div><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;margin-bottom:8px;">🔊 Hiệu ứng</div><div style="height:10px;background:#0f1320;border-radius:5px;position:relative;"><div style="width:80%;height:100%;background:linear-gradient(90deg,#5FD068,#8BE896);border-radius:5px;"></div><div style="position:absolute;left:77%;top:-5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.4);"></div></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;">📳 Rung</div><div style="width:46px;height:26px;border-radius:13px;background:#5FD068;box-shadow:0 0 8px rgba(95,208,104,0.5);position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;right:3px;"></div></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div class="zb" style="font-size:12px;color:#F4F6F8;font-weight:700;">🌐 Ngôn ngữ</div><div style="display:flex;background:#0f1320;border-radius:10px;padding:3px;gap:3px;"><div style="padding:5px 12px;background:#5FD068;color:#12251a;font-size:11px;font-weight:800;border-radius:8px;">🇻🇳 VI</div><div style="padding:5px 12px;color:#8b92a8;font-size:11px;">🇬🇧 EN</div></div></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div class="zb" style="font-size:11px;color:#8b92a8;">↻ Khôi phục mua hàng [PLACEHOLDER]</div></div>
+          <div class="zb" style="text-align:center;font-size:10px;color:#3a4050;">v0.1.0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 15. FTUE ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#F4F6F8;">15 · FTUE OVERLAY</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px solid #2A3152;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,#191F38 0px,#191F38 1px,transparent 1px,transparent 40px);opacity:.5;"></div>
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.72);"></div>
+        <div style="position:absolute;left:36px;bottom:110px;width:130px;height:130px;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,0.72);border:3px solid #F5B841;background:transparent;"></div>
+        <div style="position:absolute;left:96px;bottom:262px;background:#1a1f2e;border:2px solid #F5B841;border-radius:14px;padding:12px 16px;max-width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.5);"><div class="zb" style="font-size:13px;color:#F4F6F8;font-weight:800;">👆 Kéo để chạy!</div></div>
+        <div style="position:absolute;left:150px;bottom:250px;font-size:22px;color:#F5B841;">↙</div>
+        <div style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:5px 12px;"><div class="zb" style="font-size:11px;color:#8b92a8;font-weight:700;">Bỏ qua</div></div>
+        <div style="position:absolute;bottom:40px;left:0;width:100%;display:flex;justify-content:center;gap:8px;"><div style="width:22px;height:8px;border-radius:4px;background:#F5B841;"></div><div style="width:8px;height:8px;border-radius:4px;background:#3a4260;"></div><div style="width:8px;height:8px;border-radius:4px;background:#3a4260;"></div></div>
+      </div>
+      <div class="zb" style="width:390px;font-size:11px;color:#8b92a8;line-height:1.5;">Cutout mask 70%, mũi tên, bàn tay animate, "Bước 1/3" dots. Cuối: "BẮT ĐẦU" glow.</div>
+    </div>
+
+    <!-- ===== SHEET A: COMPONENT STATES ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#4DD9E8;">SHEET A · COMPONENT STATES</div>
+      <div style="width:460px;min-height:844px;background:#12172A;border-radius:28px;border:2px solid #2A3152;padding:24px;box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,0.55);display:flex;flex-direction:column;gap:22px;">
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Button — Default / Pressed / Disabled</div>
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;height:48px;border-radius:14px;background:linear-gradient(180deg,#6FE07A,#5FD068);border:2px solid #16321C;box-shadow:inset 0 2px 0 rgba(255,255,255,0.3),0 5px 0 #2E7A3B;display:flex;align-items:center;justify-content:center;" class="zh"><span style="color:#12251a;font-weight:800;font-size:13px;">Default</span></div>
+            <div style="flex:1;height:48px;border-radius:14px;background:linear-gradient(180deg,#5FD068,#54bf5d);border:2px solid #16321C;box-shadow:inset 0 2px 0 rgba(255,255,255,0.2),0 1px 0 #2E7A3B;transform:translateY(2px);display:flex;align-items:center;justify-content:center;" class="zh"><span style="color:#12251a;font-weight:800;font-size:13px;">Pressed</span></div>
+            <div style="flex:1;height:48px;border-radius:14px;background:#262d40;border:2px solid #1a1f2e;display:flex;align-items:center;justify-content:center;" class="zh"><span style="color:#5a6072;font-weight:800;font-size:13px;">Disabled</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Card — Default / Hover / Selected</div>
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;height:90px;background:#1a1f2e;border:2px solid #2a3150;border-radius:14px;display:flex;align-items:center;justify-content:center;" class="zb"><span style="color:#8b92a8;font-size:11px;">Default</span></div>
+            <div style="flex:1;height:90px;background:#1a1f2e;border:2px solid #3E8EF7;border-radius:14px;transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;" class="zb"><span style="color:#F4F6F8;font-size:11px;">Hover ↑</span></div>
+            <div style="flex:1;height:90px;background:#1a1f2e;border:3px solid #5FD068;border-radius:14px;transform:scale(1.03);box-shadow:0 0 18px rgba(95,208,104,0.5);display:flex;align-items:center;justify-content:center;" class="zb"><span style="color:#5FD068;font-size:11px;font-weight:800;">Selected ✦</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Rarity glow — Xám → Cam</div>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;aspect-ratio:1;background:#1a1f2e;border:2px solid #8A93A8;border-radius:12px;"></div>
+            <div style="flex:1;aspect-ratio:1;background:#1a1f2e;border:2px solid #5FD068;border-radius:12px;box-shadow:0 0 10px rgba(95,208,104,0.4);"></div>
+            <div style="flex:1;aspect-ratio:1;background:#1a1f2e;border:2px solid #3E8EF7;border-radius:12px;box-shadow:0 0 12px rgba(62,142,247,0.5);"></div>
+            <div style="flex:1;aspect-ratio:1;background:#1a1f2e;border:2px solid #A85CF2;border-radius:12px;box-shadow:0 0 14px rgba(168,92,242,0.6);"></div>
+            <div style="flex:1;aspect-ratio:1;border-radius:12px;padding:2px;background:linear-gradient(90deg,#FF8A3D,#FFD08A,#FF8A3D);background-size:200% 100%;animation:shimmer 3s linear infinite;"><div style="width:100%;height:100%;background:#1a1f2e;border-radius:10px;"></div></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <div class="zb" style="flex:1;text-align:center;font-size:8px;color:#8A93A8;">Common</div>
+            <div class="zb" style="flex:1;text-align:center;font-size:8px;color:#5FD068;">Uncommon</div>
+            <div class="zb" style="flex:1;text-align:center;font-size:8px;color:#3E8EF7;">Rare</div>
+            <div class="zb" style="flex:1;text-align:center;font-size:8px;color:#A85CF2;">Epic</div>
+            <div class="zb" style="flex:1;text-align:center;font-size:8px;color:#FF8A3D;">Legendary</div>
+          </div>
+        </div>
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Toggle / Currency pill</div>
+          <div style="display:flex;gap:16px;align-items:center;">
+            <div style="width:46px;height:26px;border-radius:13px;background:#5FD068;box-shadow:0 0 8px rgba(95,208,104,0.5);position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;right:3px;"></div></div>
+            <div style="width:46px;height:26px;border-radius:13px;background:#3a4260;position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:3px;"></div></div>
+            <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:4px 10px;"><div style="width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE08A,#F5B841);"></div><div class="zm" style="font-size:11px;color:#F5B841;">8,450</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Loading — skeleton shimmer (không spinner)</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="height:16px;border-radius:6px;background:linear-gradient(90deg,#1a1f2e,#252b3d,#1a1f2e);background-size:160px 100%;animation:skel 1.2s linear infinite;"></div>
+            <div style="height:16px;width:70%;border-radius:6px;background:linear-gradient(90deg,#1a1f2e,#252b3d,#1a1f2e);background-size:160px 100%;animation:skel 1.2s linear infinite;"></div>
+            <div style="height:16px;width:45%;border-radius:6px;background:linear-gradient(90deg,#1a1f2e,#252b3d,#1a1f2e);background-size:160px 100%;animation:skel 1.2s linear infinite;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:10px;">Typography hierarchy</div>
+          <div class="zh grad-h" style="font-size:28px;font-weight:800;letter-spacing:-0.5px;">Header 28/800</div>
+          <div class="zh" style="font-size:19px;font-weight:600;color:#8b92a8;">Subheader 19/600</div>
+          <div class="zb" style="font-size:14px;font-weight:500;color:#F4F6F8;">Body 14/500 — chữ ngắn, đời thường.</div>
+          <div class="zm" style="font-size:14px;color:#F5B841;">1,250 · tabular nums</div>
+          <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;">Label 11 uppercase</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SHEET B: HUD OVERLAY ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#4DD9E8;">SHEET B · HUD ALIGNMENT</div>
+      <div style="width:390px;height:844px;background:#141821;border-radius:28px;border:2px dashed #4DD9E8;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.55);">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(77,217,232,0.08) 0px,rgba(77,217,232,0.08) 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,rgba(77,217,232,0.08) 0px,rgba(77,217,232,0.08) 1px,transparent 1px,transparent 48px);"></div>
+        <div style="position:absolute;top:0;left:0;right:0;height:48px;border-bottom:1px dashed rgba(77,217,232,0.4);"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:280px;border-top:1px dashed rgba(77,217,232,0.4);"></div>
+        <div class="zb" style="position:absolute;top:52px;left:8px;font-size:9px;color:#4DD9E8;">safe-area top</div>
+        <div class="zb" style="position:absolute;bottom:284px;left:8px;font-size:9px;color:#4DD9E8;">thumb-zone (dưới 40%)</div>
+        <div style="position:absolute;top:14px;left:16px;width:150px;height:16px;background:#0f1320;border:2px solid #16321C;border-radius:8px;"><div style="width:60%;height:100%;background:#5FD068;border-radius:6px;"></div></div>
+        <div class="zb" style="position:absolute;top:12px;left:0;width:100%;text-align:center;font-size:13px;font-weight:800;color:#F4F6F8;">Wave 3 — 12 👤</div>
+        <div style="position:absolute;top:12px;right:16px;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:3px 8px;"><div style="width:14px;height:14px;border-radius:50%;background:#F5B841;"></div><div class="zm" style="font-size:12px;color:#F5B841;">842</div></div>
+        <div style="position:absolute;top:44px;right:16px;width:36px;height:36px;border-radius:10px;background:#3E8EF7;border:2px solid #0D2C4F;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">⏸</div>
+        <div style="position:absolute;left:36px;bottom:110px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2a2f3e,#1a1f2e);border:2px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;"><div style="width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#718096,#4a5568);"></div></div>
+        <div style="position:absolute;right:18px;bottom:154px;width:60px;height:60px;border-radius:16px;background:#3E8EF7;border:3px solid #0D2C4F;display:flex;align-items:center;justify-content:center;font-size:20px;">🔫</div>
+        <div style="position:absolute;right:8px;bottom:38px;width:88px;height:88px;border-radius:50%;background:#5FD068;border:3px solid #16321C;display:flex;align-items:center;justify-content:center;font-size:32px;">💣</div>
+        <div class="zb" style="position:absolute;top:130px;left:0;width:100%;text-align:center;font-size:10px;color:#4DD9E8;">tất cả element in-run trên 1 grid 48px — check alignment</div>
+      </div>
+    </div>
+
+    <!-- ===== SHEET C: ANIMATION SPECS ===== -->
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
+      <div class="zh" style="font-size:16px;font-weight:800;color:#4DD9E8;">SHEET C · ANIMATION SPECS</div>
+      <div style="width:500px;min-height:844px;background:#12172A;border-radius:28px;border:2px solid #2A3152;padding:24px;box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,0.55);display:flex;flex-direction:column;gap:8px;">
+        <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:6px;">Easing tokens</div>
+        <div class="zm" style="font-size:11px;color:#8b92a8;line-height:1.9;">Standard · cubic-bezier(.4,0,.2,1) · 200ms<br/>Enter · cubic-bezier(0,0,.2,1) · 300ms<br/>Exit · cubic-bezier(.4,0,1,1) · 150ms<br/>Bounce · cubic-bezier(.34,1.56,.64,1) · 400ms<br/>Elastic · spring(1,.8,10) · perk cards</div>
+        <div style="height:1px;background:#2a3150;margin:12px 0;"></div>
+        <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:6px;">Component → trigger → motion</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">PLAY button</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">idle breathing 1→1.02, 2.4s loop · press scale .96 100ms</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Notification dot</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">pulse scale 1→1.25, opacity 1→.75, 1.6s loop</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Legendary card</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">gradient shine chạy qua viền mỗi 3s (shimmer)</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Perk cards</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">stagger 0.1s, slide-up + rotateZ nhẹ, elastic</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Coin collect</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">fly-up arc từ zombie → HUD coin, rotate + fade</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Low HP</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">bar pulse + glow đỏ + heartbeat khi &lt;30%</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Crit damage</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">số vàng to bold, float-up, screen shake nhẹ</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Error / thiếu tiền</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">shake ±4px + red flash + haptic 10ms</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Success / nâng cấp</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">scale 1.05 + green glow + confetti burst</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Gacha reveal</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">card lật + light rays + particles theo rarity</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Screen push</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">slide phải 250ms · pop = fade+scale .98</div></div>
+          <div style="display:flex;gap:10px;"><div class="zb" style="width:130px;font-size:12px;color:#F4F6F8;font-weight:800;">Loading</div><div class="zb" style="flex:1;font-size:11px;color:#8b92a8;">skeleton shimmer 1.2s, KHÔNG spinner tròn</div></div>
+        </div>
+        <div style="height:1px;background:#2a3150;margin:12px 0;"></div>
+        <div class="zb" style="font-size:11px;color:#5a6072;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;margin-bottom:6px;">A11y</div>
+        <div class="zb" style="font-size:11px;color:#8b92a8;line-height:1.8;">Touch target ≥48px · WCAG AA · danger luôn kèm icon · Reduced Motion → chỉ fade · Haptic 10ms tap/nhặt/nâng · safe-area env() top</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script>
+(async () => {
+  if (!document.title || !document.title.trim()) document.title = "ZombieWar - Premium Polish (v2)";
+  // rAF raced with a short timeout: inside a cross-origin iframe (PrintMode),
+  // rAF can be throttled or paused even while the tab is focused, which would
+  // hang the scroll loop and never reach print(). Same pattern as
+  // buildExportSettleScript (export/shared.ts).
+  var raf = function () {
+    return Promise.race([
+      new Promise(function (r) { requestAnimationFrame(r); }),
+      new Promise(function (r) { setTimeout(r, 50); }),
+    ]);
+  };
+  var t0 = performance.now();
+  var mark = function (phase) {
+    var ms = Math.round(performance.now() - t0);
+    console.info('[autoprint]', phase, ms + 'ms');
+    try { parent.postMessage({ __omelette_autoprint: { phase: phase, ms: ms } }, '*'); } catch (e) {}
+  };
+  mark('start');
+  // Prepend so page-supplied @page / break rules (deck-stage's margin:0,
+  // author CSS) keep source-order precedence over the baseline.
+  const baseCss = document.createElement('style');
+  baseCss.textContent = "@media print {\n  figure, table { break-inside: avoid; }\n  *, *::before, *::after {\n    print-color-adjust: exact; -webkit-print-color-adjust: exact;\n    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;\n    animation-delay: -99s !important; animation-duration: .001s !important;\n    animation-iteration-count: 1 !important; animation-fill-mode: both !important;\n    animation-play-state: running !important; transition-duration: 0s !important;\n  }\n}";
+  document.head.prepend(baseCss);
+  if (document.readyState === 'loading') {
+    await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
+  }
+  let ds = document.querySelector('deck-stage');
+  // whenDefined never resolves when nothing registers the element, so only
+  // await it when a <deck-stage> tag exists (and race a timeout regardless).
+  if (ds && !customElements.get('deck-stage')) {
+    try {
+      await Promise.race([
+        customElements.whenDefined('deck-stage'),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
+    } catch (e) {}
+    ds = document.querySelector('deck-stage');
+  }
+  // dc-runtime assigns window.DCLogic at init and mounts into #dc-root on
+  // DOMContentLoaded; settle on that subtree so React has rendered before
+  // print(). Non-DC pages fall through to weighing body.
+  const isDc = !ds && 'DCLogic' in window;
+  const settleRoot = ds || (isDc ? document.getElementById('dc-root') : null) || document.body;
+  if (settleRoot) {
+    // Weigh only content children — skip script/style/template so inline
+    // Babel/CSS doesn't register as stable "content" before the framework
+    // has mounted anything.
+    const MEDIA = 'img,svg,canvas,video,picture,iframe,embed,object';
+    const weigh = () => {
+      let text = 0, media = 0;
+      for (const c of settleRoot.children) {
+        const t = c.tagName;
+        if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+        text += (c.textContent || '').trim().length;
+        media += c.querySelectorAll(MEDIA).length + (c.matches(MEDIA) ? 1 : 0);
+      }
+      return text + media * 100;
+    };
+    // "Non-zero and stable" alone is not sufficient to mean rendered: generic
+    // body can carry a static shell while async main content is pending, and
+    // #dc-root can carry the root DC's static text while child refs are still
+    // .sc-placeholder boxes. Gate generic on readyState 'complete', and never
+    // accept stability while a dc-runtime placeholder is present.
+    const isGeneric = settleRoot === document.body;
+    // A placeholder whose fetch failed (.sc-placeholder-error inside) keeps
+    // .sc-placeholder forever — don't wait on it. JS loop, not :has(), so an
+    // engine without :has() support can't throw out of the while and skip
+    // print() entirely.
+    var pendingPlaceholders = function () {
+      var all = settleRoot.querySelectorAll('.sc-placeholder'), n = 0;
+      for (var i = 0; i < all.length; i++)
+        if (!all[i].querySelector('.sc-placeholder-error')) n++;
+      return n;
+    };
+    const deadline = Date.now() + 15000;
+    let last = -1, stable = 0;
+    while (Date.now() < deadline) {
+      const n = weigh();
+      const ready =
+        (!isGeneric || document.readyState === 'complete') &&
+        pendingPlaceholders() === 0;
+      if (n > 0 && n === last && ready) { if (++stable >= 2) break; } else { stable = 0; }
+      last = n;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  mark('settle-done' + (settleRoot ? ' (errs=' + settleRoot.querySelectorAll('.sc-placeholder-error').length + ' pending=' + pendingPlaceholders() + ')' : ''));
+  // Project support.js may predate runtime default-seeding; push via bridge.
+  if (isDc && window.__dcSetProps && window.__dcRootName) {
+    try {
+      const dpEl = document.querySelector('script[data-dc-script]');
+      const meta = JSON.parse((dpEl && dpEl.getAttribute('data-props')) || '{}');
+      const bag = {};
+      for (const k in meta)
+        if (k[0] !== '$' && meta[k] && meta[k].default !== undefined)
+          bag[k] = meta[k].default;
+      if (Object.keys(bag).length) {
+        window.__dcSetProps(window.__dcRootName(), bag);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    } catch (e) {}
+  }
+  // Reveal content gated on scroll or visibility before printing. Lazy <img>,
+  // IntersectionObserver fade-ins, and collapsed <details> don't render while
+  // off-screen, so a long page would print with them blank or closed. Open
+  // every <details>, force native-lazy images eager, and scroll the document
+  // through its full height to trip lazy-load + IO; then wait (bounded) for the
+  // newly-triggered images. Inert for deck-stage (slides aren't scroll-gated).
+  try {
+    for (const d of document.querySelectorAll('details')) d.open = true;
+    for (const img of document.querySelectorAll('img[loading="lazy"]'))
+      img.loading = 'eager';
+    const scroller = document.scrollingElement || document.documentElement;
+    const full = Math.max(scroller.scrollHeight, document.body.scrollHeight);
+    const step = window.innerHeight || 800;
+    var scrollDeadline = Date.now() + 4000;
+    for (let y = 0; y <= full && Date.now() < scrollDeadline; y += step) {
+      window.scrollTo(0, y);
+      await raf();
+    }
+    window.scrollTo(0, 0);
+    await Promise.race([
+      Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((res) => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+              })
+        )
+      ),
+      new Promise((r) => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  mark('scroll-done');
+  try { await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 3000))]); } catch (e) {}
+  mark('fonts-done');
+  // Jump every animation to its end state so print() never captures a slide
+  // mid-entrance. Ordering matters: the 0s-transition style must be live
+  // BEFORE data-deck-active is set so attribute-keyed transitions don't
+  // start a (now-0s) run from the pre-active base.
+  const st = document.createElement('style');
+  st.textContent = '*,*::before,*::after{animation-delay:-99s !important;animation-duration:.001s !important;animation-iteration-count:1 !important;animation-fill-mode:both !important;animation-play-state:running !important;transition-duration:0s !important}';
+  document.head.appendChild(st);
+  for (const d of document.querySelectorAll('deck-stage')) {
+    for (const c of d.children) {
+      const t = c.tagName;
+      if (t === 'SCRIPT' || t === 'STYLE' || t === 'TEMPLATE') continue;
+      c.setAttribute('data-deck-active', '');
+    }
+  }
+  // Re-append deck-stage's @page last so no author @page can add a margin and
+  // spill each full-bleed slide onto two sheets. Backstop for old copies.
+  if (ds) {
+    let pg = document.getElementById('deck-stage-print-page');
+    if (!pg) {
+      pg = document.createElement('style');
+      pg.textContent = '@page{size:' + (+ds.getAttribute('width') || 1920) +
+        'px ' + (+ds.getAttribute('height') || 1080) + 'px;margin:0}';
+    }
+    document.body.appendChild(pg);
+  }
+  try {
+    const sweep = () => {
+      for (const a of document.getAnimations()) {
+        try { a.finish(); } catch (e) {
+          try { a.currentTime = (a.effect && a.effect.getComputedTiming().duration) || 0; a.pause(); } catch (e2) {}
+        }
+      }
+    };
+    sweep();
+    await raf();
+    sweep();
+    await raf();
+  } catch (e) {}
+  // A document that owns its print CSS (the doc-page starter injects the
+  // meta at runtime; hand-rolled print designs author it) gets no automatic
+  // page geometry and keeps its forced breaks: strip the injected default
+  // @page — write time cannot see a runtime-injected meta — skip the frame
+  // override below, and skip the fakepage-flattening further down. What
+  // still applies: the print baseline and break-hygiene defaults (no @page
+  // in either; low specificity, so the document's own print CSS wins) and
+  // the break-inside relaxation on >page elements (avoid on those cannot
+  // be honored whoever authored it).
+  var ownsPrint = !!document.querySelector('meta[name="omelette-owns-print" i]');
+  if (ownsPrint) {
+    var dst = document.querySelector('style[data-omelette-print-defaults]');
+    if (dst && dst.textContent) {
+      dst.textContent = dst.textContent.replace(/@page\b[^{}]*\{[^}]*\}/, '');
+    }
+  }
+  // Size the PDF page to the rendered design unless the file opted into
+  // standard paper via @page{size:letter|A4|…} or declared print ownership
+  // via the meta above. Decks own their own @page.
+  // Wrappers (body, …) lose padding+margin so the frame sits at (0,0); the
+  // frame itself loses only margin — its padding is INSIDE the measured
+  // rect and must stay, or content shifts and leaves a gap at bottom/right.
+  var __m = null;
+  try { __m = (() => {
+  var STAMP = true;
+  var docEl = document.documentElement;
+  var doc = { width: docEl.scrollWidth, height: docEl.scrollHeight };
+  // Name-presence check, case-insensitive — the same contract as the
+  // instant-PDF path's runtime check in deck-stage-export.ts. The name is
+  // a string literal here because that file interpolates this script into
+  // its print script, so importing a shared constant from it would be a
+  // cycle; measure.test.ts pins the literal so the two cannot drift apart
+  // silently.
+  var ownsPrint = !!document.querySelector('meta[name="omelette-owns-print" i]');
+
+  var ds = document.querySelector('deck-stage');
+  if (ds) {
+    var dw = Number(ds.getAttribute('width')) || 1920;
+    var dh = Number(ds.getAttribute('height')) || 1080;
+    var n = typeof ds.length === 'number' ? ds.length : ds.children.length;
+    var idx = typeof ds.index === 'number' ? ds.index : 0;
+    var frames = [];
+    for (var i = 0; i < n; i++) frames.push({ left: 0, top: 0, width: dw, height: dh });
+    return { kind: 'deck', source: 'declared', doc: doc, frames: frames,
+      authored: frames.map(function(){return{width:true,height:true}}),
+      deck: { width: dw, height: dh, slideCount: n, index: idx },
+      signals: { paperPage: false, pxPage: false, ownsPrint: ownsPrint } };
+  }
+
+  // Declared kind: a doc-page tag names the kind outright, so no signal
+  // heuristics run (like the deck branch above, signals report false —
+  // they describe inferred classifications only). The tag alone is not
+  // trusted: the element must have upgraded (shadowRoot present), so a
+  // leftover tag whose script was deleted falls through to the heuristics
+  // that handle plain markup.
+  var stageSx = window.scrollX || 0, stageSy = window.scrollY || 0;
+  var dp = document.querySelector('doc-page');
+  if (dp && dp.shadowRoot) {
+    // Crop to the sheet, not the host — the desk around it is screen-only
+    // chrome that must not land in PNG exports.
+    var sheet = dp.shadowRoot.querySelector('.sheet');
+    var sr = (sheet || dp).getBoundingClientRect();
+    return { kind: 'paper-doc', source: 'declared', doc: doc,
+      frames: [{ left: sr.left + stageSx, top: sr.top + stageSy,
+        width: sr.width, height: sr.height }],
+      authored: [{ width: false, height: false }],
+      signals: { paperPage: false, pxPage: false, ownsPrint: ownsPrint } };
+  }
+  var paperPage = false, pxPage = false;
+  var eachRule = function (fn) {
+    for (var s = 0; s < document.styleSheets.length; s++) {
+      var rs; try { rs = document.styleSheets[s].cssRules; } catch (e) { continue; }
+      for (var r = 0; r < rs.length; r++) {
+        fn(rs[r]);
+        if (rs[r].cssRules) for (var n = 0; n < rs[r].cssRules.length; n++) fn(rs[r].cssRules[n]);
+      }
+    }
+  };
+  eachRule(function (r) {
+    if (r.type !== 6) return;
+    var m = /\bsize\s*:\s*([^;}]+)/i.exec(r.cssText || '');
+    if (!m) return;
+    if (/\b(letter|a[3-5]|legal|ledger)\b/i.test(m[1])) paperPage = true;
+    if (/\d+(?:\.\d+)?px\b/i.test(m[1])) pxPage = true;
+  });
+  var signals = { paperPage: paperPage, pxPage: pxPage, ownsPrint: ownsPrint };
+
+  var pxVal = function (v) {
+    var m = /^(\d+(?:\.\d+)?)px$/.exec(v || ''); return m ? +m[1] : 0;
+  };
+  var authoredPx = function (el, prop) {
+    if (pxVal(el.style[prop])) return true;
+    var attr = el.getAttribute(prop);
+    if (attr && /^\d+$/.test(attr)) return true;
+    var hit = false;
+    eachRule(function (r) {
+      if (hit || r.type !== 1 || !r.style) return;
+      try { if (el.matches(r.selectorText) && pxVal(r.style[prop])) hit = true; } catch (e) {}
+    });
+    return hit;
+  };
+
+  var el = document.body, rootPxW = false;
+  for (;;) {
+    var kids = [];
+    for (var c = 0; c < el.children.length; c++) {
+      var t = el.children[c].tagName;
+      if (t !== 'SCRIPT' && t !== 'STYLE' && t !== 'TEMPLATE') kids.push(el.children[c]);
+    }
+    if (kids.length !== 1 || !(kids[0] instanceof HTMLElement)) break;
+    if (STAMP) el.setAttribute('data-om-frame-wrap', '');
+    el = kids[0];
+    rootPxW = authoredPx(el, 'width');
+    if (rootPxW) break;
+  }
+  if (!rootPxW) rootPxW = authoredPx(el, 'width');
+
+  // @page{size:letter} alone is a flowing doc; with a px-width root it's a
+  // fixed sheet pretending to be paper — fall through and size to render.
+  if (paperPage && !rootPxW) {
+    return { kind: 'paper-doc', source: 'inferred', doc: doc, signals: signals,
+      frames: [{ left: 0, top: 0, width: doc.width, height: doc.height }],
+      authored: [{ width: false, height: false }] };
+  }
+
+  var sx = window.scrollX || 0, sy = window.scrollY || 0;
+  var rectOf = function (e) {
+    var r = e.getBoundingClientRect();
+    var oy; try { oy = getComputedStyle(e).overflowY; } catch (err) {}
+    var h = oy === 'visible' ? Math.max(r.height, e.scrollHeight || 0) : r.height;
+    return { left: r.left + sx, top: r.top + sy, width: r.width, height: h };
+  };
+
+  // Multi-frame: off unless the page opts in via data-om-multi-frame on the
+  // stop element — the explicit opt-in is what guards against card grids
+  // and pricing tables that match the geometry but aren't separate
+  // canvases. Two ways to name the frames, explicit first:
+  // 1. Descendants marked data-om-frame-export (the social-frames starter
+  //    marks each asset frame; shells/panels around them are presentation,
+  //    so nesting is expected). Document order.
+  // 2. Fallback, no marked descendants: direct children with an authored px
+  //    width AND height (the original geometry heuristic).
+  // Frames may be different sizes (a gallery mixes 1080×1920 stories with
+  // 728×90 banners); data-om-frame-label rides along for export filenames.
+  if (el.hasAttribute('data-om-multi-frame')) {
+    var visOk = function (e) {
+      var cs; try { cs = getComputedStyle(e); } catch (err) { return false; }
+      return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.position !== 'fixed';
+    };
+    // A frame's crop is its VISUAL box — never the scrollHeight-inflated
+    // rect that rectOf computes for page roots. Shadow-DOM hover controls
+    // (image-slot's Replace bar parks 29px below its host) and similar
+    // escaping UI contribute scrollable overflow to the frame, and the
+    // inflated height both squashes the nominal-size resize and drags
+    // content below the frame into the crop. Zoom-independent; bit every
+    // slot-bearing frame.
+    var frameRectOf = function (e) {
+      var r = e.getBoundingClientRect();
+      return { left: r.left + sx, top: r.top + sy, width: r.width, height: r.height };
+    };
+    var pushCand = function (list, e) {
+      if (!visOk(e)) return;
+      var rc = frameRectOf(e);
+      if (rc.width < 2 || rc.height < 2) return;
+      var lbl = e.getAttribute('data-om-frame-label');
+      if (lbl) rc.label = lbl;
+      list.push(rc);
+    };
+    var cands = [];
+    var marked = el.querySelectorAll('[data-om-frame-export]');
+    if (marked.length) {
+      for (var mk = 0; mk < marked.length; mk++) pushCand(cands, marked[mk]);
+    } else {
+      for (var k = 0; k < el.children.length; k++) {
+        var ch = el.children[k];
+        if (!authoredPx(ch, 'width') || !authoredPx(ch, 'height')) continue;
+        pushCand(cands, ch);
+      }
+    }
+    if (cands.length >= 2) {
+      return { kind: 'multi-frame', source: 'inferred', doc: doc, signals: signals,
+        frames: cands, authored: cands.map(function(){return{width:true,height:true}}) };
+    }
+  }
+
+  if (STAMP) el.setAttribute('data-om-frame', '');
+  return { kind: 'single-canvas', source: 'inferred', doc: doc, signals: signals,
+    frames: [rectOf(el)],
+    authored: [{ width: rootPxW, height: authoredPx(el, 'height') }] };
+})(); } catch (e) {}
+  var frame = null;
+  if (!ownsPrint && __m && __m.kind === 'single-canvas') {
+    var f = __m.frames && __m.frames[0];
+    if (f && f.width >= 200 && f.height >= 200) {
+      frame = f;
+      var fst = document.createElement('style');
+      fst.textContent = '@media print{@page{size:' + Math.ceil(f.width) + 'px ' +
+        Math.ceil(f.height) + 'px;margin:0}' +
+        'html,body,[data-om-frame-wrap]{padding:0!important;margin:0!important;background:none!important}' +
+        '[data-om-frame]{margin:0!important}}';
+      document.body.appendChild(fst);
+    }
+  }
+  // Relax break-inside on oversized elements. An element taller than a
+  // printable page can't honor break-inside: avoid — browsers either overflow
+  // it or push it whole to the next page, leaving a blank gap, then break it
+  // anyway at an arbitrary point. After the final layout (content revealed,
+  // animations jumped), find elements taller than a page that still compute
+  // break-inside: avoid and reset them to auto, so the browser breaks them at
+  // their children's boundaries instead (children keep their own avoid). PAGE_PX
+  // is a conservative portrait estimate at 96 CSS px/in — Letter/A4 usable
+  // height minus our 0.5in margins — so only clearly-oversized elements are
+  // touched and under-page elements still stay whole. Skipped for decks (slides
+  // are sized to the page) and for fixed-size canvases (frame set, or an author
+  // px-based @page) — runs as before for flowing docs on letter/A4.
+  try {
+    if (!ds && !frame && !(__m && __m.signals && __m.signals.pxPage)) {
+      const PAGE_PX = 1024;
+      // Our print defaults add a real @page margin only when the source has
+      // no @page of its own; computed style can't tell us (it reports screen
+      // media), so read the injected rule directly.
+      const defaults = document.querySelector('style[data-omelette-print-defaults]');
+      const pageInset = /@page\s*\{[^}]*margin/.test(defaults ? defaults.textContent || '' : '');
+      const SEL = 'section,article,figure,table,pre,blockquote,[class~="card" i],[class~="page" i],[class~="sheet" i]';
+      for (const el of document.body.querySelectorAll(SEL)) {
+        if (el instanceof HTMLElement && el.offsetHeight > PAGE_PX) {
+          el.setAttribute('data-om-oversized', '');
+          // Fake-paged docs simulate sheets with over-tall break-after:page
+          // boxes; honoring the break spills half-blank pages and ends a
+          // colored box mid-sheet. Flow them, and (only when we own the page
+          // inset) drop the redundant padding/background via the rule below.
+          const cs = getComputedStyle(el);
+          // An owns-print doc's forced breaks are intentional sheet
+          // boundaries, never fake-paged simulation — don't strip them.
+          // The break-inside relaxation above still applies: avoid on a
+          // >page element is impossible to honor whoever authored it.
+          if (
+            !ownsPrint &&
+            (cs.breakAfter === 'page' || cs.pageBreakAfter === 'always')
+          ) {
+            el.setAttribute('data-om-fakepage', '');
+          }
+        }
+      }
+      const ost = document.createElement('style');
+      ost.textContent = '@media print{' +
+        '[data-om-oversized]{break-inside:auto !important;page-break-inside:auto !important}' +
+        '[data-om-fakepage]{break-after:auto !important;page-break-after:auto !important}' +
+        (pageInset ? '[data-om-fakepage]{padding:0 !important;background:none !important}' : '') +
+        '}';
+      document.head.appendChild(ost);
+    }
+  } catch (e) {}
+  // macOS Preview renders Skia-PDF Luminosity soft-masks as opaque grey boxes;
+  // swap the CSS that triggers them for Preview-safe forms.
+  try {
+    for (const el of document.body.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+
+      if (cs.boxShadow !== 'none' && cs.filter === 'none') {
+        const outs = [], kept = [];
+        for (const s of cs.boxShadow.split(/,(?![^(]*[)])/)) {
+          const t = s.trim();
+          const m = t.match(/^(rgba?[(][^)]+[)]) (-?[0-9.]+px) (-?[0-9.]+px) ([0-9.]+px) -?[0-9.]+px$/);
+          if (m && parseFloat(m[4]) > 0) outs.push('drop-shadow(' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[1] + ')');
+          else kept.push(t);
+        }
+        if (outs.length) {
+          el.style.setProperty('filter', outs.join(' '), 'important');
+          el.style.setProperty('box-shadow', kept.join(', ') || 'none', 'important');
+        }
+      }
+
+      const mask = cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : cs.webkitMaskImage;
+      if (mask && mask !== 'none' && cs.filter === 'none') el.style.setProperty('filter', 'opacity(1)', 'important');
+    }
+  } catch (e) {}
+  mark('print-calling');
+  setTimeout(() => { try { window.print(); } catch (e) {} }, 200);
+})();
+</script>
+</body>
+</html>

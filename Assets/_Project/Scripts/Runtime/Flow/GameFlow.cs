@@ -38,6 +38,14 @@ namespace ZombieWar
             Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay);
         }
 
+        /// Game over "CHƠI LẠI" -> tear the map down and load it fresh (services untouched).
+        public static void RestartGameplay()
+        {
+            if (!Bill.Scene.IsAdditiveLoaded(GameplayScene)) { StartGameplay(); return; }
+            Bill.State.GoTo<LoadingState>();
+            Bill.Scene.Unload(GameplayScene, () => Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay));
+        }
+
         /// Gameplay -> back to menu (e.g. game over / quit to menu).
         public static void ReturnToMenu()
         {

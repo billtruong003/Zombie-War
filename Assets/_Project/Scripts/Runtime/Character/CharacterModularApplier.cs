@@ -28,6 +28,12 @@ namespace ZombieWar
 
         public ModularCostumeCatalog Catalog => catalog;
 
+        /// <summary>Gan catalog o runtime (dung khi spawn preview tu prefab base khong co catalog).</summary>
+        public void SetCatalog(ModularCostumeCatalog c)
+        {
+            catalog = c;
+        }
+
         private void Awake()
         {
             EnsureBoneMap();

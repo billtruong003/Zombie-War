@@ -1,72 +1,48 @@
-# ZombieWar — Remaining Features & Next Steps
+# ZombieWar — Remaining Features
 
-> Snapshot tại thời điểm commit "gun aim fix + roadmap note". Top-down zombie survival shooter.
-> Đã wired-thật (không phải wireframe): win/lose loop, Level 1 scene, wave director, weapon roster, zombie AI/VAT/pooling.
-> Còn lại chia theo mức độ chặn "playable".
+> Current snapshot: 2026-07-20. For architecture and exact paths, read `HANDOFF.md`.
 
----
+## Immediate blockers
 
-## ✅ Vừa xong (session này)
-- **AimType fix (pistol 1 tay ↔ súng 2 tay)** — 3 tầng:
-  1. Data: set `twoHanded: 1` cho `WD_Rifle / WD_Shotgun / WD_Sniper / WD_LMG` (trước đó thiếu field → default false).
-  2. Prefab: add lại `ZombieWar.WeaponIKController` vào root `Player.prefab` (đã bị gỡ ở fix rig crash).
-  3. Code: `Weapon.CurrentGrips` getter + `WeaponIKController.OnEnable` gọi `HandleWeaponEquipped` ngay → AimType đúng cả lần equip đầu (spawn-order independent).
+1. **UI state is split between real gameplay data and prototype metadata.** Loadout/Shop/Costume must share one ownership/equipment/save model.
+2. **Economy is not authoritative.** Currency, purchase, upgrade, payout and rewards are still prototype or presentation-only.
+3. **Map_Level1 is a test arena.** It needs encounter geometry, spawn rules, NavMesh rebake and balance against the finished weapon roster.
 
----
+## UI wiring checklist
 
-## 🔴 A. Functional gaps — PHẢI wire (chặn playtest/balance)
-| # | Feature | Ghi chú |
-|---|---------|---------|
-| 34 | **Bomb throw button** trong HUD → `BombThrower.TryThrow` | Bomb có logic, thiếu nút trigger |
-| 41 | **Weapon-switch button** trong HUD → `Weapon.SwitchWeapon()` | Chưa wire nút đổi súng |
+- [ ] Wallet/profile schema with versioned save data.
+- [ ] Weapon ownership keyed by stable `WeaponId`.
+- [ ] Equipped slots persisted through `LoadoutState` and applied on Player spawn.
+- [ ] Shop transaction service with atomic purchase/upgrade behavior.
+- [ ] Costume ownership/equipped GUIDs, preview sync and gameplay application.
+- [ ] Real GameOver result and payout.
+- [ ] Currency widgets subscribe to one change source.
+- [ ] Remove production dependency on `cheatUnlockAll`.
+- [ ] Bind/disable Gacha, Pass and rewarded revive honestly.
+- [ ] EditMode/PlayMode tests for persistence, duplicate purchase and insufficient funds.
 
-> Không có 2 nút này thì không thể test đủ đồ chơi để cân bằng.
+## Game-design checklist
 
----
+- [ ] Weapon role/stat/economy table for all 25 weapons.
+- [ ] Player baseline plus reachable power tiers.
+- [ ] Enemy archetype HP/damage/speed/reward table.
+- [ ] Wave and boss/elite milestone curve.
+- [ ] XP/perk/drop/reward curve.
+- [ ] Target run duration and expected purchase cadence.
 
-## 🟡 B. BALANCE pass — tuning số (quyết định game vui/dở, KHÔNG fix-sau được)
-Systems đủ, cần chỉnh **số**:
-1. **Wave curve** (`Assets/_Project/Data/Waves/WD_Level1.asset`): số wave, zombie/wave, `spawnInterval`, `maxConcurrent`, độ khó tăng dần, boss xuất hiện wave mấy.
-2. **Player survivability**: HP + speed + i-frame vs zombie damage/speed.
-3. **Weapon economy**: damage từng súng vs zombie HP (TTK), ammo/magazine/reload, súng trị loại nào; recoil/spread ảnh hưởng TTK.
-4. **Zombie mix**: tỉ lệ Melee/Ranged/Speed/Boss theo wave.
-5. **Bomb**: cooldown / damage / radius.
+## Map checklist
 
-> Cách làm: wire nhóm A → playtest Level 1 end-to-end 1 lần → dump bảng số tunable → chỉnh cho "winnable but hard".
+- [ ] Arena footprint and camera bounds.
+- [ ] Obstacle/choke/recovery-space blockout.
+- [ ] Spawn zones and anti-pop-in distance rules.
+- [ ] NavMesh rebake and path validation.
+- [ ] Pickups and combat readability.
+- [ ] Mobile stress test at maximum concurrency.
 
----
+## Later
 
-## 🟢 C. Defer được (wireframe/juice — fix sau OK)
-| # | Feature |
-|---|---------|
-| 36 | Súng hai tay: support-hand IK (left hand grip) — visual cầm 2 tay |
-| 39 | Damage number popup: pool + TextMeshPro 3D (không UI) + tween up/fade |
-| 40 | Phase D: Weapon roster đầy đủ + tiering + HUD icon |
-| 21 | UI/HUD skin (đang wireframe, chạy được) + mobile joystick polish |
-| 13 | Phase 5: Juice, audio hooks, camera shake/impulse, hit feedback |
-
----
-
-## 🎯 Phase lớn còn lại (roadmap)
-- **Phase 4** (#12): Wave + **world streaming** + Level 1 hoàn thiện — scene + director đã có, cần streaming + balance.
-- **Phase 5** (#13): Juice, audio, UI/HUD polish.
-- **Phase 6** (#14, bonus): Level 2 — slope terrain + Kaiju boss (chỉ nếu còn thời gian).
-- **Phase 7** (#15): End-to-end playtest + polish pass.
-
----
-
-## 📌 Thứ tự đề xuất khi quay lại
-1. **Nhóm A** — wire bomb button + weapon-switch button (nhanh).
-2. **Playtest** Level 1 end-to-end 1 lần.
-3. **Nhóm B** — balance pass (dump bảng số → chỉnh).
-4. Nhóm C / Phase 5 — juice & polish.
-5. Phase 6 bonus nếu dư thời gian.
-
-## Key paths
-- Player prefab: `Assets/_Project/Prefabs/Player.prefab`
-- Weapons data: `Assets/_Project/Data/Weapons/WD_*.asset`
-- Wave data: `Assets/_Project/Data/Waves/WD_Level1.asset`
-- Scenes: `Assets/_Project/Scenes/{Bootstrap,Menu,Map_Level1}.unity`
-- Gameplay scripts: `Assets/_Project/Scripts/Runtime/Gameplay/`
-- HUD: `Assets/_Project/Scripts/Runtime/UI/HudController.cs`
-- Design docs: `Docs/GAMEPLAY_DESIGN.md`, `Docs/TASK_BREAKDOWN.md`, `Docs/EDITOR_SETUP_CHECKLIST.md`
+- Audio/VFX/haptics polish.
+- More enemies, elites and boss content.
+- FTUE and accessibility/settings persistence.
+- Addressables/asset streaming after content stabilizes.
+- Release hardening and platform QA.
