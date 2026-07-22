@@ -1,0 +1,50 @@
+=== Pro Casual Costume Catalog — audit ===
+source: Assets/ThirdParty/Layer Lab/3D CharactersCasual/3D Characters Pro-Casual/FBX/Character/Characters.fbx
+internal source parts: 453
+player-facing parts: 448
+technical renderer parts: 5 (Head + Body_1..4)
+
+Source mesh category counts (includes technical Head/Body):
+  Bag        18
+  Body       4
+  Bottom     55
+  Bracelet   5
+  Earring    20
+  Eye        12
+  Eyebrow    23
+  Eyewear    18
+  Glove      22
+  Hair       28
+  HairAcc    3
+  HandAcc    10
+  Head       1
+  Headgear   63
+  lips       11
+  Mask       5
+  Mustache   29
+  Shoes      50
+  Top        71
+  Watch      5
+
+Logical slots:
+  Eye       group=Head  parts=12  required=True allowNone=False default=casual.pro.eye.001
+  Brow      group=Head  parts=23  required=True allowNone=False default=casual.pro.eyebrow.001
+  Mouth     group=Head  parts=11  required=True allowNone=False default=casual.pro.lips.001
+  Hair      group=Head  parts=28  required=True allowNone=False default=casual.pro.hair.001
+  Beard     group=Head  parts=29  required=False allowNone=True default=
+  Mask      group=Head  parts=5   required=False allowNone=True default=
+  HairAccessory group=Head  parts=3   required=False allowNone=True default=
+  Head      group=Head  parts=63  required=False allowNone=True default=
+  Eyewear   group=Head  parts=18  required=False allowNone=True default=
+  Earring   group=Head  parts=20  required=False allowNone=True default=
+  Chest     group=Body  parts=71  required=True allowNone=False default=casual.pro.chest.top.001
+  Hands     group=Body  parts=22  required=False allowNone=True default=
+  Bracelet  group=Body  parts=5   required=False allowNone=True default=
+  HandAccessory group=Body  parts=10  required=False allowNone=True default=
+  Watch     group=Body  parts=5   required=False allowNone=True default=
+  Back      group=Body  parts=18  required=False allowNone=True default=
+  Legs      group=Legs  parts=55  required=True allowNone=False default=casual.pro.legs.bottom.001
+  Feet      group=Legs  parts=50  required=False allowNone=True default=casual.pro.feet.shoes.001
+
+Excluded Body assembly meshes (16):
+  Body_ArmA_1, Body_ArmA_2, Body_ArmB_1, Body_ArmB_2, Body_Bottom_1, Body_Bottom_2, Body_Hand, Body_LegA_1, Body_LegA_2, Body_LegB_1, Body_LegB_2, Body_LegC_1, Body_LegC_2, Body_Neck, Body_Top_1, Body_Top_2

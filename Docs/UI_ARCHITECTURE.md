@@ -1,6 +1,6 @@
 # ZombieWar — UI Architecture
 
-> Updated 2026-07-20. Visual source: `UI_REDESIGN_SPEC.md`. Wiring status: `HANDOFF_UI_CODEX.md`.
+> Updated 2026-07-21. Visual source: `UI_REDESIGN_SPEC.md`. Current status: `ACCOUNT_SWITCH_HANDOFF.md`.
 
 ## Authoring model
 
@@ -13,7 +13,7 @@ Assets/_Project/UI/
                        UI_ShopScreen, UI_PassScreen, UI_Hud
   Prefabs/Preview/      MenuCharacterPreviewStage
   Data/                 UIPrototypeCatalog
-  Icons/Generated/      25 weapon + representative costume thumbnails
+  Icons/Generated/      25 weapon + 448 Pro Casual item icons + 30 set icons
   RenderTextures/       MenuCharacterPreview
   Sprites/              rounded frames, pills, glow, gradients, rarity visuals
 ```
@@ -41,12 +41,19 @@ Use `ZombieWar/UI/Authoring/Validate All UI References` after wiring. Rebuild co
 - Four Shop tabs.
 - Pass presentation and gameplay overlays.
 - 25 real weapon thumbnails.
-- 978 costume entries grouped across 14 slots; pooled/paged UI prevents mass instantiation.
-- 108 representative costume thumbnails with fallback for uncaptured entries.
+- 448 Pro Casual player-facing items across 18 definitions; pooled/paged UI prevents mass instantiation.
+- `CasualCostumeCatalog` owns stable `itemId → real baked sprite`; `CasualIconCatalogSync` copies the
+  exact 448 mappings into `UIPrototypeCatalog`. Missing icon/fallback is a test failure.
+- 30 curated outfit sets use separate full-character icons and never share loose-item card identity.
+- Costume wardrobe has a dedicated `BỘ` tab. Shop Costume has separate `ITEM LẺ / BỘ` modes and an
+  editor-authored confirmation modal. Shop Upgrade cards are editor-authored and bind runtime state.
 
 ## Remaining architecture work
 
-- Replace PlayerPrefs/prototype ownership with one versioned profile/wallet service.
-- Wire Loadout, Shop and Costume to that authority.
-- Bind real run results, payout and progression.
+- Add a prefab-first five-node Campaign screen between Hub PLAY and gameplay; parameterize GameFlow
+  around the selected stage. Contract: `ENEMY_CAMPAIGN_EXPANSION_PROMPT.md`.
+- Bind real run Coin/XP, temporary perks, Defeat/Victory results and atomic payout by extending
+  `HudController`/`RunOverlays`; reuse the prerequisite contract, never build a parallel run system.
+- Replace fake Pass quest percentages with the campaign mission catalog/progress/claim flow. Keep
+  premium/revive unavailable until their product/backend scope is real.
 - Keep `UIPrototypeCatalog` for icon/featured authoring metadata, not production ownership.

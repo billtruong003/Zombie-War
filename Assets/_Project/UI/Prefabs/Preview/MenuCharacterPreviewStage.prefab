@@ -780,6 +780,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3783104869522474629, guid: def6c20bb86c12b43bccb622b43f7632, type: 3}
       insertIndex: -1
       addedObject: {fileID: 947207366577453104}
+    - targetCorrespondingSourceObject: {fileID: 3783104869522474629, guid: def6c20bb86c12b43bccb622b43f7632, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4525196540070362187}
   m_SourcePrefab: {fileID: 100100000, guid: def6c20bb86c12b43bccb622b43f7632, type: 3}
 --- !u!95 &1456172133191951313 stripped
 Animator:
@@ -808,6 +811,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44b82eb880c32c74c9ae3a7daf5b40d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.CharacterModularApplier
-  catalog: {fileID: 11400000, guid: afa195913535b064c883d69c26b80b45, type: 2}
+  catalog: {fileID: 11400000, guid: 0aff2677f6dd932468540aa5455ad961, type: 2}
   skeletonRoot: {fileID: 0}
   attachRoot: {fileID: 0}
+--- !u!114 &4525196540070362187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5304854084928873233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e869364bc459b14f822fe261ed807ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.CostumePreviewIdleDirector
+  baseIdle: {fileID: 7400000, guid: 6fa407195355c9146a483b7ef43a502d, type: 2}
+  variations:
+  - {fileID: 672507478828685675, guid: a70f64793bd5eb2409281ece28454ec3, type: 3}
+  - {fileID: 1827226128182048838, guid: cf88423fb6072844995a16cc1fab1f9e, type: 3}
+  - {fileID: 1827226128182048838, guid: f5628428349a0d74f9a33d944a13443f, type: 3}
+  minInterval: 7
+  maxInterval: 12
+  crossfade: 0.35
+  enabledDirector: 1

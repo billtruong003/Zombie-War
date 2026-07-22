@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faf6e6e20aa1f04459941b4f029dbc18, type: 3}
+  m_Name: CampaignCatalog
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.CampaignCatalog
+  levels:
+  - levelId: level.1
+    displayName: "B\xF9ng Ph\xE1t"
+    sceneName: Map_Level1
+    waves: {fileID: 11400000, guid: 8e2d4a6c1b9f03578a2c5e7d4b6f8091, type: 2}
+    minimumPower: 0
+    recommendedPower: 300
+    suggestedFamilies:
+    - Pistol
+    - SMG
+    suggestedWeaponIds:
+    - weapon.sidearm.pistol_a
+    - weapon.smg.generic
+    firstClearCoin: 400
+    firstClearGold: 0
+    firstClearGem: 0
+    repeatCoin: 100
+    hasBoss: 0
+    bossEnemyId: 
+  - levelId: level.2
+    displayName: "C\xE1nh \u0110\u1ED3ng Gai"
+    sceneName: Map_Level2
+    waves: {fileID: 11400000, guid: 4d0387ca67b17894197ffbd67ccb907f, type: 2}
+    minimumPower: 700
+    recommendedPower: 950
+    suggestedFamilies:
+    - Shotgun
+    - AR
+    suggestedWeaponIds:
+    - weapon.shotgun.generic
+    - weapon.assault_rifle.generic
+    - weapon.smg.generic
+    firstClearCoin: 700
+    firstClearGold: 5
+    firstClearGem: 0
+    repeatCoin: 180
+    hasBoss: 1
+    bossEnemyId: enemy.cute.cactus_boss
+  - levelId: level.3
+    displayName: "Ngh\u0129a \u0110\u1ECBa X\u01B0\u01A1ng"
+    sceneName: Map_Level3
+    waves: {fileID: 11400000, guid: 1c20fa772fe19c643ba92e73e97f14d9, type: 2}
+    minimumPower: 1100
+    recommendedPower: 1400
+    suggestedFamilies:
+    - AR
+    - Marksman
+    - Shotgun
+    suggestedWeaponIds:
+    - weapon.assault_rifle.m4a1
+    - weapon.marksman.sniper_generic
+    - weapon.shotgun.generic
+    firstClearCoin: 1100
+    firstClearGold: 10
+    firstClearGem: 0
+    repeatCoin: 260
+    hasBoss: 1
+    bossEnemyId: enemy.cute.skeleton_giant
+  - levelId: level.4
+    displayName: "B\u1EA7y Hoang"
+    sceneName: Map_Level4
+    waves: {fileID: 11400000, guid: 8ca2b512a7dbb7748bbd8b15ad34a67d, type: 2}
+    minimumPower: 1500
+    recommendedPower: 1800
+    suggestedFamilies:
+    - SMG
+    - AR
+    - Shotgun
+    suggestedWeaponIds:
+    - weapon.smg.generic
+    - weapon.assault_rifle.scar_l
+    - weapon.shotgun.benelli_m4
+    firstClearCoin: 1600
+    firstClearGold: 15
+    firstClearGem: 1
+    repeatCoin: 340
+    hasBoss: 1
+    bossEnemyId: enemy.cute.mole_rat_king
+  - levelId: level.5
+    displayName: "V\xE2y H\xE3m Titan"
+    sceneName: Map_Level5
+    waves: {fileID: 11400000, guid: 30617da3d27ea5f48adce3ce53aaf2c7, type: 2}
+    minimumPower: 1900
+    recommendedPower: 2200
+    suggestedFamilies:
+    - AR
+    - Shotgun
+    - Marksman
+    suggestedWeaponIds:
+    - weapon.assault_rifle.ak_47
+    - weapon.shotgun.aa_12
+    - weapon.marksman.sniper_generic
+    firstClearCoin: 2400
+    firstClearGold: 25
+    firstClearGem: 3
+    repeatCoin: 450
+    hasBoss: 1
+    bossEnemyId: enemy.cute.cactus_boss

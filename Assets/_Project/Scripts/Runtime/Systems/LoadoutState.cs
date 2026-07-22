@@ -4,11 +4,11 @@ using UnityEngine;
 
 namespace ZombieWar
 {
-    /// Loadout nguoi choi chon o MENU (3 slot sung + modular parts), persist PlayerPrefs JSON.
-    /// Gameplay KHONG doc PlayerPrefs truc tiep - PlayerSpawner goi ApplyTo(weapon) sau khi spawn.
-    /// Weapon id = WeaponData.WeaponId (stable, immutable — xem WeaponRosterMigration). Save cu
-    /// (truoc migration) luu ten asset (vd "WD_Pistol") - Resolve fallback sang ten de khong mat save,
-    /// ApplyTo tu dong ghi lai id chuan vao lan save ke tiep.
+    /// Loadout nguoi choi chon o MENU (3 slot sung + modular parts). Storage nam trong
+    /// PlayerProfile (versioned, luu qua Bill.Save) — class nay giu nguyen seam cu cho UI/gameplay:
+    /// PlayerSpawner van goi ApplyTo(weapon) sau khi spawn, CharacterModularApplier van doc Parts.
+    /// Weapon id = WeaponData.WeaponId (stable). Save cu (truoc migration) luu ten asset
+    /// (vd "WD_Pistol") — Resolve fallback qua LegacyAliases, ApplyTo canonical hoa o lan load dau.
     public static class LoadoutState
     {
         [Serializable]
@@ -18,56 +18,38 @@ namespace ZombieWar
             public string guid;   // asset guid trong ModularCostumeCatalog
         }
 
-        [Serializable]
-        private class SaveData
-        {
-            public string pistol = "";
-            public string longA = "";
-            public string longB = "";
-            public List<PartSel> parts = new();
-        }
-
-        private const string Key = "zw.loadout";
-        private static SaveData _data;
-
-        private static SaveData Data
-        {
-            get
-            {
-                if (_data == null)
-                {
-                    string json = PlayerPrefs.GetString(Key, "");
-                    _data = string.IsNullOrEmpty(json)
-                        ? new SaveData()
-                        : (JsonUtility.FromJson<SaveData>(json) ?? new SaveData());
-                }
-                return _data;
-            }
-        }
-
-        /// Chua tung save -> ApplyTo khong dong vao gi ca (giu default cua prefab).
-        public static bool HasSave => PlayerPrefs.HasKey(Key);
-
-        private static void Save()
-        {
-            PlayerPrefs.SetString(Key, JsonUtility.ToJson(Data));
-            PlayerPrefs.Save();
-        }
+        /// Profile luon ton tai sau lan truy cap dau (fresh profile duoc seed starter o ApplyTo).
+        public static bool HasSave => PlayerProfile.HasProfile;
 
         // ===== Weapon slots (0=pistol, 1-2=long) =====
 
-        public static string GetWeaponId(int slot) =>
-            slot == 0 ? Data.pistol : slot == 1 ? Data.longA : slot == 2 ? Data.longB : "";
+        public static string GetWeaponId(int slot) => PlayerProfile.GetWeaponSlot(slot);
 
         /// id = "" nghia la slot trong (chi hop le cho slot 1-2).
-        public static void SetWeaponId(int slot, string id)
+        public static void SetWeaponId(int slot, string id) => PlayerProfile.SetWeaponSlot(slot, id);
+
+        public enum EquipResult { Equipped, NotOwned, Incompatible, InvalidSlot, InvalidWeapon }
+
+        /// Thao tac equip tu UI: kiem tra slot contract (0 = 1-tay, 1-2 = 2-tay), so huu qua
+        /// PlayerProfile, roi persist WeaponId chuan. That bai = KHONG doi bat ky state nao.
+        /// Rule trung lap (documented): mot khau chi nam trong 1 slot — equip vao slot dai nay
+        /// khi dang nam o slot dai kia thi GO khoi slot cu (move, khong swap ngam).
+        public static EquipResult TryEquip(int slot, WeaponData data)
         {
-            id ??= "";
-            if (slot == 0) { if (id.Length == 0) return; Data.pistol = id; }
-            else if (slot == 1) Data.longA = id;
-            else if (slot == 2) Data.longB = id;
-            else return;
-            Save();
+            if (slot < 0 || slot > 2) return EquipResult.InvalidSlot;
+            if (data == null || string.IsNullOrEmpty(data.WeaponId)) return EquipResult.InvalidWeapon;
+            bool slotWantsTwoHanded = slot != 0;
+            if (data.twoHanded != slotWantsTwoHanded) return EquipResult.Incompatible;
+            if (!PlayerProfile.IsWeaponOwned(data.WeaponId)) return EquipResult.NotOwned;
+
+            if (slot != 0)
+            {
+                int otherLong = slot == 1 ? 2 : 1;
+                if (PlayerProfile.GetWeaponSlot(otherLong) == data.WeaponId)
+                    PlayerProfile.SetWeaponSlot(otherLong, "");
+            }
+            PlayerProfile.SetWeaponSlot(slot, data.WeaponId);
+            return EquipResult.Equipped;
         }
 
         /// Tim WeaponData trong arsenal. Uu tien WeaponId (stable) - fallback LegacyAliases (ten asset
@@ -89,77 +71,42 @@ namespace ZombieWar
             return null;
         }
 
-        /// Ghi loadout da luu vao Weapon slot API ngay sau khi spawn player. Neu save cu resolve
-        /// qua legacy ten asset (khong khop WeaponId), tu dong nang cap id trong save len WeaponId
-        /// chuan va ghi lai (migrate-on-load, mot lan la xong vinh vien cho save do).
+        /// Ghi loadout da luu vao Weapon slot API ngay sau khi spawn player.
+        /// Buoc 1 (pure data): PlayerProfile.EnsureValidLoadout — seed starter cho profile moi
+        /// (khau 1-tay dau tien trong arsenal, dung rule cua Weapon.Start), canonical hoa id legacy,
+        /// dam bao sung dang trang bi deu owned. Buoc 2: trang bi tu profile vao slot API.
+        /// Id khong resolve duoc thi KHONG trang bi va KHONG thay the — Weapon.Start tu fallback.
         public static void ApplyTo(Weapon weapon)
         {
-            if (weapon == null || !weapon.UseSlotSystem || !HasSave) return;
+            if (weapon == null || !weapon.UseSlotSystem) return;
 
             var arsenal = weapon.Weapons;
-            bool migrated = false;
+            PlayerProfile.EnsureValidLoadout(arsenal);
 
-            var pistol = Resolve(Data.pistol, arsenal);
+            var pistol = Resolve(PlayerProfile.GetWeaponSlot(0), arsenal);
             if (pistol != null && !pistol.twoHanded)
-            {
                 weapon.EquipToSlot(0, pistol);
-                migrated |= MigrateId(ref Data.pistol, pistol);
-            }
 
-            migrated |= ApplyLongSlot(weapon, 1, ref Data.longA, arsenal);
-            migrated |= ApplyLongSlot(weapon, 2, ref Data.longB, arsenal);
-
-            if (migrated) Save();
+            ApplyLongSlot(weapon, 1, arsenal);
+            ApplyLongSlot(weapon, 2, arsenal);
         }
 
-        private static bool ApplyLongSlot(Weapon weapon, int slot, ref string id, IReadOnlyList<WeaponData> arsenal)
+        private static void ApplyLongSlot(Weapon weapon, int slot, IReadOnlyList<WeaponData> arsenal)
         {
-            if (string.IsNullOrEmpty(id)) { weapon.UnequipSlot(slot); return false; }
+            string id = PlayerProfile.GetWeaponSlot(slot);
+            if (string.IsNullOrEmpty(id)) { weapon.UnequipSlot(slot); return; }
             var data = Resolve(id, arsenal);
-            if (data == null) return false; // id co ma khong resolve duoc (asset doi/xoa) -> giu nguyen, khong pha.
+            if (data == null) return; // id co ma khong resolve duoc (asset doi/xoa) -> giu nguyen, khong pha.
             weapon.EquipToSlot(slot, data);
-            return MigrateId(ref id, data);
-        }
-
-        /// True neu id luu trong save khac WeaponId chuan cua data da resolve (tuc resolve qua legacy
-        /// fallback) - ghi de id ve dang chuan, bao caller can Save().
-        private static bool MigrateId(ref string id, WeaponData data)
-        {
-            if (string.IsNullOrEmpty(data.WeaponId) || id == data.WeaponId) return false;
-            id = data.WeaponId;
-            return true;
         }
 
         // ===== Modular costume parts =====
 
-        public static IReadOnlyList<PartSel> Parts => Data.parts;
+        public static IReadOnlyList<PartSel> Parts => PlayerProfile.Parts;
 
-        public static string GetPart(string slot)
-        {
-            var parts = Data.parts;
-            for (int i = 0; i < parts.Count; i++)
-                if (parts[i].slot == slot) return parts[i].guid;
-            return null;
-        }
+        public static string GetPart(string slot) => PlayerProfile.GetPart(slot);
 
         /// guid = null/"" -> bo chon part slot do (ve default).
-        public static void SetPart(string slot, string guid)
-        {
-            if (string.IsNullOrEmpty(slot)) return;
-            var parts = Data.parts;
-            for (int i = 0; i < parts.Count; i++)
-            {
-                if (parts[i].slot != slot) continue;
-                if (string.IsNullOrEmpty(guid)) parts.RemoveAt(i);
-                else parts[i] = new PartSel { slot = slot, guid = guid };
-                Save();
-                return;
-            }
-            if (!string.IsNullOrEmpty(guid))
-            {
-                parts.Add(new PartSel { slot = slot, guid = guid });
-                Save();
-            }
-        }
+        public static void SetPart(string slot, string guid) => PlayerProfile.SetPart(slot, guid);
     }
 }

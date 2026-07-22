@@ -27,10 +27,25 @@ namespace ZombieWar.UI
             partGuid = entry.guid;
             partName = entry.name;
             if (nameLabel != null) nameLabel.text = entry.name;
-            if (icon != null && iconSprite != null)
+            if (icon != null)
             {
+                // Gan VO DIEU KIEN — cell pool rebind khong duoc giu sprite cua item truoc.
                 icon.sprite = iconSprite;
                 icon.color = Color.white;
+            }
+            gameObject.SetActive(true);
+        }
+
+        /// <summary>Bind option player-facing (part/virtual/body) — label + icon. State
+        /// (owned/selected tint) do CostumeScreen set truc tiep tren icon/nameLabel.</summary>
+        public void BindOption(string label, Sprite iconSprite)
+        {
+            if (nameLabel != null) nameLabel.text = label;
+            if (icon != null)
+            {
+                icon.sprite = iconSprite; // vo dieu kien — cell pool rebind khong giu icon cu
+                icon.color = Color.white;
+                icon.enabled = iconSprite != null;
             }
             gameObject.SetActive(true);
         }
@@ -40,6 +55,9 @@ namespace ZombieWar.UI
             slotName = null;
             partGuid = null;
             partName = null;
+            if (icon != null) icon.sprite = null;
+            if (nameLabel != null) nameLabel.text = "";
+            if (selectedMarker != null) selectedMarker.SetActive(false);
             gameObject.SetActive(false);
         }
 

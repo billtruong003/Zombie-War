@@ -18,19 +18,10 @@ namespace ZombieWar.Editor.UI
     public static class UIThumbnailGenerator
     {
         const string WeaponsDir = "Assets/_Project/UI/Icons/Generated/Weapons";
-        const string CostumeDir = "Assets/_Project/UI/Icons/Generated/Costume";
+        public const string CostumeDir = "Assets/_Project/UI/Icons/Generated/Costume";
         public const string CatalogAssetPath = "Assets/_Project/UI/Data/UIPrototypeCatalog.asset";
+        const string CostumeCatalogPath = "Assets/_Project/Data/Character/ModularCostumeCatalog.asset";
         const int Size = 256;
-        const int CellsPerPage = 18;
-        const int PagesToCover = 2;   // trang 1-2 mỗi tab có icon thật; sau đó fallback (log)
-
-        // PHẢI khớp CostumeScreen.TabSlots (nhóm Đầu/Thân/Chân)
-        static readonly string[][] TabSlots =
-        {
-            new[] { "Hair", "Beard", "Brow", "Mouth", "Eyewear", "Eye", "Earring", "Head" },
-            new[] { "Chest", "Hands", "Back", "Body" },
-            new[] { "Legs", "Feet" },
-        };
 
         [MenuItem("ZombieWar/UI/Authoring/Generate Item Thumbnails")]
         public static void Generate()
@@ -62,47 +53,7 @@ namespace ZombieWar.Editor.UI
                     UpsertWeaponEntry(catalog, wd, sprite);
                 }
 
-                var costumeCatalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
-                    "Assets/_Project/Data/Character/ModularCostumeCatalog.asset");
-                if (costumeCatalog != null)
-                {
-                    int cap = CellsPerPage * PagesToCover;
-                    var targets = new List<(string slot, ModularCostumeCatalog.PartEntry part)>();
-                    foreach (var group in TabSlots)
-                    {
-                        int taken = 0;
-                        foreach (var slotName in group)
-                        {
-                            var slot = costumeCatalog.GetSlot(slotName);
-                            if (slot == null) continue;
-                            foreach (var p in slot.parts)
-                            {
-                                if (taken >= cap) break;
-                                targets.Add((slot.slot, p));
-                                taken++;
-                            }
-                            if (taken >= cap) break;
-                        }
-                    }
-                    Debug.Log($"[Thumbs] Costume: tổng {costumeCatalog.TotalParts} part; strategy=pool {CellsPerPage} cell/page, " +
-                              $"generate {targets.Count} icon ({PagesToCover} trang đầu/tab), còn lại fallback icon.");
-
-                    for (int i = 0; i < targets.Count; i++)
-                    {
-                        var (slot, part) = targets[i];
-                        if (EditorUtility.DisplayCancelableProgressBar("Generate Thumbnails",
-                                $"Costume {i + 1}/{targets.Count}: {part.name}", 0.5f + i / (float)(targets.Count * 2)))
-                            { Debug.LogWarning("[Thumbs] Cancelled bởi user."); break; }
-
-                        var sprite = RenderCostumePart(part);
-                        if (sprite != null) { okC++; UpsertCostumeIcon(catalog, part.guid, sprite); }
-                        else failC++;
-                    }
-                }
-                else Debug.LogWarning("[Thumbs] Không thấy ModularCostumeCatalog — bỏ qua costume icons.");
-
                 catalog.weaponFallbackIcon = UIKit.Icon("Icon_Sword02");
-                catalog.costumeFallbackIcon = UIKit.Icon("Icon_Helmet");
                 EditorUtility.SetDirty(catalog);
                 AssetDatabase.SaveAssets();
             }
@@ -110,7 +61,83 @@ namespace ZombieWar.Editor.UI
             {
                 EditorUtility.ClearProgressBar();
             }
-            Debug.Log($"[Thumbs] DONE — weapons {okW} ok / {failW} fallback; costume {okC} ok / {failC} fail.");
+            Debug.Log($"[Thumbs] Weapons DONE — {okW} ok / {failW} fallback. Costume icons: chạy riêng lệnh Costume Thumbnails.");
+            GenerateCostumeIcons(onlyMissing: true);
+        }
+
+        /// Sinh icon con thiếu — an toàn resume/cancel, không đụng asset đã hoàn thành.
+        [MenuItem("ZombieWar/UI/Authoring/Generate Missing Costume Thumbnails")]
+        public static void GenerateMissingCostume() => GenerateCostumeIcons(onlyMissing: true);
+
+        /// Chủ đích refresh TOÀN BỘ icon costume (đè cùng path deterministic, giữ GUID sprite).
+        [MenuItem("ZombieWar/UI/Authoring/Regenerate All Costume Thumbnails")]
+        public static void RegenerateAllCostume() => GenerateCostumeIcons(onlyMissing: false);
+
+        /// Slice 4.1: MỌI part hợp lệ trong catalog (978) phải có icon thật render từ đúng mesh đó.
+        /// - Path deterministic C_&lt;guid8&gt;_&lt;name&gt;.png → rerun đè cùng file.
+        /// - onlyMissing: bỏ qua entry đã có sprite hợp lệ trong mapping (resume-safe).
+        /// - Dọn mapping stale (guid không còn trong catalog).
+        /// - Fallback runtime = sprite trung tính (rounded_dashed) — KHÔNG bao giờ là helmet/đồ khác.
+        public static void GenerateCostumeIcons(bool onlyMissing)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogError("[Thumbs] Không chạy khi Play Mode.");
+                return;
+            }
+            Directory.CreateDirectory(CostumeDir);
+            var catalog = EnsureCatalogAsset();
+            var costumeCatalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(CostumeCatalogPath);
+            if (costumeCatalog == null) { Debug.LogError("[Thumbs] Không thấy ModularCostumeCatalog."); return; }
+
+            var targets = new List<(string slot, ModularCostumeCatalog.PartEntry part)>();
+            var validGuids = new HashSet<string>();
+            foreach (var slot in costumeCatalog.slots)
+                foreach (var p in slot.parts)
+                {
+                    if (string.IsNullOrEmpty(p.guid)) continue;
+                    validGuids.Add(p.guid);
+                    if (onlyMissing)
+                    {
+                        var existing = catalog.costumeIcons.FirstOrDefault(e => e.guid == p.guid);
+                        if (existing != null && existing.icon != null) continue;
+                    }
+                    targets.Add((slot.slot, p));
+                }
+
+            // Dọn mapping stale trước khi generate.
+            int stale = catalog.costumeIcons.RemoveAll(e => !validGuids.Contains(e.guid));
+
+            int ok = 0, fail = 0;
+            bool cancelled = false;
+            try
+            {
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    var (slot, part) = targets[i];
+                    if (EditorUtility.DisplayCancelableProgressBar("Costume Thumbnails",
+                            $"{i + 1}/{targets.Count}: {slot}/{part.name}", i / (float)Mathf.Max(1, targets.Count)))
+                    {
+                        cancelled = true;
+                        Debug.LogWarning($"[Thumbs] Cancelled tại {i}/{targets.Count} — chạy lại 'Generate Missing' để resume.");
+                        break;
+                    }
+                    var sprite = RenderCostumePart(slot, part);
+                    if (sprite != null) { ok++; UpsertCostumeIcon(catalog, part.guid, sprite); }
+                    else { fail++; Debug.LogWarning($"[Thumbs] FAIL render '{slot}/{part.name}' ({part.guid})"); }
+                }
+                // Fallback trung tính — chỉ là lưới an toàn runtime, validator vẫn coi thiếu icon là lỗi.
+                catalog.costumeFallbackIcon = UISpriteFactory.Load("rounded_dashed");
+                EditorUtility.SetDirty(catalog);
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+            int mapped = catalog.costumeIcons.Count(e => e.icon != null);
+            Debug.Log($"[Thumbs] Costume DONE — generated {ok}, fail {fail}, stale removed {stale}, " +
+                      $"mapping {mapped}/{validGuids.Count}{(cancelled ? " (CANCELLED — resume bằng Generate Missing)" : "")}.");
         }
 
         // ================================================================ render
@@ -162,7 +189,17 @@ namespace ZombieWar.Editor.UI
             }
         }
 
-        static Sprite RenderCostumePart(in ModularCostumeCatalog.PartEntry part)
+        /// Hướng camera theo slot để icon đọc được: mặt/đầu = chính diện, thân/lưng = 3/4,
+        /// tay/chân/giày = crop sát bounds của chính part (bounds mesh bind pose đã là part đó).
+        static Vector3 SlotViewDir(string slot) => slot switch
+        {
+            "Chest" or "Body" => new Vector3(-0.45f, 0.2f, -1f),
+            "Back" => new Vector3(0f, 0.15f, 1f),          // đồ đeo lưng nhìn từ phía sau
+            "Hands" or "Legs" or "Feet" => new Vector3(-0.25f, 0.1f, -1f),
+            _ => new Vector3(0f, 0.12f, -1f),              // Hair/Head/mặt: chính diện hơi cao
+        };
+
+        static Sprite RenderCostumePart(string slot, in ModularCostumeCatalog.PartEntry part)
         {
             // Skinned part render ở BIND POSE qua DrawMesh — không cần rig/animator, không đụng scene.
             if (part.skinnedMesh == null || part.materials == null || part.materials.Length == 0)
@@ -181,7 +218,7 @@ namespace ZombieWar.Editor.UI
                     if (mat == null) continue;
                     pru.DrawMesh(mesh, Matrix4x4.identity, mat, s);
                 }
-                FrameCamera(pru, b, new Vector3(0f, 0.15f, -1f));
+                FrameCamera(pru, b, SlotViewDir(slot));
                 return Snap(pru, CostumeDir, $"C_{ShortGuid(part.guid)}_{Sanitize(part.name)}");
             }
             catch (System.Exception ex)

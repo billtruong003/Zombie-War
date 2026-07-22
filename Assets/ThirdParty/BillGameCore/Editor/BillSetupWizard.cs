@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -57,7 +58,9 @@ namespace BillGameCore.Editor
             GUILayout.Label("Status", EditorStyles.boldLabel);
             Status("Config", Resources.Load("BillBootstrapConfig") != null);
             Status("Bootstrap Scene", File.Exists("Assets/_Game/Scenes/00_Bootstrap.unity"));
-            Status("PHOTON_FUSION", PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget)).Contains("PHOTON_FUSION"));
+            var activeBuildTarget = NamedBuildTarget.FromBuildTargetGroup(
+                BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget));
+            Status("PHOTON_FUSION", PlayerSettings.GetScriptingDefineSymbols(activeBuildTarget).Contains("PHOTON_FUSION"));
         }
 
         void Status(string label, bool ok) { EditorGUILayout.BeginHorizontal(); GUILayout.Label(ok ? "  OK" : "  --", GUILayout.Width(30)); GUILayout.Label(label); EditorGUILayout.EndHorizontal(); }
@@ -97,9 +100,10 @@ namespace BillGameCore.Editor
 
             if (hasFusion)
             {
-                var g = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
-                var d = PlayerSettings.GetScriptingDefineSymbolsForGroup(g);
-                if (!d.Contains("PHOTON_FUSION")) PlayerSettings.SetScriptingDefineSymbolsForGroup(g, d + ";PHOTON_FUSION");
+                var buildTarget = NamedBuildTarget.FromBuildTargetGroup(
+                    BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget));
+                var d = PlayerSettings.GetScriptingDefineSymbols(buildTarget);
+                if (!d.Contains("PHOTON_FUSION")) PlayerSettings.SetScriptingDefineSymbols(buildTarget, d + ";PHOTON_FUSION");
             }
 
             AssetDatabase.Refresh();

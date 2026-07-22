@@ -32,6 +32,9 @@ namespace ZombieWar
 
         [SerializeField] private ZombieData data;
         [SerializeField] private Renderer bodyRenderer;
+        [Tooltip("Flat blob quad standing in for a real cast shadow. Follows the body's visibility " +
+                 "so a hidden or burrowed enemy never leaves a shadow floating on the ground.")]
+        [SerializeField] private Renderer shadowRenderer;
         [SerializeField] private float stateCrossFadeDuration = 0.2f;
         [SerializeField] private float deathCrossFadeDuration = 0.1f;
         [SerializeField] private float dissolveDuration = 0.7f;
@@ -40,17 +43,27 @@ namespace ZombieWar
         [SerializeField] private float knockbackDuration = 0.15f;
         [Tooltip("World height above the zombie's origin where the floating damage number pops.")]
         [SerializeField] private float damageNumberHeight = 1.7f;
+        [Tooltip("How long the white hit flash stays visible. Short by design - it must read on a " +
+                 "fast-firing weapon without strobing.")]
+        [SerializeField] private float hitFlashDuration = 0.12f;
 
         private static readonly int DissolveID = Shader.PropertyToID("_Dissolve");
+        private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
+        private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorID = Shader.PropertyToID("_Color");
 
         private NavMeshAgent _agent;
         private Health _health;
         private VAT_Animator _vatAnimator;
         private MaterialPropertyBlock _dissolvePropertyBlock;
+        private MaterialPropertyBlock _shadowPropertyBlock;
+        private Color _shadowBaseColor = new Color(0f, 0f, 0f, 0.45f);
         private State _state;
         private ZombieTier _tier = ZombieTier.Full;
         private float _attackCooldownTimer;
         private Coroutine _hitReactRoutine;
+        private Coroutine _hitFlashRoutine;
+        private Coroutine _attackRoutine;
 
         public ZombieData Data => data;
         public ZombieTier Tier => _tier;
@@ -59,13 +72,35 @@ namespace ZombieWar
         protected Health Health => _health;
         protected VAT_Animator Vat => _vatAnimator;
         protected State CurrentState => _state;
+        protected Renderer BodyRenderer => bodyRenderer;
+        protected Renderer ShadowRenderer => shadowRenderer;
+
+        /// <summary>Shows/hides the body and its blob shadow together. Used by tiering and by the
+        /// burrower's underground phase - the two must never disagree.</summary>
+        protected void SetVisible(bool visible)
+        {
+            if (bodyRenderer != null) bodyRenderer.enabled = visible;
+            if (shadowRenderer != null) shadowRenderer.enabled = visible;
+        }
+
+        /// <summary>Set by subtypes that are driving their own movement phase this frame, so the
+        /// shared chase/attack FSM steps aside. See <see cref="Update"/>.</summary>
+        protected virtual bool SuppressBaseFsm => false;
 
         // Distance at which the zombie stops chasing and switches to attacking. Melee uses the
         // data's attack range; ranged types widen this so they open fire from well outside it.
         protected virtual float EngageRange => data.attackRange;
 
         Transform ITargetable.Transform => transform;
-        bool ITargetable.IsTargetable => _state != State.Dead;
+        bool ITargetable.IsTargetable => CanBeTargeted;
+
+        /// <summary>Whether the player's auto-aim may lock onto this zombie. Subtypes hide while they
+        /// are physically unreachable - a burrower underground must not soak up the player's fire.</summary>
+        protected virtual bool CanBeTargeted => _state != State.Dead;
+
+        /// <summary>While true every incoming hit is ignored. Kept separate from
+        /// <see cref="CanBeTargeted"/> because splash damage does not go through targeting.</summary>
+        protected virtual bool IsInvulnerable => false;
 
         private void Awake()
         {
@@ -76,6 +111,15 @@ namespace ZombieWar
             if (_vatAnimator == null)
                 Debug.LogError($"[{name}] VAT_Animator missing in children - zombie animation disabled.", this);
             _dissolvePropertyBlock = new MaterialPropertyBlock();
+            _shadowPropertyBlock = new MaterialPropertyBlock();
+            // Cache the authored blob tint once, so the per-frame fade multiplies a constant rather
+            // than compounding against whatever it wrote last frame.
+            if (shadowRenderer != null && shadowRenderer.sharedMaterial != null)
+            {
+                var m = shadowRenderer.sharedMaterial;
+                if (m.HasProperty(BaseColorID)) _shadowBaseColor = m.GetColor(BaseColorID);
+                else if (m.HasProperty(ColorID)) _shadowBaseColor = m.GetColor(ColorID);
+            }
         }
 
         private void OnEnable()
@@ -93,9 +137,12 @@ namespace ZombieWar
             _tier = ZombieTier.Full;
             _attackCooldownTimer = 0f;
             _hitReactRoutine = null; // coroutines died with the pooled deactivation
+            _hitFlashRoutine = null;
+            _attackRoutine = null;
             _agent.isStopped = false;
             if (TryGetComponent(out Collider col)) col.enabled = true;
             SetDissolve(0f);
+            SetHitFlash(0f); // a pooled instance must not reappear still lit from its last death
             OnSpawned();
         }
 
@@ -114,7 +161,11 @@ namespace ZombieWar
         protected virtual void OnSpawned() { }
         protected virtual void OnDespawned() { }
 
-        public void TakeDamage(float amount) => _health.TakeDamage(amount);
+        public void TakeDamage(float amount)
+        {
+            if (IsInvulnerable) return;
+            _health.TakeDamage(amount);
+        }
 
         // Deliberately never calls gameObject.SetActive(false) here - that would fire OnDisable(),
         // which unregisters from ZombieManager, and an Inactive zombie would then never be found
@@ -132,17 +183,17 @@ namespace ZombieWar
                 case ZombieTier.Full:
                     _agent.enabled = true;
                     _vatAnimator.enabled = true;
-                    if (bodyRenderer != null) bodyRenderer.enabled = true;
+                    SetVisible(true);
                     break;
                 case ZombieTier.Cheap:
                     _agent.enabled = false;
                     _vatAnimator.enabled = true;
-                    if (bodyRenderer != null) bodyRenderer.enabled = true;
+                    SetVisible(true);
                     break;
                 case ZombieTier.Inactive:
                     _agent.enabled = false;
                     _vatAnimator.enabled = false;
-                    if (bodyRenderer != null) bodyRenderer.enabled = false;
+                    SetVisible(false);
                     break;
             }
         }
@@ -165,6 +216,16 @@ namespace ZombieWar
             if (_attackCooldownTimer > 0f) _attackCooldownTimer -= Time.deltaTime;
 
             float distance = Vector3.Distance(transform.position, player.transform.position);
+
+            // A subtype running its own movement phase (a burrower underground, a boss mid-dash)
+            // still gets its per-frame tick, but the shared chase/attack FSM stands down so the two
+            // cannot fight over the agent's destination.
+            if (SuppressBaseFsm)
+            {
+                OnFullTick(player.transform, distance);
+                return;
+            }
+
             SwitchState(distance <= EngageRange ? State.Attack : State.Chase);
 
             if (_state == State.Chase) Chase(player.transform);
@@ -204,11 +265,49 @@ namespace ZombieWar
         private void FaceAndAttack(Transform target)
         {
             transform.rotation = Quaternion.LookRotation(FlattenY(target.position - transform.position));
-            if (_attackCooldownTimer > 0f) return;
+            if (_attackCooldownTimer > 0f || _attackRoutine != null) return;
 
             _attackCooldownTimer = data.attackCooldown;
             _vatAnimator.CrossFade(data.attackClip, stateCrossFadeDuration);
+            _attackRoutine = StartCoroutine(AttackAfterWindup(target));
+        }
+
+        /// <summary>
+        /// Lands the hit on the animation's actual contact frame instead of the instant the clip
+        /// starts. VAT has no Mecanim events, so the delay comes from the authored
+        /// <see cref="ZombieData.attackWindup"/> measured off the real clip.
+        ///
+        /// Exactly one hit per swing: the routine handle doubles as the "already swinging" guard in
+        /// <see cref="FaceAndAttack"/>, and death or a pool return cancels it before it can land.
+        /// </summary>
+        private IEnumerator AttackAfterWindup(Transform target)
+        {
+            float windup = Mathf.Max(0f, data.attackWindup);
+            if (windup > 0f) yield return new WaitForSeconds(windup);
+
+            _attackRoutine = null;
+            if (_state == State.Dead || target == null) yield break;
+
             PerformAttack(target);
+        }
+
+        /// <summary>Cancels an in-flight swing so a dying or despawning zombie cannot still deal its
+        /// damage a few frames later.</summary>
+        protected void CancelPendingAttack()
+        {
+            if (_attackRoutine == null) return;
+            StopCoroutine(_attackRoutine);
+            _attackRoutine = null;
+        }
+
+        /// <summary>Shared AoE helper for slams, dashes and emerges. Uses a non-allocating overlap
+        /// query and damages the player once - enemies are never friendly-fire targets here.</summary>
+        protected void DealAreaDamage(Vector3 center, float radius, float damage)
+        {
+            var player = PlayerMovement.Instance;
+            if (player == null) return;
+            if (Vector3.Distance(FlattenY(player.transform.position), FlattenY(center)) > radius) return;
+            player.GetComponentInParent<IDamageable>()?.TakeDamage(damage);
         }
 
         // The actual hit. Melee deals contact damage; ranged spawns a projectile; boss adds AoE.
@@ -227,6 +326,11 @@ namespace ZombieWar
             // Floating damage number at chest height. Covers every source (guns, bomb, contact)
             // since it hangs off Health.OnDamaged rather than any single weapon.
             DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight);
+
+            // The flash restarts on EVERY hit (unlike the react anim below) - that per-bullet
+            // response is the whole point of it, and it's a shader value so it costs nothing.
+            if (_hitFlashRoutine != null) StopCoroutine(_hitFlashRoutine);
+            _hitFlashRoutine = StartCoroutine(HitFlash());
 
             // One-shot hit react: while the hit anim is still playing, further bullets only
             // deal damage/spawn numbers - they do NOT restart the anim or re-knockback, so
@@ -255,6 +359,21 @@ namespace ZombieWar
             ResumeStateClip();
         }
 
+        // Fades the shader's white flash back out. Deliberately unscaled-time-free: it uses regular
+        // deltaTime so a paused game freezes the flash along with everything else.
+        private IEnumerator HitFlash()
+        {
+            float t = 0f;
+            while (t < hitFlashDuration)
+            {
+                t += Time.deltaTime;
+                SetHitFlash(1f - Mathf.Clamp01(t / hitFlashDuration));
+                yield return null;
+            }
+            SetHitFlash(0f);
+            _hitFlashRoutine = null;
+        }
+
         private void ResumeStateClip()
         {
             if (_vatAnimator == null || !_vatAnimator.enabled) return;
@@ -273,6 +392,7 @@ namespace ZombieWar
         public void OnPlayerLost()
         {
             if (_state == State.Dead) return;
+            CancelPendingAttack();   // no posthumous hits on a dead player
             _state = State.Idle;
             if (_agent.enabled && _agent.isOnNavMesh) _agent.isStopped = true;
             ResumeStateClip();
@@ -298,12 +418,34 @@ namespace ZombieWar
 
         private void HandleDeath()
         {
+            // Exactly-once reward guard. Health already fires OnDeath a single time per life, but the
+            // reward path must not depend on that: a pooled instance re-subscribes on every respawn,
+            // so a double-report here would silently inflate the run's currency.
+            if (_state == State.Dead) return;
+
+            // When a PickupManager is present it drops physical coin instead, so the ledger must not
+            // also bank it here - the kill and XP still register either way.
+            bool pickupsHandleCoin = PickupManager.Instance != null;
+            RunState.Current?.RecordKill(data, !pickupsHandleCoin);
+            Bill.Events?.Fire(new ZombieKilledEvent(data, transform.position));
+
             // Kill any pending hit react so it can't crossfade over the death anim.
             if (_hitReactRoutine != null)
             {
                 StopCoroutine(_hitReactRoutine);
                 _hitReactRoutine = null;
             }
+
+            // A swing already wound up must not still connect after death.
+            CancelPendingAttack();
+
+            // A corpse must not keep flashing white while it dissolves.
+            if (_hitFlashRoutine != null)
+            {
+                StopCoroutine(_hitFlashRoutine);
+                _hitFlashRoutine = null;
+            }
+            SetHitFlash(0f);
 
             _state = State.Dead;
             _agent.isStopped = true;
@@ -328,11 +470,32 @@ namespace ZombieWar
             Bill.Pool?.Return(gameObject);
         }
 
+        /// <summary>Dissolves the body and fades the blob shadow out in step with it, so a corpse
+        /// that has burnt away never leaves its shadow sitting on the ground.</summary>
         private void SetDissolve(float amount)
+        {
+            SetRendererFloat(DissolveID, amount);
+
+            if (shadowRenderer == null) return;
+            // The blob uses the shared M_BlobShadow material, so the alpha MUST go through a
+            // property block - writing the material colour directly would fade every enemy at once.
+            shadowRenderer.GetPropertyBlock(_shadowPropertyBlock);
+            var tint = _shadowBaseColor;
+            tint.a *= 1f - Mathf.Clamp01(amount);
+            _shadowPropertyBlock.SetColor(BaseColorID, tint);
+            _shadowPropertyBlock.SetColor(ColorID, tint);
+            shadowRenderer.SetPropertyBlock(_shadowPropertyBlock);
+        }
+
+        private void SetHitFlash(float amount) => SetRendererFloat(HitFlashID, amount);
+
+        // Read-modify-write on the shared block, so dissolve, hit flash and VAT_Animator's own
+        // animation-time writes on this same renderer never clobber one another.
+        private void SetRendererFloat(int propertyId, float value)
         {
             if (bodyRenderer == null) return;
             bodyRenderer.GetPropertyBlock(_dissolvePropertyBlock);
-            _dissolvePropertyBlock.SetFloat(DissolveID, amount);
+            _dissolvePropertyBlock.SetFloat(propertyId, value);
             bodyRenderer.SetPropertyBlock(_dissolvePropertyBlock);
         }
 

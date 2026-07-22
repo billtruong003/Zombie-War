@@ -1,24 +1,28 @@
 # ZombieWar — Remaining Features
 
-> Current snapshot: 2026-07-20. For architecture and exact paths, read `HANDOFF.md`.
+> Current snapshot: 2026-07-21. Read `ACCOUNT_SWITCH_HANDOFF.md`; the active expansion contract is
+> `ENEMY_CAMPAIGN_EXPANSION_PROMPT.md`, which absorbs the missing run-loop prerequisite.
 
 ## Immediate blockers
 
-1. **UI state is split between real gameplay data and prototype metadata.** Loadout/Shop/Costume must share one ownership/equipment/save model.
-2. **Economy is not authoritative.** Currency, purchase, upgrade, payout and rewards are still prototype or presentation-only.
-3. **Map_Level1 is a test arena.** It needs encounter geometry, spawn rules, NavMesh rebake and balance against the finished weapon roster.
+1. **Imported monsters are source art only.** Fifteen Cute creatures plus HUGO must be baked through
+   the existing VAT pipeline; no runtime Animator/SkinnedMeshRenderer enemy is acceptable.
+2. **Campaign/run state is missing.** Five stages, selection/progression, kills, Coin/XP/perks,
+   results and terminal payout need authoritative data and save flow.
+3. **Maps are placeholders.** Create five simple Plane scenes now; authored trees/obstacles come in
+   the owner's next environment-design pass.
 
 ## UI wiring checklist
 
-- [ ] Wallet/profile schema with versioned save data.
-- [ ] Weapon ownership keyed by stable `WeaponId`.
-- [ ] Equipped slots persisted through `LoadoutState` and applied on Player spawn.
-- [ ] Shop transaction service with atomic purchase/upgrade behavior.
-- [ ] Costume ownership/equipped GUIDs, preview sync and gameplay application.
+- [x] Wallet/profile schema with versioned save data.
+- [x] Weapon ownership keyed by stable `WeaponId`.
+- [x] Equipped slots persisted through `LoadoutState` and applied on Player spawn.
+- [x] Shop/Gacha/weapon-upgrade transactions are atomic and real.
+- [x] Pro Casual ownership/equipment, preview/gameplay sync and item/set commerce.
 - [ ] Real GameOver result and payout.
-- [ ] Currency widgets subscribe to one change source.
-- [ ] Remove production dependency on `cheatUnlockAll`.
-- [ ] Bind/disable Gacha, Pass and rewarded revive honestly.
+- [x] Currency widgets subscribe to `PlayerProfile`.
+- [x] Production ownership no longer depends on `cheatUnlockAll`.
+- [x] Weapon/Costume Gacha is real; Pass/rewarded revive remain honestly deferred.
 - [ ] EditMode/PlayMode tests for persistence, duplicate purchase and insufficient funds.
 
 ## Game-design checklist

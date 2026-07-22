@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Zombie-War** (22977 symbols, 28877 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Zombie-War** (29935 symbols, 37781 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -45,8 +45,9 @@ This project is indexed by GitNexus as **Zombie-War** (22977 symbols, 28877 rela
 
 ## Project handoff
 
-Before implementation, read `Docs/HANDOFF.md` and the domain handoff it links. Treat old phase
-snapshots and wireframe prompts as historical unless the current handoff explicitly points to them.
+Before implementation, read `Docs/ACCOUNT_SWITCH_HANDOFF.md` and the domain handoffs it links. Treat
+`Docs/HANDOFF.md`, old phase snapshots and wireframe prompts as historical unless the current
+account-switch handoff explicitly points to them.
 
 ## Completion notification
 

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a02e4533fc66eac4385915d76cb01f3e, type: 3}
+  m_Name: WD_Level3
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.WaveData
+  waves:
+  - label: "X\u01B0\u01A1ng tr\u1ED7i"
+    entries:
+    - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+      count: 12
+    spawnInterval: 0.85
+    maxConcurrent: 12
+    restAfterClear: 5
+  - label: "Ph\xE1p s\u01B0"
+    entries:
+    - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+      count: 10
+    - zombie: {fileID: 11400000, guid: a9733e8143d7df94cbe7ad70dd21b23a, type: 2}
+      count: 3
+    spawnInterval: 0.8
+    maxConcurrent: 14
+    restAfterClear: 5
+  - label: "Gi\u1EEF kho\u1EA3ng"
+    entries:
+    - zombie: {fileID: 11400000, guid: a9733e8143d7df94cbe7ad70dd21b23a, type: 2}
+      count: 5
+    - zombie: {fileID: 11400000, guid: fe859b9b05892c745aea1774800026dd, type: 2}
+      count: 6
+    spawnInterval: 0.8
+    maxConcurrent: 14
+    restAfterClear: 6
+  - label: "K\u1EBB n\u1EB7ng"
+    entries:
+    - zombie: {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+      count: 1
+    - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+      count: 10
+    spawnInterval: 0.8
+    maxConcurrent: 14
+    restAfterClear: 6
+  - label: "H\u1EE3p l\u1EF1c"
+    entries:
+    - zombie: {fileID: 11400000, guid: a9733e8143d7df94cbe7ad70dd21b23a, type: 2}
+      count: 5
+    - zombie: {fileID: 11400000, guid: 73571edaceef4b6458b6e05cabfe7565, type: 2}
+      count: 5
+    - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+      count: 10
+    spawnInterval: 0.75
+    maxConcurrent: 16
+    restAfterClear: 6
+  - label: "\xC1p \u0111\u1EA3o"
+    entries:
+    - zombie: {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+      count: 1
+    - zombie: {fileID: 11400000, guid: a9733e8143d7df94cbe7ad70dd21b23a, type: 2}
+      count: 4
+    - zombie: {fileID: 11400000, guid: fe859b9b05892c745aea1774800026dd, type: 2}
+      count: 8
+    spawnInterval: 0.7
+    maxConcurrent: 16
+    restAfterClear: 8
+  - label: BOSS
+    entries:
+    - zombie: {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+      count: 2
+    - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+      count: 8
+    spawnInterval: 1.1
+    maxConcurrent: 10
+    restAfterClear: 0

@@ -26,6 +26,9 @@ namespace ZombieWar.UI
         /// <summary>RT asset các RawImage (Hub/Costume) reference trực tiếp trong Inspector.</summary>
         public RenderTexture Texture => previewTexture;
 
+        /// <summary>Root nhân vật preview — CostumeScreen drag-rotate quay quanh Y (không đụng camera).</summary>
+        public Transform CharacterRoot => characterRoot;
+
         private void Start()
         {
             if (!ValidateRefs()) return;
@@ -33,6 +36,18 @@ namespace ZombieWar.UI
                 previewCamera.targetTexture = previewTexture;
             modularApplier.EnsureBoneMap(true);
             modularApplier.ApplySavedParts();
+        }
+
+        // Stage là CHỦ SỞ HỮU duy nhất của preview sync: mọi thay đổi costume (equip từng món,
+        // MẶC ĐỊNH, randomize, dev reset/unlock) → mặc lại đúng outfit đã lưu. ClearAll trước
+        // để slot vừa bị gỡ không còn mesh cũ.
+        private void OnEnable() => PlayerProfile.CostumeChanged += RefreshFromProfile;
+        private void OnDisable() => PlayerProfile.CostumeChanged -= RefreshFromProfile;
+
+        private void RefreshFromProfile()
+        {
+            if (modularApplier == null) return;
+            modularApplier.ApplySavedParts(); // reconcile per-slot (không ClearAll -> không flash/chồng renderer)
         }
 
         private bool ValidateRefs()

@@ -1,4 +1,8 @@
-# ZombieWar UI — Implementation Handoff
+# ZombieWar UI — Historical implementation handoff
+
+> **Current status moved to `Docs/ACCOUNT_SWITCH_HANDOFF.md`.** Architecture and authored-prefab rules
+> below still apply, but Fantasy-specific 14-slot/978-part descriptions are historical. The active
+> Casual Costume screen now uses ten logical slots, 323 stable-itemId parts and 323 real icons.
 
 > Updated 2026-07-20. Read `HANDOFF.md` first. This document covers the current UI implementation and the next wiring phase. `UI_REDESIGN_SPEC.md` remains the visual source of truth.
 
@@ -54,15 +58,29 @@ The UI is prefab/scene-authored and remains editable in the Unity Inspector. Edi
 
 ## What is still prototype-only
 
+> 2026-07-20 (slice 1): `PlayerProfile` (versioned, via `Bill.Save`) now owns wallet, weapon
+> ownership, equipped slots and costume ownership/equipment — see `Docs/PROFILE_SAVE.md`.
+> `LoadoutState` delegates storage to it and `Player.prefab` has the slot system enabled, so
+> persisted slots reach the spawned Player. The table below is updated accordingly.
+>
+> 2026-07-21 (slices 5–7): **one economy source of truth** — `EconomyConfig` ScriptableObject
+> (`Assets/_Project/Data/Economy/EconomyConfig.asset`, generated deterministically by
+> `ZombieWar/Economy/Generate Economy Config` from the costume catalog) holds rarity price bands,
+> 854 costume commerce records, and both gacha pools. Costume shop, both gacha banners, weapon
+> shop, loadout and costume equip all read one `PlayerProfile` + one catalog. New-item badges
+> (minimal): gacha grants mark items unseen (`PlayerProfile.unseenItems`); Hub shows a red dot on
+> LOADOUT (súng mới) / COSTUME (skin mới), cleared when that screen opens. Dev wallet cheat:
+> `ZombieWar/Dev/*` (Editor-only, seeds Coin+Gold+Gem). All logic covered by 82 EditMode tests.
+
 | Area | Current behavior | Required wiring |
 |---|---|---|
-| Loadout | Card selection updates preview and slot 0 only | Read/write authoritative equipped slots through `LoadoutState`; enforce slot rules; persist and apply to spawned Player |
-| Weapon ownership | `UIPrototypeCatalog.cheatUnlockAll=true` | Ownership belongs to save/economy state; catalog keeps icons only |
-| Shop Weapons | Selection visual only | Price validation, purchase transaction, owned/equip state, currency refresh and failure feedback |
-| Shop Gacha | Presentation only | Explicitly defer or implement a deterministic backend; do not fake purchases |
+| Loadout | **WIRED (Slice 2)**: active slot + equip qua `LoadoutState.TryEquip`, ownership từ `PlayerProfile`, refresh theo `LoadoutChanged`, icon bind runtime từ catalog | Còn lại: lock-overlay art placeholder, stat bar normalization tạm |
+| Weapon ownership | `PlayerProfile.ownedWeaponIds` exists (equipped ⇒ owned, starter owned); `cheatUnlockAll=true` still masks UI locks | UI reads `PlayerProfile.IsWeaponOwned`; catalog keeps icons only; cheat becomes Editor-only display override |
+| Shop Weapons | **WIRED (Slice 3)**: mua atomic qua `PlayerProfile.TryPurchaseWeapon` (tap-select rồi tap-lại-mua), state owned/affordable runtime từ profile, giá danger + shake khi thiếu tiền | Còn lại: navigation Loadout từ card đã sở hữu (tuỳ chọn) |
+| Shop Gacha | **WIRED (Slice 6)**: 2 banner (Súng/Skin) quay thật qua `GachaService` + `EconomyConfig.GachaPool` (cost/rarity weight/pity/dup compensation serialized editor-visible). Single + x10, RNG inject được (test deterministic), pity per-pool lưu trong `PlayerProfile.gachaPity`, reveal overlay hiện MỚI/Trùng+đền bù, loại starter/gacha-only. Cross-screen sync qua Loadout/CostumeChanged | Còn lại: reveal animation polish (hiện là list tĩnh) |
 | Shop Upgrades | Presentation only | Define upgrade model, max levels, price curve and WeaponData-derived result |
-| Costume | Preview apply only | Ownership, equipped parts, save/load and Player/menu preview synchronization |
-| Currency | PlayerPrefs prototype provider | One authoritative wallet/save service with change events |
+| Costume | **WIRED (Slice 4→4.2, commerce Slice 5)**: 14 slot chip, ownership/equip qua PlayerProfile, preview+gameplay sync, vendor icons, Body composite, essential/optional, kéo-xoay preview. **Slice 5**: giá theo `EconomyConfig` rarity band hiện trên card chưa sở hữu; tap-1 xem giá "MUA?", tap-2 mua atomic (`PlayerProfile.TryPurchaseCostume`) rồi tự mặc; starter không bán, gacha-only không bán ở shop. Shop-tab Costume redirect sang màn Costume (không placeholder giả) | — |
+| Currency | **WIRED (Slice 3)**: `ProfileCurrencyProvider` là DefaultProvider — widget đọc ví profile, refresh theo `WalletChanged` | HUD coin pill in-run vẫn 0 (chưa có run-reward backend — trung thực) |
 | Pass | Claim buttons log placeholder | Quest/progress/reward backend or remain visibly locked |
 | GameOver | Payout values are placeholder | Bind real run result and wallet transaction |
 | Revive | Ad button is placeholder | SDK/service boundary or disable cleanly |

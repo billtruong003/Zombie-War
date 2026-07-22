@@ -36,6 +36,17 @@ namespace ZombieWar
             _current = maxHealth;
         }
 
+        /// <summary>Restores health, clamped at max. Refuses to revive something already dead -
+        /// a health pickup must not undo a death that has already resolved.</summary>
+        public void Heal(float amount)
+        {
+            if (IsDead || amount <= 0f) return;
+            _current = Mathf.Min(maxHealth, _current + amount);
+            OnHealed?.Invoke(amount);
+        }
+
+        public event Action<float> OnHealed;
+
         // Lets a data-driven owner (e.g. a pooled zombie whose stats come from a ZombieData asset)
         // make that data the source of truth for max HP instead of the inspector value.
         public void Configure(float max)

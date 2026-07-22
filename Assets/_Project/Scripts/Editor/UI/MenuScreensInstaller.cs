@@ -73,6 +73,82 @@ namespace ZombieWar.Editor.UI
             Debug.Log("[MenuScreensInstaller] Loadout + Costume + Shop rebuilt (prototype content) + prefab reconnected.");
         }
 
+        [MenuItem("ZombieWar/UI/Authoring/Ensure Real Costume Shop + Upgrades")]
+        public static void EnsureCommercePrefabs()
+        {
+            ZombieWar.Editor.CasualIconCatalogSync.Sync();
+            const string shopPath = "Assets/_Project/UI/Prefabs/Screens/UI_ShopScreen.prefab";
+            var root = PrefabUtility.LoadPrefabContents(shopPath);
+            try
+            {
+                var screen = root.GetComponent<ShopScreen>();
+                var safe = root.transform.Find("Safe") as RectTransform;
+                if (screen == null || safe == null)
+                {
+                    Debug.LogError("[MenuScreensInstaller] Shop prefab missing ShopScreen/Safe.");
+                    return;
+                }
+
+                foreach (var name in new[] { "TabCostume", "TabUpgrades" })
+                {
+                    var old = safe.Find(name);
+                    if (old != null) Object.DestroyImmediate(old.gameObject);
+                }
+                var oldModal = root.transform.Find("PurchaseModal");
+                if (oldModal != null) Object.DestroyImmediate(oldModal.gameObject);
+
+                var costumePanel = BuildShopCostumeReal(safe);
+                var upgradePanel = BuildShopUpgradesReal(safe);
+                var modal = BuildShopPurchaseModal((RectTransform)root.transform,
+                    out var modalIcon, out var modalTitle, out var modalPrice, out var modalConfirm, out var modalCancel);
+
+                var so = new SerializedObject(screen);
+                var panels = so.FindProperty("tabPanels");
+                if (panels == null || panels.arraySize < 4)
+                {
+                    Debug.LogError("[MenuScreensInstaller] Shop tabPanels must contain four tabs.");
+                    return;
+                }
+                panels.GetArrayElementAtIndex(2).objectReferenceValue = costumePanel;
+                panels.GetArrayElementAtIndex(3).objectReferenceValue = upgradePanel;
+                Set(so, "catalog", AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>(
+                    "Assets/_Project/UI/Data/UIPrototypeCatalog.asset"));
+                Set(so, "economy", AssetDatabase.LoadAssetAtPath<EconomyConfig>(
+                    "Assets/_Project/Data/Economy/EconomyConfig.asset"));
+                SetArray(so, "costumeModeButtons", new Object[]
+                {
+                    FindNamed<Button>(costumePanel.transform, "ItemMode"),
+                    FindNamed<Button>(costumePanel.transform, "SetMode")
+                });
+                SetArray(so, "costumeCards", System.Array.ConvertAll(
+                    costumePanel.GetComponentsInChildren<ShopCostumeCardView>(true), c => (Object)c));
+                Set(so, "costumePrevButton", FindNamed<Button>(costumePanel.transform, "Prev"));
+                Set(so, "costumeNextButton", FindNamed<Button>(costumePanel.transform, "Next"));
+                Set(so, "costumePageLabel", FindNamed<TMP_Text>(costumePanel.transform, "Page"));
+                Set(so, "purchaseModal", modal);
+                Set(so, "purchaseIcon", modalIcon);
+                Set(so, "purchaseTitle", modalTitle);
+                Set(so, "purchasePrice", modalPrice);
+                Set(so, "purchaseConfirmButton", modalConfirm);
+                Set(so, "purchaseCancelButton", modalCancel);
+                SetArray(so, "upgradeCards", System.Array.ConvertAll(
+                    upgradePanel.GetComponentsInChildren<WeaponUpgradeCardView>(true), c => (Object)c));
+                Set(so, "upgradePrevButton", FindNamed<Button>(upgradePanel.transform, "Prev"));
+                Set(so, "upgradeNextButton", FindNamed<Button>(upgradePanel.transform, "Next"));
+                Set(so, "upgradePageLabel", FindNamed<TMP_Text>(upgradePanel.transform, "Page"));
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, shopPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            CostumeSlotChipInstaller.Ensure();
+            AssetDatabase.SaveAssets();
+            Debug.Log("[MenuScreensInstaller] Real Costume Shop, weapon upgrades, purchase modal, and Costume BỘ tab authored.");
+        }
+
         static void EnsureWeaponEntries(UIPrototypeCatalog catalog)
         {
             foreach (var wd in UIThumbnailGenerator.LoadAllWeaponData())
@@ -319,8 +395,8 @@ namespace ZombieWar.Editor.UI
             raw.texture = MenuCharacterStageInstaller.EnsureRenderTexture();
             raw.uvRect = new Rect(0.02f, 0.42f, 0.96f, 0.42f);   // crop band mặt/thân — chỉnh Inspector
 
-            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -680), new Vector2(640, 88),
-                new[] { "Đầu", "Thân", "Chân" }, UITheme.Green, 0, out var partFills, out var partLabels);
+            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -680), new Vector2(900, 88),
+                new[] { "ĐẦU", "THÂN", "CHÂN", "BỘ" }, UITheme.Green, 0, out var partFills, out var partLabels);
 
             // Pool 18 cell cố định (catalog ~nghìn part → paging, không Instantiate runtime)
             var area = K.StretchTop(K.Rect("PartArea", safe), 820, -800, 32, 32);
@@ -413,8 +489,13 @@ namespace ZombieWar.Editor.UI
             var panels = new GameObject[4];
             panels[0] = BuildShopWeapons(safe, catalog, weaponCards);
             panels[1] = BuildShopGacha(safe);
-            panels[2] = BuildShopCostume(safe, catalog);
-            panels[3] = BuildShopUpgrades(safe);
+            panels[2] = BuildShopCostumeReal(safe);
+            panels[3] = BuildShopUpgradesReal(safe);
+            var modal = BuildShopPurchaseModal((RectTransform)scr.transform,
+                out var modalIcon, out var modalTitle, out var modalPrice, out var modalConfirm, out var modalCancel);
+
+            var economy = AssetDatabase.LoadAssetAtPath<EconomyConfig>(
+                "Assets/_Project/Data/Economy/EconomyConfig.asset");
 
             var so = new SerializedObject(scr);
             Set(so, "backButton", back);
@@ -425,6 +506,29 @@ namespace ZombieWar.Editor.UI
             SetColorArray(so, "tabActiveColors",
                 new[] { UITheme.Green, UITheme.Gold, UITheme.Green, UITheme.Green });
             SetArray(so, "weaponCards", weaponCards.ConvertAll(c => (Object)c).ToArray());
+            Set(so, "catalog", catalog);
+            Set(so, "economy", economy);
+            SetArray(so, "costumeModeButtons", new Object[]
+            {
+                FindNamed<Button>(panels[2].transform, "ItemMode"),
+                FindNamed<Button>(panels[2].transform, "SetMode")
+            });
+            SetArray(so, "costumeCards", System.Array.ConvertAll(
+                panels[2].GetComponentsInChildren<ShopCostumeCardView>(true), c => (Object)c));
+            Set(so, "costumePrevButton", FindNamed<Button>(panels[2].transform, "Prev"));
+            Set(so, "costumeNextButton", FindNamed<Button>(panels[2].transform, "Next"));
+            Set(so, "costumePageLabel", FindNamed<TMP_Text>(panels[2].transform, "Page"));
+            Set(so, "purchaseModal", modal);
+            Set(so, "purchaseIcon", modalIcon);
+            Set(so, "purchaseTitle", modalTitle);
+            Set(so, "purchasePrice", modalPrice);
+            Set(so, "purchaseConfirmButton", modalConfirm);
+            Set(so, "purchaseCancelButton", modalCancel);
+            SetArray(so, "upgradeCards", System.Array.ConvertAll(
+                panels[3].GetComponentsInChildren<WeaponUpgradeCardView>(true), c => (Object)c));
+            Set(so, "upgradePrevButton", FindNamed<Button>(panels[3].transform, "Prev"));
+            Set(so, "upgradeNextButton", FindNamed<Button>(panels[3].transform, "Next"));
+            Set(so, "upgradePageLabel", FindNamed<TMP_Text>(panels[3].transform, "Page"));
             so.ApplyModifiedPropertiesWithoutUndo();
             scr.gameObject.SetActive(false);
             return scr;
@@ -522,6 +626,162 @@ namespace ZombieWar.Editor.UI
 
             K.Button(card, "Quay1", b1, new Vector2(440, 96), A.BC, new Vector2(-236, 28), btnFace, btnEdge, btnText, UITheme.FontLabel + 4);
             K.Button(card, "Quay10", b2, new Vector2(440, 96), A.BC, new Vector2(236, 28), btnFace, btnEdge, btnText, UITheme.FontLabel + 4);
+        }
+
+        static GameObject BuildShopCostumeReal(RectTransform safe)
+        {
+            var panel = ShopContent(safe, "TabCostume", out var content);
+            var vlg = content.GetComponent<VerticalLayoutGroup>();
+            vlg.spacing = 20; vlg.padding = new RectOffset(24, 24, 8, 8);
+
+            var switcher = K.Rect("OfferMode", content);
+            LE(switcher, 88);
+            var itemMode = K.Button(switcher, "ItemMode", "ITEM LẺ", new Vector2(440, 76), A.ML,
+                new Vector2(8, 0), UITheme.Green, UITheme.GreenLo, Color.white, UITheme.FontLabel);
+            var setMode = K.Button(switcher, "SetMode", "BỘ", new Vector2(440, 76), A.MR,
+                new Vector2(-8, 0), UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, UITheme.FontLabel);
+
+            var note = K.Text(content, "Hint", "Chọn món hoặc bộ · xác nhận giá trước khi mua",
+                UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
+            LE(note, 44);
+
+            var grid = K.Rect("OfferGrid", content);
+            var gl = grid.gameObject.AddComponent<GridLayoutGroup>();
+            gl.cellSize = new Vector2(452, 290); gl.spacing = new Vector2(20, 20);
+            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount; gl.constraintCount = 2;
+            gl.childAlignment = TextAnchor.UpperCenter;
+            LE(grid, 4 * 290 + 3 * 20);
+            for (int i = 0; i < 8; i++) BuildShopCostumeCard(grid, i);
+
+            BuildPager(content);
+            panel.gameObject.SetActive(false);
+            return panel.gameObject;
+        }
+
+        static void BuildShopCostumeCard(RectTransform parent, int index)
+        {
+            var card = K.Card(parent, $"CostumeOffer{index}", A.TC, Vector2.zero,
+                new Vector2(452, 290), out _, out var border, out _);
+            var button = card.gameObject.AddComponent<Button>();
+            button.targetGraphic = card.GetComponent<Image>();
+            var icon = K.Image(card, "Icon", K.Rounded24, Color.white, false);
+            K.Place(icon.rectTransform, A.TC, new Vector2(0, -18), new Vector2(230, 150));
+            icon.preserveAspect = true;
+            var name = K.Text(card, "Name", "Costume", 28, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(name.rectTransform, A.BC, new Vector2(0, 64), new Vector2(400, 48));
+            var price = K.Text(card, "Price", "C 0", 26, UITheme.Gold,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(price.rectTransform, A.BC, new Vector2(0, 18), new Vector2(320, 42));
+            var owned = K.Image(card, "Owned", K.Pill, UITheme.Green, false);
+            K.Place(owned.rectTransform, A.TR, new Vector2(-12, -12), new Vector2(116, 42));
+            var ownedText = K.Text(owned.rectTransform, "Label", "ĐÃ CÓ", 20, Color.white,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Full(ownedText.rectTransform);
+
+            var view = card.gameObject.AddComponent<ShopCostumeCardView>();
+            view.button = button; view.icon = icon; view.border = border; view.nameLabel = name;
+            view.priceLabel = price; view.ownedBadge = owned.gameObject;
+        }
+
+        static GameObject BuildShopUpgradesReal(RectTransform safe)
+        {
+            var panel = ShopContent(safe, "TabUpgrades", out var content);
+            var vlg = content.GetComponent<VerticalLayoutGroup>();
+            vlg.spacing = 20; vlg.padding = new RectOffset(24, 24, 8, 8);
+
+            var title = K.Text(content, "UpgradeTitle", "NÂNG CẤP VŨ KHÍ",
+                UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.Center);
+            LE(title, 58);
+            var hint = K.Text(content, "UpgradeHint", "Súng trùng → mảnh · mảnh + Vàng tăng sao",
+                UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
+            LE(hint, 62);
+
+            var grid = K.Rect("UpgradeGrid", content);
+            var gl = grid.gameObject.AddComponent<GridLayoutGroup>();
+            gl.cellSize = new Vector2(452, 330); gl.spacing = new Vector2(20, 20);
+            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount; gl.constraintCount = 2;
+            gl.childAlignment = TextAnchor.UpperCenter;
+            LE(grid, 3 * 330 + 2 * 20);
+            for (int i = 0; i < 6; i++) BuildWeaponUpgradeCard(grid, i);
+
+            BuildPager(content);
+            panel.gameObject.SetActive(false);
+            return panel.gameObject;
+        }
+
+        static void BuildWeaponUpgradeCard(RectTransform parent, int index)
+        {
+            var card = K.Card(parent, $"WeaponUpgrade{index}", A.TC, Vector2.zero,
+                new Vector2(452, 330), out _, out var border, out _);
+            var button = card.gameObject.AddComponent<Button>();
+            button.targetGraphic = card.GetComponent<Image>();
+            var icon = K.Image(card, "Icon", K.Rounded24, Color.white, false);
+            K.Place(icon.rectTransform, A.TL, new Vector2(20, -20), new Vector2(150, 110));
+            icon.preserveAspect = true;
+            var name = K.Text(card, "Name", "Weapon", 27, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(name.rectTransform, A.TR, new Vector2(-20, -22), new Vector2(250, 48));
+            var level = K.Text(card, "Level", "CẤP 1/3", 28, UITheme.Gold,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(level.rectTransform, A.TR, new Vector2(-20, -72), new Vector2(250, 42));
+            var stats = K.Text(card, "Stats", "DMG 0 → 0\nROF 0 → 0", 25, UITheme.TextDim,
+                FontStyles.Normal, TextAlignmentOptions.TopLeft);
+            K.Place(stats.rectTransform, A.BL, new Vector2(24, 96), new Vector2(400, 82));
+            var cost = K.Text(card, "Cost", "0/10 mảnh · 100 V", 24, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(cost.rectTransform, A.BC, new Vector2(0, 28), new Vector2(400, 52));
+
+            var view = card.gameObject.AddComponent<WeaponUpgradeCardView>();
+            view.button = button; view.icon = icon; view.border = border; view.nameLabel = name;
+            view.levelLabel = level; view.statLabel = stats; view.resourceLabel = cost;
+        }
+
+        static void BuildPager(RectTransform parent)
+        {
+            var pager = K.Rect("Pager", parent);
+            LE(pager, 84);
+            K.Button(pager, "Prev", "‹", new Vector2(160, 68), A.ML, new Vector2(120, 0),
+                UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, 36);
+            var page = K.Text(pager, "Page", "1/1", 28, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(page.rectTransform, A.C, Vector2.zero, new Vector2(240, 68));
+            K.Button(pager, "Next", "›", new Vector2(160, 68), A.MR, new Vector2(-120, 0),
+                UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, 36);
+        }
+
+        static GameObject BuildShopPurchaseModal(RectTransform parent, out Image icon, out TMP_Text title,
+            out TMP_Text price, out Button confirm, out Button cancel)
+        {
+            var root = K.Image(parent, "PurchaseModal", K.Rounded24, new Color(0, 0, 0, 0.82f), false);
+            K.Full(root.rectTransform);
+            var panel = K.Card(root.rectTransform, "Panel", A.C, Vector2.zero, new Vector2(820, 720),
+                out var glow, out var border, out _);
+            glow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha); glow.gameObject.SetActive(true);
+            border.color = UITheme.Cyan; border.gameObject.SetActive(true);
+            title = K.Text(panel, "Title", "Mua item?", UITheme.FontSub, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(title.rectTransform, A.TC, new Vector2(0, -44), new Vector2(720, 80));
+            icon = K.Image(panel, "Icon", K.Rounded24, Color.white, false);
+            K.Place(icon.rectTransform, A.C, new Vector2(0, 30), new Vector2(300, 260));
+            icon.preserveAspect = true;
+            price = K.Text(panel, "Price", "C 0", 40, UITheme.Gold,
+                FontStyles.Bold, TextAlignmentOptions.Center);
+            K.Place(price.rectTransform, A.BC, new Vector2(0, 170), new Vector2(500, 64));
+            cancel = K.Button(panel, "Cancel", "HỦY", new Vector2(320, 96), A.BL, new Vector2(40, 40),
+                UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, UITheme.FontLabel);
+            confirm = K.Button(panel, "Confirm", "MUA", new Vector2(320, 96), A.BR, new Vector2(-40, 40),
+                UITheme.Green, UITheme.GreenLo, Color.white, UITheme.FontLabel);
+            root.gameObject.SetActive(false);
+            return root.gameObject;
+        }
+
+        static T FindNamed<T>(Transform root, string name) where T : Component
+        {
+            if (root == null) return null;
+            foreach (var component in root.GetComponentsInChildren<T>(true))
+                if (component.name == name) return component;
+            return null;
         }
 
         static GameObject BuildShopCostume(RectTransform safe, UIPrototypeCatalog catalog)

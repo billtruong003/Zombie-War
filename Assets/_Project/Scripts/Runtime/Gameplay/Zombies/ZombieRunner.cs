@@ -2,9 +2,10 @@ using UnityEngine;
 
 namespace ZombieWar
 {
-    // A fast zombie that pounces: once inside lunge range it sprints, so it closes the last few
-    // metres far quicker than it wanders the distance. Still a melee attacker.
-    public sealed class ZombieRunner : ZombieBase
+    // A fast zombie: once inside lunge range it sprints, so it closes the last few metres far
+    // quicker than it wanders the distance. Still a melee attacker.
+    // Base class for ZombiePouncer, which keeps this sprint approach and adds a committed leap.
+    public class ZombieRunner : ZombieBase
     {
         [SerializeField] private float lungeRange = 6f;
         [SerializeField] private float lungeSpeedMultiplier = 2.2f;

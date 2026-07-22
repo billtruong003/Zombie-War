@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a02e4533fc66eac4385915d76cb01f3e, type: 3}
+  m_Name: WD_Level4
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.WaveData
+  waves:
+  - label: "Vu\u1ED1t nhanh"
+    entries:
+    - zombie: {fileID: 11400000, guid: f168443f00849f142ab8b8806cddeb49, type: 2}
+      count: 6
+    - zombie: {fileID: 11400000, guid: fe859b9b05892c745aea1774800026dd, type: 2}
+      count: 6
+    spawnInterval: 0.8
+    maxConcurrent: 12
+    restAfterClear: 5
+  - label: "S\u1EA5m s\xE9t"
+    entries:
+    - zombie: {fileID: 11400000, guid: b4c30108ac4346b4cb208604f5d917b7, type: 2}
+      count: 6
+    - zombie: {fileID: 11400000, guid: f168443f00849f142ab8b8806cddeb49, type: 2}
+      count: 6
+    spawnInterval: 0.75
+    maxConcurrent: 14
+    restAfterClear: 5
+  - label: "\u0110\xE0o ng\u1EA7m"
+    entries:
+    - zombie: {fileID: 11400000, guid: fd8d54e5f79d40b42b4484b3b48535cd, type: 2}
+      count: 5
+    - zombie: {fileID: 11400000, guid: f168443f00849f142ab8b8806cddeb49, type: 2}
+      count: 8
+    spawnInterval: 0.75
+    maxConcurrent: 14
+    restAfterClear: 6
+  - label: "\u0110\xE8 n\u1EB7ng"
+    entries:
+    - zombie: {fileID: 11400000, guid: 77ec4f179c16a404fa19b220ec2b673e, type: 2}
+      count: 4
+    - zombie: {fileID: 11400000, guid: b4c30108ac4346b4cb208604f5d917b7, type: 2}
+      count: 8
+    spawnInterval: 0.7
+    maxConcurrent: 16
+    restAfterClear: 6
+  - label: "B\u1EA7y \u0111\xE0n"
+    entries:
+    - zombie: {fileID: 11400000, guid: f168443f00849f142ab8b8806cddeb49, type: 2}
+      count: 10
+    - zombie: {fileID: 11400000, guid: b4c30108ac4346b4cb208604f5d917b7, type: 2}
+      count: 8
+    - zombie: {fileID: 11400000, guid: fd8d54e5f79d40b42b4484b3b48535cd, type: 2}
+      count: 5
+    spawnInterval: 0.7
+    maxConcurrent: 18
+    restAfterClear: 6
+  - label: "S\u0103n m\u1ED3i"
+    entries:
+    - zombie: {fileID: 11400000, guid: 77ec4f179c16a404fa19b220ec2b673e, type: 2}
+      count: 6
+    - zombie: {fileID: 11400000, guid: fd8d54e5f79d40b42b4484b3b48535cd, type: 2}
+      count: 6
+    - zombie: {fileID: 11400000, guid: fe859b9b05892c745aea1774800026dd, type: 2}
+      count: 8
+    spawnInterval: 0.65
+    maxConcurrent: 18
+    restAfterClear: 8
+  - label: BOSS
+    entries:
+    - zombie: {fileID: 11400000, guid: f8cf8818ab64e664dbf282bd4c84d541, type: 2}
+      count: 1
+    - zombie: {fileID: 11400000, guid: fd8d54e5f79d40b42b4484b3b48535cd, type: 2}
+      count: 4
+    - zombie: {fileID: 11400000, guid: f168443f00849f142ab8b8806cddeb49, type: 2}
+      count: 6
+    spawnInterval: 1.1
+    maxConcurrent: 12
+    restAfterClear: 0

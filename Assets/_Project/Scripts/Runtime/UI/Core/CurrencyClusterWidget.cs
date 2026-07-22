@@ -17,7 +17,24 @@ namespace ZombieWar.UI
         event System.Action Changed;
     }
 
-    /// <summary>Mock provider persist bằng PlayerPrefs — thay bằng WalletService ở E1.</summary>
+    /// <summary>
+    /// Provider production: đọc thẳng PlayerProfile (Bill.Save), Changed forward WalletChanged —
+    /// không polling, không giữ state riêng, add/remove listener đi thẳng vào event profile.
+    /// </summary>
+    public sealed class ProfileCurrencyProvider : ICurrencyProvider
+    {
+        public long Coin => PlayerProfile.Coin;
+        public long Gold => PlayerProfile.Gold;
+        public long Gem => PlayerProfile.Gem;
+        public event System.Action Changed
+        {
+            add => PlayerProfile.WalletChanged += value;
+            remove => PlayerProfile.WalletChanged -= value;
+        }
+    }
+
+    /// <summary>Mock provider PlayerPrefs cũ — CHỈ còn cho test/tương thích; key wallet_* giờ chỉ là
+    /// input migration (PROFILE_SAVE.md), không phải ví production.</summary>
     public sealed class PlayerPrefsCurrencyProvider : ICurrencyProvider
     {
         public event System.Action Changed;
@@ -45,8 +62,8 @@ namespace ZombieWar.UI
 
         private ICurrencyProvider _provider;
 
-        /// <summary>Static default để mọi widget dùng chung khi chưa có DI (E1 sẽ thay).</summary>
-        public static ICurrencyProvider DefaultProvider { get; set; } = new PlayerPrefsCurrencyProvider();
+        /// <summary>Static default để mọi widget dùng chung — production = ví PlayerProfile.</summary>
+        public static ICurrencyProvider DefaultProvider { get; set; } = new ProfileCurrencyProvider();
 
         private void OnEnable()
         {

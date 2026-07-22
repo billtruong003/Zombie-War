@@ -40,10 +40,40 @@ namespace ZombieWar.UI
             Wire(settingsButton, () => Open(settingsScreen, "SETTINGS"));
         }
 
-        protected override void OnShow() => RefreshRecord();
-        protected override void OnFocus() => RefreshRecord();
+        private GameObject _loadoutBadge, _costumeBadge;
+
+        protected override void OnShow() { RefreshRecord(); RefreshBadges(); }
+        protected override void OnFocus() { RefreshRecord(); RefreshBadges(); }
 
         public override bool OnEscape() => true;   // HUB là root — back không pop
+
+        /// Badge "item mới" (Slice 7, minimal): chấm đỏ trên LOADOUT khi có súng gacha chưa xem,
+        /// trên COSTUME khi có skin chưa xem. Clear khi mở màn tương ứng (LoadoutScreen/CostumeScreen).
+        private void RefreshBadges()
+        {
+            if (loadoutButton != null)
+                SetBadge(ref _loadoutBadge, loadoutButton, PlayerProfile.HasUnseenWeapon());
+            if (costumeButton != null)
+                SetBadge(ref _costumeBadge, costumeButton, PlayerProfile.HasUnseenCostume());
+        }
+
+        private static void SetBadge(ref GameObject badge, Button host, bool on)
+        {
+            if (badge == null)
+            {
+                badge = new GameObject("NewBadge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var rt = (RectTransform)badge.transform;
+                rt.SetParent(host.transform, false);
+                rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = new Vector2(-6f, -6f);
+                rt.sizeDelta = new Vector2(20f, 20f);
+                var img = badge.GetComponent<Image>();
+                img.color = UITheme.Danger;
+                img.raycastTarget = false;
+            }
+            badge.SetActive(on);
+        }
 
         private void RefreshRecord()
         {

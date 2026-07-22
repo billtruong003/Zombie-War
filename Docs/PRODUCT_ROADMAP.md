@@ -1,6 +1,8 @@
 # ZombieWar — Product Roadmap
 
-> Updated 2026-07-20. Dependency-ordered; current execution focus is UI/data wiring, then map and encounter balance.
+> Updated 2026-07-21. Menu/profile/Pro Casual commerce is complete. Current execution focus is the
+> VAT enemy + five-stage campaign contract in `ENEMY_CAMPAIGN_EXPANSION_PROMPT.md`; it includes any
+> missing run-loop prerequisite from `NEXT_PHASE_RUN_LOOP_PROMPT.md`.
 
 ## Completed foundations
 
@@ -11,13 +13,13 @@
 - ✅ Menu character RenderTexture preview and modular costume catalog extraction.
 - ✅ Generated item thumbnails and Editor validation/authoring tools.
 
-## Phase A — UI and state wiring (next)
+## Phase A — UI and state wiring (completed except run results)
 
-- ⬜ Define one authoritative wallet/save profile.
-- ⬜ Move ownership/equipment authority out of `UIPrototypeCatalog`.
-- ⬜ Wire Loadout to `LoadoutState` and spawned Player.
-- ⬜ Wire Shop purchases/equip/upgrades or explicitly disable unfinished tabs.
-- ⬜ Persist costume ownership/equipment and synchronize preview/gameplay character.
+- ✅ Define one authoritative wallet/save profile.
+- ✅ Move ownership/equipment authority out of `UIPrototypeCatalog`.
+- ✅ Wire Loadout to `LoadoutState` and spawned Player.
+- ✅ Wire real weapon/Costume item+set Shop, Gacha and weapon upgrades.
+- ✅ Persist Pro Casual costume ownership/equipment and synchronize preview/gameplay character.
 - ⬜ Bind GameOver payout, Pass/revive availability and all currency displays.
 - ⬜ Replace hard-coded stats with documented normalized values.
 - ⬜ Save/reload and scene-transition tests.
@@ -39,7 +41,9 @@
 - ⬜ Tune concurrency/spawn cadence against mobile performance budget.
 - ⬜ Validate full run: Menu → Loadout → Map → waves → death/revive → payout → Shop.
 
-## Phase D — In-run roguelite systems
+## Phase D — In-run roguelite systems (current execution slice)
+
+Execution contract: `Docs/NEXT_PHASE_RUN_LOOP_PROMPT.md`.
 
 - ⬜ Pickup/drop table and magnet behavior.
 - ⬜ XP, level-up and 1-of-3 perk choice.

@@ -289,7 +289,9 @@ namespace ZombieWar
                 return;
             }
 
-            _fireCooldown = 1f / data.fireRate;
+            int weaponLevel = PlayerProfile.GetWeaponLevel(data.WeaponId);
+            float effectiveFireRate = WeaponUpgradeMath.EffectiveFireRate(data, weaponLevel);
+            _fireCooldown = effectiveFireRate > 0f ? 1f / effectiveFireRate : float.PositiveInfinity;
             if (data.magazineSize > 0)
             {
                 _ammoInMag--;
@@ -360,7 +362,8 @@ namespace ZombieWar
             if (dmg != null)
             {
                 float dist01 = data.range > 0f ? Vector3.Distance(origin, hit.point) / data.range : 0f;
-                dmg.TakeDamage(data.damage * dmgMult * data.RangeFalloff(dist01));
+                int weaponLevel = PlayerProfile.GetWeaponLevel(data.WeaponId);
+                dmg.TakeDamage(WeaponUpgradeMath.EffectiveDamage(data, weaponLevel) * dmgMult * data.RangeFalloff(dist01));
             }
             if (data.impactPrefab != null)
                 FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));

@@ -9,7 +9,10 @@ namespace ZombieWar
         [SerializeField] private Animator animator;
         [SerializeField] private float moveSpeed = 5f;
         [SerializeField] private float bodyRotationSpeed = 720f;
-        [SerializeField] private float aimRange = 15f;
+        [Tooltip("Auto-aim acquisition radius. Must stay close to what the portrait camera actually " +
+                 "shows on the ground (~6 m forward, ~4 m sideways) or the player auto-fires at " +
+                 "enemies that are entirely off-screen. Weapon ranges are tuned into this same band.")]
+        [SerializeField] private float aimRange = 11f;
         [SerializeField] private float animDamp = 0.1f;
 
                 [Header("Auto-aim (nearest zombie)")]

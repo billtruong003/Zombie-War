@@ -3,6 +3,21 @@
 > **Proposed design, not implemented backend.** The next phase must reconcile these values with the
 > real 25-weapon roster and create an authoritative wallet/profile before wiring purchases.
 
+> **2026-07-21 (slices 5–6) — commerce/gacha implemented (provisional values).** The authoritative
+> data now lives in `EconomyConfig` (`Assets/_Project/Data/Economy/EconomyConfig.asset`, editor-visible,
+> regenerate via `ZombieWar/Economy/Generate Economy Config`). Provisional costume rarity price bands:
+> Common 300 Coin · Uncommon 800 Coin · Rare 120 Gold · Epic 350 Gold · Legendary 900 Gold. Body
+> colors/ears priced by the same bands (White/Normal = starter, free). Gacha pools: Súng 100/900 Gold,
+> Skin 10/90 Gem, rarity weights {55,25,12,6,2}, pity 30 → Epic guarantee, dup compensation
+> {20,40,80,160,320} Coin. `provisional=true` on the asset — **balance not final** (needs run-income
+> tuning before lock). Costume set-vs-part KC pricing (§7) deferred; parts/body currently use bands.
+
+> **2026-07-21 Pro Casual correction.** The generated economy now contains 448 player-facing items
+> and 30 curated outfit sets. The unique base Head plus `Body_1..4` are technical render meshes:
+> they are excluded from ownership, shop, gacha and icons. Runtime selects Body_1/2/3/4 from the
+> equipped Gloves/Shoes combination. Weapon duplicates now grant weapon-specific shards used for
+> star upgrades; the older Coin-compensation text below is historical until the balance pass.
+
 > v2.0 — chốt hệ Rarity 5 màu + Sao súng + nội tại, tab UPGRADES nhỏ, Battle Pass free track.
 > Asset đã verify: `Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Prefabs/` (Money_*, Gem_*, Gems_*), UI skin: `Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual`.
 
@@ -113,8 +128,16 @@ Full cả 3 dòng = 5.550 Coin, +16% mỗi loại. Đây là "nền rẻ tiền"
 
 ## 7. Costume (modular Layer Lab) — thuần cosmetic
 
-**Free:** Hair ~4–5 · Face (mouth/eye/brow) 4–5 · Beard: default "không râu" + vài kiểu free; **màu râu/tóc = option riêng trong cùng category** (~4–5 màu).
-**Default (có thể thay, không được trần truồng):** Chest `61–66` · Leg `62–67` · Feet `1,2,3,4,6,7,55` · Head `38,53,55`. Ngoài danh sách: mua hết.
+**Free/default ownership (CHỐT — Slice 4.2, thay lời 4.1):** đúng 9 part + Body White/Normal:
+Hair `Hair_Black_1` · Eye `Eye_Black_1` · Brow `Brow_Black_1` · Mouth `Mouth_Black_1` · Chest `Chest_61` ·
+Legs `Legs_62` · Feet `1,2,3` (free nhưng KHÔNG mặc — bàn chân có sẵn từ body mesh) · Body màu White +
+tai Normal. KHÔNG free thêm gì khác. Ngoài danh sách: mua/thưởng/gacha/achievement.
+**Body = composite:** 6 màu (White/Black/Brown/Green/Purple/Yellow, chỉ White free) + 2 tai
+(Normal free / Elf khoá). 132 mesh raw của Body KHÔNG phải 132 lựa chọn — chỉ dùng nội bộ để resolve.
+**Outfit mặc định (không trần truồng):** Body White_1 + White_Head_1, Hair/Eye/Brow/Mouth Black_1,
+Chest_61, Legs_62; Feet + phụ kiện = "Không mang". Head không tự đội.
+**Slot essential** (Hair/Brow/Eye/Mouth/Chest/Legs) có "Mặc định"; **optional** (Beard/Eyewear/
+Earring/Head/Hands/Back/Feet) có "Không mang". Giá costume vẫn CHƯA chốt (deferred).
 **Bán:** part lẻ = Coin/Vàng theo rarity 5 màu; **SET full-body chỉ KC: 200 / 500 / 1000**; vài set gacha-only, vài set achievement-only (prestige).
 
 ## 8. Battle Pass — FREE track ngay, premium để sau

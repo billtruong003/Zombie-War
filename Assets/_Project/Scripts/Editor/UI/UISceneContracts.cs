@@ -198,11 +198,59 @@ namespace ZombieWar.Editor.UI
             if (loadout != null)
                 foreach (var f in new[] { "backButton", "shopLinkButton", "shopScreen", "catalog", "infoNameLabel" })
                     CheckRef(loadout, f, r, ref fails);
+            var shop = Object.FindFirstObjectByType<ShopScreen>(FindObjectsInactive.Include);
+            if (shop != null)
+            {
+                foreach (var f in new[] { "backButton", "catalog" })
+                    CheckRef(shop, f, r, ref fails);
+                // Card coverage: đủ 25 khẩu roster, không null/trùng WeaponData.
+                var soShop = new SerializedObject(shop);
+                var cardsProp = soShop.FindProperty("weaponCards");
+                if (cardsProp == null || !cardsProp.isArray || cardsProp.arraySize == 0)
+                    Fail("ShopScreen.weaponCards rỗng");
+                else
+                {
+                    var seenData = new System.Collections.Generic.HashSet<Object>();
+                    int nulls = 0, dups = 0;
+                    for (int i = 0; i < cardsProp.arraySize; i++)
+                    {
+                        var view = cardsProp.GetArrayElementAtIndex(i).objectReferenceValue as ZombieWar.UI.WeaponItemCardView;
+                        if (view == null || view.data == null) { nulls++; continue; }
+                        if (!seenData.Add(view.data)) dups++;
+                    }
+                    if (nulls > 0) Fail($"ShopScreen có {nulls} card null/thiếu WeaponData");
+                    if (dups > 0) Fail($"ShopScreen có {dups} card trùng WeaponData");
+                    var cat = AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>(UIThumbnailGenerator.CatalogAssetPath);
+                    if (cat != null && seenData.Count != cat.weapons.Count)
+                        Fail($"ShopScreen card ({seenData.Count}) ≠ roster catalog ({cat.weapons.Count})");
+                    else if (nulls == 0 && dups == 0) Ok($"ShopScreen {seenData.Count} card khớp roster");
+                }
+            }
+
             var costume = Object.FindFirstObjectByType<CostumeScreen>(FindObjectsInactive.Include);
             if (costume != null)
-                foreach (var f in new[] { "backButton", "randomButton", "catalog", "uiCatalog", "previewStage",
-                                          "pagePrevButton", "pageNextButton", "pageLabel" })
+            {
+                foreach (var f in new[] { "backButton", "randomButton", "resetOutfitButton", "catalog", "uiCatalog",
+                                          "previewStage", "dragRotator", "pagePrevButton", "pageNextButton", "pageLabel" })
                     CheckRef(costume, f, r, ref fails);
+
+                // Slice 4: hang chip 14 logical slot phai duoc author + wire (8 chip, khong null).
+                var soCostume = new SerializedObject(costume);
+                var chipsProp = soCostume.FindProperty("slotChips");
+                if (chipsProp == null || chipsProp.arraySize < 8)
+                    Fail($"CostumeScreen.slotChips = {(chipsProp == null ? "thiếu field" : chipsProp.arraySize + " chip")} (cần 8 — chạy Ensure Costume Slot Selector)");
+                else
+                {
+                    int nullChips = 0;
+                    for (int i = 0; i < chipsProp.arraySize; i++)
+                        if (chipsProp.GetArrayElementAtIndex(i).objectReferenceValue == null) nullChips++;
+                    if (nullChips > 0) Fail($"CostumeScreen.slotChips có {nullChips} chip null");
+                    else Ok("CostumeScreen 8 slot chip wired");
+                }
+                var cellsProp = soCostume.FindProperty("cells");
+                if (cellsProp != null && cellsProp.arraySize > 50)
+                    Fail($"CostumeScreen.cells = {cellsProp.arraySize} (pool phải bounded, không bake 978 cell)");
+            }
             var pass = Object.FindFirstObjectByType<PassScreen>(FindObjectsInactive.Include);
             if (pass != null)
                 foreach (var f in new[] { "backButton", "gachaLinkButton", "shopScreen" })
@@ -286,7 +334,170 @@ namespace ZombieWar.Editor.UI
             var guids = new System.Collections.Generic.HashSet<string>();
             foreach (var c in catalog.costumeIcons)
                 if (!guids.Add(c.guid)) { r.AppendLine($"  ✗ Assets: costumeIcon trùng guid {c.guid}"); fails++; }
+
+            // WeaponId/catalogOrder là persistent identity (PROFILE_SAVE.md) — trùng/thiếu là hỏng save.
+            var ids = new System.Collections.Generic.HashSet<string>();
+            var orders = new System.Collections.Generic.HashSet<int>();
+            foreach (var e in catalog.weapons)
+            {
+                if (e.data == null) continue;
+                if (string.IsNullOrEmpty(e.data.WeaponId)) { r.AppendLine($"  ✗ Assets: '{e.data.name}' thiếu WeaponId"); fails++; }
+                else if (!ids.Add(e.data.WeaponId)) { r.AppendLine($"  ✗ Assets: WeaponId trùng '{e.data.WeaponId}'"); fails++; }
+                if (!orders.Add(e.data.CatalogOrder)) { r.AppendLine($"  ✗ Assets: catalogOrder trùng {e.data.CatalogOrder} ('{e.data.name}')"); fails++; }
+                if (e.data.price < 0) { r.AppendLine($"  ✗ Assets: '{e.data.name}' price âm ({e.data.price})"); fails++; }
+                if (e.icon == null) { r.AppendLine($"  ✗ Assets: '{e.data.name}' thiếu icon trong catalog"); fails++; }
+            }
+            if (fails == 0) r.AppendLine($"  ✓ Assets: {ids.Count} WeaponId duy nhất, catalogOrder không trùng");
+
+            fails += ValidateCostumeCatalog(r);
+
             r.AppendLine($"  ✓ Assets: catalog {catalog.weapons.Count} weapons, {catalog.costumeIcons.Count} costume icons, cheatUnlockAll={catalog.cheatUnlockAll}");
+            return fails;
+        }
+
+        // Slice 4: catalog costume phai giu dung 14 wardrobe slot, guid unique, khong lot held-item.
+        static readonly string[] WardrobeSlots =
+        {
+            "Hair", "Beard", "Brow", "Mouth", "Eyewear", "Eye", "Earring", "Head",
+            "Chest", "Hands", "Back", "Body", "Legs", "Feet",
+        };
+
+        static int ValidateCostumeCatalog(StringBuilder r)
+        {
+            int fails = 0;
+            var cat = AssetDatabase.LoadAssetAtPath<ZombieWar.ModularCostumeCatalog>(
+                "Assets/_Project/Data/Character/ModularCostumeCatalog.asset");
+            if (cat == null) { r.AppendLine("  ✗ Assets: thiếu ModularCostumeCatalog"); return 1; }
+
+            var expected = new System.Collections.Generic.HashSet<string>(WardrobeSlots);
+            var found = new System.Collections.Generic.HashSet<string>();
+            var guids = new System.Collections.Generic.HashSet<string>();
+            bool hasBaseBody = false;
+            int total = 0;
+
+            foreach (var slot in cat.slots)
+            {
+                if (!expected.Contains(slot.slot))
+                { r.AppendLine($"  ✗ Costume: slot lạ '{slot.slot}' (held-item phải bị exclude)"); fails++; continue; }
+                if (!found.Add(slot.slot))
+                { r.AppendLine($"  ✗ Costume: slot '{slot.slot}' bị trùng"); fails++; }
+                if (slot.isBaseBody)
+                {
+                    hasBaseBody = true;
+                    if (slot.slot != "Body") { r.AppendLine($"  ✗ Costume: isBaseBody nằm ở '{slot.slot}' (phải là Body)"); fails++; }
+                    if (slot.parts.Count == 0) { r.AppendLine("  ✗ Costume: slot Body rỗng — không có base body hợp lệ"); fails++; }
+                }
+                foreach (var p in slot.parts)
+                {
+                    total++;
+                    if (string.IsNullOrEmpty(p.guid)) { r.AppendLine($"  ✗ Costume: '{slot.slot}/{p.name}' thiếu guid"); fails++; }
+                    else if (!guids.Add(p.guid)) { r.AppendLine($"  ✗ Costume: guid trùng '{p.guid}' ({slot.slot}/{p.name})"); fails++; }
+                    if (p.skinnedMesh == null || p.boneNames == null || p.boneNames.Length == 0)
+                    { r.AppendLine($"  ✗ Costume: '{slot.slot}/{p.name}' thiếu skinned binding"); fails++; }
+                }
+            }
+            foreach (var s in WardrobeSlots)
+                if (!found.Contains(s)) { r.AppendLine($"  ✗ Costume: thiếu slot '{s}'"); fails++; }
+            if (!hasBaseBody) { r.AppendLine("  ✗ Costume: không có slot isBaseBody"); fails++; }
+            foreach (var ex in new[] { "Wield_Gear_Left", "Wield_Gear_Right" })
+                if (found.Contains(ex)) { r.AppendLine($"  ✗ Costume: held category '{ex}' lọt vào wardrobe"); fails++; }
+
+            if (fails == 0)
+                r.AppendLine($"  ✓ Costume: {found.Count} slot / {total} part, guid unique, base Body OK, held-item excluded");
+
+            fails += ValidateCostumeDefaults(cat, r);
+            fails += ValidateCostumeIconCoverage(cat, r);
+            return fails;
+        }
+
+        /// Slice 4.1: defaults phai authored, resolve dung slot, equipped ⊆ owned, du 4 slot bat buoc.
+        static int ValidateCostumeDefaults(ZombieWar.ModularCostumeCatalog cat, StringBuilder r)
+        {
+            int fails = 0;
+            var d = cat.defaults;
+            if (d == null || !d.IsAuthored)
+            { r.AppendLine("  ✗ Costume: defaults chưa authored — chạy 'Author Costume Defaults'"); return 1; }
+
+            // Slice 4.2: essential = Hair/Brow/Eye/Mouth/Chest/Legs (Feet KHÔNG mặc, optional).
+            foreach (var m in ZombieWar.ModularCostumeCatalog.EssentialSlots)
+                if (string.IsNullOrEmpty(d.GetEquippedGuid(m)))
+                { r.AppendLine($"  ✗ Costume defaults: thiếu default equip cho slot essential '{m}'"); fails++; }
+            if (!string.IsNullOrEmpty(d.GetEquippedGuid("Feet")))
+                { r.AppendLine("  ✗ Costume defaults: Feet KHÔNG được tự mặc (optional)"); fails++; }
+            if (!ZombieWar.ModularCostumeCatalog.IsValidBodyColor(d.defaultBodyColor))
+                { r.AppendLine($"  ✗ Costume defaults: body color '{d.defaultBodyColor}' không hợp lệ"); fails++; }
+            if (!ZombieWar.ModularCostumeCatalog.IsValidBodyEar(d.defaultBodyEar))
+                { r.AppendLine($"  ✗ Costume defaults: body ear '{d.defaultBodyEar}' không hợp lệ"); fails++; }
+
+            foreach (var eq in d.equipped)
+            {
+                bool found = false; string realSlot = null; bool hasBinding = false;
+                foreach (var slot in cat.slots)
+                    foreach (var p in slot.parts)
+                        if (p.guid == eq.guid)
+                        { found = true; realSlot = slot.slot; hasBinding = p.skinnedMesh != null && p.boneNames != null && p.boneNames.Length > 0; }
+                if (!found) { r.AppendLine($"  ✗ Costume defaults: equip '{eq.slot}' guid không có trong catalog"); fails++; }
+                else if (realSlot != eq.slot) { r.AppendLine($"  ✗ Costume defaults: equip guid thuộc '{realSlot}' ≠ '{eq.slot}'"); fails++; }
+                else if (!hasBinding) { r.AppendLine($"  ✗ Costume defaults: equip '{eq.slot}' thiếu skinned binding"); fails++; }
+                if (!d.ownedGuids.Contains(eq.guid))
+                { r.AppendLine($"  ✗ Costume defaults: equip '{eq.slot}' không nằm trong ownedGuids"); fails++; }
+            }
+            foreach (var g in d.ownedGuids)
+            {
+                bool found = false;
+                foreach (var slot in cat.slots) foreach (var p in slot.parts) if (p.guid == g) found = true;
+                if (!found) { r.AppendLine($"  ✗ Costume defaults: owned guid '{g}' không có trong catalog"); fails++; }
+            }
+            if (fails == 0)
+                r.AppendLine($"  ✓ Costume defaults: owned={d.ownedGuids.Count}, equipped={d.equipped.Count} slot bắt buộc OK");
+            return fails;
+        }
+
+        /// Slice 4.1: MỌI part hợp lệ phải có icon thật (mapping non-null) — fallback = LỖI.
+        static int ValidateCostumeIconCoverage(ZombieWar.ModularCostumeCatalog cat, StringBuilder r)
+        {
+            int fails = 0;
+            var ui = AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>(UIThumbnailGenerator.CatalogAssetPath);
+            if (ui == null) { r.AppendLine("  ✗ Icons: thiếu UIPrototypeCatalog"); return 1; }
+
+            var mapped = new System.Collections.Generic.Dictionary<string, Sprite>();
+            var dupes = 0;
+            foreach (var e in ui.costumeIcons)
+            {
+                if (mapped.ContainsKey(e.guid)) { dupes++; continue; }
+                mapped[e.guid] = e.icon;
+            }
+            if (dupes > 0) { r.AppendLine($"  ✗ Icons: {dupes} mapping guid trùng"); fails++; }
+
+            // Slice 4.2: non-Body dùng vendor icon (846 phủ 100%). Body dùng bodyColorIcons (6).
+            var validGuids = new System.Collections.Generic.HashSet<string>();
+            r.AppendLine("  Icon coverage (slot: parts/real/missing):");
+            int nonBodyTotal = 0;
+            foreach (var slot in cat.slots)
+            {
+                if (slot.slot == ZombieWar.ModularCostumeCatalog.BodySlot)
+                { r.AppendLine($"    Body: {slot.parts.Count} mesh (composite — dùng {ui.bodyColorIcons.Count} color icon)"); continue; }
+                int real = 0, missing = 0;
+                foreach (var p in slot.parts)
+                {
+                    validGuids.Add(p.guid); nonBodyTotal++;
+                    if (mapped.TryGetValue(p.guid, out var s) && s != null) real++; else missing++;
+                }
+                r.AppendLine($"    {slot.slot}: {slot.parts.Count}/{real}/{missing}{(missing > 0 ? "  ✗" : "")}");
+                if (missing > 0) fails++;
+            }
+            // Body color icons: đủ 6.
+            int bodyIcons = 0;
+            foreach (var col in ZombieWar.ModularCostumeCatalog.BodyColors)
+                if (ui.GetBodyColorIcon(col) != null && ui.GetBodyColorIcon(col) != ui.costumeFallbackIcon) bodyIcons++;
+            if (bodyIcons != 6) { r.AppendLine($"  ✗ Icons: Body color icon {bodyIcons}/6 (thiếu vendor Body_<Color>.png)"); fails++; }
+            // Vendor icon không được là generated (đường dẫn phải nằm trong ThirdParty ScreenShot).
+            int nonVendor = 0;
+            foreach (var kv in mapped)
+                if (kv.Value != null && !AssetDatabase.GetAssetPath(kv.Value).Contains("ScreenShot")) nonVendor++;
+            if (nonVendor > 0) { r.AppendLine($"  ✗ Icons: {nonVendor} icon KHÔNG phải vendor screenshot (vẫn dùng generated)"); fails++; }
+
+            if (fails == 0) r.AppendLine($"  ✓ Icons: {mapped.Count}/{nonBodyTotal} non-Body vendor + 6 Body color, không generated/fallback");
             return fails;
         }
 

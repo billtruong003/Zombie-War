@@ -24,6 +24,22 @@ namespace ZombieWar
     /// audio stinger and wave system all react to this through Bill.Events.</summary>
     public readonly struct PlayerDiedEvent : IEvent { }
 
+    /// <summary>Fired once per enemy death, after the run ledger has already banked the kill.
+    /// Pass missions and audio/analytics listen here so they never need a ZombieBase reference.
+    /// Carries the ZombieData so subscribers can read archetype/elite without a scene lookup.</summary>
+    public readonly struct ZombieKilledEvent : IEvent
+    {
+        public readonly ZombieData Data;
+        /// <summary>Where it died - loot drops here, so the event has to carry it.</summary>
+        public readonly UnityEngine.Vector3 Position;
+
+        public ZombieKilledEvent(ZombieData data, UnityEngine.Vector3 position)
+        {
+            Data = data;
+            Position = position;
+        }
+    }
+
     /// <summary>Fired after the player's death sequence (anim + FX + delay) finishes.
     /// The lose screen and zombie/pool cleanup react to THIS, not to PlayerDiedEvent,
     /// so the corpse gets its on-screen moment before the UI takes over.</summary>

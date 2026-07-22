@@ -1,17 +1,16 @@
 # Resume prompt — current project context
 
-Use the execution prompt supplied after the 2026-07-20 handoff commit. Before acting, read:
+Canonical account-switch context is now:
 
-1. `Docs/HANDOFF.md` — canonical current status and execution order.
-2. `Docs/HANDOFF_UI_CODEX.md` — exact UI architecture and wiring gaps.
-3. `Docs/UI_REDESIGN_SPEC.md` — visual source of truth.
-4. `Docs/WeaponRosterMapping.json` — canonical 25-weapon identity/order.
-5. `Docs/PlayerRigSocketIncident.md` — rig architecture and resolved failure history.
-6. `AGENTS.md` / `CLAUDE.md` — repository rules.
+`Docs/ACCOUNT_SWITCH_HANDOFF.md`
 
-Do not use the old assumptions that the project has two or six weapons, that Player IK is unwired,
-that Pass/HUD prefabs do not exist, or that all UI must spawn at runtime. Those statements are obsolete.
+Read it after `AGENTS.md` and `CLAUDE.md`, then follow its required-reading order. Verify its claims
+against Git status, Unity MCP, GitNexus and current source before acting.
 
-Current focus: wire real ownership/equipment/economy data into the authored UI, verify persistence and
-scene transitions, then design and balance the bounded Level 1 arena. Weapon setup is complete unless a
-new reproducible regression is found.
+Current focus: finish Casual migration Phase 6 (Shop/Gacha/Economy), then Phase 7 (remove active
+Fantasy dependencies and update historical docs). After the migration is complete, build the real
+wave/reward/GameOver gameplay loop before final Level 1 map production.
+
+Do not replace Player skeleton/Animator/WeaponRig, do not treat the shared Casual FBX GUID as item
+identity, do not restore deleted Fantasy generated icons, and do not clean the dirty worktree without
+proving ownership of every affected change.

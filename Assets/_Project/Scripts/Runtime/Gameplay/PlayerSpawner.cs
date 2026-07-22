@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using BillGameCore;
 
 namespace ZombieWar
@@ -37,6 +38,7 @@ namespace ZombieWar
             Quaternion rot = point != null ? point.transform.rotation : transform.rotation;
 
             Current = Instantiate(playerPrefab, pos, rot);
+            MoveToSpawnerScene(Current);
 
             // Wire the persistent scene objects into the freshly spawned player.
             if (cameraFollow != null) cameraFollow.Target = Current.transform;
@@ -53,6 +55,29 @@ namespace ZombieWar
             if (costume != null) costume.ApplySavedParts();
 
             return Current;
+        }
+
+        // Instantiate dat object vao ACTIVE scene. Khi map load additive, GameFlow chi
+        // SetActiveScene trong callback cua Bill.Scene.LoadAdditive — callback nay chay SAU
+        // Start() cua scene moi, nen luc spawn active scene van la Bootstrap. Player nam o
+        // Bootstrap thi unload map KHONG destroy no -> orphan don dan sau moi lan restart.
+        // Keo player ve scene chua spawner de lifecycle player gan chat voi scene gameplay.
+        private void MoveToSpawnerScene(GameObject spawned)
+        {
+            Scene target = gameObject.scene;
+            if (spawned.scene == target) return;
+            if (!target.IsValid() || !target.isLoaded)
+            {
+                Debug.LogError($"[PlayerSpawner] Scene dich '{target.name}' khong hop le/chua load xong - " +
+                               "Player se nam sai scene va thanh orphan khi unload map.");
+                return;
+            }
+            if (spawned.transform.parent != null)
+            {
+                Debug.LogError("[PlayerSpawner] Spawned player khong phai root object - khong move scene duoc.");
+                return;
+            }
+            SceneManager.MoveGameObjectToScene(spawned, target);
         }
 
         private static PlayerSpawnPoint ResolveSpawnPoint()

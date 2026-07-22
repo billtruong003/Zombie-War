@@ -30,6 +30,13 @@ namespace ZombieWar.UI
             public Sprite icon;
         }
 
+        [Serializable]
+        public class BodyColorIcon
+        {
+            public string color;   // "White", "Black", ...
+            public Sprite icon;    // vendor Body_<Color>.png
+        }
+
         [Header("Cheat / prototype state")]
         [Tooltip("Bật = mọi weapon/costume xem được như đã sở hữu. Prototype-only, không phải economy thật.")]
         public bool cheatUnlockAll = true;
@@ -38,9 +45,12 @@ namespace ZombieWar.UI
         public List<WeaponEntry> weapons = new();
         public Sprite weaponFallbackIcon;
 
-        [Header("Costume icons (guid → sprite, sparse — phần thiếu dùng fallback)")]
+        [Header("Costume icons (guid → vendor sprite; đủ 100% part player-facing)")]
         public List<CostumeIcon> costumeIcons = new();
         public Sprite costumeFallbackIcon;
+
+        [Header("Body color icons (color → vendor Body_<Color>.png)")]
+        public List<BodyColorIcon> bodyColorIcons = new();
 
         public Sprite GetWeaponIcon(WeaponData data)
         {
@@ -66,6 +76,15 @@ namespace ZombieWar.UI
                 for (int i = 0; i < costumeIcons.Count; i++)
                     if (costumeIcons[i].guid == guid && costumeIcons[i].icon != null)
                         return costumeIcons[i].icon;
+            return costumeFallbackIcon;
+        }
+
+        public Sprite GetBodyColorIcon(string color)
+        {
+            if (!string.IsNullOrEmpty(color))
+                for (int i = 0; i < bodyColorIcons.Count; i++)
+                    if (bodyColorIcons[i].color == color && bodyColorIcons[i].icon != null)
+                        return bodyColorIcons[i].icon;
             return costumeFallbackIcon;
         }
     }
