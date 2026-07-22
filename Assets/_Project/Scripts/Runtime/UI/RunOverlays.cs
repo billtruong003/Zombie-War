@@ -219,6 +219,7 @@ namespace ZombieWar
         private void OnGameOver(GameOverEvent e)
         {
             Restart(null);
+            StopFtueWatch();
             Show(pauseRoot, false);
             Show(confirmRoot, false);
             Show(settingsRoot, false);
@@ -237,7 +238,14 @@ namespace ZombieWar
         {
             PlayerPrefs.SetInt("ftue_done", 1);
             Show(ftueRoot, false);
-            if (_ftueWatch != null) { StopCoroutine(_ftueWatch); _ftueWatch = null; }
+            StopFtueWatch();
+        }
+
+        private void StopFtueWatch()
+        {
+            if (_ftueWatch == null) return;
+            StopCoroutine(_ftueWatch);
+            _ftueWatch = null;
         }
 
         // FTUE dạy "kéo để chạy" — làm đúng hành động đó là tutorial coi như xong, tự đóng.
@@ -249,6 +257,7 @@ namespace ZombieWar
             while (ftueRoot != null && ftueRoot.activeSelf)
             {
                 if (joy != null && joy.Direction.sqrMagnitude > 0.04f) held += Time.unscaledDeltaTime;
+                else held = 0f;
                 if (held >= 0.5f) { CompleteFtue(); yield break; }
                 yield return null;
             }
