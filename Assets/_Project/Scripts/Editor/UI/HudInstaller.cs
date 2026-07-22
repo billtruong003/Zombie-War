@@ -486,8 +486,10 @@ namespace ZombieWar.Editor.UI
         {
             var root = K.Rect("FtueOverlay", parent);
             K.Full(root);
-            // Dim nhẹ toàn màn (cutout stencil thật để đợt asset/shader — ring highlight thay thế)
-            var dim = K.Image(root, "Dim", null, new Color(0, 0, 0, 0.55f));
+            // Dim nhẹ toàn màn (cutout stencil thật để đợt asset/shader — ring highlight thay thế).
+            // ray=false bắt buộc: dim mà chặn raycast thì joystick/pause/bomb chết hết trong lúc FTUE,
+            // người chơi không làm được chính cái hành động tutorial đang dạy.
+            var dim = K.Image(root, "Dim", null, new Color(0, 0, 0, 0.55f), false);
             K.Full(dim.rectTransform);
 
             var ring = K.Image(root, "HighlightRing", K.Dashed, UITheme.Gold, false);
@@ -499,7 +501,9 @@ namespace ZombieWar.Editor.UI
             var tipT = K.Text(tip.rectTransform, "L", "Kéo để chạy!", 34, UITheme.OnGold, FontStyles.Bold);
             K.Full(tipT.rectTransform);
 
-            skip = K.BtnGhost(root, "SkipBtn", "Bỏ qua", new Vector2(220, 88), A.TR, new Vector2(-32, -32));
+            // FtueOverlay phủ full canvas, KHÔNG nằm dưới Safe — TR (-32,-32) rơi vào vùng notch
+            // trên máy thật nên không bấm được. Đặt BC trên hàng step dots, xa notch lẫn joystick.
+            skip = K.BtnGhost(root, "SkipBtn", "Bỏ qua", new Vector2(220, 88), A.BC, new Vector2(0, 150));
 
             var dots = K.Rect("StepDots", root);
             K.Place(dots, A.BC, new Vector2(0, 64), new Vector2(120, 16));

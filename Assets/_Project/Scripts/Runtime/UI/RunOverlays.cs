@@ -119,7 +119,11 @@ namespace ZombieWar
 
         private void Start()
         {
-            if (PlayerPrefs.GetInt("ftue_done", 0) == 0) Show(ftueRoot, true);
+            if (PlayerPrefs.GetInt("ftue_done", 0) == 0)
+            {
+                Show(ftueRoot, true);
+                _ftueWatch = StartCoroutine(CoFtueWatchJoystick());
+            }
         }
 
         private void OnDestroy()
@@ -227,10 +231,28 @@ namespace ZombieWar
         }
 
         // ------------------------------------------------------------ ftue
+        private Coroutine _ftueWatch;
+
         private void CompleteFtue()
         {
             PlayerPrefs.SetInt("ftue_done", 1);
             Show(ftueRoot, false);
+            if (_ftueWatch != null) { StopCoroutine(_ftueWatch); _ftueWatch = null; }
+        }
+
+        // FTUE dạy "kéo để chạy" — làm đúng hành động đó là tutorial coi như xong, tự đóng.
+        // Coroutine riêng, không dùng _routine: pause/revive gọi Restart() sẽ giết nhầm watcher.
+        private IEnumerator CoFtueWatchJoystick()
+        {
+            var joy = GetComponentInChildren<VirtualJoystick>(true);
+            float held = 0f;
+            while (ftueRoot != null && ftueRoot.activeSelf)
+            {
+                if (joy != null && joy.Direction.sqrMagnitude > 0.04f) held += Time.unscaledDeltaTime;
+                if (held >= 0.5f) { CompleteFtue(); yield break; }
+                yield return null;
+            }
+            _ftueWatch = null;
         }
 
         // ------------------------------------------------------------ utils
