@@ -217,3 +217,20 @@ accumulation on restart/return). Fixed: `PlayerSpawner.Spawn` now calls
 target scene valid+loaded, loud error otherwise). Verified: 3 full Menu↔Map cycles = exactly 1
 player in `Map_Level1` during play, 0 players/Weapon/PlayerMovement instances after unload.
 PlayMode tests: `PlayerSpawnerSceneTests` (scene ownership + 3-cycle no-orphan).
+
+## Campaign & Battle Pass fields (added 2026-07-22)
+
+Additive `ProfileData` fields, all normalized on load (null-safe, deduped):
+
+| Field | Type | Contract |
+|---|---|---|
+| `completedLevelIds` | `List<string>` | Stable level IDs (`level.1`..), NEVER indices. `MarkLevelCompleted` is idempotent. |
+| `claimedFirstClearIds` | `List<string>` | `TryClaimFirstClear` writes the claim BEFORE granting currency — an interruption loses a reward rather than allowing a repeat. Pays exactly once, ever. |
+| `lastSelectedLevelId` | `string` | Campaign screen restores selection from this. |
+| `missionProgress` | `List<MissionProgressEntry>` | Keyed by mission ID, clamped at target. |
+| `claimedMissionIds` | `List<string>` | Claim-once; cleared per scope on rollover. |
+| `missionDayKey` / `missionWeekKey` | `int` | UTC epoch day / week. `RefreshMissionWindow` clears ONLY the scope that expired (a new day must not wipe weekly progress). |
+| `passXp` | `int` | Battle Pass XP total; clamped >= 0 on load. |
+
+Run-earned currency NEVER writes these directly: it goes through `RunState.Payout()` (idempotent,
+once per run) into the wallet. Mission catalog itself is code (`PassMissions`), not saved.

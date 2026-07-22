@@ -1,16 +1,30 @@
 # ZombieWar — Remaining Features
 
-> Current snapshot: 2026-07-21. Read `ACCOUNT_SWITCH_HANDOFF.md`; the active expansion contract is
-> `ENEMY_CAMPAIGN_EXPANSION_PROMPT.md`, which absorbs the missing run-loop prerequisite.
+> Current snapshot: 2026-07-22, after the VAT roster + campaign backend push. Read
+> `ACCOUNT_SWITCH_HANDOFF.md` section 0 first; execution detail is in
+> `ENEMY_CAMPAIGN_TASK_STATE.md`.
 
-## Immediate blockers
+## Resolved since 2026-07-21
 
-1. **Imported monsters are source art only.** Fifteen Cute creatures plus HUGO must be baked through
-   the existing VAT pipeline; no runtime Animator/SkinnedMeshRenderer enemy is acceptable.
-2. **Campaign/run state is missing.** Five stages, selection/progression, kills, Coin/XP/perks,
-   results and terminal payout need authoritative data and save flow.
-3. **Maps are placeholders.** Create five simple Plane scenes now; authored trees/obstacles come in
-   the owner's next environment-design pass.
+- ~~Imported monsters are source art only~~ -> 15/15 Cute monsters baked as VAT (HUGO documented
+  blocked: 16,567 verts > 16,384 texture limit). Tests enforce zero Animator/SMR.
+- ~~Campaign/run state is missing~~ -> RunState ledger + RunDirector + CampaignCatalog + CombatPower
+  gates + PlayerProfile persistence (completion, first-clear, missions) all live, 191/191 tests.
+- ~~Maps are placeholders~~ -> Map_Level2-5 cloned with wired waves/spawns/NavMesh; desert map
+  GENERATOR exists (`Tools/ZombieWar/Desert Map Generator`) producing Map_GenTest.
+
+## Immediate next (owner-approved order)
+
+1. **Food buff system** — full approved spec in `Docs/FOOD_BUFF_SPEC.md`: green apple heal,
+   blue berry shield (150 cap, no duration, 100% absorb, navy bar under health), red apple
+   infinite ammo (mag snapshot/restore, ~8 s), cheese 2x coin (~20 s), HUD buff tiles.
+   NOT implemented yet.
+2. **Campaign selector UI** (`UI_CampaignScreen.prefab`) — backend complete, screen not built.
+3. **Run-loop UI binding** — HUD coin/XP, level-up 1-of-3 perk overlay (RunOverlays is still
+   placeholder), result screen reading `RunFinishedEvent`.
+4. **Pass screen binding** — mission backend (20 missions, UTC rotation) done; UI not bound.
+5. **PlayMode/profiler evidence** — no stress numbers yet; do 25/50/100 horde before calling
+   anything mobile-safe.
 
 ## UI wiring checklist
 
