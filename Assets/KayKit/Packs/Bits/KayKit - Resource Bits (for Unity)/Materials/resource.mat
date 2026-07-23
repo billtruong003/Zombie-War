@@ -11,8 +11,11 @@ Material:
   m_Shader: {fileID: 4800000, guid: 38aad05786d3ec46827bd0f559899dfd, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_ValidKeywords:
+  - _EMISSION
+  - _RIM
+  m_InvalidKeywords:
+  - _OUTLINE_SCREENSPACE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -45,7 +48,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 2e7deb1b84884a9469b201cce81621c9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -97,8 +100,8 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EmissionToggle: 0
-    - _GIStrength: 1
+    - _EmissionToggle: 1
+    - _GIStrength: 2
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossinessSource: 0
@@ -108,22 +111,24 @@ Material:
     - _NormalMapToggle: 0
     - _Occlusion: 1
     - _OcclusionStrength: 1
+    - _OutlineScreen: 1
+    - _OutlineWidth: 0
     - _Parallax: 0.02
     - _QueueOffset: 0
-    - _RampSmooth: 0.05
-    - _RampSteps: 3
+    - _RampSmooth: 0
+    - _RampSteps: 1.5
     - _RampTexToggle: 0
     - _ReceiveShadows: 1
-    - _RimPower: 3
-    - _RimStrength: 1
-    - _RimToggle: 0
+    - _RimPower: 2.9
+    - _RimStrength: 2
+    - _RimToggle: 1
     - _Shininess: 0
     - _Smoothness: 0.5
     - _SmoothnessSource: 0
     - _SmoothnessTextureChannel: 0
     - _SpecSize: 0.2
     - _SpecSource: 0
-    - _SpecStrength: 0
+    - _SpecStrength: 0.26
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
@@ -135,10 +140,11 @@ Material:
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Emission: {r: 0, g: 0, b: 0, a: 0}
+    - _Emission: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
-    - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowTint: {r: 0.45, g: 0.5, b: 0.6, a: 1}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _RimColor: {r: 4, g: 0, b: 0.02567482, a: 1}
+    - _ShadowTint: {r: 0.2679245, g: 0.2679245, b: 0.2679245, a: 1}
     - _SpecColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
