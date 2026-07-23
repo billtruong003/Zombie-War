@@ -8,12 +8,13 @@ using ZombieWar.EditorTools;
 using ZombieWar.UI;
 using K = ZombieWar.Editor.UI.UIKit;
 using A = ZombieWar.Editor.UI.UIKit.Anch;
+using SC = ZombieWar.Editor.UI.SuperCasualSkin;
 
 namespace ZombieWar.Editor.UI
 {
     /// <summary>
     /// DESTRUCTIVE generator màn 01 HUB (spec §4.1): 1 PLAY gold duy nhất (breathing trên wrapper,
-    /// press trên button — không tranh transform), dock 4 tab icon Layer Lab, preview RawImage
+    /// press trên button — không tranh transform), dock 5 tab icon Layer Lab, preview RawImage
     /// preplaced trỏ RT asset. Sau migration: prefab là source of truth — chỉ chạy khi user confirm.
     /// </summary>
     public static class HubInstaller
@@ -49,7 +50,8 @@ namespace ZombieWar.Editor.UI
 
             var bg = K.Image(root, "Bg", null, UITheme.Bg, false);
             K.Full(bg.rectTransform);
-            var diag = K.Image(root, "BgDiagonal", K.DiagonalBg, new Color(1f, 1f, 1f, 0.35f), false);
+            var diag = K.Image(root, "BgDiagonal", K.DiagonalBg,
+                new Color(1f, 1f, 1f, 0.25f), false);
             K.Full(diag.rectTransform);
             diag.type = Image.Type.Tiled;
 
@@ -60,7 +62,9 @@ namespace ZombieWar.Editor.UI
             // ============ AvatarChip ============
             var avatarChip = K.Rect("AvatarChip", safe);
             K.Place(avatarChip, A.TL, new Vector2(32, -32), new Vector2(340, 96));
-            var avatarBg = K.Image(avatarChip, "Avatar", K.Circle, UITheme.Rarity[2], false);
+            var avatarPanel = SC.Image(avatarChip, "Bg", "Components/UI_Etc/ResourceBar_Demo_Bg.png", UITheme.Surface, false);
+            K.Full(avatarPanel.rectTransform);
+            var avatarBg = SC.Image(avatarChip, "Avatar", "Components/Button/Button_Circle122.png", Color.white, false);
             K.Place(avatarBg.rectTransform, A.ML, Vector2.zero, new Vector2(96, 96));
             K.IconImage(avatarBg.rectTransform, "Face", "Icon_Face", A.C, Vector2.zero, new Vector2(64, 64));
             var recCaption = K.Rect("RecordCaption", avatarChip);
@@ -72,47 +76,88 @@ namespace ZombieWar.Editor.UI
             K.Place(record.rectTransform, A.BL, new Vector2(112, 12), new Vector2(220, 46));
 
             // ============ CurrencyRow ============
-            var coinLbl = K.CurrencyPill(safe, "PillCoin", UITheme.Coin, A.TR, new Vector2(-32 - 192, -44), 176, "Icon_Coin");
-            var gemLbl = K.CurrencyPill(safe, "PillGem", UITheme.Gem, A.TR, new Vector2(-32, -44), 176, "Icon_Gem");
+            var coinLbl = SC.ResourcePill(safe, "PillCoin", A.TR, new Vector2(-32 - 192, -44), 176, "Coin");
+            var gemLbl = SC.ResourcePill(safe, "PillGem", A.TR, new Vector2(-32, -44), 176, "Gem");
+            coinLbl.transform.parent.GetComponent<Image>().color = UITheme.Surface;
+            gemLbl.transform.parent.GetComponent<Image>().color = UITheme.Surface;
             var cluster = safe.gameObject.AddComponent<CurrencyClusterWidget>();
 
-            // ============ PreviewCard — RawImage preplaced trỏ RT ASSET ============
+            // ============ Mission focus ============
+            var mission = K.Card(safe, "MissionCard", A.TC, new Vector2(0, -152),
+                new Vector2(1016, 142), out var missionGlow, out var missionBorder, out _);
+            missionGlow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha);
+            missionGlow.gameObject.SetActive(true);
+            missionBorder.color = UITheme.Cyan;
+            missionBorder.gameObject.SetActive(true);
+            K.IconImage(mission, "MissionIcon", "Icon_MapPoint", A.ML, new Vector2(28, 0), new Vector2(76, 76));
+            var missionTitle = K.Text(mission, "Title", "NHIỆM VỤ TIẾP THEO", 24, UITheme.TextDim,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(missionTitle.rectTransform, A.TL, new Vector2(124, -22), new Vector2(540, 34));
+            var missionName = K.Text(mission, "Name", "SỐNG SÓT QUA ĐỢT TIẾP THEO", 34, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(missionName.rectTransform, A.BL, new Vector2(124, 24), new Vector2(650, 48));
+            var reward = SC.ResourcePill(mission, "Reward", A.MR, new Vector2(-24, 0), 184, "Coin");
+            reward.text = "+250";
+
+            // ============ Character focus — RawImage preplaced trỏ RT ASSET ============
             var preview = K.Rect("Podium", safe);
-            K.Place(preview, A.TC, new Vector2(0, -200), new Vector2(930, 860));
-            var dashed = K.Image(preview, "DashedFrame", K.Dashed, UITheme.Hairline, false);
-            K.Full(dashed.rectTransform);
+            K.Place(preview, A.TC, new Vector2(0, -324), new Vector2(760, 800));
+            var previewFrame = SC.ItemFrame(preview, "SuperCasualFrame", Color.white);
+            K.Full(previewFrame.rectTransform);
             var rawGo = new GameObject("CharacterRT", typeof(RectTransform));
             var rawRt = (RectTransform)rawGo.transform;
             rawRt.SetParent(preview, false);
-            K.Place(rawRt, A.C, Vector2.zero, new Vector2(466, 820));
+            K.Place(rawRt, A.C, new Vector2(0, 10), new Vector2(520, 760));
             var raw = rawGo.AddComponent<RawImage>();
             raw.raycastTarget = false;
             raw.texture = MenuCharacterStageInstaller.EnsureRenderTexture();
 
-            var edit = K.Image(preview, "EditChip", K.Pill, UITheme.Surface);
-            K.Place(edit.rectTransform, A.BR, new Vector2(-24, 24), new Vector2(120, 72));
-            var editBtn = edit.gameObject.AddComponent<Button>();
-            editBtn.targetGraphic = edit;
-            var editRelay = edit.gameObject.AddComponent<ButtonRelay>();
-            var editTxt = K.Text(edit.rectTransform, "Label", "EDIT", 28, UITheme.Gold, FontStyles.Bold);
-            K.Full(editTxt.rectTransform);
+            var editBtn = SC.Button(preview, "EditChip", "TRANG PHỤC", new Vector2(250, 78), A.BR,
+                new Vector2(-24, 24), "Blue", Color.white, 25);
+            var editRelay = editBtn.gameObject.AddComponent<ButtonRelay>();
+
+            // ============ Compact supporting cards ============
+            var daily = K.Card(safe, "DailyCard", A.TC, new Vector2(-258, -1160),
+                new Vector2(492, 176), out _, out _, out _);
+            K.IconImage(daily, "Icon", "BtnIcon_Gift", A.ML, new Vector2(28, 0), new Vector2(84, 84));
+            var dailyTitle = K.Text(daily, "Title", "QUÀ HẰNG NGÀY", 28, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(dailyTitle.rectTransform, A.TL, new Vector2(132, -34), new Vector2(320, 42));
+            var dailyHint = K.Text(daily, "Hint", "Sẵn sàng nhận", 24, UITheme.Green,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(dailyHint.rectTransform, A.BL, new Vector2(132, 34), new Vector2(320, 38));
+
+            var eventCard = K.Card(safe, "EventCard", A.TC, new Vector2(258, -1160),
+                new Vector2(492, 176), out _, out var eventBorder, out _);
+            eventBorder.color = UITheme.Gold;
+            eventBorder.gameObject.SetActive(true);
+            K.IconImage(eventCard, "Icon", "Icon_Ticket01", A.ML, new Vector2(28, 0), new Vector2(84, 84));
+            var eventTitle = K.Text(eventCard, "Title", "ZOMBIE HUNT", 28, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(eventTitle.rectTransform, A.TL, new Vector2(132, -34), new Vector2(320, 42));
+            var eventHint = K.Text(eventCard, "Hint", "Còn 2 ngày", 24, UITheme.Gold,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(eventHint.rectTransform, A.BL, new Vector2(132, 34), new Vector2(320, 38));
 
             // ============ PLAY: breathing trên WRAPPER, press trên button (không tranh scale) ============
             var playWrap = K.Rect("PlayButtonWrap", safe);
-            K.Place(playWrap, A.BC, new Vector2(0, 264), new Vector2(960, 150));
+            K.Place(playWrap, A.BC, new Vector2(0, 246), new Vector2(1016, 150));
             playWrap.gameObject.AddComponent<UIFxBreathe>();
-            var playBtn = K.BtnPrimary(playWrap, "PlayButton", "PLAY", new Vector2(960, 150), A.C, Vector2.zero);
+            var playBtn = SC.Button(playWrap, "PlayButton", "BẮT ĐẦU CHIẾN ĐẤU", new Vector2(1016, 150), A.C,
+                Vector2.zero, "Yellow", UITheme.OnGold, 58);
 
-            // ============ Dock 4 tab — icon semantic Layer Lab ============
-            var dock = K.Image(safe, "Dock", K.Rounded32, UITheme.Surface);
+            // ============ Dock 5 tab — Home là trạng thái hiện tại ============
+            var dock = SC.Dock(safe, "Dock");
+            dock.color = UITheme.Surface;
             K.Place(dock.rectTransform, A.BC, new Vector2(0, 32), new Vector2(1016, 152));
-            var dockFrame = K.Image(dock.rectTransform, "Hairline", K.Frame32, UITheme.Hairline, false);
-            K.Full(dockFrame.rectTransform);
 
-            var loadoutBtn = DockTab(dock.rectTransform, "LoadoutTab", "LOADOUT", 0, "Icon_Sword01", false);
-            var shopBtn    = DockTab(dock.rectTransform, "ShopTab",    "SHOP",    1, "Icon_Coin", true);
-            var costumeBtn = DockTab(dock.rectTransform, "CostumeTab", "COSTUME", 2, "Icon_Helmet", false);
-            var passBtn    = DockTab(dock.rectTransform, "PassTab",    "PASS",    3, "Icon_Ticket01", false);
+            var homeBtn    = DockTab(dock.rectTransform, "HomeTab",    "HOME",    0, "Icon_Castle", false);
+            var loadoutBtn = DockTab(dock.rectTransform, "LoadoutTab", "LOADOUT", 1, "Icon_Sword01", false);
+            var shopBtn    = DockTab(dock.rectTransform, "ShopTab",    "SHOP",    2, "Icon_Coin", true);
+            var costumeBtn = DockTab(dock.rectTransform, "CostumeTab", "COSTUME", 3, "Icon_Helmet", false);
+            var passBtn    = DockTab(dock.rectTransform, "PassTab",    "PASS",    4, "Icon_Ticket01", false);
+            homeBtn.interactable = false;
+            homeBtn.GetComponentInChildren<TMP_Text>().color = UITheme.Gold;
 
             // ============ WIRE ============
             var soRelayEdit = new SerializedObject(editRelay);
@@ -139,7 +184,12 @@ namespace ZombieWar.Editor.UI
 
             EditorSceneManager.MarkSceneDirty(root.gameObject.scene);
             EditorSceneManager.SaveScene(root.gameObject.scene);
-            Debug.Log("[HubInstaller] HUB rebuilt + prefab reconnected.");
+
+            // Hub is rebuilt after the other standalone screen prefabs in some authoring flows.
+            // Cross-prefab navigation cannot live inside UI_HubScreen.prefab itself, so repair
+            // the serialized scene-instance references every time this prefab is reconnected.
+            UISceneContracts.EnsureMenu();
+            Debug.Log("[HubInstaller] HUB rebuilt + prefab reconnected + menu references repaired.");
         }
 
         static void RemoveLegacy<T>() where T : Component
@@ -155,22 +205,25 @@ namespace ZombieWar.Editor.UI
             var rt = K.Rect(name, dock);
             rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
             rt.pivot = new Vector2(0, 0.5f);
-            rt.sizeDelta = new Vector2(254, 152);
-            rt.anchoredPosition = new Vector2(i * 254, 0);
+            const float tabWidth = 1016f / 5f;
+            rt.sizeDelta = new Vector2(tabWidth, 152);
+            rt.anchoredPosition = new Vector2(i * tabWidth, 0);
             var hit = rt.gameObject.AddComponent<Image>();
             hit.color = Color.clear;
             var btn = rt.gameObject.AddComponent<Button>();
             btn.targetGraphic = hit;
 
-            var icon = K.IconImage(rt, "Icon", iconName, A.C, new Vector2(0, 28), new Vector2(56, 56));
+            var icon = K.IconImage(rt, "Icon", iconName, A.C, new Vector2(0, 28), new Vector2(64, 64));
 
-            var txt = K.Text(rt, "Label", label, 24, UITheme.TextDim, FontStyles.Bold);
-            K.Place(txt.rectTransform, A.C, new Vector2(0, -40), new Vector2(254, 32));
+            var txt = K.Text(rt, "Label", label, 24, Color.white, FontStyles.Bold);
+            txt.outlineWidth = 0.12f;
+            txt.outlineColor = new Color32(8, 13, 25, 230);
+            K.Place(txt.rectTransform, A.C, new Vector2(0, -40), new Vector2(tabWidth, 32));
 
             if (dot)
             {
-                var d = K.Image(icon.rectTransform, "Dot", K.Circle, UITheme.Danger, false);
-                K.Place(d.rectTransform, A.TR, new Vector2(6, 6), new Vector2(22, 22));
+                var d = SC.Image(icon.rectTransform, "Dot", "Components/UI_Etc/Alert_Dot_Bg.png", Color.white, false);
+                K.Place(d.rectTransform, A.TR, new Vector2(8, 8), new Vector2(28, 28));
                 d.gameObject.AddComponent<UIFxPulse>();
             }
             return btn;

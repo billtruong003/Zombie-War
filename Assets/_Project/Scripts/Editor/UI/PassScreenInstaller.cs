@@ -48,18 +48,36 @@ namespace ZombieWar.Editor.UI
             K.Full(safe);
             safe.gameObject.AddComponent<SafeArea>();
 
-            var back = K.HeaderBack(safe, "BATTLE PASS", out _);
+            var back = SuperCasualSkin.HeaderWithCurrency(safe, "PASS");
+
+            // ---- Seasonal hero + progress ----
+            var season = K.Card(safe, "SeasonHero", A.TC, new Vector2(0, -154), new Vector2(1016, 220),
+                out var seasonGlow, out var seasonBorder, out _);
+            seasonGlow.color = UITheme.Alpha(UITheme.Gold, UITheme.GlowAlpha);
+            seasonGlow.gameObject.SetActive(true);
+            seasonBorder.color = UITheme.Gold;
+            seasonBorder.gameObject.SetActive(true);
+            K.IconImage(season, "SeasonIcon", "Icon_Crown", A.ML, new Vector2(34, 0), new Vector2(116, 116));
+            var seasonTitle = K.Text(season, "Title", "MÙA DỊCH BÙNG PHÁT", 42, UITheme.TextMain,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(seasonTitle.rectTransform, A.TL, new Vector2(176, -34), new Vector2(650, 60));
+            var seasonLevel = K.Text(season, "Level", "CẤP 2  ·  340/500 XP", 26, UITheme.Gold,
+                FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(seasonLevel.rectTransform, A.BL, new Vector2(176, 62), new Vector2(650, 42));
+            K.ProgressBar(season, "SeasonProgress", A.BL, new Vector2(176, 30),
+                new Vector2(780, 20), 0.68f, UITheme.Gold);
 
             // ---- MIỄN PHÍ + track ngang 200×200 ----
-            var ml = K.Text(safe, "MilestoneLabel", "MIỄN PHÍ", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-            K.Place(ml.rectTransform, A.TL, new Vector2(32, -150), new Vector2(300, 40));
+            var ml = K.Text(safe, "MilestoneLabel", "PHẦN THƯỞNG MIỄN PHÍ", UITheme.FontLabel,
+                UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            K.Place(ml.rectTransform, A.TL, new Vector2(32, -410), new Vector2(500, 40));
 
             var track = K.Rect("TrackScroll", safe);
             track.anchorMin = new Vector2(0, 1); track.anchorMax = new Vector2(1, 1);
             track.pivot = new Vector2(0.5f, 1);
             track.offsetMin = new Vector2(32, 0); track.offsetMax = new Vector2(-32, 0);
             track.sizeDelta = new Vector2(track.sizeDelta.x, 240);
-            track.anchoredPosition = new Vector2(0, -200);
+            track.anchoredPosition = new Vector2(0, -460);
             track.gameObject.AddComponent<RectMask2D>();
             var hscroll = track.gameObject.AddComponent<ScrollRect>();
             hscroll.horizontal = true; hscroll.vertical = false;
@@ -111,22 +129,28 @@ namespace ZombieWar.Editor.UI
             }
 
             // ---- Premium strip (khoá, không bán) ----
-            var prem = K.Card(safe, "PremiumBanner", A.TC, new Vector2(0, -480), new Vector2(1016, 120), out _, out _, out var pbg);
+            var prem = K.Card(safe, "PremiumBanner", A.TC, new Vector2(0, -760), new Vector2(1016, 150),
+                out var premiumGlow, out var premiumBorder, out var pbg);
             pbg.color = UITheme.Surface2;
+            premiumGlow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha);
+            premiumGlow.gameObject.SetActive(true);
+            premiumBorder.color = UITheme.Cyan;
+            premiumBorder.gameObject.SetActive(true);
             K.LockGlyph(prem, 48).anchoredPosition = new Vector2(-440, 0);
-            var pt = K.Text(prem, "Label", "Premium Pass  [PLACEHOLDER]", UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
+            var pt = K.Text(prem, "Label", "PREMIUM PASS  ·  THÊM 30 PHẦN THƯỞNG",
+                30, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.Center);
             K.Full(pt.rectTransform, 100, 0, 40, 0);
 
             // ---- Nhiệm vụ hôm nay ----
             var ql = K.Text(safe, "QuestLabel", "Nhiệm vụ hôm nay", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-            K.Place(ql.rectTransform, A.TL, new Vector2(32, -640), new Vector2(600, 60));
+            K.Place(ql.rectTransform, A.TL, new Vector2(32, -970), new Vector2(600, 60));
 
             string[] quests = { "Giết 200 zombie", "Sống sót wave 5", "Nhặt 500 coin" };
             float[] progress = { 1f, 0.6f, 0.35f };
             var claims = new System.Collections.Generic.List<Button>();
             for (int i = 0; i < 3; i++)
             {
-                float y = -730 - i * 156;
+                float y = -1060 - i * 156;
                 var row = K.Card(safe, $"Quest{i}", A.TC, new Vector2(0, y), new Vector2(1016, 140), out _, out _, out _);
                 var qn = K.Text(row, "Name", quests[i], UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.TopLeft);
                 K.Place(qn.rectTransform, A.TL, new Vector2(32, -20), new Vector2(600, 44));
@@ -165,6 +189,7 @@ namespace ZombieWar.Editor.UI
             for (int i = 0; i < claims.Count; i++)
                 pClaims.GetArrayElementAtIndex(i).objectReferenceValue = claims[i];
             so.ApplyModifiedPropertiesWithoutUndo();
+            SuperCasualSkin.ApplyMenuScreen((RectTransform)scr.transform);
             go.SetActive(false);
 
             var hub = Object.FindFirstObjectByType<HubScreen>(FindObjectsInactive.Include);

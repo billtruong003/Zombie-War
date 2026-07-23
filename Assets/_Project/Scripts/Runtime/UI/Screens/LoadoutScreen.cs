@@ -27,6 +27,7 @@ namespace ZombieWar.UI
         [Header("Authored views")]
         [SerializeField] private LoadoutSlotView[] slotViews;      // 3 equipped slots
         [SerializeField] private WeaponItemCardView[] ownedCards;  // 1 card / WeaponData, bake sẵn
+        [SerializeField] private Image infoIcon;
         [SerializeField] private TMP_Text infoNameLabel;
         [SerializeField] private Image[] statBars;                 // DMG / TỐC BẮN / TẦM fills
 
@@ -172,6 +173,12 @@ namespace ZombieWar.UI
             card.SetSelected(true);
 
             var d = card.data;
+            if (infoIcon != null)
+            {
+                infoIcon.sprite = card.icon != null ? card.icon.sprite : null;
+                infoIcon.color = infoIcon.sprite != null ? Color.white : UITheme.Surface2;
+                infoIcon.preserveAspect = true;
+            }
             if (infoNameLabel != null)
                 infoNameLabel.text =
                     $"{d.weaponName} · <color=#{ColorUtility.ToHtmlStringRGB(d.TierColor)}>{d.tier.ToString().ToUpperInvariant()}</color>";

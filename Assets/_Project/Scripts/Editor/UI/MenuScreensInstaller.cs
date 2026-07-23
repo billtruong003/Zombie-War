@@ -52,7 +52,7 @@ namespace ZombieWar.Editor.UI
             var uiCatalog = UIThumbnailGenerator.EnsureCatalogAsset();
             EnsureWeaponEntries(uiCatalog);
             var costumeCatalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
-                "Assets/_Project/Data/Character/ModularCostumeCatalog.asset");
+                "Assets/_Project/Data/Character/CasualCostumeCatalog.asset");
 
             var loadout = BuildLoadout(root, uiCatalog);
             var costume = BuildCostume(root, uiCatalog, costumeCatalog, stage);
@@ -60,6 +60,10 @@ namespace ZombieWar.Editor.UI
 
             WireHub(loadout, shop, costume);
             WireShopLink(loadout, shop);
+
+            SuperCasualSkin.ApplyMenuScreen((RectTransform)loadout.transform);
+            SuperCasualSkin.ApplyMenuScreen((RectTransform)costume.transform);
+            SuperCasualSkin.ApplyMenuScreen((RectTransform)shop.transform);
 
             UIRootInstaller.SetInitialScreen(FindInactive<HubScreen>());
 
@@ -70,7 +74,12 @@ namespace ZombieWar.Editor.UI
 
             EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
             EditorSceneManager.SaveScene(canvas.gameObject.scene);
-            Debug.Log("[MenuScreensInstaller] Loadout + Costume + Shop rebuilt (prototype content) + prefab reconnected.");
+
+            // The destructive base rebuild replaces UI_CostumeScreen.prefab. Re-apply its
+            // idempotent authored controls/references, then serialize all cross-screen links.
+            CostumeSlotChipInstaller.Ensure();
+            UISceneContracts.EnsureMenu();
+            Debug.Log("[MenuScreensInstaller] Loadout + Costume + Shop rebuilt, prefab wiring repaired, and scene contract saved.");
         }
 
         [MenuItem("ZombieWar/UI/Authoring/Ensure Real Costume Shop + Upgrades")]
@@ -170,7 +179,7 @@ namespace ZombieWar.Editor.UI
             var scr = ScreenRoot<LoadoutScreen>(canvas, "LoadoutScreen", out var safe);
 
             Bg(scr, safe);
-            var back = K.HeaderBack(safe, "LOADOUT", out _);
+            var back = SuperCasualSkin.HeaderWithCurrency(safe, "LOADOUT");
 
             var weapons = UIThumbnailGenerator.LoadAllWeaponData();
 
@@ -184,24 +193,34 @@ namespace ZombieWar.Editor.UI
                 BakeSlot(slots[i], wd, catalog);
             }
 
-            // InfoPanel
-            var info = K.Card(safe, "InfoPanel", A.TC, new Vector2(0, -420), new Vector2(1016, 300), out _, out _, out _);
+            // Hero weapon card: icon thật cập nhật theo lựa chọn runtime.
+            var info = K.Card(safe, "InfoPanel", A.TC, new Vector2(0, -400), new Vector2(1016, 450),
+                out var infoGlow, out var infoBorder, out _);
+            infoGlow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha);
+            infoGlow.gameObject.SetActive(true);
+            infoBorder.color = UITheme.Cyan;
+            infoBorder.gameObject.SetActive(true);
+            var heroBackdrop = K.Image(info, "HeroBackdrop", K.Rounded32, UITheme.Bg, false);
+            K.Place(heroBackdrop.rectTransform, A.ML, new Vector2(30, 0), new Vector2(400, 370));
+            var infoIcon = K.Image(heroBackdrop.rectTransform, "HeroWeaponIcon", null, UITheme.Surface2, false);
+            K.Place(infoIcon.rectTransform, A.C, Vector2.zero, new Vector2(350, 300));
+            infoIcon.preserveAspect = true;
             var name = K.Text(info, "Name", "—", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            K.Place(name.rectTransform, A.TL, new Vector2(32, -24), new Vector2(700, 56));
+            K.Place(name.rectTransform, A.TL, new Vector2(470, -42), new Vector2(500, 70));
 
             string[] statNames = { "DMG", "TỐC BẮN", "TẦM" };
             Color[] statCol = { UITheme.Rarity[2], UITheme.Green, UITheme.Gold };
             var bars = new Image[3];
             for (int i = 0; i < 3; i++)
             {
-                float y = -120 - i * 58;
+                float y = -148 - i * 82;
                 var lbl = K.Text(info, $"Stat{i}L", statNames[i], UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-                K.Place(lbl.rectTransform, A.TL, new Vector2(32, y), new Vector2(160, 40));
-                bars[i] = K.ProgressBar(info, $"Stat{i}Bar", A.TL, new Vector2(200, y - 10), new Vector2(760, 20), 0.5f, statCol[i]);
+                K.Place(lbl.rectTransform, A.TL, new Vector2(470, y), new Vector2(150, 40));
+                bars[i] = K.ProgressBar(info, $"Stat{i}Bar", A.TL, new Vector2(630, y - 9), new Vector2(330, 22), 0.5f, statCol[i]);
             }
 
             // BombRow
-            var bomb = K.Card(safe, "BombRow", A.TC, new Vector2(0, -760), new Vector2(1016, 120), out _, out _, out _);
+            var bomb = K.Card(safe, "BombRow", A.TC, new Vector2(0, -890), new Vector2(1016, 120), out _, out _, out _);
             var bIcon = K.Image(bomb, "BombIcon", K.Circle, UITheme.Danger, false);
             K.Place(bIcon.rectTransform, A.ML, new Vector2(40, 0), new Vector2(72, 72));
             var bTxt = K.Text(bomb, "BombName", "Bom — 1 loại", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
@@ -213,14 +232,14 @@ namespace ZombieWar.Editor.UI
 
             // KHO SỞ HỮU — 1 card / WeaponData (25 khẩu → bake hết, designer thấy đủ trong prefab)
             var kho = K.Text(safe, "KhoLabel", "KHO SỞ HỮU", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            K.Place(kho.rectTransform, A.TL, new Vector2(32, -920), new Vector2(400, 40));
+            K.Place(kho.rectTransform, A.TL, new Vector2(32, -1050), new Vector2(400, 40));
 
-            var area = K.StretchTop(K.Rect("KhoArea", safe), 700, -980, 32, 32);
+            var area = K.StretchTop(K.Rect("KhoArea", safe), 650, -1110, 32, 32);
             var content = K.VScroll(safe, "KhoScroll", area, out _);
-            Grid(content, new Vector2(312, 312), new Vector2(24, 24), 3, 16);
+            Grid(content, new Vector2(476, 320), new Vector2(24, 24), 2, 8);
             var cards = new List<WeaponItemCardView>();
             foreach (var wd in weapons)
-                cards.Add(WeaponCard(content, $"Wpn_{wd.name}", new Vector2(312, 312), wd, catalog, showPrice: false));
+                cards.Add(WeaponCard(content, $"Wpn_{wd.name}", new Vector2(476, 320), wd, catalog, showPrice: false));
 
             // ShopLink — text link nhỏ
             var linkRt = K.Rect("ShopLink", safe);
@@ -240,6 +259,7 @@ namespace ZombieWar.Editor.UI
             Set(so, "catalog", catalog);
             SetArray(so, "slotViews", System.Array.ConvertAll(slots, s => (Object)s));
             SetArray(so, "ownedCards", cards.ConvertAll(c => (Object)c).ToArray());
+            Set(so, "infoIcon", infoIcon);
             Set(so, "infoNameLabel", name);
             SetArray(so, "statBars", System.Array.ConvertAll(bars, b => (Object)b));
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -377,31 +397,29 @@ namespace ZombieWar.Editor.UI
             var scr = ScreenRoot<CostumeScreen>(canvas, "CostumeScreen", out var safe);
 
             Bg(scr, safe);
-            var back = K.HeaderBack(safe, "COSTUME", out _);
+            var back = SuperCasualSkin.HeaderWithCurrency(safe, "COSTUME");
 
             // PreviewCard — RawImage preplaced, texture = RT ASSET (không runtime bind/Find)
             var prev = K.Rect("PreviewCard", safe);
-            K.Place(prev, A.TC, new Vector2(0, -160), new Vector2(700, 480));
-            var pbg = K.Image(prev, "Bg", K.Rounded32, UITheme.Surface2, false);
+            K.Place(prev, A.TC, new Vector2(0, -160), new Vector2(760, 620));
+            var pbg = SuperCasualSkin.ItemFrame(prev, "Bg", Color.white);
             K.Full(pbg.rectTransform);
-            var dashed = K.Image(prev, "DashedFrame", K.Dashed, UITheme.Hairline, false);
-            K.Full(dashed.rectTransform);
             var rawGo = new GameObject("PreviewRT", typeof(RectTransform));
             var rawRt = (RectTransform)rawGo.transform;
             rawRt.SetParent(prev, false);
-            K.Full(rawRt, 16, 16, 16, 16);
+            K.Place(rawRt, A.C, Vector2.zero, new Vector2(340, 572));
             var raw = rawGo.AddComponent<RawImage>();
             raw.raycastTarget = false;
             raw.texture = MenuCharacterStageInstaller.EnsureRenderTexture();
-            raw.uvRect = new Rect(0.02f, 0.42f, 0.96f, 0.42f);   // crop band mặt/thân — chỉnh Inspector
+            raw.uvRect = new Rect(0f, 0f, 1f, 1f);
 
-            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -680), new Vector2(900, 88),
+            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -820), new Vector2(1016, 88),
                 new[] { "ĐẦU", "THÂN", "CHÂN", "BỘ" }, UITheme.Green, 0, out var partFills, out var partLabels);
 
             // Pool 18 cell cố định (catalog ~nghìn part → paging, không Instantiate runtime)
-            var area = K.StretchTop(K.Rect("PartArea", safe), 820, -800, 32, 32);
+            var area = K.StretchTop(K.Rect("PartArea", safe), 600, -930, 32, 32);
             var content = K.VScroll(safe, "PartScroll", area, out _);
-            Grid(content, new Vector2(292, 292), new Vector2(24, 24), 3, 16);
+            Grid(content, new Vector2(184, 232), new Vector2(15, 18), 5, 8);
             var cells = new List<CostumeItemCardView>();
             for (int i = 0; i < 18; i++)
                 cells.Add(CostumeCell(content, $"Cell{i}", uiCatalog));
@@ -438,7 +456,7 @@ namespace ZombieWar.Editor.UI
         static CostumeItemCardView CostumeCell(RectTransform parent, string name, UIPrototypeCatalog uiCatalog)
         {
             var rootRt = K.Rect(name, parent);
-            K.Place(rootRt, A.TC, Vector2.zero, new Vector2(292, 292));
+            K.Place(rootRt, A.TC, Vector2.zero, new Vector2(184, 232));
             var bg = K.Image(rootRt, "Bg", K.Rounded24, UITheme.Surface);
             K.Full(bg.rectTransform);
             var btn = bg.gameObject.AddComponent<Button>();
@@ -449,10 +467,10 @@ namespace ZombieWar.Editor.UI
             var fallback = uiCatalog != null ? uiCatalog.costumeFallbackIcon : null;
             var icon = K.Image(rootRt, "Icon", fallback != null ? fallback : K.Rounded24,
                 fallback != null ? Color.white : UITheme.Surface2, false);
-            K.Place(icon.rectTransform, A.C, new Vector2(0, 24), new Vector2(160, 160));
+            K.Place(icon.rectTransform, A.C, new Vector2(0, 22), new Vector2(120, 120));
             icon.preserveAspect = true;
-            var nameLbl = K.Text(rootRt, "Name", "—", 24, UITheme.TextMain, FontStyles.Bold);
-            K.Place(nameLbl.rectTransform, A.BC, new Vector2(0, 16), new Vector2(268, 36));
+            var nameLbl = K.Text(rootRt, "Name", "—", 20, UITheme.TextMain, FontStyles.Bold);
+            K.Place(nameLbl.rectTransform, A.BC, new Vector2(0, 16), new Vector2(168, 34));
             var marker = CheckDot(rootRt);
 
             var view = rootRt.gameObject.AddComponent<CostumeItemCardView>();
@@ -480,7 +498,7 @@ namespace ZombieWar.Editor.UI
             var scr = ScreenRoot<ShopScreen>(canvas, "ShopScreen", out var safe);
 
             Bg(scr, safe);
-            var back = K.HeaderBack(safe, "SHOP", out _);
+            var back = SuperCasualSkin.HeaderWithCurrency(safe, "SHOP");
 
             var tabs = K.SegmentedTabs(safe, "Tabs", A.TC, new Vector2(0, -140), new Vector2(1016, 88),
                 new[] { "WEAPONS", "GACHA", "COSTUME", "UPGRADES" }, UITheme.Green, 0, out var fills, out var labels);
@@ -560,12 +578,35 @@ namespace ZombieWar.Editor.UI
         {
             var panel = ShopContent(safe, "TabWeapons", out var content);
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            vlg.spacing = 16; vlg.padding = new RectOffset(24, 24, 8, 8);
+            vlg.spacing = 20; vlg.padding = new RectOffset(24, 24, 8, 8);
 
-            // group toàn bộ WeaponData theo class — mỗi section grid 2 cột
-            var byClass = new SortedDictionary<int, List<WeaponData>>();
-            foreach (var wd in UIThumbnailGenerator.LoadAllWeaponData())
+            var weapons = UIThumbnailGenerator.LoadAllWeaponData();
+            WeaponData featured = null;
+            var featuredPrice = -1;
+            foreach (var weapon in weapons)
             {
+                var candidatePrice = Mathf.Max(weapon.price, weapon.unlockCost);
+                if (candidatePrice <= featuredPrice) continue;
+                featured = weapon;
+                featuredPrice = candidatePrice;
+            }
+            if (featured == null && weapons.Count > 0) featured = weapons[0];
+            if (featured != null)
+            {
+                var featuredLabel = K.Text(content, "FeaturedLabel", "NỔI BẬT",
+                    UITheme.FontLabel, UITheme.Gold, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+                LE(featuredLabel, 48);
+                var featuredCard = WeaponCard(content, $"Featured_{featured.name}",
+                    new Vector2(952, 420), featured, catalog, showPrice: true);
+                LE(featuredCard, 420);
+                outCards.Add(featuredCard);
+            }
+
+            // Toàn bộ kho còn lại vẫn giữ đủ data, nhưng được đặt sau offer chính.
+            var byClass = new SortedDictionary<int, List<WeaponData>>();
+            foreach (var wd in weapons)
+            {
+                if (wd == featured) continue;
                 int key = (int)wd.weaponClass;
                 if (!byClass.TryGetValue(key, out var list)) byClass[key] = list = new List<WeaponData>();
                 list.Add(wd);
