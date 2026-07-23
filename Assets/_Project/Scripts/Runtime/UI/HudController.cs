@@ -44,6 +44,12 @@ namespace ZombieWar
         private WeaponData _iconBound;
         private float _hp01 = 1f;
 
+        // Cache giá trị đã hiển thị — TMP .text set mỗi frame là nguồn GC string chính của HUD.
+        private int _shownAmmo = int.MinValue;
+        private int _shownBombs = int.MinValue;
+        private int _shownCooldownTenths = int.MinValue;
+        private long _shownRunCoin = long.MinValue;
+
         /// <summary>Phase Pause/GameOver wire vào đây (PauseOverlay). Null → nút pause log fail-safe.</summary>
         public System.Action PauseRequested;
 
@@ -54,6 +60,9 @@ namespace ZombieWar
             if (weaponButton) weaponButton.onClick.AddListener(OnWeaponPressed);
             if (bombButton) bombButton.onClick.AddListener(OnBombPressed);
             if (pauseButton) pauseButton.onClick.AddListener(OnPausePressed);
+
+            RunState.Changed += OnRunChanged;
+            OnRunChanged();
 
             var bus = Bill.Events;
             if (bus == null) return;
@@ -68,6 +77,7 @@ namespace ZombieWar
 
         private void OnDisable()
         {
+            RunState.Changed -= OnRunChanged;
             if (weaponButton) weaponButton.onClick.RemoveListener(OnWeaponPressed);
             if (bombButton) bombButton.onClick.RemoveListener(OnBombPressed);
             if (pauseButton) pauseButton.onClick.RemoveListener(OnPausePressed);
@@ -96,9 +106,25 @@ namespace ZombieWar
             if (_player == null) _player = PlayerMovement.Instance;
 
             if (bombLabel != null && _bomb != null)
-                bombLabel.text = _bomb.CooldownRemaining > 0.05f
-                    ? $"{_bomb.CooldownRemaining:0.0}s"
-                    : $"x{_bomb.BombsRemaining}";
+            {
+                // Chỉ đổi text khi giá trị hiển thị đổi thật — không alloc string mỗi frame.
+                if (_bomb.CooldownRemaining > 0.05f)
+                {
+                    int tenths = Mathf.CeilToInt(_bomb.CooldownRemaining * 10f);
+                    if (tenths != _shownCooldownTenths)
+                    {
+                        _shownCooldownTenths = tenths;
+                        _shownBombs = int.MinValue;
+                        bombLabel.text = $"{tenths / 10f:0.0}s";
+                    }
+                }
+                else if (_bomb.BombsRemaining != _shownBombs)
+                {
+                    _shownBombs = _bomb.BombsRemaining;
+                    _shownCooldownTenths = int.MinValue;
+                    bombLabel.text = $"x{_shownBombs}";
+                }
+            }
 
             if (weaponIcon)
             {
@@ -118,11 +144,22 @@ namespace ZombieWar
             if (ammoRing && _weapon.MagazineSize > 0)
                 ammoRing.fillAmount = (float)_weapon.AmmoInMag / _weapon.MagazineSize;
 
-            if (weaponLabel)
+            if (weaponLabel && _weapon.AmmoInMag != _shownAmmo)
             {
-                var d = _weapon.Current;
-                weaponLabel.text = d != null ? $"{_weapon.AmmoInMag}" : "";
+                _shownAmmo = _weapon.AmmoInMag;
+                weaponLabel.text = _weapon.Current != null ? _shownAmmo.ToString() : "";
             }
+        }
+
+        // Coin pill bind RunState thật: nhặt vàng/nổ thùng/giết quái → số nhảy ngay.
+        private void OnRunChanged()
+        {
+            if (coinPill == null) return;
+            long coin = RunState.Current?.Coin ?? 0;
+            if (coin == _shownRunCoin) return;
+            _shownRunCoin = coin;
+            coinPill.text = ZombieWar.UI.CurrencyClusterWidget.Format(coin);
+            ZombieWar.UI.UIFx.Punch(coinPill.transform);
         }
 
         private void OnWeaponPressed()
