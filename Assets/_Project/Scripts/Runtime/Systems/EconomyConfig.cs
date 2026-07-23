@@ -94,7 +94,7 @@ namespace ZombieWar
             [Tooltip("Weapon duplicate shards, index 0..4 by rarity. Costume pools ignore this.")]
             public int[] weaponDuplicateShards = { 10, 10, 12, 15, 20 };
         }
-        public GachaPool weaponPool = new() { poolId = "gacha.weapon", displayName = "Súng Gacha", kind = "weapon" };
+        public GachaPool weaponPool = new() { poolId = "gacha.weapon", displayName = "Weapon Gacha", kind = "weapon" };
         public GachaPool costumePool = new() { poolId = "gacha.costume", displayName = "Skin Gacha", kind = "costume",
             currency = WalletCurrency.Gem, singleCost = 10, multiCost = 90 };
 

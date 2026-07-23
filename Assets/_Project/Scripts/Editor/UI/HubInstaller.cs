@@ -70,7 +70,7 @@ namespace ZombieWar.Editor.UI
             var recCaption = K.Rect("RecordCaption", avatarChip);
             K.Place(recCaption, A.TL, new Vector2(112, -14), new Vector2(220, 30));
             K.IconImage(recCaption, "Trophy", "Icon_Trophy", A.ML, Vector2.zero, new Vector2(26, 26));
-            var recLbl = K.Text(recCaption, "L", "KỶ LỤC", 26, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var recLbl = K.Text(recCaption, "L", "BEST", 26, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Full(recLbl.rectTransform, 34, 0, 0, 0);
             var record = K.Text(avatarChip, "RecordValue", "—", 40, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.BottomLeft);
             K.Place(record.rectTransform, A.BL, new Vector2(112, 12), new Vector2(220, 46));
@@ -90,14 +90,17 @@ namespace ZombieWar.Editor.UI
             missionBorder.color = UITheme.Cyan;
             missionBorder.gameObject.SetActive(true);
             K.IconImage(mission, "MissionIcon", "Icon_MapPoint", A.ML, new Vector2(28, 0), new Vector2(76, 76));
-            var missionTitle = K.Text(mission, "Title", "NHIỆM VỤ TIẾP THEO", 24, UITheme.TextDim,
+            var missionTitle = K.Text(mission, "Title", "NEXT MISSION", 24, UITheme.TextDim,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(missionTitle.rectTransform, A.TL, new Vector2(124, -22), new Vector2(540, 34));
-            var missionName = K.Text(mission, "Name", "SỐNG SÓT QUA ĐỢT TIẾP THEO", 34, UITheme.TextMain,
+            var missionName = K.Text(mission, "Name", "SURVIVE THE NEXT WAVE", 34, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(missionName.rectTransform, A.BL, new Vector2(124, 24), new Vector2(650, 48));
             var reward = SC.ResourcePill(mission, "Reward", A.MR, new Vector2(-24, 0), 184, "Coin");
             reward.text = "+250";
+            // Accent chủ đích (decision #3): cyan khớp border MissionCard, KHÔNG trắng và khác PLAY vàng.
+            reward.transform.parent.GetComponent<Image>().color = UITheme.Cyan;
+            reward.color = UITheme.OnGold;
 
             // ============ Character focus — RawImage preplaced trỏ RT ASSET ============
             var preview = K.Rect("Podium", safe);
@@ -111,8 +114,9 @@ namespace ZombieWar.Editor.UI
             var raw = rawGo.AddComponent<RawImage>();
             raw.raycastTarget = false;
             raw.texture = MenuCharacterStageInstaller.EnsureRenderTexture();
+            K.RtAspect(rawGo, raw.texture);
 
-            var editBtn = SC.Button(preview, "EditChip", "TRANG PHỤC", new Vector2(250, 78), A.BR,
+            var editBtn = SC.Button(preview, "EditChip", "COSTUME", new Vector2(250, 78), A.BR,
                 new Vector2(-24, 24), "Blue", Color.white, 25);
             var editRelay = editBtn.gameObject.AddComponent<ButtonRelay>();
 
@@ -120,10 +124,10 @@ namespace ZombieWar.Editor.UI
             var daily = K.Card(safe, "DailyCard", A.TC, new Vector2(-258, -1160),
                 new Vector2(492, 176), out _, out _, out _);
             K.IconImage(daily, "Icon", "BtnIcon_Gift", A.ML, new Vector2(28, 0), new Vector2(84, 84));
-            var dailyTitle = K.Text(daily, "Title", "QUÀ HẰNG NGÀY", 28, UITheme.TextMain,
+            var dailyTitle = K.Text(daily, "Title", "DAILY REWARD", 28, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(dailyTitle.rectTransform, A.TL, new Vector2(132, -34), new Vector2(320, 42));
-            var dailyHint = K.Text(daily, "Hint", "Sẵn sàng nhận", 24, UITheme.Green,
+            var dailyHint = K.Text(daily, "Hint", "Ready to claim", 24, UITheme.Green,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(dailyHint.rectTransform, A.BL, new Vector2(132, 34), new Vector2(320, 38));
 
@@ -135,7 +139,7 @@ namespace ZombieWar.Editor.UI
             var eventTitle = K.Text(eventCard, "Title", "ZOMBIE HUNT", 28, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(eventTitle.rectTransform, A.TL, new Vector2(132, -34), new Vector2(320, 42));
-            var eventHint = K.Text(eventCard, "Hint", "Còn 2 ngày", 24, UITheme.Gold,
+            var eventHint = K.Text(eventCard, "Hint", "2 days left", 24, UITheme.Gold,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(eventHint.rectTransform, A.BL, new Vector2(132, 34), new Vector2(320, 38));
 
@@ -143,7 +147,7 @@ namespace ZombieWar.Editor.UI
             var playWrap = K.Rect("PlayButtonWrap", safe);
             K.Place(playWrap, A.BC, new Vector2(0, 246), new Vector2(1016, 150));
             playWrap.gameObject.AddComponent<UIFxBreathe>();
-            var playBtn = SC.Button(playWrap, "PlayButton", "BẮT ĐẦU CHIẾN ĐẤU", new Vector2(1016, 150), A.C,
+            var playBtn = SC.Button(playWrap, "PlayButton", "PLAY", new Vector2(1016, 150), A.C,
                 Vector2.zero, "Yellow", UITheme.OnGold, 58);
 
             // ============ Dock 5 tab — Home là trạng thái hiện tại ============

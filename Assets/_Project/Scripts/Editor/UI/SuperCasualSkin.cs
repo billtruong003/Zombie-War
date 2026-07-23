@@ -116,7 +116,11 @@ namespace ZombieWar.Editor.UI
 
                 if (objectName == "BackBtn")
                 {
-                    Use(image, "Components/Button/Button_Round02_Blue.png", Color.white);
+                    // Chuẩn back = mũi tên picto phẳng (style màn Pass), tắt text "←" fallback.
+                    Use(image, "Components/Icon_PictoIcons/256/PictoIcon_Arrow_Left_1.Png", Color.white);
+                    image.preserveAspect = true;
+                    var textIcon = image.transform.Find("Icon");
+                    if (textIcon != null) textIcon.gameObject.SetActive(false);
                     continue;
                 }
 

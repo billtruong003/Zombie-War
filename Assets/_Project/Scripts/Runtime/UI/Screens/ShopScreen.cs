@@ -348,7 +348,7 @@ namespace ZombieWar.UI
         {
             _pendingCostumeId = id;
             _pendingCostumeIsSet = isSet;
-            if (purchaseTitle != null) purchaseTitle.text = $"Mua {displayName}?";
+            if (purchaseTitle != null) purchaseTitle.text = $"Buy {displayName}?";
             if (purchaseIcon != null) { purchaseIcon.sprite = icon; purchaseIcon.enabled = icon != null; }
             if (purchasePrice != null) purchasePrice.text = $"{CurTag(currency)} {price:N0}";
             if (purchaseModal != null) { purchaseModal.SetActive(true); purchaseModal.transform.SetAsLastSibling(); }
@@ -427,7 +427,7 @@ namespace ZombieWar.UI
             }
             if (card.border != null) card.border.color = weapon.TierColor;
             if (card.nameLabel != null) card.nameLabel.text = weapon.weaponName;
-            if (card.levelLabel != null) card.levelLabel.text = $"CẤP {level}/3";
+            if (card.levelLabel != null) card.levelLabel.text = $"LV {level}/3";
             if (card.statLabel != null) card.statLabel.text = level >= 3
                 ? $"DMG {WeaponUpgradeMath.EffectiveDamage(weapon, level):0.#} · ROF {WeaponUpgradeMath.EffectiveFireRate(weapon, level):0.##}"
                 : $"DMG {WeaponUpgradeMath.EffectiveDamage(weapon, level):0.#} → {WeaponUpgradeMath.EffectiveDamage(weapon, next):0.#}\nROF {WeaponUpgradeMath.EffectiveFireRate(weapon, level):0.##} → {WeaponUpgradeMath.EffectiveFireRate(weapon, next):0.##}";
@@ -439,7 +439,7 @@ namespace ZombieWar.UI
                     int tier = Mathf.Clamp((int)weapon.tier, 0, 4);
                     int shards = (level == 1 ? economy.weaponStar2ShardCost : economy.weaponStar3ShardCost)[tier];
                     long gold = (level == 1 ? economy.weaponStar2GoldCost : economy.weaponStar3GoldCost)[tier];
-                    card.resourceLabel.text = $"{PlayerProfile.GetWeaponShards(weapon.WeaponId)}/{shards} mảnh · {gold:N0} V";
+                    card.resourceLabel.text = $"{PlayerProfile.GetWeaponShards(weapon.WeaponId)}/{shards} shards · {gold:N0} Gold";
                 }
             }
             if (card.button != null) card.button.interactable = level < 3;
@@ -471,10 +471,10 @@ namespace ZombieWar.UI
         /// Đồng bộ nhãn nút + rate với pool config (không hardcode giá trong prefab).
         private void UpdateGachaLabels(Transform g)
         {
-            SetBtnLabel(FindBtn(g, "SungGacha", "Quay1"),  $"Quay 1 · {economy.weaponPool.singleCost}");
-            SetBtnLabel(FindBtn(g, "SungGacha", "Quay10"), $"Quay {economy.weaponPool.multiCount} · {economy.weaponPool.multiCost}");
-            SetBtnLabel(FindBtn(g, "SkinGacha", "Quay1"),  $"Quay 1 · {economy.costumePool.singleCost}");
-            SetBtnLabel(FindBtn(g, "SkinGacha", "Quay10"), $"Quay {economy.costumePool.multiCount} · {economy.costumePool.multiCost}");
+            SetBtnLabel(FindBtn(g, "SungGacha", "Quay1"),  $"Pull 1 · {economy.weaponPool.singleCost}");
+            SetBtnLabel(FindBtn(g, "SungGacha", "Quay10"), $"Pull {economy.weaponPool.multiCount} · {economy.weaponPool.multiCost}");
+            SetBtnLabel(FindBtn(g, "SkinGacha", "Quay1"),  $"Pull 1 · {economy.costumePool.singleCost}");
+            SetBtnLabel(FindBtn(g, "SkinGacha", "Quay10"), $"Pull {economy.costumePool.multiCount} · {economy.costumePool.multiCost}");
         }
 
         private void Pull(EconomyConfig.GachaPool pool, int count)
@@ -484,7 +484,7 @@ namespace ZombieWar.UI
             var results = GachaService.Pull(economy, pool, poolItems, count, new GachaService.SystemRng());
             if (results == null)
             {
-                ShowReveal(pool.displayName, "Không đủ tiền hoặc pool trống — không quay.");
+                ShowReveal(pool.displayName, "Not enough funds or the pool is empty — no pull.");
                 return;
             }
             ShowReveal(pool.displayName, FormatResults(results));
@@ -508,7 +508,7 @@ namespace ZombieWar.UI
             return set;
         }
 
-        private static readonly string[] RarityVi = { "Xám", "Xanh lá", "Xanh biển", "Tím", "Cam" };
+        private static readonly string[] RarityVi = { "Common", "Uncommon", "Rare", "Epic", "Legendary" };
 
         private static string FormatResults(System.Collections.Generic.List<GachaService.GachaResult> rs)
         {
@@ -519,15 +519,15 @@ namespace ZombieWar.UI
                 string hex = ColorUtility.ToHtmlStringRGB(col);
                 string rv = (int)r.rarity < RarityVi.Length ? RarityVi[(int)r.rarity] : r.rarity.ToString();
                 string duplicate = r.isWeapon
-                    ? $"<color=#9AA3B2>Trùng +{r.weaponShards} mảnh</color>"
-                    : $"<color=#9AA3B2>Trùng +{r.dupComp} {CurTag(r.dupCurrency)}</color>";
-                string tag = r.isNew ? "<color=#4ECB6E>MỚI</color>" : duplicate;
+                    ? $"<color=#9AA3B2>Dup +{r.weaponShards} shards</color>"
+                    : $"<color=#9AA3B2>Dup +{r.dupComp} {CurTag(r.dupCurrency)}</color>";
+                string tag = r.isNew ? "<color=#4ECB6E>NEW</color>" : duplicate;
                 sb.Append($"<color=#{hex}>●</color> {r.displayName} <size=70%>[{rv}]</size>  {tag}\n");
             }
             return sb.ToString();
         }
 
-        private static string CurTag(WalletCurrency c) => c == WalletCurrency.Gem ? "KC" : c == WalletCurrency.Gold ? "V" : "C";
+        private static string CurTag(WalletCurrency c) => c == WalletCurrency.Gem ? "Gem" : c == WalletCurrency.Gold ? "Gold" : "Coin";
 
         private static Button FindBtn(Transform root, string cardName, string btnName)
         {
@@ -591,7 +591,7 @@ namespace ZombieWar.UI
             hrt.anchorMin = new Vector2(0, 0); hrt.anchorMax = new Vector2(1, 0); hrt.pivot = new Vector2(0.5f, 0);
             hrt.offsetMin = new Vector2(0, 24); hrt.offsetMax = new Vector2(0, 72);
             var ht = hint.AddComponent<TextMeshProUGUI>();
-            ht.text = "Chạm để đóng"; ht.fontSize = 26; ht.color = new Color(0.6f, 0.64f, 0.7f);
+            ht.text = "Tap to close"; ht.fontSize = 26; ht.color = new Color(0.6f, 0.64f, 0.7f);
             ht.alignment = TextAlignmentOptions.Center;
         }
 

@@ -12,16 +12,16 @@ import time
 DEFAULT_MESSAGE = "Claude has finished the task."
 MELODY = ((784, 180), (988, 180), (1175, 260))
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ROXY_RUNTIME = PROJECT_ROOT / "Library" / "ClaudeVoice"
-ROXY_PYTHON = ROXY_RUNTIME / "venv" / "Scripts" / "python.exe"
-ROXY_MODEL = ROXY_RUNTIME / "models" / "Roxy" / "roxy_e660_s4620.pth"
-ROXY_INDEX = (
-    ROXY_RUNTIME
+VOICE_RUNTIME = PROJECT_ROOT / "Library" / "ClaudeVoice"
+VOICE_PYTHON = VOICE_RUNTIME / "venv" / "Scripts" / "python.exe"
+JARVIS_MODEL = VOICE_RUNTIME / "models" / "Jarvis" / "jarvis.pth"
+JARVIS_INDEX = (
+    VOICE_RUNTIME
     / "models"
-    / "Roxy"
-    / "added_IVF346_Flat_nprobe_1_roxy_v2.index"
+    / "Jarvis"
+    / "added_IVF20_Flat_nprobe_1_jarvis_v2.index"
 )
-PIPER_MODEL = ROXY_RUNTIME / "models" / "Piper" / "en_US-lessac-medium.onnx"
+PIPER_MODEL = VOICE_RUNTIME / "models" / "Piper" / "en_US-lessac-medium.onnx"
 PIPER_CONFIG = Path(f"{PIPER_MODEL}.json")
 
 
@@ -50,9 +50,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--voice",
-        choices=("roxy", "windows"),
-        default="roxy",
-        help="voice used to read the message (default: roxy)",
+        choices=("jarvis", "windows"),
+        default="jarvis",
+        help="voice used to read the message (default: jarvis)",
     )
     parser.add_argument(
         "--dry-run",
@@ -65,21 +65,24 @@ def parse_args() -> argparse.Namespace:
 def run_powershell(script: str, timeout: int = 30) -> bool:
     encoded_script = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    result = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-EncodedCommand",
-            encoded_script,
-        ],
-        capture_output=True,
-        creationflags=creation_flags,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-EncodedCommand",
+                encoded_script,
+            ],
+            capture_output=True,
+            creationflags=creation_flags,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False
     return result.returncode == 0
 
 
@@ -153,14 +156,14 @@ $speaker.Rate = 0
 $speaker.Speak($message)
 $speaker.Dispose()
 """
-    return run_powershell(script)
+    return run_powershell(script, timeout=180)
 
 
 def create_source_speech(message: str, output_path: Path) -> bool:
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     result = subprocess.run(
         [
-            str(ROXY_PYTHON),
+            str(VOICE_PYTHON),
             "-m",
             "piper",
             "-m",
@@ -187,33 +190,33 @@ def create_source_speech(message: str, output_path: Path) -> bool:
     return False
 
 
-def speak_roxy_message(message: str) -> bool:
+def speak_jarvis_message(message: str) -> bool:
     required_files = (
-        ROXY_PYTHON,
-        ROXY_MODEL,
-        ROXY_INDEX,
+        VOICE_PYTHON,
+        JARVIS_MODEL,
+        JARVIS_INDEX,
         PIPER_MODEL,
         PIPER_CONFIG,
     )
     if not all(path.is_file() for path in required_files):
         print(
-            "Warning: Roxy runtime is incomplete; using Windows voice.",
+            "Warning: Jarvis runtime is incomplete; using Windows voice.",
             file=sys.stderr,
         )
         return False
 
     creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    with tempfile.TemporaryDirectory(prefix="notify-", dir=ROXY_RUNTIME) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="notify-", dir=VOICE_RUNTIME) as temp_dir:
         source_path = Path(temp_dir) / "source.wav"
-        output_path = Path(temp_dir) / "roxy.wav"
+        output_path = Path(temp_dir) / "jarvis.wav"
 
         if not create_source_speech(message, source_path):
             return False
 
-        print("Generating Roxy voice...")
+        print("Generating Jarvis voice...")
         result = subprocess.run(
             [
-                str(ROXY_PYTHON),
+                str(VOICE_PYTHON),
                 "-m",
                 "rvc_python",
                 "cli",
@@ -222,9 +225,9 @@ def speak_roxy_message(message: str) -> bool:
                 "-o",
                 str(output_path),
                 "-mp",
-                str(ROXY_MODEL),
+                str(JARVIS_MODEL),
                 "-ip",
-                str(ROXY_INDEX),
+                str(JARVIS_INDEX),
                 "-de",
                 "cuda:0",
                 "-me",
@@ -252,7 +255,7 @@ def speak_roxy_message(message: str) -> bool:
         if result.returncode != 0 or not output_path.is_file():
             error = (result.stderr or result.stdout).strip().splitlines()
             if error:
-                print(f"Roxy error: {error[-1]}", file=sys.stderr)
+                print(f"Jarvis error: {error[-1]}", file=sys.stderr)
             return False
 
         import winsound
@@ -279,7 +282,7 @@ def notify(message: str, repetitions: int, use_speech: bool, voice: str) -> None
     if not use_speech:
         return
 
-    speech_played = speak_roxy_message(message) if voice == "roxy" else False
+    speech_played = speak_jarvis_message(message) if voice == "jarvis" else False
     if not speech_played and not speak_windows_message(message):
         print("Warning: speech could not be played.", file=sys.stderr)
 

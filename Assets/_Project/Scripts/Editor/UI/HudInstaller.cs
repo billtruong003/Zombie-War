@@ -226,7 +226,7 @@ namespace ZombieWar.Editor.UI
             var root = K.Modal(parent, "PauseModal", 800, out var panel, out _);
             panel.sizeDelta = new Vector2(800, 640);
 
-            var title = K.Text(panel, "Title", "TẠM DỪNG", UITheme.FontSub + 8, UITheme.Green, FontStyles.Bold);
+            var title = K.Text(panel, "Title", "PAUSED", UITheme.FontSub + 8, UITheme.Green, FontStyles.Bold);
             K.Place(title.rectTransform, A.TC, new Vector2(0, -40), new Vector2(600, 64));
 
             gear = K.Image(panel, "GearBtn", K.Rounded24, UITheme.Surface2).gameObject.AddComponent<Button>();
@@ -235,12 +235,12 @@ namespace ZombieWar.Editor.UI
             gear.targetGraphic = gear.GetComponent<Image>();
             K.IconImage(gearRt, "Icon", "Icon_Setting", A.C, Vector2.zero, new Vector2(40, 40));
 
-            resume = K.BtnGreen(panel, "ResumeBtn", "TIẾP TỤC", new Vector2(720, 120), A.TC, new Vector2(0, -130));
+            resume = K.BtnGreen(panel, "ResumeBtn", "RESUME", new Vector2(720, 120), A.TC, new Vector2(0, -130));
 
-            sound = ToggleRow(panel, "SoundRow", "Âm thanh", -290);
-            vibrate = ToggleRow(panel, "VibRow", "Rung", -390);
+            sound = ToggleRow(panel, "SoundRow", "Sound", -290);
+            vibrate = ToggleRow(panel, "VibRow", "Vibration", -390);
 
-            exit = K.BtnDanger(panel, "ExitBtn", "BỎ TRẬN", new Vector2(720, 110), A.BC, new Vector2(0, 32));
+            exit = K.BtnDanger(panel, "ExitBtn", "QUIT", new Vector2(720, 110), A.BC, new Vector2(0, 32));
             root.gameObject.SetActive(false);
             return root.gameObject;
         }
@@ -262,10 +262,10 @@ namespace ZombieWar.Editor.UI
         {
             var root = K.Modal(parent, "ConfirmModal", 640, out var panel, out _);
             panel.sizeDelta = new Vector2(640, 320);
-            var t = K.Text(panel, "Title", "Bỏ trận?  Mất thưởng", UITheme.FontBody + 4, UITheme.TextMain, FontStyles.Bold);
+            var t = K.Text(panel, "Title", "Quit run?  Rewards lost", UITheme.FontBody + 4, UITheme.TextMain, FontStyles.Bold);
             K.Place(t.rectTransform, A.TC, new Vector2(0, -48), new Vector2(560, 60));
-            yes = K.BtnDanger(panel, "Yes", "BỎ TRẬN", new Vector2(260, 96), A.BC, new Vector2(-140, 40));
-            no = K.BtnGreen(panel, "No", "Ở LẠI", new Vector2(260, 96), A.BC, new Vector2(140, 40));
+            yes = K.BtnDanger(panel, "Yes", "QUIT", new Vector2(260, 96), A.BC, new Vector2(-140, 40));
+            no = K.BtnGreen(panel, "No", "STAY", new Vector2(260, 96), A.BC, new Vector2(140, 40));
             root.gameObject.SetActive(false);
             return root.gameObject;
         }
@@ -277,11 +277,11 @@ namespace ZombieWar.Editor.UI
             panel.sizeDelta = new Vector2(840, 720);
             close = dim;   // tap ngoài panel = đóng
 
-            var title = K.Text(panel, "Title", "CÀI ĐẶT", UITheme.FontSub + 8, UITheme.TextMain, FontStyles.Bold);
+            var title = K.Text(panel, "Title", "SETTINGS", UITheme.FontSub + 8, UITheme.TextMain, FontStyles.Bold);
             K.Place(title.rectTransform, A.TC, new Vector2(0, -36), new Vector2(500, 64));
 
-            music = SliderRow(panel, "MusicRow", "Nhạc nền", -140);
-            sfx = SliderRow(panel, "SfxRow", "Hiệu ứng", -260);
+            music = SliderRow(panel, "MusicRow", "Music", -140);
+            sfx = SliderRow(panel, "SfxRow", "Sound FX", -260);
 
             var vibRow = K.Rect("VibRow", panel);
             vibRow.anchorMin = new Vector2(0, 1); vibRow.anchorMax = new Vector2(1, 1);
@@ -289,7 +289,7 @@ namespace ZombieWar.Editor.UI
             vibRow.offsetMin = new Vector2(48, 0); vibRow.offsetMax = new Vector2(-48, 0);
             vibRow.sizeDelta = new Vector2(vibRow.sizeDelta.x, 80);
             vibRow.anchoredPosition = new Vector2(0, -380);
-            var vl = K.Text(vibRow, "Label", "Rung", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            var vl = K.Text(vibRow, "Label", "Vibration", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             K.Full(vl.rectTransform);
             haptic = K.Toggle(vibRow, "Toggle", A.MR, Vector2.zero, true);
 
@@ -299,18 +299,18 @@ namespace ZombieWar.Editor.UI
             langRow.offsetMin = new Vector2(48, 0); langRow.offsetMax = new Vector2(-48, 0);
             langRow.sizeDelta = new Vector2(langRow.sizeDelta.x, 80);
             langRow.anchoredPosition = new Vector2(0, -490);
-            var ll = K.Text(langRow, "Label", "Ngôn ngữ", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            var ll = K.Text(langRow, "Label", "Language", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             K.Full(ll.rectTransform);
-            var vi = K.Image(langRow, "VI", K.Pill, UITheme.Green);
+            var vi = K.Image(langRow, "VI", K.Pill, UITheme.Surface2);
             K.Place(vi.rectTransform, A.MR, new Vector2(-110, 0), new Vector2(96, 60));
-            var viT = K.Text(vi.rectTransform, "L", "VI", UITheme.FontLabel, Color.white, FontStyles.Bold);
+            var viT = K.Text(vi.rectTransform, "L", "VI", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold);
             K.Full(viT.rectTransform);
-            var en = K.Image(langRow, "EN", K.Pill, UITheme.Surface2);
+            var en = K.Image(langRow, "EN", K.Pill, UITheme.Green);
             K.Place(en.rectTransform, A.MR, new Vector2(0, 0), new Vector2(96, 60));
-            var enT = K.Text(en.rectTransform, "L", "EN", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold);
+            var enT = K.Text(en.rectTransform, "L", "EN", UITheme.FontLabel, Color.white, FontStyles.Bold);
             K.Full(enT.rectTransform);
 
-            var restore = K.Text(panel, "Restore", "Khôi phục mua hàng  [PLACEHOLDER]", 28, UITheme.TextDim, FontStyles.Underline);
+            var restore = K.Text(panel, "Restore", "Restore purchases  [PLACEHOLDER]", 28, UITheme.TextDim, FontStyles.Underline);
             K.Place(restore.rectTransform, A.BC, new Vector2(0, 36), new Vector2(600, 44));
 
             root.gameObject.SetActive(false);
@@ -360,7 +360,7 @@ namespace ZombieWar.Editor.UI
             var root = K.Modal(parent, "ReviveModal", 760, out var panel, out _);
             panel.sizeDelta = new Vector2(760, 620);
 
-            var title = K.Text(panel, "Title", "HỒI SINH?", UITheme.FontSub + 8, UITheme.TextMain, FontStyles.Bold);
+            var title = K.Text(panel, "Title", "REVIVE?", UITheme.FontSub + 8, UITheme.TextMain, FontStyles.Bold);
             K.Place(title.rectTransform, A.TC, new Vector2(0, -36), new Vector2(500, 64));
 
             var circle = K.Image(panel, "CountCircle", K.Ring, UITheme.Gold, false);
@@ -368,13 +368,13 @@ namespace ZombieWar.Editor.UI
             count = K.Text(circle.rectTransform, "Count", "5", 96, UITheme.Gold, FontStyles.Bold);
             K.Full(count.rectTransform);
 
-            ad = K.BtnGreen(panel, "AdBtn", "Xem quảng cáo", new Vector2(640, 120), A.TC, new Vector2(0, -360));
+            ad = K.BtnGreen(panel, "AdBtn", "Watch ad", new Vector2(640, 120), A.TC, new Vector2(0, -360));
             var adChip = K.Image((RectTransform)ad.transform, "AdChip", K.Pill, UITheme.Gold, false);
             K.Place(adChip.rectTransform, A.TR, new Vector2(-10, -10), new Vector2(72, 44));
             var adT = K.Text(adChip.rectTransform, "L", "AD", 24, UITheme.OnGold, FontStyles.Bold);
             K.Full(adT.rectTransform);
 
-            skip = K.BtnGhost(panel, "SkipBtn", "Thôi", new Vector2(280, 88), A.BC, new Vector2(0, 28));
+            skip = K.BtnGhost(panel, "SkipBtn", "No thanks", new Vector2(280, 88), A.BC, new Vector2(0, 28));
             root.gameObject.SetActive(false);
             return root.gameObject;
         }
@@ -389,8 +389,8 @@ namespace ZombieWar.Editor.UI
             var title = K.Text(root, "Title", "LEVEL UP!", 96, UITheme.Gold, FontStyles.Bold);
             K.Place(title.rectTransform, A.TC, new Vector2(0, -360), new Vector2(800, 120));
 
-            string[] names = { "Tốc bắn", "Giáp", "Tốc chạy" };
-            string[] descs = { "+15% tốc bắn", "+20% giáp", "-8% tốc dịch chuyển kẻ địch" };
+            string[] names = { "Fire Rate", "Armor", "Move Speed" };
+            string[] descs = { "+15% fire rate", "+20% armor", "-8% enemy move speed" };
             int[] rarities = { 2, 3, 0 };
             perks = new Button[3];
             for (int i = 0; i < 3; i++)
@@ -413,7 +413,7 @@ namespace ZombieWar.Editor.UI
                 perks[i] = btn;
             }
 
-            var hint = K.Text(root, "Hint", "Chạm để chọn", 30, UITheme.TextDim, FontStyles.Normal);
+            var hint = K.Text(root, "Hint", "Tap to choose", 30, UITheme.TextDim, FontStyles.Normal);
             K.Place(hint.rectTransform, A.BC, new Vector2(0, 140), new Vector2(400, 44));
             root.gameObject.SetActive(false);
             return root.gameObject;
@@ -428,7 +428,7 @@ namespace ZombieWar.Editor.UI
             var vign = K.Image(root, "Vignette", K.RedVignette, new Color(1, 1, 1, 0.5f), false);
             K.Full(vign.rectTransform);
 
-            var banner = K.Text(root, "Banner", "HẾT TRẬN", 80, UITheme.Gold, FontStyles.Bold);
+            var banner = K.Text(root, "Banner", "RUN OVER", 80, UITheme.Gold, FontStyles.Bold);
             K.Place(banner.rectTransform, A.TC, new Vector2(0, -140), new Vector2(700, 100));
 
             var recPill = K.Image(root, "RecordPill", K.Pill, UITheme.Alpha(UITheme.Surface, 0.9f), false);
@@ -438,7 +438,7 @@ namespace ZombieWar.Editor.UI
 
             // Payout card — số liệu placeholder (WalletService/payout backend chưa có)
             var card = K.Card(root, "PayoutCard", A.TC, new Vector2(0, -560), new Vector2(952, 520), out _, out _, out _);
-            string[] rows = { "Nhặt trong trận", "Thưởng wave", "Thưởng lần đầu" };
+            string[] rows = { "Collected in run", "Wave bonus", "First-clear bonus" };
             string[] vals = { "+1,250", "+350", "+580" };
             for (int i = 0; i < 3; i++)
             {
@@ -450,22 +450,22 @@ namespace ZombieWar.Editor.UI
             }
             var divider = K.Image(card, "Divider", null, UITheme.Hairline, false);
             K.Place(divider.rectTransform, A.TC, new Vector2(0, -300), new Vector2(872, 2));
-            var totL = K.Text(card, "TotalL", "Tổng", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var totL = K.Text(card, "TotalL", "Total", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(totL.rectTransform, A.TL, new Vector2(40, -320), new Vector2(300, 70));
             var totV = K.Text(card, "TotalV", "2,180", 64, UITheme.Gold, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
             K.Place(totV.rectTransform, A.TR, new Vector2(-40, -320), new Vector2(400, 70));
-            var kc = K.Text(card, "KcRow", "KC nhặt được  +5", 34, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var kc = K.Text(card, "KcRow", "Gems collected  +5", 34, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(kc.rectTransform, A.BL, new Vector2(40, 24), new Vector2(500, 52));
 
             K.ProgressBar(root, "PassXpBar", A.TC, new Vector2(0, -1130), new Vector2(952, 20), 0.4f, UITheme.RarityColor(3));
             var passLbl = K.Text(root, "PassXpLabel", "PASS XP +40", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold);
             K.Place(passLbl.rectTransform, A.TC, new Vector2(0, -1160), new Vector2(400, 40));
 
-            var shopLink = K.Text(root, "ShopLink", "<color=#F5B841>Súng mới ở Shop →</color>", 34, UITheme.Gold, FontStyles.Bold);
+            var shopLink = K.Text(root, "ShopLink", "<color=#F5B841>New guns in the Shop →</color>", 34, UITheme.Gold, FontStyles.Bold);
             K.Place(shopLink.rectTransform, A.TC, new Vector2(0, -1230), new Vector2(500, 48));
 
-            replay = K.BtnPrimary(root, "ReplayBtn", "CHƠI LẠI", new Vector2(960, 150), A.BC, new Vector2(0, 220));
-            home = K.BtnGhost(root, "HomeBtn", "VỀ NHÀ", new Vector2(960, 110), A.BC, new Vector2(0, 88));
+            replay = K.BtnPrimary(root, "ReplayBtn", "PLAY AGAIN", new Vector2(960, 150), A.BC, new Vector2(0, 220));
+            home = K.BtnGhost(root, "HomeBtn", "HOME", new Vector2(960, 110), A.BC, new Vector2(0, 88));
             root.gameObject.SetActive(false);
             return root.gameObject;
         }
@@ -476,7 +476,7 @@ namespace ZombieWar.Editor.UI
             K.Full(root);
             var dim = K.Image(root, "Dim", null, new Color(0f, 0.25f, 0.08f, 0.65f));
             K.Full(dim.rectTransform);
-            var t = K.Text(root, "Label", "SỐNG SÓT!", 96, UITheme.Green, FontStyles.Bold);
+            var t = K.Text(root, "Label", "SURVIVED!", 96, UITheme.Green, FontStyles.Bold);
             K.Place(t.rectTransform, A.C, new Vector2(0, 120), new Vector2(800, 140));
             root.gameObject.SetActive(false);
             return root.gameObject;
@@ -498,12 +498,12 @@ namespace ZombieWar.Editor.UI
 
             var tip = K.Image(root, "TooltipChip", K.Pill, UITheme.Gold, false);
             K.Place(tip.rectTransform, A.BL, new Vector2(120, 620), new Vector2(360, 84));
-            var tipT = K.Text(tip.rectTransform, "L", "Kéo để chạy!", 34, UITheme.OnGold, FontStyles.Bold);
+            var tipT = K.Text(tip.rectTransform, "L", "Drag to move!", 34, UITheme.OnGold, FontStyles.Bold);
             K.Full(tipT.rectTransform);
 
             // FtueOverlay phủ full canvas, KHÔNG nằm dưới Safe — TR (-32,-32) rơi vào vùng notch
             // trên máy thật nên không bấm được. Đặt BC trên hàng step dots, xa notch lẫn joystick.
-            skip = K.BtnGhost(root, "SkipBtn", "Bỏ qua", new Vector2(220, 88), A.BC, new Vector2(0, 150));
+            skip = K.BtnGhost(root, "SkipBtn", "Skip", new Vector2(220, 88), A.BC, new Vector2(0, 150));
 
             var dots = K.Rect("StepDots", root);
             K.Place(dots, A.BC, new Vector2(0, 64), new Vector2(120, 16));

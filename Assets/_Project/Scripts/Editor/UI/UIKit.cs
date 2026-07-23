@@ -364,6 +364,16 @@ namespace ZombieWar.Editor.UI
             return btns;
         }
 
+        /// <summary>RawImage hiển thị RenderTexture nhân vật phải giữ đúng ratio texture —
+        /// fitter khoá width theo height, không cho stretch X/Y độc lập (UI handoff §RawImage).</summary>
+        public static void RtAspect(GameObject rawGo, Texture tex)
+        {
+            var f = rawGo.GetComponent<AspectRatioFitter>();
+            if (f == null) f = rawGo.AddComponent<AspectRatioFitter>();
+            f.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
+            f.aspectRatio = tex != null && tex.height > 0 ? (float)tex.width / tex.height : 1f;
+        }
+
         public static Image ProgressBar(RectTransform parent, string name, Anch a, Vector2 pos, Vector2 size, float fill01, Color fill)
         {
             var track = Image(parent, name, Pill, UITheme.Surface2);

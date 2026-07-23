@@ -21,7 +21,12 @@ namespace ZombieWar.Editor.UI
         public const string CostumeDir = "Assets/_Project/UI/Icons/Generated/Costume";
         public const string CatalogAssetPath = "Assets/_Project/UI/Data/UIPrototypeCatalog.asset";
         const string CostumeCatalogPath = "Assets/_Project/Data/Character/ModularCostumeCatalog.asset";
-        const int Size = 256;
+        const int Size = 256;              // legacy costume-part path (PreviewRenderUtility)
+
+        // Icon súng: chụp profile ngang (nòng hướng phải), scene camera alpha-0 → nền trong suốt,
+        // capture 2048 MSAA rồi downscale bilinear về 512 (pipeline chung với CasualIconGenerator).
+        const int WeaponCaptureSize = 2048;
+        const int WeaponIconSize = 512;
 
         [MenuItem("ZombieWar/UI/Authoring/Generate Item Thumbnails")]
         public static void Generate()
@@ -41,6 +46,11 @@ namespace ZombieWar.Editor.UI
             try
             {
                 var weapons = LoadAllWeaponData();
+                // Frame CHUNG một scale cho cả roster (theo khẩu dài nhất): súng lục nhỏ trong khung
+                // đúng tỉ lệ thật so với súng trường — không auto-zoom từng khẩu làm lệch proportion.
+                float rosterExtent = 0f;
+                foreach (var wd in weapons) rosterExtent = Mathf.Max(rosterExtent, MeasureExtent(wd));
+
                 for (int i = 0; i < weapons.Count; i++)
                 {
                     var wd = weapons[i];
@@ -48,7 +58,7 @@ namespace ZombieWar.Editor.UI
                             $"Weapon {i + 1}/{weapons.Count}: {wd.weaponName}", i / (float)(weapons.Count + 1)))
                         { Debug.LogWarning("[Thumbs] Cancelled bởi user."); break; }
 
-                    var sprite = RenderWeapon(wd);
+                    var sprite = RenderWeapon(wd, rosterExtent);
                     if (sprite != null) okW++; else failW++;
                     UpsertWeaponEntry(catalog, wd, sprite);
                 }
@@ -61,8 +71,10 @@ namespace ZombieWar.Editor.UI
             {
                 EditorUtility.ClearProgressBar();
             }
-            Debug.Log($"[Thumbs] Weapons DONE — {okW} ok / {failW} fallback. Costume icons: chạy riêng lệnh Costume Thumbnails.");
-            GenerateCostumeIcons(onlyMissing: true);
+            Debug.Log($"[Thumbs] Weapons DONE — {okW} ok / {failW} fallback.");
+            // KHÔNG chain GenerateCostumeIcons ở đây: path đó dựa trên ModularCostumeCatalog (Fantasy
+            // legacy) và sẽ dọn 448 entry Pro Casual active ra khỏi mapping như "stale". Icon costume
+            // active sinh bằng ZombieWar/Costume/Generate Casual Icons.
         }
 
         /// Sinh icon con thiếu — an toàn resume/cancel, không đụng asset đã hoàn thành.
@@ -142,7 +154,24 @@ namespace ZombieWar.Editor.UI
 
         // ================================================================ render
 
-        static Sprite RenderWeapon(WeaponData wd)
+        /// Bounds profile (max của chiều dài Z / cao Y) — dùng gom scale chung cả roster.
+        static float MeasureExtent(WeaponData wd)
+        {
+            if (wd == null || wd.weaponPrefab == null) return 0f;
+            var inst = Object.Instantiate(wd.weaponPrefab, new Vector3(5000f, 5000f, 5000f), Quaternion.identity);
+            try
+            {
+                var renderers = inst.GetComponentsInChildren<Renderer>(true)
+                    .Where(r => r.enabled && !(r is ParticleSystemRenderer)).ToArray();
+                if (renderers.Length == 0) return 0f;
+                var b = renderers[0].bounds;
+                foreach (var r in renderers) b.Encapsulate(r.bounds);
+                return Mathf.Max(b.size.z, b.size.y);
+            }
+            finally { Object.DestroyImmediate(inst); }
+        }
+
+        static Sprite RenderWeapon(WeaponData wd, float rosterExtent)
         {
             if (wd == null || wd.weaponPrefab == null)
             {
@@ -150,14 +179,15 @@ namespace ZombieWar.Editor.UI
                 return null;
             }
 
-            var pru = new PreviewRenderUtility();
-            GameObject inst = null;
+            // Đặt xa khỏi mọi content scene để frustum chỉ thấy khẩu súng.
+            var offset = new Vector3(5000f, 5000f, 5000f);
+            GameObject inst = null, camGO = null, keyGO = null, fillGO = null;
+            RenderTexture rt = null;
             try
             {
-                inst = Object.Instantiate(wd.weaponPrefab);
+                inst = Object.Instantiate(wd.weaponPrefab, offset, Quaternion.identity);
                 foreach (var ps in inst.GetComponentsInChildren<ParticleSystem>(true))
                     ps.gameObject.SetActive(false);
-                pru.AddSingleGO(inst);
 
                 var renderers = inst.GetComponentsInChildren<Renderer>(true)
                     .Where(r => r.enabled && !(r is ParticleSystemRenderer)).ToArray();
@@ -174,8 +204,36 @@ namespace ZombieWar.Editor.UI
                     return null;
                 }
 
-                FrameCamera(pru, b, new Vector3(-0.55f, 0.3f, -0.8f));
-                return Snap(pru, WeaponsDir, StableName("W", wd));
+                keyGO = MakeLight("ThumbKey", new Vector3(35f, 140f, 0f), 1.15f);
+                fillGO = MakeLight("ThumbFill", new Vector3(10f, -30f, 0f), 0.5f);
+
+                camGO = new GameObject("ThumbCam");
+                var cam = camGO.AddComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0, 0, 0, 0);   // nền trong suốt thật
+                cam.fieldOfView = 30f;
+                cam.nearClipPlane = 0.001f;
+                cam.farClipPlane = 100f;
+                rt = new RenderTexture(WeaponCaptureSize, WeaponCaptureSize, 24, RenderTextureFormat.ARGB32)
+                { antiAliasing = 8 };
+                cam.targetTexture = rt;
+
+                // Profile ngang, nòng súng hướng sang PHẢI icon (camera phía +X).
+                // Scale khung = trung bình nhân giữa size khẩu này và khẩu dài nhất roster:
+                // giữ thứ bậc to–nhỏ (súng lục nhỏ hơn rifle rõ rệt) nhưng không true-scale
+                // đến mức súng lục bé tí không đọc được. pad 1.24 chừa mép cho outline
+                // (Tools/outline_icons.py chạy SAU mỗi lần render).
+                float baseExtent = Mathf.Max(b.size.z, b.size.y);
+                float blended = Mathf.Sqrt(baseExtent * Mathf.Max(rosterExtent, baseExtent));
+                float extent = blended * 1.24f;
+                float dist = extent * 0.5f / Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                cam.transform.position = b.center + Vector3.right * dist;
+                cam.transform.LookAt(b.center);
+                cam.Render();
+
+                string file = $"{WeaponsDir}/{StableName("W", wd)}.png";
+                CasualIconGenerator.WriteDownscaled(rt, file, WeaponIconSize);
+                return ImportIcon(file, WeaponIconSize);
             }
             catch (System.Exception ex)
             {
@@ -184,9 +242,38 @@ namespace ZombieWar.Editor.UI
             }
             finally
             {
+                if (camGO != null) { var c = camGO.GetComponent<Camera>(); if (c != null) c.targetTexture = null; }
+                if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+                if (camGO != null) Object.DestroyImmediate(camGO);
+                if (keyGO != null) Object.DestroyImmediate(keyGO);
+                if (fillGO != null) Object.DestroyImmediate(fillGO);
                 if (inst != null) Object.DestroyImmediate(inst);
-                pru.Cleanup();
             }
+        }
+
+        static GameObject MakeLight(string name, Vector3 euler, float intensity)
+        {
+            var go = new GameObject(name);
+            var l = go.AddComponent<Light>();
+            l.type = LightType.Directional;
+            l.intensity = intensity;
+            go.transform.rotation = Quaternion.Euler(euler);
+            return go;
+        }
+
+        static Sprite ImportIcon(string path, int maxSize)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.textureType = TextureImporterType.Sprite;
+            imp.spriteImportMode = SpriteImportMode.Single;
+            imp.alphaIsTransparency = true;
+            imp.mipmapEnabled = false;
+            imp.maxTextureSize = maxSize;
+            imp.wrapMode = TextureWrapMode.Clamp;
+            imp.filterMode = FilterMode.Bilinear;
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         /// Hướng camera theo slot để icon đọc được: mặt/đầu = chính diện, thân/lưng = 3/4,

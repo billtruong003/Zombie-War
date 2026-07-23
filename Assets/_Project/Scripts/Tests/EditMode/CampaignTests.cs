@@ -42,7 +42,7 @@ namespace ZombieWar.Tests
             {
                 var e = levels.GetArrayElementAtIndex(i);
                 e.FindPropertyRelative("levelId").stringValue = $"level.{i + 1}";
-                e.FindPropertyRelative("displayName").stringValue = $"Màn {i + 1}";
+                e.FindPropertyRelative("displayName").stringValue = $"Stage {i + 1}";
                 e.FindPropertyRelative("sceneName").stringValue = $"Map_Level{i + 1}";
                 e.FindPropertyRelative("minimumPower").intValue = i * 1000;
             }
@@ -117,7 +117,7 @@ namespace ZombieWar.Tests
             var gate = _catalog.Evaluate(1, 999999);
             Assert.IsFalse(gate.CanPlay);
             Assert.AreEqual(LevelGate.Status.Locked, gate.State);
-            StringAssert.Contains("Màn 1", gate.Reason, "the lock must name the stage that unlocks it");
+            StringAssert.Contains("Stage 1", gate.Reason, "the lock must name the stage that unlocks it");
         }
 
         [Test]

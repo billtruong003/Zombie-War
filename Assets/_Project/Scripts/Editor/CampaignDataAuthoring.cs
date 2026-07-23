@@ -66,7 +66,7 @@ namespace ZombieWar.Editor
             // Only walkers, then one runner late. Teaches movement and shooting, nothing else.
             new StageSpec
             {
-                levelId = "level.1", displayName = "Bùng Phát", sceneName = "Map_Level1",
+                levelId = "level.1", displayName = "Outbreak", sceneName = "Map_Level1",
                 waveAsset = "WD_Level1", minimumPower = 0, recommendedPower = 300,
                 families = new[] { "Pistol", "SMG" },
                 weaponIds = new[] { "weapon.sidearm.pistol_a", "weapon.smg.generic" },
@@ -74,11 +74,11 @@ namespace ZombieWar.Editor
                 bossEnemyId = "",
                 waves = new[]
                 {
-                    new WaveSpec { label = "Dò đường", entries = new[]{(Pup,6)},               interval=1.1f, maxConcurrent=6,  rest=5f },
-                    new WaveSpec { label = "Bầy nhỏ",  entries = new[]{(Pup,8),(Meow,4)},      interval=0.9f, maxConcurrent=8,  rest=5f },
-                    new WaveSpec { label = "Xương khô",entries = new[]{(Meow,8),(Skel,4)},     interval=0.9f, maxConcurrent=10, rest=5f },
-                    new WaveSpec { label = "Đông dần", entries = new[]{(Pup,10),(Skel,8)},     interval=0.8f, maxConcurrent=12, rest=6f },
-                    new WaveSpec { label = "Kẻ chạy",  entries = new[]{(Skel,10),(Bark,3)},    interval=0.8f, maxConcurrent=14, rest=0f },
+                    new WaveSpec { label = "Scouting",  entries = new[]{(Pup,6)},               interval=1.1f, maxConcurrent=6,  rest=5f },
+                    new WaveSpec { label = "Small Pack",entries = new[]{(Pup,8),(Meow,4)},      interval=0.9f, maxConcurrent=8,  rest=5f },
+                    new WaveSpec { label = "Dry Bones", entries = new[]{(Meow,8),(Skel,4)},     interval=0.9f, maxConcurrent=10, rest=5f },
+                    new WaveSpec { label = "Thickening",entries = new[]{(Pup,10),(Skel,8)},     interval=0.8f, maxConcurrent=12, rest=6f },
+                    new WaveSpec { label = "Runners",   entries = new[]{(Skel,10),(Bark,3)},    interval=0.8f, maxConcurrent=14, rest=0f },
                 },
             },
 
@@ -86,7 +86,7 @@ namespace ZombieWar.Editor
             // Introduces ranged pressure and the first burrower, then a boss. Three new concepts.
             new StageSpec
             {
-                levelId = "level.2", displayName = "Cánh Đồng Gai", sceneName = "Map_Level2",
+                levelId = "level.2", displayName = "Thorn Fields", sceneName = "Map_Level2",
                 waveAsset = "WD_Level2", minimumPower = 700, recommendedPower = 950,
                 families = new[] { "Shotgun", "AR" },
                 weaponIds = new[] { "weapon.shotgun.generic", "weapon.assault_rifle.generic", "weapon.smg.generic" },
@@ -94,11 +94,11 @@ namespace ZombieWar.Editor
                 bossEnemyId = CactusBoss,
                 waves = new[]
                 {
-                    new WaveSpec { label = "Gai nhỏ",   entries = new[]{(Pup,8),(Cacti,3)},            interval=0.9f, maxConcurrent=10, rest=5f },
-                    new WaveSpec { label = "Bắn tỉa",   entries = new[]{(Cacti,6),(Bark,4)},           interval=0.85f,maxConcurrent=12, rest=5f },
-                    new WaveSpec { label = "Phục kích", entries = new[]{(Burrow,4),(Meow,8)},          interval=0.85f,maxConcurrent=12, rest=6f },
-                    new WaveSpec { label = "Rừng gai",  entries = new[]{(Cactus,5),(Cacti,6),(Bark,4)},interval=0.8f, maxConcurrent=14, rest=6f },
-                    new WaveSpec { label = "Vây hãm",   entries = new[]{(Burrow,5),(Cactus,6),(Skel,8)},interval=0.75f,maxConcurrent=16,rest=8f },
+                    new WaveSpec { label = "Small Thorns", entries = new[]{(Pup,8),(Cacti,3)},            interval=0.9f, maxConcurrent=10, rest=5f },
+                    new WaveSpec { label = "Sharpshooters",entries = new[]{(Cacti,6),(Bark,4)},           interval=0.85f,maxConcurrent=12, rest=5f },
+                    new WaveSpec { label = "Ambush",       entries = new[]{(Burrow,4),(Meow,8)},          interval=0.85f,maxConcurrent=12, rest=6f },
+                    new WaveSpec { label = "Thorn Forest", entries = new[]{(Cactus,5),(Cacti,6),(Bark,4)},interval=0.8f, maxConcurrent=14, rest=6f },
+                    new WaveSpec { label = "Siege",        entries = new[]{(Burrow,5),(Cactus,6),(Skel,8)},interval=0.75f,maxConcurrent=16,rest=8f },
                     new WaveSpec { label = "BOSS",      entries = new[]{(CactusBoss,1),(Cacti,4)},     interval=1.2f, maxConcurrent=8,  rest=0f },
                 },
             },
@@ -107,7 +107,7 @@ namespace ZombieWar.Editor
             // Caster spacing + a heavy that punishes standing still. Boss is the Giant.
             new StageSpec
             {
-                levelId = "level.3", displayName = "Nghĩa Địa Xương", sceneName = "Map_Level3",
+                levelId = "level.3", displayName = "Bone Graveyard", sceneName = "Map_Level3",
                 waveAsset = "WD_Level3", minimumPower = 1100, recommendedPower = 1400,
                 families = new[] { "AR", "Marksman", "Shotgun" },
                 weaponIds = new[] { "weapon.assault_rifle.m4a1", "weapon.marksman.sniper_generic", "weapon.shotgun.generic" },
@@ -115,12 +115,12 @@ namespace ZombieWar.Editor
                 bossEnemyId = Giant,
                 waves = new[]
                 {
-                    new WaveSpec { label = "Xương trỗi", entries = new[]{(Skel,12)},                    interval=0.85f,maxConcurrent=12, rest=5f },
-                    new WaveSpec { label = "Pháp sư",    entries = new[]{(Skel,10),(Mage,3)},           interval=0.8f, maxConcurrent=14, rest=5f },
-                    new WaveSpec { label = "Giữ khoảng", entries = new[]{(Mage,5),(Bark,6)},            interval=0.8f, maxConcurrent=14, rest=6f },
-                    new WaveSpec { label = "Kẻ nặng",    entries = new[]{(Giant,1),(Skel,10)},          interval=0.8f, maxConcurrent=14, rest=6f },
-                    new WaveSpec { label = "Hợp lực",    entries = new[]{(Mage,5),(Cactus,5),(Skel,10)},interval=0.75f,maxConcurrent=16, rest=6f },
-                    new WaveSpec { label = "Áp đảo",     entries = new[]{(Giant,1),(Mage,4),(Bark,8)},  interval=0.7f, maxConcurrent=16, rest=8f },
+                    new WaveSpec { label = "Bones Rising",entries = new[]{(Skel,12)},                    interval=0.85f,maxConcurrent=12, rest=5f },
+                    new WaveSpec { label = "Mages",       entries = new[]{(Skel,10),(Mage,3)},           interval=0.8f, maxConcurrent=14, rest=5f },
+                    new WaveSpec { label = "Keep Away",   entries = new[]{(Mage,5),(Bark,6)},            interval=0.8f, maxConcurrent=14, rest=6f },
+                    new WaveSpec { label = "Heavyweight", entries = new[]{(Giant,1),(Skel,10)},          interval=0.8f, maxConcurrent=14, rest=6f },
+                    new WaveSpec { label = "Joint Force", entries = new[]{(Mage,5),(Cactus,5),(Skel,10)},interval=0.75f,maxConcurrent=16, rest=6f },
+                    new WaveSpec { label = "Overwhelm",   entries = new[]{(Giant,1),(Mage,4),(Bark,8)},  interval=0.7f, maxConcurrent=16, rest=8f },
                     new WaveSpec { label = "BOSS",       entries = new[]{(Giant,2),(Skel,8)},           interval=1.1f, maxConcurrent=10, rest=0f },
                 },
             },
@@ -129,7 +129,7 @@ namespace ZombieWar.Editor
             // Speed and burrow pressure, deliberately little ranged noise so the pack reads clearly.
             new StageSpec
             {
-                levelId = "level.4", displayName = "Bầy Hoang", sceneName = "Map_Level4",
+                levelId = "level.4", displayName = "Wild Pack", sceneName = "Map_Level4",
                 waveAsset = "WD_Level4", minimumPower = 1500, recommendedPower = 1800,
                 families = new[] { "SMG", "AR", "Shotgun" },
                 weaponIds = new[] { "weapon.smg.generic", "weapon.assault_rifle.scar_l", "weapon.shotgun.benelli_m4" },
@@ -137,12 +137,12 @@ namespace ZombieWar.Editor
                 bossEnemyId = MoleKing,
                 waves = new[]
                 {
-                    new WaveSpec { label = "Vuốt nhanh", entries = new[]{(Bolt,6),(Bark,6)},              interval=0.8f, maxConcurrent=12, rest=5f },
-                    new WaveSpec { label = "Sấm sét",    entries = new[]{(Lightning,6),(Bolt,6)},         interval=0.75f,maxConcurrent=14, rest=5f },
-                    new WaveSpec { label = "Đào ngầm",   entries = new[]{(Mole,5),(Bolt,8)},              interval=0.75f,maxConcurrent=14, rest=6f },
-                    new WaveSpec { label = "Đè nặng",    entries = new[]{(Bowwow,4),(Lightning,8)},       interval=0.7f, maxConcurrent=16, rest=6f },
-                    new WaveSpec { label = "Bầy đàn",    entries = new[]{(Bolt,10),(Lightning,8),(Mole,5)},interval=0.7f,maxConcurrent=18, rest=6f },
-                    new WaveSpec { label = "Săn mồi",    entries = new[]{(Bowwow,6),(Mole,6),(Bark,8)},   interval=0.65f,maxConcurrent=18, rest=8f },
+                    new WaveSpec { label = "Swift Claws", entries = new[]{(Bolt,6),(Bark,6)},              interval=0.8f, maxConcurrent=12, rest=5f },
+                    new WaveSpec { label = "Thunderbolt", entries = new[]{(Lightning,6),(Bolt,6)},         interval=0.75f,maxConcurrent=14, rest=5f },
+                    new WaveSpec { label = "Burrowers",   entries = new[]{(Mole,5),(Bolt,8)},              interval=0.75f,maxConcurrent=14, rest=6f },
+                    new WaveSpec { label = "Heavy Press", entries = new[]{(Bowwow,4),(Lightning,8)},       interval=0.7f, maxConcurrent=16, rest=6f },
+                    new WaveSpec { label = "The Swarm",   entries = new[]{(Bolt,10),(Lightning,8),(Mole,5)},interval=0.7f,maxConcurrent=18, rest=6f },
+                    new WaveSpec { label = "Predators",   entries = new[]{(Bowwow,6),(Mole,6),(Bark,8)},   interval=0.65f,maxConcurrent=18, rest=8f },
                     new WaveSpec { label = "BOSS",       entries = new[]{(MoleKing,1),(Mole,4),(Bolt,6)}, interval=1.1f, maxConcurrent=12, rest=0f },
                 },
             },
@@ -151,7 +151,7 @@ namespace ZombieWar.Editor
             // A curated mix, not all 15 at once, climaxing on the charger boss.
             new StageSpec
             {
-                levelId = "level.5", displayName = "Vây Hãm Titan", sceneName = "Map_Level5",
+                levelId = "level.5", displayName = "Titan Siege", sceneName = "Map_Level5",
                 waveAsset = "WD_Level5", minimumPower = 1900, recommendedPower = 2200,
                 families = new[] { "AR", "Shotgun", "Marksman" },
                 weaponIds = new[] { "weapon.assault_rifle.ak_47", "weapon.shotgun.aa_12", "weapon.marksman.sniper_generic" },
@@ -159,13 +159,13 @@ namespace ZombieWar.Editor
                 bossEnemyId = CactusBoss,
                 waves = new[]
                 {
-                    new WaveSpec { label = "Tiền trạm",  entries = new[]{(Skel,10),(Bolt,6)},               interval=0.75f,maxConcurrent=14, rest=5f },
-                    new WaveSpec { label = "Hoả lực",    entries = new[]{(Mage,5),(Cactus,5)},              interval=0.75f,maxConcurrent=14, rest=5f },
-                    new WaveSpec { label = "Ngầm & nhanh",entries= new[]{(Mole,5),(Lightning,8)},           interval=0.7f, maxConcurrent=16, rest=6f },
-                    new WaveSpec { label = "Tinh nhuệ",  entries = new[]{(Giant,1),(Bowwow,4),(Mage,4)},    interval=0.7f, maxConcurrent=16, rest=6f },
-                    new WaveSpec { label = "Tổng lực",   entries = new[]{(Bolt,10),(Skel,10),(Cacti,6)},    interval=0.65f,maxConcurrent=18, rest=6f },
-                    new WaveSpec { label = "Song tinh",  entries = new[]{(Giant,1),(MoleKing,1),(Bark,8)},  interval=0.8f, maxConcurrent=14, rest=8f },
-                    new WaveSpec { label = "BOSS CUỐI",  entries = new[]{(CactusBoss,1),(Cactus,4),(Mage,3)},interval=1.2f,maxConcurrent=10, rest=0f },
+                    new WaveSpec { label = "Vanguard",    entries = new[]{(Skel,10),(Bolt,6)},               interval=0.75f,maxConcurrent=14, rest=5f },
+                    new WaveSpec { label = "Firepower",   entries = new[]{(Mage,5),(Cactus,5)},              interval=0.75f,maxConcurrent=14, rest=5f },
+                    new WaveSpec { label = "Fast & Deep", entries= new[]{(Mole,5),(Lightning,8)},            interval=0.7f, maxConcurrent=16, rest=6f },
+                    new WaveSpec { label = "Elites",      entries = new[]{(Giant,1),(Bowwow,4),(Mage,4)},    interval=0.7f, maxConcurrent=16, rest=6f },
+                    new WaveSpec { label = "Full Assault",entries = new[]{(Bolt,10),(Skel,10),(Cacti,6)},    interval=0.65f,maxConcurrent=18, rest=6f },
+                    new WaveSpec { label = "Twin Elites", entries = new[]{(Giant,1),(MoleKing,1),(Bark,8)},  interval=0.8f, maxConcurrent=14, rest=8f },
+                    new WaveSpec { label = "FINAL BOSS",  entries = new[]{(CactusBoss,1),(Cactus,4),(Mage,3)},interval=1.2f,maxConcurrent=10, rest=0f },
                 },
             },
         };

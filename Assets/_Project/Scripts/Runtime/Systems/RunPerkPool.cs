@@ -14,13 +14,13 @@ namespace ZombieWar
     {
         public static readonly IReadOnlyList<RunPerk> All = new List<RunPerk>
         {
-            new RunPerk("perk.damage.s",    "Sát thương +15%", "Tăng 15% sát thương mọi vũ khí.",  RunPerkKind.Damage,     1.15f),
-            new RunPerk("perk.damage.m",    "Sát thương +30%", "Tăng 30% sát thương mọi vũ khí.",  RunPerkKind.Damage,     1.30f),
-            new RunPerk("perk.firerate.s",  "Tốc độ bắn +12%", "Bắn nhanh hơn 12%.",               RunPerkKind.FireRate,   1.12f),
-            new RunPerk("perk.firerate.m",  "Tốc độ bắn +25%", "Bắn nhanh hơn 25%.",               RunPerkKind.FireRate,   1.25f),
-            new RunPerk("perk.speed.s",     "Chạy nhanh +10%", "Di chuyển nhanh hơn 10%.",         RunPerkKind.MoveSpeed,  1.10f),
-            new RunPerk("perk.health.s",    "Máu tối đa +20%", "Tăng 20% máu tối đa.",             RunPerkKind.MaxHealth,  1.20f),
-            new RunPerk("perk.coin.s",      "Vàng rơi +25%",   "Nhận thêm 25% Coin trong màn.",    RunPerkKind.CoinGain,   1.25f),
+            new RunPerk("perk.damage.s",    "Damage +15%",     "+15% damage on all weapons.",      RunPerkKind.Damage,     1.15f),
+            new RunPerk("perk.damage.m",    "Damage +30%",     "+30% damage on all weapons.",      RunPerkKind.Damage,     1.30f),
+            new RunPerk("perk.firerate.s",  "Fire Rate +12%",  "Shoot 12% faster.",                RunPerkKind.FireRate,   1.12f),
+            new RunPerk("perk.firerate.m",  "Fire Rate +25%",  "Shoot 25% faster.",                RunPerkKind.FireRate,   1.25f),
+            new RunPerk("perk.speed.s",     "Move Speed +10%", "Move 10% faster.",                 RunPerkKind.MoveSpeed,  1.10f),
+            new RunPerk("perk.health.s",    "Max Health +20%", "+20% maximum health.",             RunPerkKind.MaxHealth,  1.20f),
+            new RunPerk("perk.coin.s",      "Coin Drops +25%", "+25% Coin earned in a stage.",     RunPerkKind.CoinGain,   1.25f),
         };
 
         /// <summary>Draws <paramref name="count"/> distinct perks. Uses UnityEngine.Random so a test

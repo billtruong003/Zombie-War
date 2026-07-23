@@ -38,36 +38,36 @@ namespace ZombieWar.EditorTools
         // Stable vendor-preset manifest. Identity, presentation and value never depend on scan order.
         static readonly SetOffer[] CuratedSets =
         {
-            new("Characters_85",  "casual.pro.set.001", "Ông Già Tuyết",           WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_33",  "casual.pro.set.002", "Họa Sĩ Đường Phố",       WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_48",  "casual.pro.set.003", "Nhà Thám Hiểm Nhí",      WeaponTier.Rare,      WalletCurrency.Gem,   60),
-            new("Characters_115", "casual.pro.set.004", "Nổi Loạn Đỏ",            WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_29",  "casual.pro.set.005", "Học Giả Công Nghệ",      WeaponTier.Rare,      WalletCurrency.Coin, 7500),
-            new("Characters_44",  "casual.pro.set.006", "Người Làm Vườn",         WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_6",   "casual.pro.set.007", "Trượt Ván Cuối Tuần",    WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_64",  "casual.pro.set.008", "Hổ Con Tinh Nghịch",     WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_89",  "casual.pro.set.009", "Ninja Mai Rùa",          WeaponTier.Legendary, WalletCurrency.Gem,  180),
-            new("Characters_10",  "casual.pro.set.010", "Bóng Đêm Đường Phố",     WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_111", "casual.pro.set.011", "Cá Mập Xanh",            WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_119", "casual.pro.set.012", "Punk Lỗi Nhịp",          WeaponTier.Rare,      WalletCurrency.Coin, 7500),
-            new("Characters_14",  "casual.pro.set.013", "Tay Trượt Kính Đen",     WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_19",  "casual.pro.set.014", "Nhà Khoa Học Kẹo Ngọt",  WeaponTier.Rare,      WalletCurrency.Coin, 7500),
-            new("Characters_23",  "casual.pro.set.015", "Dạo Phố Mùa Thu",        WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_31",  "casual.pro.set.016", "Áo Ấm Mùa Đông",         WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_39",  "casual.pro.set.017", "Cậu Bé Hải Quân",        WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_52",  "casual.pro.set.018", "Cừu Bông",               WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_65",  "casual.pro.set.019", "Chiến Binh Mặt Nạ Đỏ",   WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_7",   "casual.pro.set.020", "Nắng Dịu",               WeaponTier.Common,    WalletCurrency.Coin, 2500),
-            new("Characters_8",   "casual.pro.set.021", "Phố Xanh",               WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_9",   "casual.pro.set.022", "Nón Màu Cổ Điển",        WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_114", "casual.pro.set.023", "Nhà Phiêu Lưu Trung Cổ", WeaponTier.Epic,      WalletCurrency.Gem,   80),
-            new("Characters_30",  "casual.pro.set.024", "Học Viện Xanh",          WeaponTier.Rare,      WalletCurrency.Coin, 7500),
-            new("Characters_49",  "casual.pro.set.025", "Xạ Thủ Rừng Xanh",       WeaponTier.Epic,      WalletCurrency.Gem,  100),
-            new("Characters_58",  "casual.pro.set.026", "Thủy Thủ Nhí",           WeaponTier.Rare,      WalletCurrency.Gem,   60),
-            new("Characters_83",  "casual.pro.set.027", "Chiến Binh Viking",      WeaponTier.Legendary, WalletCurrency.Gem,  180),
-            new("Characters_95",  "casual.pro.set.028", "Ngôi Sao Sân Trường",    WeaponTier.Rare,      WalletCurrency.Coin, 5000),
-            new("Characters_5",   "casual.pro.set.029", "Năng Động Cam",          WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
-            new("Characters_2",   "casual.pro.set.030", "Tối Giản Đen",           WeaponTier.Common,    WalletCurrency.Coin, 2500),
+            new("Characters_85",  "casual.pro.set.001", "Santa Claus",            WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_33",  "casual.pro.set.002", "Street Artist",          WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_48",  "casual.pro.set.003", "Little Explorer",        WeaponTier.Rare,      WalletCurrency.Gem,   60),
+            new("Characters_115", "casual.pro.set.004", "Red Rebel",              WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_29",  "casual.pro.set.005", "Tech Scholar",           WeaponTier.Rare,      WalletCurrency.Coin, 7500),
+            new("Characters_44",  "casual.pro.set.006", "Gardener",               WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_6",   "casual.pro.set.007", "Weekend Skater",         WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_64",  "casual.pro.set.008", "Playful Tiger Cub",      WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_89",  "casual.pro.set.009", "Turtle Shell Ninja",     WeaponTier.Legendary, WalletCurrency.Gem,  180),
+            new("Characters_10",  "casual.pro.set.010", "Street Shadow",          WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_111", "casual.pro.set.011", "Blue Shark",             WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_119", "casual.pro.set.012", "Offbeat Punk",           WeaponTier.Rare,      WalletCurrency.Coin, 7500),
+            new("Characters_14",  "casual.pro.set.013", "Shades Skater",          WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_19",  "casual.pro.set.014", "Candy Scientist",        WeaponTier.Rare,      WalletCurrency.Coin, 7500),
+            new("Characters_23",  "casual.pro.set.015", "Autumn Stroll",          WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_31",  "casual.pro.set.016", "Winter Warmth",          WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_39",  "casual.pro.set.017", "Navy Cadet",             WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_52",  "casual.pro.set.018", "Cotton Sheep",           WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_65",  "casual.pro.set.019", "Red Mask Warrior",       WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_7",   "casual.pro.set.020", "Gentle Sunshine",        WeaponTier.Common,    WalletCurrency.Coin, 2500),
+            new("Characters_8",   "casual.pro.set.021", "Green Street",           WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_9",   "casual.pro.set.022", "Classic Cap",            WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_114", "casual.pro.set.023", "Medieval Adventurer",    WeaponTier.Epic,      WalletCurrency.Gem,   80),
+            new("Characters_30",  "casual.pro.set.024", "Blue Academy",           WeaponTier.Rare,      WalletCurrency.Coin, 7500),
+            new("Characters_49",  "casual.pro.set.025", "Jungle Marksman",        WeaponTier.Epic,      WalletCurrency.Gem,  100),
+            new("Characters_58",  "casual.pro.set.026", "Little Sailor",          WeaponTier.Rare,      WalletCurrency.Gem,   60),
+            new("Characters_83",  "casual.pro.set.027", "Viking Warrior",         WeaponTier.Legendary, WalletCurrency.Gem,  180),
+            new("Characters_95",  "casual.pro.set.028", "Campus Star",            WeaponTier.Rare,      WalletCurrency.Coin, 5000),
+            new("Characters_5",   "casual.pro.set.029", "Orange Energy",          WeaponTier.Uncommon,  WalletCurrency.Coin, 3500),
+            new("Characters_2",   "casual.pro.set.030", "Minimal Black",          WeaponTier.Common,    WalletCurrency.Coin, 2500),
         };
 
         [MenuItem("ZombieWar/Economy/Generate Economy Config")]
@@ -93,7 +93,7 @@ namespace ZombieWar.EditorTools
             econ.costumeSets = BuildCostumeSets(cat, econ.costumeSets);
             // Gacha pool giu default trong asset (editor-tunable); chi set neu chua co poolId.
             if (string.IsNullOrEmpty(econ.weaponPool?.poolId))
-                econ.weaponPool = new EconomyConfig.GachaPool { poolId = "gacha.weapon", displayName = "Súng Gacha", kind = "weapon", currency = WalletCurrency.Gold, singleCost = 100, multiCost = 900 };
+                econ.weaponPool = new EconomyConfig.GachaPool { poolId = "gacha.weapon", displayName = "Weapon Gacha", kind = "weapon", currency = WalletCurrency.Gold, singleCost = 100, multiCost = 900 };
             if (string.IsNullOrEmpty(econ.costumePool?.poolId))
                 econ.costumePool = new EconomyConfig.GachaPool { poolId = "gacha.costume", displayName = "Skin Gacha", kind = "costume", currency = WalletCurrency.Gem, singleCost = 10, multiCost = 90 };
             econ.weaponPool.weaponDuplicateShards = new[] { 10, 10, 12, 15, 20 };
@@ -168,7 +168,7 @@ namespace ZombieWar.EditorTools
                 items.Add(new EconomyConfig.CostumeEntry
                 {
                     itemId = EconomyConfig.BodyColorId(col),
-                    displayName = "Da " + col,
+                    displayName = col + " Skin",
                     slot = ModularCostumeCatalog.BodySlot,
                     rarity = isStarter ? WeaponTier.Common : rarity,
                     source = isStarter ? AcquireSource.Starter : source,
@@ -182,7 +182,7 @@ namespace ZombieWar.EditorTools
                 items.Add(new EconomyConfig.CostumeEntry
                 {
                     itemId = EconomyConfig.BodyEarId(ear),
-                    displayName = ear == "Elf" ? "Tai Elf" : "Tai " + ear,
+                    displayName = ear == "Elf" ? "Elf Ears" : ear + " Ears",
                     slot = ModularCostumeCatalog.BodySlot,
                     rarity = isStarter ? WeaponTier.Common : WeaponTier.Epic,
                     source = isStarter ? AcquireSource.Starter : AcquireSource.ShopAndGacha,
@@ -307,33 +307,33 @@ namespace ZombieWar.EditorTools
             int n = TrailingNumber(meshName);
             if (slot == "Eye")
             {
-                string[] names = { "Mắt mở tự nhiên", "Mắt lim dim", "Mắt tròn ngạc nhiên", "Mắt nhắm thư thái",
-                    "Mắt long lanh xanh", "Mắt xanh lim dim", "Mắt nâu ấm", "Mắt nâu lim dim",
-                    "Mắt cười", "Mắt chibi", "Mắt choáng chữ X", "Mắt chóng mặt" };
+                string[] names = { "Natural Open Eyes", "Sleepy Eyes", "Surprised Round Eyes", "Relaxed Closed Eyes",
+                    "Sparkling Blue Eyes", "Drowsy Blue Eyes", "Warm Brown Eyes", "Drowsy Brown Eyes",
+                    "Smiling Eyes", "Chibi Eyes", "X Dazed Eyes", "Dizzy Eyes" };
                 if (n >= 1 && n <= names.Length) return names[n - 1];
             }
             if (slot == "Mouth")
             {
-                string[] names = { "Cười nhẹ", "Cười tươi", "Nhếch môi", "Hờn dỗi", "Buồn bã", "Há miệng vui",
-                    "Ngạc nhiên", "Cười lớn", "Cười lộ răng", "Cười phấn khích", "Cười răng nanh" };
+                string[] names = { "Soft Smile", "Bright Smile", "Smirk", "Pout", "Sad Face", "Happy Open Mouth",
+                    "Surprised Mouth", "Big Laugh", "Toothy Grin", "Excited Grin", "Fanged Grin" };
                 if (n >= 1 && n <= names.Length) return names[n - 1];
             }
             if (slot == "Brow")
             {
-                string[] names = { "Mày tự nhiên đen", "Mày cao đen", "Mày lo lắng đen", "Mày tập trung đen",
-                    "Mày giận đen", "Mày buồn đen", "Mày tự nhiên vàng", "Mày cao vàng", "Mày lo lắng vàng",
-                    "Mày tập trung vàng", "Mày giận vàng", "Mày buồn vàng", "Mày tự tin đen", "Mày giận đậm",
-                    "Mày mềm đen", "Mày mạnh mẽ", "Mày sẹo phải", "Mày sẹo trái", "Mày trắng dịu",
-                    "Mày trắng sắc", "Mày rậm đen", "Mày rậm vàng", "Mày rậm cam" };
+                string[] names = { "Natural Black Brows", "Raised Black Brows", "Worried Black Brows", "Focused Black Brows",
+                    "Angry Black Brows", "Sad Black Brows", "Natural Blond Brows", "Raised Blond Brows", "Worried Blond Brows",
+                    "Focused Blond Brows", "Angry Blond Brows", "Sad Blond Brows", "Confident Black Brows", "Deep Angry Brows",
+                    "Soft Black Brows", "Strong Brows", "Right Scar Brows", "Left Scar Brows", "Soft White Brows",
+                    "Sharp White Brows", "Bushy Black Brows", "Bushy Blond Brows", "Bushy Orange Brows" };
                 if (n >= 1 && n <= names.Length) return names[n - 1];
             }
 
             string prefix = slot switch
             {
-                "Hair" => "Kiểu tóc", "Beard" => "Râu", "Mask" => "Mặt nạ", "HairAccessory" => "Phụ kiện tóc",
-                "Head" => "Mũ", "Eyewear" => "Kính", "Earring" => "Khuyên tai", "Chest" => "Áo",
-                "Hands" => "Găng tay", "Bracelet" => "Vòng tay", "HandAccessory" => "Phụ kiện tay",
-                "Watch" => "Đồng hồ", "Back" => "Ba lô", "Legs" => "Quần", "Feet" => "Giày", _ => slot,
+                "Hair" => "Hairstyle", "Beard" => "Beard", "Mask" => "Mask", "HairAccessory" => "Hair Accessory",
+                "Head" => "Hat", "Eyewear" => "Glasses", "Earring" => "Earring", "Chest" => "Top",
+                "Hands" => "Gloves", "Bracelet" => "Bracelet", "HandAccessory" => "Hand Accessory",
+                "Watch" => "Watch", "Back" => "Backpack", "Legs" => "Pants", "Feet" => "Shoes", _ => slot,
             };
             return n > 0 ? $"{prefix} {n:00}" : prefix;
         }

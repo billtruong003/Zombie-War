@@ -21,7 +21,13 @@ namespace ZombieWar.Editor
         const string Catalog = "Assets/_Project/Data/Character/CasualCostumeCatalog.asset";
         const string PlayerPrefab = "Assets/_Project/Prefabs/Player.prefab";
         const string OutDir = "Assets/_Project/UI/Icons/Generated/CasualCostume";
-        const int IconSize = 256;
+        const string PreviewDir = "Assets/Screenshots/UIAudit/IconSizePreview";
+
+        // Capture ở 2048 (MSAA) rồi downscale bilinear từng nấc /2 về TargetSize — outline mượt,
+        // không răng cưa. TargetSize hợp lệ: 2048 / 1024 / 512 / 256 / 128; production dùng 512.
+        const int CaptureSize = 2048;
+        const int TargetSize = 512;
+        static readonly int[] PreviewSizes = { 2048, 1024, 512, 256, 128 };
 
         // Deterministic pose time sampled from the idle clip so arms rest at the sides (not T-pose).
         const float PoseTime = 0.6f;
@@ -29,30 +35,31 @@ namespace ZombieWar.Editor
         // Framing computed from the target renderer's world bounds (auto-fits any item, pose-safe).
         // pad = how much bigger than the item to frame (context); biasY = shift target up by a
         // fraction of bounds height (e.g. face decal is low on the head → bias up to include it).
-        struct Framing { public float fov, yaw, pitch, pad, biasY; public bool behind; }
+        // Approved direction: camera thẳng mặt ngang (yaw 0, pitch 0) — không chụp nghiêng.
+        struct Framing { public float fov, pad, biasY; public bool behind; }
 
         static readonly Dictionary<string, Framing> Frames = new()
         {
-            { "Hair",    new Framing { fov = 28f, yaw = 16f, pitch = -6f, pad = 1.35f, biasY = -0.05f } },
-            { "Face",    new Framing { fov = 28f, yaw = 10f, pitch = -4f, pad = 2.7f,  biasY = 0.25f } },
-            { "Eye",     new Framing { fov = 28f, yaw = 8f,  pitch = -4f, pad = 3.4f,  biasY = 0.3f } },
-            { "Brow",    new Framing { fov = 28f, yaw = 8f,  pitch = -4f, pad = 3.4f,  biasY = 0.2f } },
-            { "Mouth",   new Framing { fov = 28f, yaw = 8f,  pitch = -4f, pad = 3.4f,  biasY = 0.45f } },
-            { "Beard",   new Framing { fov = 28f, yaw = 12f, pitch = -4f, pad = 2.3f,  biasY = 0.15f } },
-            { "Mask",    new Framing { fov = 28f, yaw = 12f, pitch = -4f, pad = 2.0f,  biasY = 0.15f } },
-            { "HairAccessory", new Framing { fov = 28f, yaw = 18f, pitch = -6f, pad = 1.7f, biasY = 0f } },
-            { "Head",    new Framing { fov = 28f, yaw = 20f, pitch = -6f, pad = 1.7f,  biasY = 0.0f } },
-            { "Eyewear", new Framing { fov = 28f, yaw = 10f, pitch = -6f, pad = 3.0f,  biasY = 0.4f } },
-            { "Earring", new Framing { fov = 28f, yaw = 28f, pitch = -4f, pad = 2.5f,  biasY = 0.1f } },
-            { "Chest",   new Framing { fov = 32f, yaw = 15f, pitch = -4f, pad = 1.25f, biasY = 0.05f } },
-            { "Hands",   new Framing { fov = 30f, yaw = 22f, pitch = -2f, pad = 1.7f,  biasY = 0.0f } },
-            { "Bracelet", new Framing { fov = 30f, yaw = 25f, pitch = -2f, pad = 2.0f, biasY = 0f } },
-            { "HandAccessory", new Framing { fov = 30f, yaw = 25f, pitch = -2f, pad = 1.8f, biasY = 0f } },
-            { "Watch",   new Framing { fov = 30f, yaw = 25f, pitch = -2f, pad = 2.1f,  biasY = 0f } },
-            { "Back",    new Framing { fov = 32f, yaw = 8f,  pitch = -4f, pad = 1.4f,  biasY = 0.0f, behind = true } },
-            { "Body",    new Framing { fov = 30f, yaw = 12f, pitch = -3f, pad = 1.12f, biasY = 0.0f } },
-            { "Legs",    new Framing { fov = 32f, yaw = 12f, pitch = -3f, pad = 1.2f,  biasY = 0.0f } },
-            { "Feet",    new Framing { fov = 30f, yaw = 18f, pitch = 2f,  pad = 1.7f,  biasY = 0.1f } },
+            { "Hair",    new Framing { fov = 28f, pad = 1.35f, biasY = -0.05f } },
+            { "Face",    new Framing { fov = 28f, pad = 2.7f,  biasY = 0.25f } },
+            { "Eye",     new Framing { fov = 28f, pad = 3.4f,  biasY = 0.3f } },
+            { "Brow",    new Framing { fov = 28f, pad = 3.4f,  biasY = 0.2f } },
+            { "Mouth",   new Framing { fov = 28f, pad = 3.4f,  biasY = 0.45f } },
+            { "Beard",   new Framing { fov = 28f, pad = 2.3f,  biasY = 0.15f } },
+            { "Mask",    new Framing { fov = 28f, pad = 2.0f,  biasY = 0.15f } },
+            { "HairAccessory", new Framing { fov = 28f, pad = 1.7f, biasY = 0f } },
+            { "Head",    new Framing { fov = 28f, pad = 1.7f,  biasY = 0.0f } },
+            { "Eyewear", new Framing { fov = 28f, pad = 3.0f,  biasY = 0.4f } },
+            { "Earring", new Framing { fov = 28f, pad = 2.5f,  biasY = 0.1f } },
+            { "Chest",   new Framing { fov = 32f, pad = 1.25f, biasY = 0.05f } },
+            { "Hands",   new Framing { fov = 30f, pad = 1.7f,  biasY = 0.0f } },
+            { "Bracelet", new Framing { fov = 30f, pad = 2.0f, biasY = 0f } },
+            { "HandAccessory", new Framing { fov = 30f, pad = 1.8f, biasY = 0f } },
+            { "Watch",   new Framing { fov = 30f, pad = 2.1f,  biasY = 0f } },
+            { "Back",    new Framing { fov = 32f, pad = 1.4f,  biasY = 0.0f, behind = true } },
+            { "Body",    new Framing { fov = 30f, pad = 1.12f, biasY = 0.0f } },
+            { "Legs",    new Framing { fov = 32f, pad = 1.2f,  biasY = 0.0f } },
+            { "Feet",    new Framing { fov = 30f, pad = 1.7f,  biasY = 0.1f } },
         };
 
         // Bare base context (itemIds): ONLY body + face + hair — no clothing. Every icon is shot on
@@ -67,15 +74,25 @@ namespace ZombieWar.Editor
         [MenuItem("ZombieWar/Costume/Generate Casual Icons (ALL)")]
         public static void GenerateAll() => Run();
 
+        [MenuItem("ZombieWar/Costume/Generate Casual Icons (Missing only)")]
+        public static void GenerateMissing() => Run(missingOnly: true);
+
         [MenuItem("ZombieWar/Costume/Generate Casual Icons (Sample per slot)")]
         public static void GenerateSample() => Run(sampleOnePerSlot: true);
 
-        static void Run(bool sampleOnePerSlot = false, HashSet<string> onlySlots = null)
+        /// So sánh chất lượng theo size: render 1 item/slot ra đủ 2048/1024/512/256/128
+        /// vào Assets/Screenshots/UIAudit/IconSizePreview — chỉ để duyệt mắt, không bind.
+        [MenuItem("ZombieWar/Costume/Generate Casual Icons (Size preview)")]
+        public static void GenerateSizePreview() => Run(sampleOnePerSlot: true, sizePreview: true);
+
+        static void Run(bool sampleOnePerSlot = false, HashSet<string> onlySlots = null,
+            bool missingOnly = false, bool sizePreview = false)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(Catalog);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
             if (catalog == null || prefab == null) { Debug.LogError("[CasualIcon] catalog/player missing"); return; }
             if (!Directory.Exists(OutDir)) Directory.CreateDirectory(OutDir);
+            if (sizePreview && !Directory.Exists(PreviewDir)) Directory.CreateDirectory(PreviewDir);
 
             GameObject inst = null; GameObject camGO = null, keyGO = null, fillGO = null; RenderTexture rt = null;
             var writtenByItem = new Dictionary<string, string>();
@@ -99,8 +116,9 @@ namespace ZombieWar.Editor
                 camGO = new GameObject("IconCam");
                 var cam = camGO.AddComponent<Camera>();
                 cam.clearFlags = CameraClearFlags.SolidColor;
-                cam.backgroundColor = new Color(0, 0, 0, 0); // transparent cut-out
-                rt = new RenderTexture(IconSize, IconSize, 24, RenderTextureFormat.ARGB32);
+                cam.backgroundColor = new Color(0, 0, 0, 0); // transparent cut-out — không cần remove BG
+                rt = new RenderTexture(CaptureSize, CaptureSize, 24, RenderTextureFormat.ARGB32)
+                { antiAliasing = 8 };
                 cam.targetTexture = rt;
 
                 int done = 0;
@@ -116,13 +134,19 @@ namespace ZombieWar.Editor
                     for (int i = 0; i < parts.Count; i += step)
                     {
                         var entry = parts[i];
+                        string file = Path.Combine(OutDir, entry.itemId + ".png");
+                        if (missingOnly && File.Exists(file)) continue; // "đừng đụng cái là chụp nữa"
+
                         applier.ApplyCasualTechnicalBase(slot.slot == "Hands", slot.slot == "Feet");
                         applier.Apply(slot.slot, entry);            // swap only this slot to the target
                         var rend = FindRenderer(attachRoot, slot.slot);
-                        string file = Path.Combine(OutDir, entry.itemId + ".png");
-                        if (rend != null) RenderTo(cam, frame, rend, file);
+                        if (rend != null)
+                        {
+                            if (sizePreview)
+                                RenderPreviewSizes(cam, frame, rend, entry.itemId);
+                            else { RenderTo(cam, frame, rend, file, TargetSize); writtenByItem[entry.itemId] = file; }
+                        }
                         else Debug.LogWarning($"[CasualIcon] no renderer for {entry.itemId}");
-                        writtenByItem[entry.itemId] = file;
                         RestoreSlot(applier, catalog, slot.slot);    // put the starter item back for this slot
                         applier.ApplyCasualTechnicalBase(false, false);
                         done++;
@@ -133,6 +157,7 @@ namespace ZombieWar.Editor
             catch (Exception e) { Debug.LogError($"[CasualIcon] {e.Message}\n{e.StackTrace}"); }
             finally
             {
+                if (camGO != null) { var c = camGO.GetComponent<Camera>(); if (c != null) c.targetTexture = null; }
                 if (rt != null) { rt.Release(); UnityEngine.Object.DestroyImmediate(rt); }
                 if (camGO) UnityEngine.Object.DestroyImmediate(camGO);
                 if (keyGO) UnityEngine.Object.DestroyImmediate(keyGO);
@@ -187,25 +212,68 @@ namespace ZombieWar.Editor
             return null;
         }
 
-        static void RenderTo(Camera cam, Framing f, SkinnedMeshRenderer renderer, string path)
+        static void RenderTo(Camera cam, Framing f, SkinnedMeshRenderer renderer, string path, int size)
         {
             renderer.updateWhenOffscreen = true; // force a correct world-bounds evaluation in edit mode
             var b = renderer.bounds;
             Vector3 target = b.center + Vector3.up * (f.biasY * b.size.y);
             float extent = Mathf.Max(b.size.x, b.size.y) * f.pad;
             float dist = extent * 0.5f / Mathf.Tan(f.fov * 0.5f * Mathf.Deg2Rad);
-            // Character faces +Z. Camera sits on the +Z (front) side; behind flips to the -Z side.
-            var dir = Quaternion.Euler(f.pitch, (f.behind ? 180f : 0f) + f.yaw, 0f) * Vector3.forward;
+            // Character faces +Z. Camera thẳng mặt ngang: front (+Z) hoặc behind (-Z), không nghiêng.
+            var dir = (f.behind ? Vector3.back : Vector3.forward);
             cam.transform.position = target + dir * dist;
             cam.transform.LookAt(target);
             cam.fieldOfView = f.fov;
             cam.Render();
 
-            var prev = RenderTexture.active; RenderTexture.active = cam.targetTexture;
-            var tex = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false);
-            tex.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
-            tex.Apply();
+            WriteDownscaled(cam.targetTexture, path, size);
+        }
+
+        /// Cùng một khung hình, xuất đủ các size PreviewSizes để duyệt mắt chọn resolution.
+        static void RenderPreviewSizes(Camera cam, Framing f, SkinnedMeshRenderer renderer, string itemId)
+        {
+            RenderTo(cam, f, renderer, Path.Combine(PreviewDir, $"{itemId}_{PreviewSizes[0]}.png"), PreviewSizes[0]);
+            for (int i = 1; i < PreviewSizes.Length; i++)
+                WriteDownscaled(cam.targetTexture, Path.Combine(PreviewDir, $"{itemId}_{PreviewSizes[i]}.png"), PreviewSizes[i]);
+        }
+
+        /// Downscale bilinear từng nấc /2 (box-filter tương đương) rồi unpremultiply alpha để
+        /// outline mượt, không viền đen — nền đã trong suốt sẵn từ camera alpha-0.
+        /// internal: UIThumbnailGenerator (icon súng) dùng chung một pipeline chất lượng.
+        internal static void WriteDownscaled(RenderTexture source, string path, int size)
+        {
+            var chain = new List<RenderTexture>();
+            RenderTexture current = source;
+            int w = source.width;
+            while (w / 2 >= size)
+            {
+                w /= 2;
+                var half = RenderTexture.GetTemporary(w, w, 0, RenderTextureFormat.ARGB32);
+                half.filterMode = FilterMode.Bilinear;
+                Graphics.Blit(current, half);
+                chain.Add(half);
+                current = half;
+            }
+
+            var prev = RenderTexture.active; RenderTexture.active = current;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, size, size), 0, 0);
             RenderTexture.active = prev;
+            foreach (var t in chain) RenderTexture.ReleaseTemporary(t);
+
+            // Alpha-blend lên nền (0,0,0,0) cho RGB dạng premultiplied — chia lại theo alpha
+            // để pixel rìa giữ đúng màu thay vì sậm dần về đen.
+            var px = tex.GetPixels();
+            for (int i = 0; i < px.Length; i++)
+            {
+                float a = px[i].a;
+                if (a > 0.001f && a < 0.999f)
+                    px[i] = new Color(Mathf.Min(1f, px[i].r / a), Mathf.Min(1f, px[i].g / a),
+                                      Mathf.Min(1f, px[i].b / a), a);
+            }
+            tex.SetPixels(px);
+            tex.Apply();
+
             File.WriteAllBytes(path, ImageConversion.EncodeToPNG(tex));
             UnityEngine.Object.DestroyImmediate(tex);
         }
@@ -231,6 +299,7 @@ namespace ZombieWar.Editor
                 importer.spriteImportMode = SpriteImportMode.Single;
                 importer.alphaIsTransparency = true;
                 importer.mipmapEnabled = false;
+                importer.maxTextureSize = TargetSize;
                 importer.SaveAndReimport();
             }
             AssetDatabase.Refresh();

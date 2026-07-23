@@ -61,6 +61,8 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text gemLabel;
 
         private ICurrencyProvider _provider;
+        private long _lastCoin, _lastGold, _lastGem;
+        private bool _hasLast;
 
         /// <summary>Static default để mọi widget dùng chung — production = ví PlayerProfile.</summary>
         public static ICurrencyProvider DefaultProvider { get; set; } = new ProfileCurrencyProvider();
@@ -69,6 +71,7 @@ namespace ZombieWar.UI
         {
             _provider ??= DefaultProvider;
             _provider.Changed += Refresh;
+            _hasLast = false;   // lần đầu sau enable chỉ set text, không punch
             Refresh();
         }
 
@@ -86,9 +89,19 @@ namespace ZombieWar.UI
 
         private void Refresh()
         {
-            if (coinLabel != null) coinLabel.text = Format(_provider.Coin);
-            if (goldLabel != null) goldLabel.text = Format(_provider.Gold);
-            if (gemLabel != null) gemLabel.text = Format(_provider.Gem);
+            long coin = _provider.Coin, gold = _provider.Gold, gem = _provider.Gem;
+            SetLabel(coinLabel, coin, _hasLast && coin != _lastCoin);
+            SetLabel(goldLabel, gold, _hasLast && gold != _lastGold);
+            SetLabel(gemLabel, gem, _hasLast && gem != _lastGem);
+            _lastCoin = coin; _lastGold = gold; _lastGem = gem;
+            _hasLast = true;
+        }
+
+        private static void SetLabel(TMP_Text label, long value, bool punch)
+        {
+            if (label == null) return;
+            label.text = Format(value);
+            if (punch) UIFx.Punch(label.transform);
         }
 
         /// <summary>1234567 → "1.23M", 12345 → "12.3K" — khớp wireframe compact.</summary>

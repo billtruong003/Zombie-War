@@ -10,7 +10,7 @@ namespace ZombieWar
     {
         [Tooltip("Stable save key. Never renumber these - completion is persisted against them.")]
         public string levelId = "level.1";
-        public string displayName = "Màn 1";
+        public string displayName = "Stage 1";
         [Tooltip("Scene name, which must also be present in Build Settings.")]
         public string sceneName = "Map_Level1";
         public WaveData waves;
@@ -80,18 +80,18 @@ namespace ZombieWar
         public LevelGate Evaluate(int index, int playerPower)
         {
             var level = Get(index);
-            if (level == null) return LevelGate.Locked("Màn không tồn tại.");
+            if (level == null) return LevelGate.Locked("Stage does not exist.");
 
             if (index > 0)
             {
                 var previous = Get(index - 1);
                 if (previous != null && !PlayerProfile.IsLevelCompleted(previous.levelId))
-                    return LevelGate.Locked($"Cần hoàn thành {previous.displayName} trước.");
+                    return LevelGate.Locked($"Complete {previous.displayName} first.");
             }
 
             if (playerPower < level.minimumPower)
                 return LevelGate.Underpowered(
-                    $"Cần {level.minimumPower} lực chiến (hiện có {playerPower}).");
+                    $"Requires {level.minimumPower} Combat Power (you have {playerPower}).");
 
             return LevelGate.Open();
         }

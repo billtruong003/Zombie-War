@@ -63,7 +63,7 @@ namespace ZombieWar.Editor.UI
             UIKit.Place(sub.rectTransform, UIKit.Anch.C, new Vector2(0, -70), new Vector2(560, 44));
 
             // ---- Status text ----
-            var status = UIKit.Text(root, "Status", "Đang tải...", UITheme.FontBody,
+            var status = UIKit.Text(root, "Status", "Loading...", UITheme.FontBody,
                 UITheme.TextDim, FontStyles.Normal);
             UIKit.Place(status.rectTransform, UIKit.Anch.C, new Vector2(0, -260), new Vector2(700, 50));
 

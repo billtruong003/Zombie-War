@@ -68,10 +68,10 @@ namespace ZombieWar.UI
 
         private static readonly Dictionary<string, string> FantasySlotLabels = new()
         {
-            { "Hair", "Tóc" }, { "Beard", "Râu" }, { "Brow", "Mày" }, { "Mouth", "Miệng" },
-            { "Eyewear", "Kính" }, { "Eye", "Mắt" }, { "Earring", "Khuyên" }, { "Head", "Mũ" },
-            { "Chest", "Áo" }, { "Hands", "Găng" }, { "Back", "Lưng" }, { "Body", "Thân" },
-            { "Legs", "Quần" }, { "Feet", "Giày" },
+            { "Hair", "Hair" }, { "Beard", "Beard" }, { "Brow", "Brows" }, { "Mouth", "Mouth" },
+            { "Eyewear", "Glasses" }, { "Eye", "Eyes" }, { "Earring", "Earring" }, { "Head", "Hat" },
+            { "Chest", "Top" }, { "Hands", "Gloves" }, { "Back", "Back" }, { "Body", "Body" },
+            { "Legs", "Pants" }, { "Feet", "Shoes" },
         };
 
         private static readonly Color LockedTint = new(0.45f, 0.45f, 0.45f, 1f);
@@ -179,7 +179,7 @@ namespace ZombieWar.UI
 
         private string SlotLabel(string slot)
         {
-            if (slot == SetsSlot) return "Bộ";
+            if (slot == SetsSlot) return "Sets";
             if (_casual)
             {
                 var def = catalog.GetSlotDefinition(slot);
@@ -322,7 +322,7 @@ namespace ZombieWar.UI
                 bool ownedSet = PlayerProfile.IsCostumeSetOwned(set);
                 economy.TryGetCostumeSetPrice(set, out var setCurrency, out long setPrice);
                 int ownedCount = set.itemIds.Count(PlayerProfile.IsCostumeItemOwned);
-                string setLabel = $"{set.displayName}\n{PriceText(setCurrency, setPrice)} · {ownedCount}/{set.itemIds.Count} món";
+                string setLabel = $"{set.displayName}\n{PriceText(setCurrency, setPrice)} · {ownedCount}/{set.itemIds.Count} items";
                 cell.BindOption(setLabel, set.icon);
                 if (cell.icon != null) cell.icon.color = ownedSet ? Color.white : LockedTint;
                 if (cell.nameLabel != null) cell.nameLabel.color = ownedSet ? Color.white : UITheme.Gold;
@@ -332,7 +332,7 @@ namespace ZombieWar.UI
 
             if (opt.kind == OptKind.None)
             {
-                cell.BindOption("Không mang", NeutralIcon);
+                cell.BindOption("None", NeutralIcon);
                 if (cell.icon != null) cell.icon.color = Color.white;
                 if (cell.nameLabel != null) cell.nameLabel.color = Color.white;
                 cell.SetSelected(string.IsNullOrEmpty(PlayerProfile.GetPart(slotName)));
@@ -368,13 +368,13 @@ namespace ZombieWar.UI
                     selected = PlayerProfile.GetPart(slotName) == opt.data;
                     break;
                 case OptKind.Default:
-                    label = "Mặc định";
+                    label = "Default";
                     string defGuid = catalog.defaults.GetEquippedGuid(slotName);
                     icon = defGuid != null && uiCatalog != null ? uiCatalog.GetCostumeIcon(defGuid) : NeutralIcon;
                     selected = PlayerProfile.GetPart(slotName) == defGuid;
                     break;
                 case OptKind.None:
-                    label = "Không mang"; icon = NeutralIcon;
+                    label = "None"; icon = NeutralIcon;
                     selected = string.IsNullOrEmpty(PlayerProfile.GetPart(slotName));
                     break;
                 case OptKind.BodyColor:
@@ -384,7 +384,7 @@ namespace ZombieWar.UI
                     selected = PlayerProfile.BodyColor == opt.data;
                     break;
                 case OptKind.BodyEar:
-                    label = opt.data == "Elf" ? "Tai elf" : "Tai thường";
+                    label = opt.data == "Elf" ? "Elf ears" : "Normal ears";
                     icon = NeutralIcon;
                     owned = PlayerProfile.IsBodyEarOwned(opt.data);
                     selected = PlayerProfile.BodyEar == opt.data;
@@ -428,7 +428,7 @@ namespace ZombieWar.UI
             c == WalletCurrency.Gem ? PlayerProfile.CurrencyKind.Gem : PlayerProfile.CurrencyKind.Coin;
 
         private static string PriceText(WalletCurrency c, long p) =>
-            p.ToString("N0") + (c == WalletCurrency.Gem ? " KC" : c == WalletCurrency.Gold ? " V" : " C");
+            p.ToString("N0") + (c == WalletCurrency.Gem ? " Gem" : c == WalletCurrency.Gold ? " Gold" : " Coin");
 
         private Sprite NeutralIcon => uiCatalog != null ? uiCatalog.costumeFallbackIcon : null;
 
@@ -525,9 +525,9 @@ namespace ZombieWar.UI
             string itemName = null;
             if (set == null && economy.TryGetCostume(itemId, out var namedItem)) itemName = namedItem.displayName;
             if (purchaseModalTitle != null) purchaseModalTitle.text = set != null ? set.displayName
-                : string.IsNullOrEmpty(itemName) ? "Xác nhận mua" : itemName;
+                : string.IsNullOrEmpty(itemName) ? "Confirm purchase" : itemName;
             if (purchaseModalDescription != null) purchaseModalDescription.text = set != null
-                ? $"Mua trọn bộ {set.itemIds.Count} món?" : "Mua món đồ này?";
+                ? $"Buy the full {set.itemIds.Count}-item set?" : "Buy this item?";
             long price = 0; WalletCurrency currency = WalletCurrency.Gem;
             if (set != null) economy.TryGetCostumeSetPrice(set, out currency, out price);
             else economy.TryGetCostumePrice(itemId, out currency, out price);

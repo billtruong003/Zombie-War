@@ -100,7 +100,7 @@ namespace ZombieWar.Editor.UI
             if (old != null) Object.DestroyImmediate(old.gameObject);
             var buttons = UIKit.SegmentedTabs(safe, "PartTabs", UIKit.Anch.TC,
                 new Vector2(0, -680), new Vector2(900, 88),
-                new[] { "ĐẦU", "THÂN", "CHÂN", "BỘ" }, UITheme.Green, 0,
+                new[] { "HEAD", "BODY", "LEGS", "SETS" }, UITheme.Green, 0,
                 out var fills, out var labels);
             return new PartTabRefs { buttons = buttons, fills = fills, labels = labels };
         }
@@ -122,16 +122,17 @@ namespace ZombieWar.Editor.UI
             var border = UIKit.Image(panel, "Border", UIKit.Frame32, UITheme.Gold, false);
             UIKit.Full(border.rectTransform);
 
-            var title = UIKit.Text(panel, "Title", "XÁC NHẬN MUA", 38, UITheme.TextMain, FontStyles.Bold);
+            var title = UIKit.Text(panel, "Title", "CONFIRM PURCHASE", 38, UITheme.TextMain, FontStyles.Bold);
             UIKit.Place(title.rectTransform, UIKit.Anch.TC, new Vector2(0, -42), new Vector2(660, 60));
             var icon = UIKit.Image(panel, "ItemIcon", UIKit.Rounded24, Color.white, false);
             UIKit.Place(icon.rectTransform, UIKit.Anch.TC, new Vector2(0, -250), new Vector2(300, 300));
+            icon.type = UnityEngine.UI.Image.Type.Simple; // runtime swap sprite item — Sliced sẽ làm giãn
             icon.preserveAspect = true;
-            var desc = UIKit.Text(panel, "Description", "Mua món đồ này?", 28, UITheme.TextDim, FontStyles.Normal);
+            var desc = UIKit.Text(panel, "Description", "Buy this item?", 28, UITheme.TextDim, FontStyles.Normal);
             UIKit.Place(desc.rectTransform, UIKit.Anch.TC, new Vector2(0, -460), new Vector2(650, 100));
 
-            var cancel = UIKit.BtnGhost(panel, "Cancel", "HỦY", new Vector2(260, 96), UIKit.Anch.BC, new Vector2(-150, 44));
-            var confirm = UIKit.BtnPrimary(panel, "Confirm", "MUA", new Vector2(300, 96), UIKit.Anch.BC, new Vector2(150, 44));
+            var cancel = UIKit.BtnGhost(panel, "Cancel", "CANCEL", new Vector2(260, 96), UIKit.Anch.BC, new Vector2(-150, 44));
+            var confirm = UIKit.BtnPrimary(panel, "Confirm", "BUY", new Vector2(300, 96), UIKit.Anch.BC, new Vector2(150, 44));
             var price = confirm.GetComponentInChildren<TMP_Text>(true);
             root.gameObject.SetActive(false);
             return new PurchaseModalRefs { root = root.gameObject, icon = icon, title = title,
@@ -221,8 +222,9 @@ namespace ZombieWar.Editor.UI
                 return existing.GetComponent<UnityEngine.UI.Button>();
             }
             created = true;
-            var btn = UIKit.BtnGhost(safe, "ResetOutfitBtn", "MẶC ĐỊNH", new Vector2(220, 88),
-                UIKit.Anch.TR, new Vector2(-32, -32));
+            // Dưới hàng pill tiền (đáy -76), trên PreviewCard (top -160) — không đè Gem pill.
+            var btn = UIKit.BtnGhost(safe, "ResetOutfitBtn", "RESET", new Vector2(200, 64),
+                UIKit.Anch.TR, new Vector2(-32, -84));
             return btn;
         }
 

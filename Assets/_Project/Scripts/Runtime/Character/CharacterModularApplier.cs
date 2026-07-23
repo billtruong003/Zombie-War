@@ -129,7 +129,7 @@ namespace ZombieWar
                 var child = root.GetChild(i);
                 if (child.name != childName) continue;
                 child.gameObject.SetActive(false); // tat ngay -> khong flash 1 frame khi Destroy defer
-                Destroy(child.gameObject);
+                SafeDestroy(child.gameObject);
             }
         }
 
@@ -141,8 +141,16 @@ namespace ZombieWar
             for (int i = root.childCount - 1; i >= 0; i--)
             {
                 var child = root.GetChild(i);
-                if (child.name.StartsWith("Costume_")) Destroy(child.gameObject);
+                if (child.name.StartsWith("Costume_")) SafeDestroy(child.gameObject);
             }
+        }
+
+        /// <summary>Destroy bi cam trong edit mode (icon generator/preview tooling chay applier ngoai
+        /// Play) — dung DestroyImmediate khi khong play de khoi leak object + spam error.</summary>
+        static void SafeDestroy(GameObject go)
+        {
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
         }
 
         /// <summary>Ap nguyen loadout (slot → partName).</summary>

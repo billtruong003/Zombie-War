@@ -58,17 +58,17 @@ namespace ZombieWar.Editor.UI
             seasonBorder.color = UITheme.Gold;
             seasonBorder.gameObject.SetActive(true);
             K.IconImage(season, "SeasonIcon", "Icon_Crown", A.ML, new Vector2(34, 0), new Vector2(116, 116));
-            var seasonTitle = K.Text(season, "Title", "MÙA DỊCH BÙNG PHÁT", 42, UITheme.TextMain,
+            var seasonTitle = K.Text(season, "Title", "OUTBREAK SEASON", 42, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(seasonTitle.rectTransform, A.TL, new Vector2(176, -34), new Vector2(650, 60));
-            var seasonLevel = K.Text(season, "Level", "CẤP 2  ·  340/500 XP", 26, UITheme.Gold,
+            var seasonLevel = K.Text(season, "Level", "LEVEL 2  ·  340/500 XP", 26, UITheme.Gold,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(seasonLevel.rectTransform, A.BL, new Vector2(176, 62), new Vector2(650, 42));
             K.ProgressBar(season, "SeasonProgress", A.BL, new Vector2(176, 30),
                 new Vector2(780, 20), 0.68f, UITheme.Gold);
 
             // ---- MIỄN PHÍ + track ngang 200×200 ----
-            var ml = K.Text(safe, "MilestoneLabel", "PHẦN THƯỞNG MIỄN PHÍ", UITheme.FontLabel,
+            var ml = K.Text(safe, "MilestoneLabel", "FREE REWARDS", UITheme.FontLabel,
                 UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(ml.rectTransform, A.TL, new Vector2(32, -410), new Vector2(500, 40));
 
@@ -137,15 +137,15 @@ namespace ZombieWar.Editor.UI
             premiumBorder.color = UITheme.Cyan;
             premiumBorder.gameObject.SetActive(true);
             K.LockGlyph(prem, 48).anchoredPosition = new Vector2(-440, 0);
-            var pt = K.Text(prem, "Label", "PREMIUM PASS  ·  THÊM 30 PHẦN THƯỞNG",
+            var pt = K.Text(prem, "Label", "PREMIUM PASS  ·  30 EXTRA REWARDS",
                 30, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.Center);
             K.Full(pt.rectTransform, 100, 0, 40, 0);
 
             // ---- Nhiệm vụ hôm nay ----
-            var ql = K.Text(safe, "QuestLabel", "Nhiệm vụ hôm nay", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var ql = K.Text(safe, "QuestLabel", "Today's missions", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(ql.rectTransform, A.TL, new Vector2(32, -970), new Vector2(600, 60));
 
-            string[] quests = { "Giết 200 zombie", "Sống sót wave 5", "Nhặt 500 coin" };
+            string[] quests = { "Kill 200 zombies", "Survive wave 5", "Collect 500 coins" };
             float[] progress = { 1f, 0.6f, 0.35f };
             var claims = new System.Collections.Generic.List<Button>();
             for (int i = 0; i < 3; i++)

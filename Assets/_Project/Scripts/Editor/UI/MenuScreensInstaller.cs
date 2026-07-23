@@ -208,7 +208,7 @@ namespace ZombieWar.Editor.UI
             var name = K.Text(info, "Name", "—", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.TopLeft);
             K.Place(name.rectTransform, A.TL, new Vector2(470, -42), new Vector2(500, 70));
 
-            string[] statNames = { "DMG", "TỐC BẮN", "TẦM" };
+            string[] statNames = { "DMG", "FIRE RATE", "RANGE" };
             Color[] statCol = { UITheme.Rarity[2], UITheme.Green, UITheme.Gold };
             var bars = new Image[3];
             for (int i = 0; i < 3; i++)
@@ -223,7 +223,7 @@ namespace ZombieWar.Editor.UI
             var bomb = K.Card(safe, "BombRow", A.TC, new Vector2(0, -890), new Vector2(1016, 120), out _, out _, out _);
             var bIcon = K.Image(bomb, "BombIcon", K.Circle, UITheme.Danger, false);
             K.Place(bIcon.rectTransform, A.ML, new Vector2(40, 0), new Vector2(72, 72));
-            var bTxt = K.Text(bomb, "BombName", "Bom — 1 loại", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            var bTxt = K.Text(bomb, "BombName", "Bomb — 1 type", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             K.Place(bTxt.rectTransform, A.ML, new Vector2(140, 0), new Vector2(500, 60));
             var chip = K.Image(bomb, "CountChip", K.Pill, UITheme.Alpha(UITheme.Gold, 0.18f), false);
             K.Place(chip.rectTransform, A.MR, new Vector2(-32, 0), new Vector2(96, 56));
@@ -231,7 +231,7 @@ namespace ZombieWar.Editor.UI
             K.Full(chipTxt.rectTransform);
 
             // KHO SỞ HỮU — 1 card / WeaponData (25 khẩu → bake hết, designer thấy đủ trong prefab)
-            var kho = K.Text(safe, "KhoLabel", "KHO SỞ HỮU", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            var kho = K.Text(safe, "KhoLabel", "OWNED ARSENAL", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
             K.Place(kho.rectTransform, A.TL, new Vector2(32, -1050), new Vector2(400, 40));
 
             var area = K.StretchTop(K.Rect("KhoArea", safe), 650, -1110, 32, 32);
@@ -249,7 +249,7 @@ namespace ZombieWar.Editor.UI
             var shopLink = linkRt.gameObject.AddComponent<Button>();
             shopLink.targetGraphic = linkHit;
             var linkTxt = K.Text(linkRt, "Label",
-                "<color=#9AA3B2>Chưa có súng?</color>  <color=#F5B841>Tới Shop →</color>",
+                "<color=#9AA3B2>No guns yet?</color>  <color=#F5B841>Go to Shop →</color>",
                 34, UITheme.TextDim, FontStyles.Normal);
             K.Full(linkTxt.rectTransform);
 
@@ -364,7 +364,7 @@ namespace ZombieWar.Editor.UI
 
             var badge = K.Image(rootRt, "OwnedBadge", K.Pill, UITheme.Alpha(UITheme.Green, 0.2f), false);
             K.Place(badge.rectTransform, A.BC, new Vector2(0, 14), new Vector2(160, 52));
-            var badgeTxt = K.Text(badge.rectTransform, "L", "ĐÃ CÓ", UITheme.FontLabel, UITheme.Green, FontStyles.Bold);
+            var badgeTxt = K.Text(badge.rectTransform, "L", "OWNED", UITheme.FontLabel, UITheme.Green, FontStyles.Bold);
             K.Full(badgeTxt.rectTransform);
             badge.gameObject.SetActive(showPrice && owned);
 
@@ -412,9 +412,10 @@ namespace ZombieWar.Editor.UI
             raw.raycastTarget = false;
             raw.texture = MenuCharacterStageInstaller.EnsureRenderTexture();
             raw.uvRect = new Rect(0f, 0f, 1f, 1f);
+            K.RtAspect(rawGo, raw.texture);
 
             var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -820), new Vector2(1016, 88),
-                new[] { "ĐẦU", "THÂN", "CHÂN", "BỘ" }, UITheme.Green, 0, out var partFills, out var partLabels);
+                new[] { "HEAD", "BODY", "LEGS", "SETS" }, UITheme.Green, 0, out var partFills, out var partLabels);
 
             // Pool 18 cell cố định (catalog ~nghìn part → paging, không Instantiate runtime)
             var area = K.StretchTop(K.Rect("PartArea", safe), 600, -930, 32, 32);
@@ -426,13 +427,13 @@ namespace ZombieWar.Editor.UI
 
             // Page controls
             var pager = K.Rect("Pager", safe);
-            K.Place(pager, A.BC, new Vector2(-160, 60), new Vector2(320, 72));
+            K.Place(pager, A.BC, new Vector2(-120, 60), new Vector2(320, 72));
             var prevB = PageArrow(pager, "PagePrev", "Icon_Arrow_Prev1", new Vector2(-120, 0));
             var pageLabel = K.Text(pager, "PageLabel", "1/1", 30, UITheme.TextDim, FontStyles.Bold);
             K.Place(pageLabel.rectTransform, A.C, Vector2.zero, new Vector2(120, 44));
             var nextB = PageArrow(pager, "PageNext", "Icon_Arrow_Next1", new Vector2(120, 0));
 
-            var rnd = K.BtnPrimary(safe, "RandomBtn", "Ngẫu nhiên", new Vector2(420, 110), A.BC, new Vector2(190, 44));
+            var rnd = K.BtnPrimary(safe, "RandomBtn", "Random", new Vector2(420, 110), A.BC, new Vector2(298, 44));
             rnd.GetComponentInChildren<TMP_Text>().fontSize = UITheme.FontSub;
 
             var so = new SerializedObject(scr);
@@ -468,6 +469,7 @@ namespace ZombieWar.Editor.UI
             var icon = K.Image(rootRt, "Icon", fallback != null ? fallback : K.Rounded24,
                 fallback != null ? Color.white : UITheme.Surface2, false);
             K.Place(icon.rectTransform, A.C, new Vector2(0, 22), new Vector2(120, 120));
+            icon.type = UnityEngine.UI.Image.Type.Simple; // runtime swap sprite item — Sliced sẽ làm giãn
             icon.preserveAspect = true;
             var nameLbl = K.Text(rootRt, "Name", "—", 20, UITheme.TextMain, FontStyles.Bold);
             K.Place(nameLbl.rectTransform, A.BC, new Vector2(0, 16), new Vector2(168, 34));
@@ -593,7 +595,7 @@ namespace ZombieWar.Editor.UI
             if (featured == null && weapons.Count > 0) featured = weapons[0];
             if (featured != null)
             {
-                var featuredLabel = K.Text(content, "FeaturedLabel", "NỔI BẬT",
+                var featuredLabel = K.Text(content, "FeaturedLabel", "FEATURED",
                     UITheme.FontLabel, UITheme.Gold, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
                 LE(featuredLabel, 48);
                 var featuredCard = WeaponCard(content, $"Featured_{featured.name}",
@@ -636,10 +638,10 @@ namespace ZombieWar.Editor.UI
             var panel = ShopContent(safe, "TabGacha", out var content);
             var vlg = content.GetComponent<VerticalLayoutGroup>();
             vlg.spacing = 32;
-            GachaBanner(content, "SungGacha", "Súng Gacha", "Rớt tỉ lệ theo Tier — xem chi tiết",
-                UITheme.Rarity[4], UITheme.Gold, UITheme.GoldLo, UITheme.OnGold, "Quay 1 · 100", "Quay 10 · 900");
-            GachaBanner(content, "SkinGacha", "Skin Gacha", "Skin theo bộ — trùng hoàn KC",
-                UITheme.Cyan, UITheme.Cyan, new Color(0.23f, 0.6f, 0.66f), UITheme.OnGold, "Quay 1 · 10", "Quay 10 · 90");
+            GachaBanner(content, "SungGacha", "Weapon Gacha", "Drop rates by Tier — see details",
+                UITheme.Rarity[4], UITheme.Gold, UITheme.GoldLo, UITheme.OnGold, "Pull 1 · 100", "Pull 10 · 900");
+            GachaBanner(content, "SkinGacha", "Skin Gacha", "Skins by set — dupes refund Gems",
+                UITheme.Cyan, UITheme.Cyan, new Color(0.23f, 0.6f, 0.66f), UITheme.OnGold, "Pull 1 · 10", "Pull 10 · 90");
             panel.gameObject.SetActive(false);
             return panel.gameObject;
         }
@@ -677,12 +679,12 @@ namespace ZombieWar.Editor.UI
 
             var switcher = K.Rect("OfferMode", content);
             LE(switcher, 88);
-            var itemMode = K.Button(switcher, "ItemMode", "ITEM LẺ", new Vector2(440, 76), A.ML,
+            var itemMode = K.Button(switcher, "ItemMode", "ITEMS", new Vector2(440, 76), A.ML,
                 new Vector2(8, 0), UITheme.Green, UITheme.GreenLo, Color.white, UITheme.FontLabel);
-            var setMode = K.Button(switcher, "SetMode", "BỘ", new Vector2(440, 76), A.MR,
+            var setMode = K.Button(switcher, "SetMode", "SETS", new Vector2(440, 76), A.MR,
                 new Vector2(-8, 0), UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, UITheme.FontLabel);
 
-            var note = K.Text(content, "Hint", "Chọn món hoặc bộ · xác nhận giá trước khi mua",
+            var note = K.Text(content, "Hint", "Pick an item or a set · confirm the price before buying",
                 UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
             LE(note, 44);
 
@@ -707,6 +709,7 @@ namespace ZombieWar.Editor.UI
             button.targetGraphic = card.GetComponent<Image>();
             var icon = K.Image(card, "Icon", K.Rounded24, Color.white, false);
             K.Place(icon.rectTransform, A.TC, new Vector2(0, -18), new Vector2(230, 150));
+            icon.type = UnityEngine.UI.Image.Type.Simple; // runtime swap sprite item — Sliced sẽ làm giãn
             icon.preserveAspect = true;
             var name = K.Text(card, "Name", "Costume", 28, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.Center);
@@ -716,7 +719,7 @@ namespace ZombieWar.Editor.UI
             K.Place(price.rectTransform, A.BC, new Vector2(0, 18), new Vector2(320, 42));
             var owned = K.Image(card, "Owned", K.Pill, UITheme.Green, false);
             K.Place(owned.rectTransform, A.TR, new Vector2(-12, -12), new Vector2(116, 42));
-            var ownedText = K.Text(owned.rectTransform, "Label", "ĐÃ CÓ", 20, Color.white,
+            var ownedText = K.Text(owned.rectTransform, "Label", "OWNED", 20, Color.white,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             K.Full(ownedText.rectTransform);
 
@@ -731,10 +734,10 @@ namespace ZombieWar.Editor.UI
             var vlg = content.GetComponent<VerticalLayoutGroup>();
             vlg.spacing = 20; vlg.padding = new RectOffset(24, 24, 8, 8);
 
-            var title = K.Text(content, "UpgradeTitle", "NÂNG CẤP VŨ KHÍ",
+            var title = K.Text(content, "UpgradeTitle", "WEAPON UPGRADES",
                 UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.Center);
             LE(title, 58);
-            var hint = K.Text(content, "UpgradeHint", "Súng trùng → mảnh · mảnh + Vàng tăng sao",
+            var hint = K.Text(content, "UpgradeHint", "Dupe guns → shards · shards + Gold raise stars",
                 UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
             LE(hint, 62);
 
@@ -759,17 +762,18 @@ namespace ZombieWar.Editor.UI
             button.targetGraphic = card.GetComponent<Image>();
             var icon = K.Image(card, "Icon", K.Rounded24, Color.white, false);
             K.Place(icon.rectTransform, A.TL, new Vector2(20, -20), new Vector2(150, 110));
+            icon.type = UnityEngine.UI.Image.Type.Simple; // runtime swap sprite item — Sliced sẽ làm giãn
             icon.preserveAspect = true;
             var name = K.Text(card, "Name", "Weapon", 27, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(name.rectTransform, A.TR, new Vector2(-20, -22), new Vector2(250, 48));
-            var level = K.Text(card, "Level", "CẤP 1/3", 28, UITheme.Gold,
+            var level = K.Text(card, "Level", "LV 1/3", 28, UITheme.Gold,
                 FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(level.rectTransform, A.TR, new Vector2(-20, -72), new Vector2(250, 42));
             var stats = K.Text(card, "Stats", "DMG 0 → 0\nROF 0 → 0", 25, UITheme.TextDim,
                 FontStyles.Normal, TextAlignmentOptions.TopLeft);
             K.Place(stats.rectTransform, A.BL, new Vector2(24, 96), new Vector2(400, 82));
-            var cost = K.Text(card, "Cost", "0/10 mảnh · 100 V", 24, UITheme.TextMain,
+            var cost = K.Text(card, "Cost", "0/10 shards · 100 Gold", 24, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             K.Place(cost.rectTransform, A.BC, new Vector2(0, 28), new Vector2(400, 52));
 
@@ -800,18 +804,19 @@ namespace ZombieWar.Editor.UI
                 out var glow, out var border, out _);
             glow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha); glow.gameObject.SetActive(true);
             border.color = UITheme.Cyan; border.gameObject.SetActive(true);
-            title = K.Text(panel, "Title", "Mua item?", UITheme.FontSub, UITheme.TextMain,
+            title = K.Text(panel, "Title", "Buy this item?", UITheme.FontSub, UITheme.TextMain,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             K.Place(title.rectTransform, A.TC, new Vector2(0, -44), new Vector2(720, 80));
             icon = K.Image(panel, "Icon", K.Rounded24, Color.white, false);
             K.Place(icon.rectTransform, A.C, new Vector2(0, 30), new Vector2(300, 260));
+            icon.type = UnityEngine.UI.Image.Type.Simple; // runtime swap sprite item — Sliced sẽ làm giãn
             icon.preserveAspect = true;
             price = K.Text(panel, "Price", "C 0", 40, UITheme.Gold,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             K.Place(price.rectTransform, A.BC, new Vector2(0, 170), new Vector2(500, 64));
-            cancel = K.Button(panel, "Cancel", "HỦY", new Vector2(320, 96), A.BL, new Vector2(40, 40),
+            cancel = K.Button(panel, "Cancel", "CANCEL", new Vector2(320, 96), A.BL, new Vector2(40, 40),
                 UITheme.Surface2, UITheme.Hairline, UITheme.TextMain, UITheme.FontLabel);
-            confirm = K.Button(panel, "Confirm", "MUA", new Vector2(320, 96), A.BR, new Vector2(-40, 40),
+            confirm = K.Button(panel, "Confirm", "BUY", new Vector2(320, 96), A.BR, new Vector2(-40, 40),
                 UITheme.Green, UITheme.GreenLo, Color.white, UITheme.FontLabel);
             root.gameObject.SetActive(false);
             return root.gameObject;
@@ -835,9 +840,9 @@ namespace ZombieWar.Editor.UI
             LE(set, 360);
             glow.color = UITheme.Alpha(UITheme.Rarity[3], UITheme.GlowAlpha); glow.gameObject.SetActive(true);
             border.color = UITheme.Rarity[3]; border.gameObject.SetActive(true);
-            var t = K.Text(set, "SetName", "Bộ Sắt Thế Thân Đêm", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.Center);
+            var t = K.Text(set, "SetName", "Night Stalker Iron Set", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.Center);
             K.Place(t.rectTransform, A.TC, new Vector2(0, -32), new Vector2(800, 60));
-            var d = K.Text(set, "SetDesc", "5 món — SET giảm 30%", UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
+            var d = K.Text(set, "SetDesc", "5 items — SET 30% off", UITheme.FontBody, UITheme.TextDim, FontStyles.Normal, TextAlignmentOptions.Center);
             K.Place(d.rectTransform, A.C, new Vector2(0, 10), new Vector2(700, 48));
             var price = K.Image(set, "PriceChip", K.Pill, UITheme.Alpha(UITheme.Cyan, 0.15f), false);
             K.Place(price.rectTransform, A.BC, new Vector2(0, 28), new Vector2(220, 64));
@@ -845,7 +850,7 @@ namespace ZombieWar.Editor.UI
             var pv = K.Text(price.rectTransform, "Val", "300", 34, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
             K.Full(pv.rectTransform, 60, 0, 24, 0);
 
-            var il = K.Text(content, "ItemLe", "ITEM LẺ", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var il = K.Text(content, "ItemLe", "ITEMS", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             LE(il, 48);
 
             var row = K.Rect("ItemRow", content);
@@ -894,12 +899,12 @@ namespace ZombieWar.Editor.UI
 
             var header = K.Rect("PowerHeader", content);
             LE(header, 170);
-            var tl = K.Text(header, "TotalLbl", "TỔNG SỨC MẠNH", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            var tl = K.Text(header, "TotalLbl", "TOTAL POWER", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
             K.Place(tl.rectTransform, A.TL, new Vector2(8, -8), new Vector2(500, 40));
             var tv = K.Text(header, "TotalVal", "+42%", UITheme.FontHeader, UITheme.Green, FontStyles.Bold, TextAlignmentOptions.BottomLeft);
             K.Place(tv.rectTransform, A.BL, new Vector2(8, 8), new Vector2(400, 100));
 
-            (string label, string icon)[] rows = { ("Sát thương", "Icon_Sword02"), ("Máu", "Icon_Heart"), ("Tốc bắn", "Icon_Fire01") };
+            (string label, string icon)[] rows = { ("Damage", "Icon_Sword02"), ("Health", "Icon_Heart"), ("Fire Rate", "Icon_Fire01") };
             int[] filled = { 3, 5, 4 };
             for (int i = 0; i < rows.Length; i++)
             {
@@ -920,7 +925,7 @@ namespace ZombieWar.Editor.UI
                 }
                 else
                 {
-                    var up = K.BtnPrimary(row, "UpBtn", $"NÂNG · {(i == 0 ? 200 : 150)}", new Vector2(260, 96), A.MR, new Vector2(-24, 0));
+                    var up = K.BtnPrimary(row, "UpBtn", $"UPGRADE · {(i == 0 ? 200 : 150)}", new Vector2(260, 96), A.MR, new Vector2(-24, 0));
                     up.GetComponentInChildren<TMP_Text>().fontSize = 32;
                 }
             }

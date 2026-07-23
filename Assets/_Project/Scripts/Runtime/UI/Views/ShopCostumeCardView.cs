@@ -30,7 +30,7 @@ namespace ZombieWar.UI
                 icon.color = Color.white;
             }
             if (border != null) border.color = UITheme.RarityColor((int)rarity);
-            if (priceLabel != null) priceLabel.text = owned ? "ĐÃ CÓ" : $"{CurrencyTag(currency)} {price:N0}";
+            if (priceLabel != null) priceLabel.text = owned ? "OWNED" : $"{CurrencyTag(currency)} {price:N0}";
             if (ownedBadge != null) ownedBadge.SetActive(owned);
             gameObject.SetActive(true);
         }
@@ -43,6 +43,6 @@ namespace ZombieWar.UI
         }
 
         private static string CurrencyTag(WalletCurrency currency) =>
-            currency == WalletCurrency.Gem ? "KC" : currency == WalletCurrency.Gold ? "V" : "C";
+            currency == WalletCurrency.Gem ? "Gem" : currency == WalletCurrency.Gold ? "Gold" : "Coin";
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,9 +6,9 @@ using UnityEngine.UI;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// Màn 01 HUB (wireframe): PLAY lớn giữa-dưới, dock 4 nút (LOADOUT/SHOP/COSTUME/PASS),
-    /// currency cluster góc phải trên, settings góc trái trên, record (best score) dưới title.
-    /// SHOP/PASS chưa có screen (UI-4/5) → push nếu được gán, không thì toast log.
+    /// Màn 01 HUB (wireframe): PLAY lớn giữa-dưới, dock 5 tab (HOME/LOADOUT/SHOP/COSTUME/PASS),
+    /// currency cluster góc phải trên, record (best score) dưới avatar, mission card bind Pass thật.
+    /// Notify dot là object authored sẵn trong prefab (Icon/Notify + UIFxPulse) — runtime chỉ bật/tắt.
     /// </summary>
     public sealed class HubScreen : UIScreen
     {
@@ -18,9 +19,14 @@ namespace ZombieWar.UI
         [SerializeField] private Button costumeButton;
         [SerializeField] private Button passButton;
         [SerializeField] private Button settingsButton;
+        [SerializeField] private Button coinPlusButton;
+        [SerializeField] private Button gemPlusButton;
+        [SerializeField] private Button missionButton;
 
         [Header("Labels")]
         [SerializeField] private TMP_Text recordLabel;
+        [SerializeField] private TMP_Text missionNameLabel;
+        [SerializeField] private TMP_Text missionRewardLabel;
 
         [Header("Điều hướng")]
         [SerializeField] private UIScreen loadoutScreen;
@@ -34,45 +40,103 @@ namespace ZombieWar.UI
             base.Awake();
             Wire(playButton, GameFlow.StartGameplay);
             Wire(loadoutButton, () => Open(loadoutScreen, "LOADOUT"));
-            Wire(shopButton, () => Open(shopScreen, "SHOP"));
+            Wire(shopButton, () => OpenShop(0));
             Wire(costumeButton, () => Open(costumeScreen, "COSTUME"));
             Wire(passButton, () => Open(passScreen, "BATTLE PASS"));
             Wire(settingsButton, () => Open(settingsScreen, "SETTINGS"));
+            // "+" mở boundary thương mại đang tồn tại (Shop). IAP/earn flow riêng chưa có —
+            // documented gap: Coin+ → Shop Weapons, Gem+ → Shop Gacha.
+            Wire(coinPlusButton, () => OpenShop(0));
+            Wire(gemPlusButton, () => OpenShop(1));
+            Wire(missionButton, () => Open(passScreen, "BATTLE PASS"));
         }
 
-        private GameObject _loadoutBadge, _costumeBadge;
+        private void OnEnable()
+        {
+            PlayerProfile.MissionsChanged += RefreshMissionUi;
+            PlayerProfile.LoadoutChanged += RefreshBadges;
+            PlayerProfile.CostumeChanged += RefreshBadges;
+        }
 
-        protected override void OnShow() { RefreshRecord(); RefreshBadges(); }
-        protected override void OnFocus() { RefreshRecord(); RefreshBadges(); }
+        private void OnDisable()
+        {
+            PlayerProfile.MissionsChanged -= RefreshMissionUi;
+            PlayerProfile.LoadoutChanged -= RefreshBadges;
+            PlayerProfile.CostumeChanged -= RefreshBadges;
+        }
+
+        protected override void OnShow() { RefreshAll(); }
+        protected override void OnFocus() { RefreshAll(); }
 
         public override bool OnEscape() => true;   // HUB là root — back không pop
 
-        /// Badge "item mới" (Slice 7, minimal): chấm đỏ trên LOADOUT khi có súng gacha chưa xem,
-        /// trên COSTUME khi có skin chưa xem. Clear khi mở màn tương ứng (LoadoutScreen/CostumeScreen).
-        private void RefreshBadges()
+        private void RefreshAll()
         {
-            if (loadoutButton != null)
-                SetBadge(ref _loadoutBadge, loadoutButton, PlayerProfile.HasUnseenWeapon());
-            if (costumeButton != null)
-                SetBadge(ref _costumeBadge, costumeButton, PlayerProfile.HasUnseenCostume());
+            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
+            RefreshRecord();
+            RefreshBadges();
+            RefreshMissionCard();
         }
 
-        private static void SetBadge(ref GameObject badge, Button host, bool on)
+        private void RefreshMissionUi()
         {
-            if (badge == null)
+            RefreshBadges();
+            RefreshMissionCard();
+        }
+
+        /// Notify dot authored trong prefab tại TabButton/Icon/Notify. LOADOUT = súng gacha chưa xem,
+        /// COSTUME = skin chưa xem, PASS = có mission claim được. HOME/SHOP chưa có tín hiệu → luôn tắt.
+        private void RefreshBadges()
+        {
+            SetNotify(loadoutButton, PlayerProfile.HasUnseenWeapon());
+            SetNotify(costumeButton, PlayerProfile.HasUnseenCostume());
+            SetNotify(passButton, HasClaimableMission());
+            SetNotify(shopButton, false);
+        }
+
+        private static void SetNotify(Button host, bool on)
+        {
+            if (host == null) return;
+            var dot = host.transform.Find("Icon/Notify");
+            if (dot != null) dot.gameObject.SetActive(on);
+        }
+
+        private static bool HasClaimableMission()
+        {
+            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
+                if (PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id))
+                    return true;
+            return false;
+        }
+
+        /// Mission card = mission Pass đang active gần hoàn thành nhất (ưu tiên claim được).
+        /// Tap card → mở màn Pass.
+        private void RefreshMissionCard()
+        {
+            if (missionNameLabel == null && missionRewardLabel == null) return;
+
+            PassMission best = null;
+            float bestScore = -1f;
+            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
             {
-                badge = new GameObject("NewBadge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                var rt = (RectTransform)badge.transform;
-                rt.SetParent(host.transform, false);
-                rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
-                rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(-6f, -6f);
-                rt.sizeDelta = new Vector2(20f, 20f);
-                var img = badge.GetComponent<Image>();
-                img.color = UITheme.Danger;
-                img.raycastTarget = false;
+                if (PlayerProfile.IsMissionClaimed(m.id)) continue;
+                bool complete = PlayerProfile.IsMissionComplete(m);
+                float score = complete ? 2f : PlayerProfile.GetMissionProgress(m.id) / (float)m.target;
+                if (score > bestScore) { bestScore = score; best = m; }
             }
-            badge.SetActive(on);
+
+            if (best == null)
+            {
+                if (missionNameLabel != null) missionNameLabel.text = "ALL MISSIONS CLAIMED";
+                if (missionRewardLabel != null) missionRewardLabel.text = "—";
+                return;
+            }
+
+            bool claimable = PlayerProfile.IsMissionComplete(best);
+            if (missionNameLabel != null)
+                missionNameLabel.text = claimable ? $"{best.title} — CLAIM!" : best.title;
+            if (missionRewardLabel != null)
+                missionRewardLabel.text = $"+{best.coinReward}";
         }
 
         private void RefreshRecord()
@@ -82,6 +146,12 @@ namespace ZombieWar.UI
             recordLabel.text = best > 0
                 ? $"WAVE {CurrencyClusterWidget.Format(best)}"
                 : "—";
+        }
+
+        private void OpenShop(int tab)
+        {
+            if (shopScreen is ShopScreen shop) shop.OpenTab(tab);
+            Open(shopScreen, "SHOP");
         }
 
         private void Open(UIScreen screen, string label)
