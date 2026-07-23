@@ -112,6 +112,7 @@ float4 STW_GetShadowCoord(float3 positionWS, float4 positionCS)
 //  Shadow/cookie attenuation GIỮ từ light thật; vector 0 = không rig = như cũ.
 // =============================================================================
 float4 _ToonLightDirection;
+half4 _ToonLightColor;   // rgb = màu × intensity; a = 1 khi rig active (cờ chống default đen)
 
 // Main light đã kèm shadow + light-cookie attenuation (URP chuẩn).
 Light STW_GetMainLight(float4 shadowCoord, float3 positionWS, half4 shadowMask)
@@ -122,7 +123,15 @@ Light STW_GetMainLight(float4 shadowCoord, float3 positionWS, half4 shadowMask)
     Light light = GetMainLight();
 #endif
     if (dot(_ToonLightDirection.xyz, _ToonLightDirection.xyz) > 0.0001)
+    {
         light.direction = normalize(_ToonLightDirection.xyz);
+        // KHÔNG có directional light thật thì GetMainLight() trả color đen → cả scene đen.
+        // Rig là nguồn sáng thay thế nên phải cấp cả màu; giữ shadow attenuation từ light thật
+        // (nếu còn) vì rig không render shadow map.
+        if (_ToonLightColor.a > 0.5)
+            light.color = _ToonLightColor.rgb;
+        light.distanceAttenuation = 1.0;
+    }
     return light;
 }
 

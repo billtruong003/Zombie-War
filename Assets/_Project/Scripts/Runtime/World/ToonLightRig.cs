@@ -22,6 +22,14 @@ namespace ZombieWar
         public static readonly Vector3 DefaultEuler = new Vector3(50f, -30f, 0f);
 
         private static readonly int ToonLightDirId = Shader.PropertyToID("_ToonLightDirection");
+        private static readonly int ToonLightColorId = Shader.PropertyToID("_ToonLightColor");
+
+        [Tooltip("Màu ánh sáng toon — thay hoàn toàn màu directional light khi rig active.")]
+        [SerializeField] private Color lightColor = Color.white;
+
+        [Tooltip("Cường độ nhân vào màu (URP light convention: color × intensity).")]
+        [Range(0f, 8f)]
+        [SerializeField] private float intensity = 1f;
 
         private void OnEnable() => Push();
         private void OnValidate() => Push();
@@ -38,6 +46,7 @@ namespace ZombieWar
         {
             // Trả về vector 0 → shader tự fallback _MainLightPosition, scene không rig vẫn sáng.
             Shader.SetGlobalVector(ToonLightDirId, Vector4.zero);
+            Shader.SetGlobalColor(ToonLightColorId, Color.clear);
         }
 
         private void Push()
@@ -45,6 +54,11 @@ namespace ZombieWar
             // Shader cần hướng TỚI nguồn sáng (L trong N·H) — ngược chiều tia = -forward,
             // cùng quy ước _MainLightPosition.xyz của URP directional light.
             Shader.SetGlobalVector(ToonLightDirId, -transform.forward);
+            // alpha = 1 làm cờ "rig có màu" — tránh trường hợp global mặc định (0,0,0,0)
+            // đè màu đen lên scene chưa từng push.
+            var c = lightColor * intensity;
+            c.a = 1f;
+            Shader.SetGlobalColor(ToonLightColorId, c);
         }
 
 #if UNITY_EDITOR
