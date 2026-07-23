@@ -183,67 +183,121 @@ namespace ZombieWar.Editor.UI
 
             var weapons = UIThumbnailGenerator.LoadAllWeaponData();
 
-            // SlotRow — 3 LoadoutSlotView 200×200; slot 0/1 bind 2 súng đầu, slot 2 trống
+            // PanelLoad — HLG chia đều 3 slot 200×200 (hand-tuned: stretch ngang, pad 150 mỗi bên)
+            var panelLoad = K.Rect("PanelLoad", safe);
+            panelLoad.anchorMin = new Vector2(0f, 1f);
+            panelLoad.anchorMax = Vector2.one;
+            panelLoad.pivot = new Vector2(0.5f, 1f);
+            panelLoad.anchoredPosition = new Vector2(0, -200);
+            panelLoad.sizeDelta = Vector2.zero;
+            var loadHlg = panelLoad.gameObject.AddComponent<HorizontalLayoutGroup>();
+            loadHlg.padding = new RectOffset(150, 150, 0, 0);
+            loadHlg.childControlWidth = false; loadHlg.childControlHeight = false;
+            loadHlg.childForceExpandWidth = true; loadHlg.childForceExpandHeight = true;
             var slots = new LoadoutSlotView[3];
             for (int i = 0; i < 3; i++)
             {
-                float x = (i - 1) * 224;
-                slots[i] = SlotCell(safe, $"Slot{i}", new Vector2(x, -160));
+                slots[i] = SlotCell(panelLoad, $"Slot{i}", Vector2.zero);
                 var wd = i < 2 && i < weapons.Count ? weapons[i] : null;
                 BakeSlot(slots[i], wd, catalog);
             }
 
-            // Hero weapon card: icon thật cập nhật theo lựa chọn runtime.
-            var info = K.Card(safe, "InfoPanel", A.TC, new Vector2(0, -400), new Vector2(1016, 450),
-                out var infoGlow, out var infoBorder, out _);
+            // InfoPanel — hand-tuned: stretch ngang margin 75, nền ItemFrame Navy,
+            // Info block là CON của HeroBackdrop (treo bên phải), BombRow là CON của InfoPanel.
+            var info = K.Card(safe, "InfoPanel", A.TC, Vector2.zero, new Vector2(1016, 400),
+                out var infoGlow, out var infoBorder, out var infoBg);
+            info.anchorMin = new Vector2(0f, 1f);
+            info.anchorMax = Vector2.one;
+            info.pivot = new Vector2(0.5f, 1f);
+            info.anchoredPosition = new Vector2(0, -450);
+            info.sizeDelta = new Vector2(-150, 400);
             infoGlow.color = UITheme.Alpha(UITheme.Cyan, UITheme.GlowAlpha);
             infoGlow.gameObject.SetActive(true);
+            infoBg.sprite = SuperCasualSkin.Sprite("Components/Frame/ItemFrame01_Demo_Navy.png");
+            infoBg.color = Color.white;
             infoBorder.color = UITheme.Cyan;
             infoBorder.gameObject.SetActive(true);
             var heroBackdrop = K.Image(info, "HeroBackdrop", K.Rounded32, UITheme.Bg, false);
-            K.Place(heroBackdrop.rectTransform, A.ML, new Vector2(30, 0), new Vector2(400, 370));
+            K.Place(heroBackdrop.rectTransform, A.ML, new Vector2(30, 0), new Vector2(300, 300));
             var infoIcon = K.Image(heroBackdrop.rectTransform, "HeroWeaponIcon", null, UITheme.Surface2, false);
-            K.Place(infoIcon.rectTransform, A.C, Vector2.zero, new Vector2(350, 300));
+            K.Full(infoIcon.rectTransform, 20, 20, 20, 20);
             infoIcon.preserveAspect = true;
-            var name = K.Text(info, "Name", "—", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            K.Place(name.rectTransform, A.TL, new Vector2(470, -42), new Vector2(500, 70));
+            var infoBlock = K.Rect("Info", heroBackdrop.rectTransform);
+            infoBlock.anchorMin = infoBlock.anchorMax = Vector2.one;
+            infoBlock.pivot = new Vector2(0f, 1f);
+            infoBlock.anchoredPosition = new Vector2(50, 0);
+            infoBlock.sizeDelta = new Vector2(450, 317);
+            var name = K.Text(infoBlock, "Name", "—", 52, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            var nameRt = name.rectTransform;
+            nameRt.anchorMin = nameRt.anchorMax = Vector2.zero;
+            nameRt.pivot = new Vector2(0f, 1f);
+            nameRt.anchoredPosition = Vector2.zero;
+            nameRt.sizeDelta = new Vector2(450, 70);
 
             string[] statNames = { "DMG", "FIRE RATE", "RANGE" };
             Color[] statCol = { UITheme.Rarity[2], UITheme.Green, UITheme.Gold };
             var bars = new Image[3];
             for (int i = 0; i < 3; i++)
             {
-                float y = -148 - i * 82;
-                var lbl = K.Text(info, $"Stat{i}L", statNames[i], UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
-                K.Place(lbl.rectTransform, A.TL, new Vector2(470, y), new Vector2(150, 40));
-                bars[i] = K.ProgressBar(info, $"Stat{i}Bar", A.TL, new Vector2(630, y - 9), new Vector2(330, 22), 0.5f, statCol[i]);
+                var lbl = K.Text(infoBlock, $"Stat{i}L", statNames[i], 30, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+                var lblRt = lbl.rectTransform;
+                lblRt.anchorMin = lblRt.anchorMax = Vector2.zero;
+                lblRt.pivot = new Vector2(0f, 1f);
+                lblRt.anchoredPosition = Vector2.zero;
+                lblRt.sizeDelta = new Vector2(150, 40);
+                // hand-tuned: bar là CON của label — dời label kéo bar theo
+                bars[i] = K.ProgressBar(lblRt, $"Stat{i}Bar", A.TL, new Vector2(160, -9), new Vector2(275, 22), 0.5f, statCol[i]);
             }
 
-            // BombRow
-            var bomb = K.Card(safe, "BombRow", A.TC, new Vector2(0, -890), new Vector2(1016, 120), out _, out _, out _);
-            var bIcon = K.Image(bomb, "BombIcon", K.Circle, UITheme.Danger, false);
+            // BombRow — con của InfoPanel, neo đáy stretch ngang (hand-tuned)
+            var bomb = K.Card(info, "BombRow", A.TC, Vector2.zero, new Vector2(1016, 120),
+                out _, out var bombBorder, out var bombBg);
+            bomb.anchorMin = new Vector2(0f, 0f);
+            bomb.anchorMax = new Vector2(1f, 0f);
+            bomb.pivot = new Vector2(0.5f, 1f);
+            bomb.anchoredPosition = new Vector2(0, -50);
+            bomb.sizeDelta = new Vector2(0, 120);
+            bombBg.sprite = SuperCasualSkin.Sprite("Components/Frame/ItemFrame01_Demo_Navy.png");
+            bombBg.color = Color.white;
+            bombBorder.color = UITheme.Green;
+            var bIcon = SuperCasualSkin.Image(bomb, "BombIcon",
+                "Components/Icon_PictoIcons/256/PictoIcon_Bomb_2.Png", UITheme.Danger, false);
             K.Place(bIcon.rectTransform, A.ML, new Vector2(40, 0), new Vector2(72, 72));
-            var bTxt = K.Text(bomb, "BombName", "Bomb — 1 type", UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
+            bIcon.preserveAspect = true;
+            var bTxt = K.Text(bomb, "BombName", "Bomb — 1 type", 38, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
             K.Place(bTxt.rectTransform, A.ML, new Vector2(140, 0), new Vector2(500, 60));
-            var chip = K.Image(bomb, "CountChip", K.Pill, UITheme.Alpha(UITheme.Gold, 0.18f), false);
+            var chip = SuperCasualSkin.Image(bomb, "CountChip",
+                "Components/UI_Etc/ResourceBar_Demo_Bg.png", UITheme.Surface, false);
             K.Place(chip.rectTransform, A.MR, new Vector2(-32, 0), new Vector2(96, 56));
             var chipTxt = K.Text(chip.rectTransform, "Val", "x3", UITheme.FontLabel, UITheme.Gold, FontStyles.Bold);
             K.Full(chipTxt.rectTransform);
 
-            // KHO SỞ HỮU — 1 card / WeaponData (25 khẩu → bake hết, designer thấy đủ trong prefab)
-            var kho = K.Text(safe, "KhoLabel", "OWNED ARSENAL", UITheme.FontLabel, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            K.Place(kho.rectTransform, A.TL, new Vector2(32, -1050), new Vector2(400, 40));
-
-            var area = K.StretchTop(K.Rect("KhoArea", safe), 650, -1110, 32, 32);
-            var content = K.VScroll(safe, "KhoScroll", area, out _);
-            Grid(content, new Vector2(476, 320), new Vector2(24, 24), 2, 8);
+            // KhoArea — hand-tuned: label fs42 nằm trong area, grid 3 cột 275×300
+            var area = K.Rect("KhoArea", safe);
+            area.anchorMin = new Vector2(0f, 1f);
+            area.anchorMax = Vector2.one;
+            area.pivot = new Vector2(0.5f, 1f);
+            area.anchoredPosition = new Vector2(0, -1150);
+            area.sizeDelta = new Vector2(-100, 650);
+            var kho = K.Text(area, "KhoLabel", "OWNED ARSENAL", 42, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.TopLeft);
+            var khoRt = kho.rectTransform;
+            khoRt.anchorMin = khoRt.anchorMax = new Vector2(0f, 1f);
+            khoRt.pivot = new Vector2(0f, 0f);
+            khoRt.anchoredPosition = Vector2.zero;
+            khoRt.sizeDelta = new Vector2(400, 75);
+            var content = K.VScroll(area, "KhoScroll", area, out _);
+            Grid(content, new Vector2(275, 300), new Vector2(30, 30), 3, 9);
             var cards = new List<WeaponItemCardView>();
             foreach (var wd in weapons)
-                cards.Add(WeaponCard(content, $"Wpn_{wd.name}", new Vector2(476, 320), wd, catalog, showPrice: false));
+                cards.Add(WeaponCard(content, $"Wpn_{wd.name}", new Vector2(275, 300), wd, catalog, showPrice: false));
 
-            // ShopLink — text link nhỏ
+            // ShopLink — hand-tuned: strip đáy stretch ngang cao 72
             var linkRt = K.Rect("ShopLink", safe);
-            K.Place(linkRt, A.BC, new Vector2(0, 40), new Vector2(620, 72));
+            linkRt.anchorMin = new Vector2(0f, 0f);
+            linkRt.anchorMax = new Vector2(1f, 0f);
+            linkRt.pivot = new Vector2(0.5f, 0f);
+            linkRt.anchoredPosition = new Vector2(0, 5);
+            linkRt.sizeDelta = new Vector2(0, 72);
             var linkHit = linkRt.gameObject.AddComponent<Image>();
             linkHit.color = Color.clear;
             var shopLink = linkRt.gameObject.AddComponent<Button>();
@@ -401,7 +455,7 @@ namespace ZombieWar.Editor.UI
 
             // PreviewCard — RawImage preplaced, texture = RT ASSET (không runtime bind/Find)
             var prev = K.Rect("PreviewCard", safe);
-            K.Place(prev, A.TC, new Vector2(0, -160), new Vector2(760, 620));
+            K.Place(prev, A.TC, new Vector2(0, -200), new Vector2(760, 620));
             var pbg = SuperCasualSkin.ItemFrame(prev, "Bg", Color.white);
             K.Full(pbg.rectTransform);
             var rawGo = new GameObject("PreviewRT", typeof(RectTransform));
@@ -414,26 +468,44 @@ namespace ZombieWar.Editor.UI
             raw.uvRect = new Rect(0f, 0f, 1f, 1f);
             K.RtAspect(rawGo, raw.texture);
 
-            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -820), new Vector2(1016, 88),
+            var partTabs = K.SegmentedTabs(safe, "PartTabs", A.TC, new Vector2(0, -875), new Vector2(900, 88),
                 new[] { "HEAD", "BODY", "LEGS", "SETS" }, UITheme.Green, 0, out var partFills, out var partLabels);
 
-            // Pool 18 cell cố định (catalog ~nghìn part → paging, không Instantiate runtime)
-            var area = K.StretchTop(K.Rect("PartArea", safe), 600, -930, 32, 32);
+            // PartArea giữ làm mốc layout (hand-tuned); PartScroll neo đáy riêng, cao 700.
+            var area = K.Rect("PartArea", safe);
+            area.anchorMin = new Vector2(0f, 1f);
+            area.anchorMax = Vector2.one;
+            area.pivot = new Vector2(0.5f, 1f);
+            area.anchoredPosition = new Vector2(0, -978);
+            area.sizeDelta = new Vector2(-64, 552);
             var content = K.VScroll(safe, "PartScroll", area, out _);
+            var scrollRt = (RectTransform)content.parent; // ScrollRect root do VScroll dựng
+            scrollRt.anchorMin = new Vector2(0f, 0f);
+            scrollRt.anchorMax = new Vector2(1f, 0f);
+            scrollRt.pivot = new Vector2(0.5f, 0f);
+            scrollRt.anchoredPosition = new Vector2(0, 220);
+            scrollRt.sizeDelta = new Vector2(-100, 700);
             Grid(content, new Vector2(184, 232), new Vector2(15, 18), 5, 8);
             var cells = new List<CostumeItemCardView>();
             for (int i = 0; i < 18; i++)
                 cells.Add(CostumeCell(content, $"Cell{i}", uiCatalog));
 
-            // Page controls
+            // Page controls — hand-tuned: pager góc trái đáy, Random góc phải đáy
             var pager = K.Rect("Pager", safe);
-            K.Place(pager, A.BC, new Vector2(-120, 60), new Vector2(320, 72));
+            pager.anchorMin = pager.anchorMax = new Vector2(0f, 0f);
+            pager.pivot = new Vector2(0f, 1f);
+            pager.anchoredPosition = new Vector2(50, 170);
+            pager.sizeDelta = new Vector2(320, 72);
             var prevB = PageArrow(pager, "PagePrev", "Icon_Arrow_Prev1", new Vector2(-120, 0));
             var pageLabel = K.Text(pager, "PageLabel", "1/1", 30, UITheme.TextDim, FontStyles.Bold);
             K.Place(pageLabel.rectTransform, A.C, Vector2.zero, new Vector2(120, 44));
             var nextB = PageArrow(pager, "PageNext", "Icon_Arrow_Next1", new Vector2(120, 0));
 
-            var rnd = K.BtnPrimary(safe, "RandomBtn", "Random", new Vector2(420, 110), A.BC, new Vector2(298, 44));
+            var rnd = K.BtnPrimary(safe, "RandomBtn", "Random", new Vector2(420, 110), A.BC, Vector2.zero);
+            var rndRt = (RectTransform)rnd.transform;
+            rndRt.anchorMin = rndRt.anchorMax = new Vector2(1f, 0f);
+            rndRt.pivot = new Vector2(1f, 1f);
+            rndRt.anchoredPosition = new Vector2(-50, 170);
             rnd.GetComponentInChildren<TMP_Text>().fontSize = UITheme.FontSub;
 
             var so = new SerializedObject(scr);

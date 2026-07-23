@@ -47,7 +47,8 @@ namespace ZombieWar.Editor.UI
                 for (int i = chips.Length; i < ChipCount; i++) BuildChip(chipContent, i);
                 chips = chipsRoot.GetComponentsInChildren<CostumeSlotChipView>(true);
 
-                var resetBtn = EnsureResetOutfitButton(safe, out bool createdReset);
+                // Hand-tuned layout đã BỎ nút RESET — không tạo lại; runtime null-safe.
+                var resetBtn = safe.Find("ResetOutfitBtn")?.GetComponent<Button>();
                 var rotator = EnsurePreviewRotator(safe, out bool createdRot);
                 var modal = EnsurePurchaseModal(safe);
 
@@ -75,7 +76,7 @@ namespace ZombieWar.Editor.UI
 
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
                 Debug.Log($"[CostumeSlotChips] {(created ? "Đã tạo" : "Đã reuse")} SlotChips ({ChipCount} chip), " +
-                          $"{(createdReset ? "đã tạo" : "đã reuse")} nút MẶC ĐỊNH, {(createdRot ? "đã tạo" : "đã reuse")} drag rotator + wire references.");
+                          $"{(createdRot ? "đã tạo" : "đã reuse")} drag rotator + wire references.");
             }
             finally
             {
@@ -99,7 +100,7 @@ namespace ZombieWar.Editor.UI
             var old = safe.Find("PartTabs");
             if (old != null) Object.DestroyImmediate(old.gameObject);
             var buttons = UIKit.SegmentedTabs(safe, "PartTabs", UIKit.Anch.TC,
-                new Vector2(0, -680), new Vector2(900, 88),
+                new Vector2(0, -875), new Vector2(900, 88),
                 new[] { "HEAD", "BODY", "LEGS", "SETS" }, UITheme.Green, 0,
                 out var fills, out var labels);
             return new PartTabRefs { buttons = buttons, fills = fills, labels = labels };
@@ -157,7 +158,7 @@ namespace ZombieWar.Editor.UI
         private static RectTransform BuildChipRow(RectTransform safe)
         {
             var row = UIKit.Rect("SlotChips", safe);
-            UIKit.StretchTop(row, 60, -776, 32, 32);
+            UIKit.StretchTop(row, 60, -1000, 32, 32);   // hand-tuned: dưới PartTabs (-875)
             // đặt ngay dưới PartTabs (index giữ thứ tự hierarchy hợp lý)
             var tabs = safe.Find("PartTabs");
             if (tabs != null) row.SetSiblingIndex(tabs.GetSiblingIndex() + 1);
@@ -243,14 +244,8 @@ namespace ZombieWar.Editor.UI
 
         private static void NudgePartScroll(RectTransform safe)
         {
-            // Chip row chiếm 60px + 8px gap: PartScroll (grid) tụt xuống 48px cho đủ chỗ.
-            foreach (var name in new[] { "PartScroll", "PartArea" })
-            {
-                var rt = safe.Find(name) as RectTransform;
-                if (rt == null) continue;
-                rt.anchoredPosition += new Vector2(0, -48);
-                rt.sizeDelta += new Vector2(0, -48);
-            }
+            // Hand-tuned layout đã chừa sẵn chỗ cho chip row (PartScroll neo đáy riêng) —
+            // không nudge nữa; giữ hàm cho tương thích call-site.
         }
     }
 }

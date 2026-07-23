@@ -145,27 +145,23 @@ namespace ZombieWar.Editor.UI
             var ql = K.Text(safe, "QuestLabel", "Today's missions", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(ql.rectTransform, A.TL, new Vector2(32, -970), new Vector2(600, 60));
 
+            // Mỗi row ĐỦ Name+Bar+Counter+Claim(OFF) — PassScreen bind mission backend thật
+            // (questRows struct), không còn hardcode trạng thái theo progress giả.
             string[] quests = { "Kill 200 zombies", "Survive wave 5", "Collect 500 coins" };
-            float[] progress = { 1f, 0.6f, 0.35f };
-            var claims = new System.Collections.Generic.List<Button>();
+            var rowRefs = new (TMPro.TMP_Text name, RectTransform fill, TMPro.TMP_Text counter, Button claim)[3];
             for (int i = 0; i < 3; i++)
             {
                 float y = -1060 - i * 156;
                 var row = K.Card(safe, $"Quest{i}", A.TC, new Vector2(0, y), new Vector2(1016, 140), out _, out _, out _);
                 var qn = K.Text(row, "Name", quests[i], UITheme.FontBody, UITheme.TextMain, FontStyles.Normal, TextAlignmentOptions.TopLeft);
                 K.Place(qn.rectTransform, A.TL, new Vector2(32, -20), new Vector2(600, 44));
-                K.ProgressBar(row, "Bar", A.BL, new Vector2(32, 28), new Vector2(600, 20), progress[i], UITheme.Green);
-                if (progress[i] >= 1f)
-                {
-                    var claim = K.BtnGreen(row, "Claim", "CLAIM", new Vector2(180, 80), A.MR, new Vector2(-32, 0));
-                    claim.GetComponentInChildren<TMP_Text>().fontSize = 30;
-                    claims.Add(claim);
-                }
-                else
-                {
-                    var counter = K.Text(row, "Counter", $"{Mathf.RoundToInt(progress[i] * 100)}%", 34, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
-                    K.Place(counter.rectTransform, A.MR, new Vector2(-32, 0), new Vector2(160, 60));
-                }
+                var fill = K.ProgressBar(row, "Bar", A.BL, new Vector2(32, 28), new Vector2(600, 20), 0f, UITheme.Green);
+                var counter = K.Text(row, "Counter", "0/0", 34, UITheme.TextDim, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
+                K.Place(counter.rectTransform, A.MR, new Vector2(-32, 0), new Vector2(160, 60));
+                var claim = K.BtnGreen(row, "Claim", "CLAIM", new Vector2(180, 80), A.MR, new Vector2(-32, 0));
+                claim.GetComponentInChildren<TMP_Text>().fontSize = 30;
+                claim.gameObject.SetActive(false);
+                rowRefs[i] = (qn, fill.rectTransform, counter, claim);
             }
 
             // ---- Gacha link ----
@@ -175,7 +171,7 @@ namespace ZombieWar.Editor.UI
             linkHit.color = Color.clear;
             var gachaLink = linkRt.gameObject.AddComponent<Button>();
             gachaLink.targetGraphic = linkHit;
-            var linkTxt = K.Text(linkRt, "Label", "<color=#F5B841>Quay Gacha →</color>", 34, UITheme.Gold, FontStyles.Bold);
+            var linkTxt = K.Text(linkRt, "Label", "<color=#F5B841>Go to Gacha →</color>", 34, UITheme.Gold, FontStyles.Bold);
             K.Full(linkTxt.rectTransform);
 
             // ---- wire ----
@@ -184,10 +180,26 @@ namespace ZombieWar.Editor.UI
             K.Wire(so, "backButton", back);
             K.Wire(so, "gachaLinkButton", gachaLink);
             K.Wire(so, "shopScreen", shop);
-            var pClaims = so.FindProperty("claimButtons");
-            pClaims.arraySize = claims.Count;
-            for (int i = 0; i < claims.Count; i++)
-                pClaims.GetArrayElementAtIndex(i).objectReferenceValue = claims[i];
+            K.Wire(so, "seasonLevelLabel", seasonLevel);
+            var seasonFillProp = so.FindProperty("seasonFill");
+            if (seasonFillProp != null)
+            {
+                var fillTr = safe.Find("SeasonHero/SeasonProgress/Fill");
+                seasonFillProp.objectReferenceValue = fillTr as RectTransform;
+            }
+            var rows = so.FindProperty("questRows");
+            if (rows != null)
+            {
+                rows.arraySize = rowRefs.Length;
+                for (int i = 0; i < rowRefs.Length; i++)
+                {
+                    var e = rows.GetArrayElementAtIndex(i);
+                    e.FindPropertyRelative("nameLabel").objectReferenceValue = rowRefs[i].name;
+                    e.FindPropertyRelative("barFill").objectReferenceValue = rowRefs[i].fill;
+                    e.FindPropertyRelative("counter").objectReferenceValue = rowRefs[i].counter;
+                    e.FindPropertyRelative("claim").objectReferenceValue = rowRefs[i].claim;
+                }
+            }
             so.ApplyModifiedPropertiesWithoutUndo();
             SuperCasualSkin.ApplyMenuScreen((RectTransform)scr.transform);
             go.SetActive(false);
