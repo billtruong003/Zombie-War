@@ -108,6 +108,9 @@ Shader "BillTheDev/VAT/URP_ToonLit_VAT"
                 half _EmissionIntensity;
             CBUFFER_END
 
+            // Global từ ZombieWar.ToonLightRig — ngoài CBUFFER vì không per-material.
+            float4 _ToonLightDirection;
+
             // VAT per-instance
             UNITY_INSTANCING_BUFFER_START(PerInstance)
                 UNITY_DEFINE_INSTANCED_PROP(float, _CurrentAnimNormalizedTime)
@@ -162,9 +165,12 @@ Shader "BillTheDev/VAT/URP_ToonLit_VAT"
                 float3 V = normalize(i.viewDirWS);
 
                 // ══════ FAKE LIGHT ══════
-                // _MainLightPosition.xyz = hướng directional light (URP tự cung cấp qua cbuffer)
-                // Không cần GetMainLight(), không cần shadow coord, không cần gì phức tạp
-                float3 L = normalize(_MainLightPosition.xyz);
+                // Hướng sáng từ ToonLightRig (Shader.SetGlobalVector _ToonLightDirection) — rig là
+                // authority; scene không có rig (vector ~0) thì fallback _MainLightPosition như cũ.
+                float3 rigDir = _ToonLightDirection.xyz;
+                float3 L = dot(rigDir, rigDir) > 0.0001
+                    ? normalize(rigDir)
+                    : normalize(_MainLightPosition.xyz);
 
                 // ══════ TOON RAMP ══════
                 half ndotl = dot(N, L) * 0.5 + 0.5;             // Half-Lambert → [0, 1]

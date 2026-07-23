@@ -122,15 +122,47 @@ namespace ZombieWar.Editor
             EditorGUILayout.EndScrollView();
         }
 
+        /// <summary>
+        /// Generate desert environment vào CẢ 5 map campaign, mỗi map seed riêng, GIỮ nguyên wiring
+        /// per-map (WaveDirector + WaveData, RunSystems, spawner) vì generate tại chỗ chứ không clone.
+        /// Đồng thời đảm bảo mỗi map có đúng một ToonLightRig (mặc định 50/-30/0).
+        /// </summary>
+        [MenuItem("Tools/ZombieWar/Generate All Campaign Maps")]
+        public static void GenerateAllCampaignMaps()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var win = CreateInstance<DesertMapGeneratorWindow>();
+            var report = new System.Text.StringBuilder();
+            for (int i = 1; i <= 5; i++)
+            {
+                string path = $"Assets/_Project/Scenes/Map_Level{i}.unity";
+                win.seed = 100 + i;                       // deterministic, khác nhau mỗi màn
+                var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                report.AppendLine(win.GenerateCore(scene));
+            }
+            DestroyImmediate(win);
+            Debug.Log("[MapGen] ALL CAMPAIGN MAPS:\n" + report);
+        }
+
         string Generate()
         {
             AssetDatabase.DeleteAsset(outScene);
             if (!AssetDatabase.CopyAsset(SourceScene, outScene)) return "Could not copy the source scene.";
 
             var scene = EditorSceneManager.OpenScene(outScene, OpenSceneMode.Single);
+            return GenerateCore(scene);
+        }
+
+        string GenerateCore(UnityEngine.SceneManagement.Scene scene)
+        {
             var rng = new System.Random(seed);
 
             var roots = scene.GetRootGameObjects();
+
+            // Re-run trên map đã generate: dọn Environment cũ trước (idempotent).
+            var oldEnv = roots.FirstOrDefault(r => r.name == "Environment");
+            if (oldEnv != null) Object.DestroyImmediate(oldEnv);
+            roots = scene.GetRootGameObjects();
             var playerSpawn = roots.FirstOrDefault(r => r.name == "PlayerSpawnPoint");
             Vector3 playerPos = playerSpawn != null ? playerSpawn.transform.position : Vector3.zero;
 
@@ -158,6 +190,27 @@ namespace ZombieWar.Editor
             int props = ScatterProps(env.transform, rng, occupancy);
 
             ApplyBatchingFlags(env);
+            EnsureToonLightRig(scene);
+            return FinishGeneration(scene, spawnPositions, playerPos, tiles, cliffs, props, interactive);
+        }
+
+        /// Mỗi map đúng một ToonLightRig; tạo mới với hướng mặc định (50,-30,0) nếu thiếu,
+        /// đã có thì giữ nguyên hướng designer chỉnh.
+        static void EnsureToonLightRig(UnityEngine.SceneManagement.Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+                if (root.GetComponentInChildren<ZombieWar.ToonLightRig>(true) != null) return;
+
+            var go = new GameObject("ToonLightRig", typeof(ZombieWar.ToonLightRig));
+            go.transform.rotation = Quaternion.Euler(ZombieWar.ToonLightRig.DefaultEuler);
+            go.transform.position = new Vector3(0f, 10f, 0f); // vị trí chỉ để gizmo dễ thấy
+            SceneManager.MoveGameObjectToScene(go, scene);
+        }
+
+        string FinishGeneration(UnityEngine.SceneManagement.Scene scene,
+            System.Collections.Generic.List<Vector3> spawnPositions, Vector3 playerPos,
+            int tiles, int cliffs, int props, int interactive)
+        {
 
             var navRoot = scene.GetRootGameObjects().FirstOrDefault(r => r.name == "NavMesh");
             var surface = navRoot != null ? navRoot.GetComponent<NavMeshSurface>() : null;
@@ -169,7 +222,7 @@ namespace ZombieWar.Editor
             int ok = VerifyPaths(spawnPositions, playerPos, out int blocked);
 
             string report =
-                $"{System.IO.Path.GetFileNameWithoutExtension(outScene)}  (seed {seed}, {arenaSize:F0} m)\n" +
+                $"{System.IO.Path.GetFileNameWithoutExtension(scene.path)}  (seed {seed}, {arenaSize:F0} m)\n" +
                 $"{tiles} tiles, {cliffs} cliff pieces, {props} rocks/cacti, {interactive} crates+barrels\n" +
                 $"spawn paths: {ok}/{ok + blocked}" + (blocked > 0 ? "  << BLOCKED" : "  all reachable");
             Debug.Log("[MapGen] " + report.Replace("\n", "  |  "));

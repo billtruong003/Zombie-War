@@ -78,6 +78,18 @@ Shader "ZombieWar/VAT/EnemyToon"
             half _UseNoiseTex;
         CBUFFER_END
 
+        // Global do ToonLightRig push (Shader.SetGlobalVector) — hướng TỚI nguồn sáng.
+        // Nằm ngoài CBUFFER vì là global, không per-material.
+        float4 _ToonLightDirection;
+
+        // Hướng sáng cho toon term: rig là authority; khi scene không có rig (vector ~0)
+        // fallback về main light để mọi scene cũ vẫn render đúng.
+        float3 ToonLightDir()
+        {
+            float3 rigDir = _ToonLightDirection.xyz;
+            return dot(rigDir, rigDir) > 0.0001 ? normalize(rigDir) : normalize(_MainLightPosition.xyz);
+        }
+
         UNITY_INSTANCING_BUFFER_START(PerInstance)
             UNITY_DEFINE_INSTANCED_PROP(float, _CurrentAnimNormalizedTime)
             UNITY_DEFINE_INSTANCED_PROP(float, _PreviousAnimNormalizedTime)
@@ -238,7 +250,7 @@ Shader "ZombieWar/VAT/EnemyToon"
                 // then quantise it into _SpecSteps hard bands (ceil, so band 0 stays fully off).
                 float3 N = normalize(i.normalWS);
                 float3 V = normalize(i.viewDirWS);
-                float3 L = normalize(_MainLightPosition.xyz);
+                float3 L = ToonLightDir();
                 float3 H = normalize(L + V);
 
                 half ndoth  = saturate(dot(N, H));
