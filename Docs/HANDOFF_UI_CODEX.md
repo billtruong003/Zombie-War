@@ -4,6 +4,10 @@
 > below still apply, but Fantasy-specific 14-slot/978-part descriptions are historical. The active
 > Casual Costume screen now uses ten logical slots, 323 stable-itemId parts and 323 real icons.
 
+> **2026-07-23 UI correction:** read `Docs/UI_DIRECTION_02_HANDOFF.md` before this historical file.
+> It contains the current Direction 02 product decisions, known Hub/Costume layout defects,
+> English-copy requirement, currency `+` actions, Mission reward treatment and RawImage aspect rules.
+
 > Updated 2026-07-20. Read `HANDOFF.md` first. This document covers the current UI implementation and the next wiring phase. `UI_REDESIGN_SPEC.md` remains the visual source of truth.
 
 ## Current architecture

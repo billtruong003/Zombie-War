@@ -3,6 +3,20 @@
 > Updated 2026-07-21. Current truth is in `ACCOUNT_SWITCH_HANDOFF.md`; the active large execution
 > contract is `ENEMY_CAMPAIGN_EXPANSION_PROMPT.md`, which absorbs the unfinished run-loop prerequisite.
 
+## Active UI correction — 2026-07-23
+
+Contract: `Docs/UI_DIRECTION_02_HANDOFF.md`.
+
+- [ ] Convert all visible menu content to English.
+- [ ] Add a `+` action to both Coin and Gem pills without introducing a fake production wallet
+  mutation.
+- [ ] Change the Mission reward control from white to an intentional accent treatment.
+- [ ] Pin Hub and Costume bottom panels to the bottom safe area.
+- [ ] Remove Costume control overlap across 9:16, 19.5:9 and 20:9 portrait profiles.
+- [ ] Preserve native aspect ratio for RawImage/texture content; remove visible stretching.
+- [ ] Rebuild through installers, repair prefab wiring, verify at least 191 EditMode tests, capture
+  Unity screenshots, run GitNexus `detect_changes`, then commit and push the bounded UI change.
+
 ## Current migration checkpoint — 2026-07-21
 
 - [x] Pro Casual bind-pose proof, 448-item catalog and core Player/menu integration.

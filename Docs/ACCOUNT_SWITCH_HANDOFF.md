@@ -3,6 +3,15 @@
 > Canonical status as of 2026-07-22, after the VAT enemy roster + campaign backend + map generator
 > push. Read this file before older handoffs.
 
+## UI handoff update — 2026-07-23
+
+For the active portrait menu correction, read `Docs/UI_DIRECTION_02_HANDOFF.md` immediately after
+this file. The current authored checkpoint is `2cbe3b88`, but it is not final visual sign-off:
+Hub and Costume bottom panels are too high, Costume controls overlap, some RawImages are stretched,
+the menu still contains mixed Vietnamese/English copy, Coin/Gem need `+` actions, and the Mission
+reward control must change from white to a deliberate accent color. The new UI handoff is
+authoritative wherever older UI layout notes conflict.
+
 ## 0. Enemy campaign milestone (2026-07-22) — READ FIRST
 
 Everything below is committed and pushed on `main`. The blow-by-blow execution record (every fix,

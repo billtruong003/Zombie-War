@@ -6,6 +6,12 @@
 > v2 = PLAY **gold** + floating dock **4 tab**).
 > Mọi số liệu bên dưới là **canvas px trên reference 1080×1920** (sheet vẽ ~390 wide → nhân 2.77, làm tròn grid 8).
 
+> **Direction 02 correction (2026-07-23):** `Docs/UI_DIRECTION_02_HANDOFF.md` is the current
+> execution overlay for Hub/Costume. Where this older v2 layout conflicts, Direction 02 wins.
+> Specifically: all player-facing menu copy is English; Coin and Gem each have a `+` action;
+> Mission reward is not white; Hub/Costume bottom panels pin to the bottom safe area; Costume
+> controls may not overlap; and RawImage content must preserve its native aspect ratio.
+
 ---
 
 ## 0. QUY ƯỚC ĐỌC SPEC
