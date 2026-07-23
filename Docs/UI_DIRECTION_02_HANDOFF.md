@@ -1,8 +1,9 @@
 # ZombieWar — Portrait Menu UI Direction 02 handoff
 
-> Current UI execution contract as of 2026-07-23. This document overrides older menu-layout notes
-> when they conflict with the active portrait Direction 02 implementation. Gameplay, economy and
-> campaign status remain authoritative in `ACCOUNT_SWITCH_HANDOFF.md`.
+> **HISTORY — DO NOT EXECUTE (2026-07-23 EOD).** The owner now hand-authors all menu UI directly;
+> agents must never modify `Menu.unity` or `UI_*.prefab` (see `ACCOUNT_SWITCH_HANDOFF.md` §0-bis).
+> Keep this file only as design-intent reference: English copy, accent-color decisions,
+> safe-area/aspect-ratio rules. The layout/verification workflow below is obsolete.
 
 ## 1. Current checkpoint
 

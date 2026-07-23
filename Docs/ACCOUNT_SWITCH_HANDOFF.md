@@ -1,16 +1,85 @@
 # ZombieWar — Account-switch handoff
 
-> Canonical status as of 2026-07-22, after the VAT enemy roster + campaign backend + map generator
-> push. Read this file before older handoffs.
+> Canonical status as of 2026-07-23 EOD, after the world/framework push (`61be2cf2`).
+> Read this file before older handoffs.
 
-## UI handoff update — 2026-07-23
+## 0-bis. 2026-07-23 milestone — READ FIRST (supersedes the UI section below)
 
-For the active portrait menu correction, read `Docs/UI_DIRECTION_02_HANDOFF.md` immediately after
-this file. The current authored checkpoint is `2cbe3b88`, but it is not final visual sign-off:
-Hub and Costume bottom panels are too high, Costume controls overlap, some RawImages are stretched,
-the menu still contains mixed Vietnamese/English copy, Coin/Gem need `+` actions, and the Mission
-reward control must change from white to a deliberate accent color. The new UI handoff is
-authoritative wherever older UI layout notes conflict.
+Everything committed and pushed on `main` through `61be2cf2`. Session commits:
+`ce1d6100` (owner-layout snapshot) → `205348c5` (installer resync) → `976e6d00`
+(joystick/HUD-economy) → `20dd7f38` (toon rig + 5 desert maps) → `02fc1498` (embedded toon kit)
+→ `79dc2c78` (rig color/intensity) → `54b03ba5` (occlusion bakes) → `61be2cf2` (owner UI fixes
++ build serialization). 191/191 EditMode tests green at every step.
+
+### ⚠️ UI OWNERSHIP RULE (hard, permanent)
+
+**The owner hand-authors ALL menu UI. `Menu.unity` and every `UI_*.prefab` under
+`Assets/_Project/UI/Prefabs/Screens/` are OFF-LIMITS to any agent** — no layout fixes, no
+aspect fitters, no color tweaks, nothing. One violation this session silently corrupted the
+owner's hand layout via an editor-side scene save and had to be restored from snapshot.
+The only UI work an agent may do is **tween/animation CODE (.cs only)** when explicitly asked.
+Never open or save the Menu scene as a side effect; after any editor operation, check
+`git status` and revert unintended UI-file changes immediately.
+`Docs/UI_DIRECTION_02_HANDOFF.md` is now HISTORY — do not execute it.
+
+### Done this session (2026-07-23)
+
+- **All player-facing content is English**: 149 baked prefab strings, campaign stage/wave names,
+  448 costume item + 30 set names, 20 Pass missions, 7 run perks, every modal/notice. Dev-facing
+  logs/tooltips stay Vietnamese by design.
+- **Icon pipeline v2**: costume icons re-captured face-on at 2048+MSAA → stepped bilinear
+  downscale → unpremultiplied 512 PNG (448/448 bound, GUIDs stable). Weapon icons re-rendered as
+  side profiles (muzzle right) on transparent background with roster-relative proportion
+  (geometric-mean blend) and a Pillow stroke outline via `Tools/outline_icons.py`
+  (**run exactly once after each regen** — running twice thickens the outline).
+  Menu additions: Missing-only, Size-preview (2048→128 to `Assets/Screenshots/UIAudit/IconSizePreview`).
+- **Hub/Pass runtime binding**: Hub mission card shows the nearest-complete active Pass mission
+  (tap → Pass), notify dots (Loadout/Costume/Pass) driven by profile events, `+` buttons open
+  Shop Weapons/Gacha. PassScreen binds real missions: progress bars, `x/y` counters, one-shot
+  CLAIM (pays coin + PassXp, provisional 500 XP/level in `PassScreen.XpPerLevel`), UTC rollover
+  on show. `UIFx.Punch` on currency ticks.
+- **Installers resynced FROM the hand layout** (`205348c5`): a destructive rebuild now reproduces
+  the owner's structure (dock HLG, Panel Reward HLG, PanelLoad HLG, nested Info, 3-col arsenal,
+  bottom pager/random, no RESET button, quest rows with Counter+Claim). Never run them anyway
+  without explicit owner request — see the ownership rule.
+- **BillVirtualJoystick** (`Assets/ThirdParty/BillGameCore/Runtime/UI/`): floating origin,
+  pointer-id lock, rect-based radius, dead-zone remap, handle range. `ZombieWar.VirtualJoystick`
+  is a compatibility shell; PlayerMovement/HUD wiring untouched.
+- **In-run economy visible**: HUD coin pill binds `RunState.Changed` (pickup → bank → HUD punch).
+  Backend path Pickup→RunState→idempotent Payout was verified correct and untouched.
+  HudController per-frame string allocations removed (cached shown values).
+- **Toon light rig**: `ZombieWar.ToonLightRig` (ExecuteAlways, arrow gizmos, default 50/-30/0,
+  Inspector color + intensity) pushes `_ToonLightDirection` + `_ToonLightColor` globals.
+  Consumers: `VAT_EnemyToon`, `VAT_Toonlit`, and the whole **stylized-toon-world-kit** via one
+  patch in `Packages/com.billtruong.stylized-toon-world-kit/Core/URPCompat.hlsl`
+  (`STW_GetMainLight` overrides direction+color when rig active; distanceAttenuation forced 1;
+  fallback to real main light when no rig). The kit is now **embedded** in `Packages/` (owner
+  owns upstream repo; the single-hunk diff can be pushed back). Inverted-hull outline needs no
+  light — unpatched. Directional light can be fully off; rig supplies color so nothing renders black.
+- **All 5 campaign maps generated**: `Tools/ZombieWar/Generate All Campaign Maps` generates the
+  desert environment IN PLACE (no cloning → per-map wiring preserved; WaveData binds at runtime
+  via CampaignCatalog, verified), seeds 101–105, idempotent re-run, auto-places one ToonLightRig,
+  NavMesh rebaked, 12/12 spawn paths reachable on every map.
+- **Static perf pipeline complete per map**: BatchingStatic + shadow-caster stripping (generator)
+  + **occlusion culling baked** for all 5 maps (~66–70KB Umbra each, smallestOccluder=5 uniform).
+- **First Android build**: owner built + hand-fixed UI for device; build side-effect
+  serialization committed in `61be2cf2`. Android bundle id is still the Unity template default
+  (`com.UnityTechnologies.com.unity.template.urpblank`) — rename before any store upload.
+
+### Known gaps after this session
+
+- No PlayMode/profiler stress numbers yet (25/50/100 horde) — top priority before calling
+  mobile-safe; maps + occlusion are ready for measuring.
+- Pass reward TRACK (6 tiles) + premium strip remain presentation-only; missions are real.
+- Food buffs, campaign selector screen, level-up perk overlay binding, result screen binding —
+  unchanged backlog (see REMAINING_FEATURES.md).
+- `Tools/notify_done.py` can exceed 120 s (RVC voice) — run it in background.
+
+## UI handoff update — 2026-07-23 (SUPERSEDED — see §0-bis ownership rule)
+
+`Docs/UI_DIRECTION_02_HANDOFF.md` described an agent-driven UI correction pass. That flow is
+dead: the owner now hand-authors the UI directly. Keep the document only as design-intent
+reference (English copy, accent colors, safe-area rules).
 
 ## 0. Enemy campaign milestone (2026-07-22) — READ FIRST
 

@@ -1,30 +1,39 @@
 # ZombieWar — Remaining Features
 
-> Current snapshot: 2026-07-22, after the VAT roster + campaign backend push. Read
-> `ACCOUNT_SWITCH_HANDOFF.md` section 0 first; execution detail is in
+> Current snapshot: 2026-07-23 EOD (`61be2cf2`). Read `ACCOUNT_SWITCH_HANDOFF.md` §0-bis first
+> (including the hard UI-ownership rule); execution detail for the enemy milestone is in
 > `ENEMY_CAMPAIGN_TASK_STATE.md`.
 
-## Resolved since 2026-07-21
+## Resolved since 2026-07-22
 
-- ~~Imported monsters are source art only~~ -> 15/15 Cute monsters baked as VAT (HUGO documented
-  blocked: 16,567 verts > 16,384 texture limit). Tests enforce zero Animator/SMR.
-- ~~Campaign/run state is missing~~ -> RunState ledger + RunDirector + CampaignCatalog + CombatPower
-  gates + PlayerProfile persistence (completion, first-clear, missions) all live, 191/191 tests.
-- ~~Maps are placeholders~~ -> Map_Level2-5 cloned with wired waves/spawns/NavMesh; desert map
-  GENERATOR exists (`Tools/ZombieWar/Desert Map Generator`) producing Map_GenTest.
+- ~~Mixed VN/EN content~~ -> ALL player-facing text is English (prefabs, data assets, runtime
+  strings). Dev logs stay Vietnamese by design.
+- ~~Pass screen binding~~ -> PassScreen binds the real mission backend (progress, counters,
+  one-shot CLAIM, UTC rollover). Reward TRACK tiles + premium strip are still presentation.
+- ~~HUD run coin~~ -> coin pill binds RunState (pickup -> bank -> HUD). Economy path verified.
+- ~~Joystick offset feel~~ -> BillVirtualJoystick in BillGameCore (floating origin, pointer lock,
+  dead zone). Framework-level, reusable by future games.
+- ~~Maps visually sparse / placeholder Planes~~ -> all 5 campaign maps carry generated desert
+  environments (in-place, per-map wiring intact, 12/12 spawn paths) + occlusion baked +
+  static batching + one ToonLightRig each (direction/color/intensity authored per map).
+- ~~Toon shaders ignore lighting intent~~ -> rig-driven `_ToonLightDirection/_ToonLightColor`
+  consumed by VAT shaders and the embedded stylized-toon-world-kit; works with the
+  directional light fully off.
+- Icon pipeline v2 (face-on costume 512, side-profile outlined weapons, size previews).
 
 ## Immediate next (owner-approved order)
 
-1. **Food buff system** — full approved spec in `Docs/FOOD_BUFF_SPEC.md`: green apple heal,
-   blue berry shield (150 cap, no duration, 100% absorb, navy bar under health), red apple
-   infinite ammo (mag snapshot/restore, ~8 s), cheese 2x coin (~20 s), HUD buff tiles.
-   NOT implemented yet.
-2. **Campaign selector UI** (`UI_CampaignScreen.prefab`) — backend complete, screen not built.
-3. **Run-loop UI binding** — HUD coin/XP, level-up 1-of-3 perk overlay (RunOverlays is still
-   placeholder), result screen reading `RunFinishedEvent`.
-4. **Pass screen binding** — mission backend (20 missions, UTC rotation) done; UI not bound.
-5. **PlayMode/profiler evidence** — no stress numbers yet; do 25/50/100 horde before calling
-   anything mobile-safe.
+1. **PlayMode/profiler evidence** — 25/50/100 horde on the new maps; the static pipeline is done,
+   so numbers now reflect reality. Blocks any "mobile-safe" claim. (First device build exists.)
+2. **Food buff system** — full approved spec in `Docs/FOOD_BUFF_SPEC.md`. NOT implemented.
+3. **Campaign selector UI** — backend complete; screen is OWNER-BUILT now (agents supply code
+   binding only when asked).
+4. **Run-loop UI binding** — level-up 1-of-3 perk overlay (RunOverlays still placeholder),
+   result screen reading run summary + Payout.
+5. **Pass reward track backend** — level rewards for the 6-tile track + premium decision;
+   `PassScreen.XpPerLevel` (500) is provisional.
+6. **Android identity** — bundle id is still the Unity template default; rename before any
+   distribution.
 
 ## UI wiring checklist
 
