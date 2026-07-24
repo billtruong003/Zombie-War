@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace BillGameCore
@@ -56,45 +55,6 @@ namespace BillGameCore
         [Min(0)] public int maxSize = 0;
         [Min(0f)] public float autoReturnTime = 0f;
     }
-
-    // -------------------------------------------------------
-
-    [CreateAssetMenu(fileName = "AudioLibrary", menuName = "BillGameCore/Audio Library")]
-    public class AudioLibrary : ScriptableObject
-    {
-        [Serializable]
-        public class Entry
-        {
-            public string key;
-            public AudioClip clip;
-            [Range(0f, 1f)] public float volume = 1f;
-            [Range(0.1f, 3f)] public float pitch = 1f;
-            public bool loop;
-            [Range(0f, 0.3f)] public float pitchVariation;
-        }
-
-        public Entry[] entries;
-        private Dictionary<string, Entry> _map;
-
-        public Entry Get(string key)
-        {
-            if (_map == null) Rebuild();
-            return _map.TryGetValue(key, out var e) ? e : null;
-        }
-
-        private void Rebuild()
-        {
-            _map = new Dictionary<string, Entry>(entries?.Length ?? 0);
-            if (entries == null) return;
-            foreach (var e in entries)
-                if (!string.IsNullOrEmpty(e.key) && e.clip != null)
-                    _map[e.key] = e;
-        }
-
-        void OnEnable() => _map = null;
-    }
-
-    // -------------------------------------------------------
 
     [CreateAssetMenu(fileName = "GameConfig", menuName = "BillGameCore/Game Config")]
     public class GameConfigAsset : ScriptableObject

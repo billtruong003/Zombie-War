@@ -45,6 +45,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 528859177d0ec4a46aa75ebf7bf5c11d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Pickup
+  effect: 0
+  healAmount: 25
   magnetSpeed: 9
   magnetAcceleration: 22
   collectDistance: 0.45
@@ -117,7 +119,19 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: b969e969761ab9a44935a63745a95e5f, type: 3}
+      propertyPath: m_MotionVectors
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: b969e969761ab9a44935a63745a95e5f, type: 3}
       propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: b969e969761ab9a44935a63745a95e5f, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: b969e969761ab9a44935a63745a95e5f, type: 3}
+      propertyPath: m_ReflectionProbeUsage
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: b969e969761ab9a44935a63745a95e5f, type: 3}

@@ -112,6 +112,7 @@ namespace ZombieWar.Editor
                 // Unity's built-in Plane is 10 m across at scale 1.
                 ground.transform.localScale = Vector3.one * (stage.groundSize / 10f);
                 ground.transform.position = Vector3.zero;
+                MapNavigationAuthoring.AssignWalkableGround(ground);
 
                 var mr = ground.GetComponent<MeshRenderer>();
                 if (mr != null) mr.sharedMaterial = StageMaterial(stage);
@@ -123,7 +124,7 @@ namespace ZombieWar.Editor
             // ---- navmesh: rebake for the new ground size -------------------------------------
             var navRoot = roots.FirstOrDefault(r => r.name == "NavMesh");
             var surface = navRoot != null ? navRoot.GetComponent<NavMeshSurface>() : null;
-            if (surface != null) surface.BuildNavMesh();
+            if (surface != null) MapNavigationAuthoring.BakeSandOnly(surface);
             else Debug.LogWarning($"[StageBuilder] {stage.sceneName}: no NavMeshSurface found to bake.");
         }
 

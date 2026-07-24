@@ -13,15 +13,17 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _ANISO
-  - _EMISSION
-  m_InvalidKeywords:
-  - _RIM
+  - _SURFACE_TYPE_TRANSPARENT
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
-  disabledShaderPasses: []
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  - DepthOnly
+  - SHADOWCASTER
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -51,7 +53,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: e8b9ab60b2bbe694f9cbf954cd2e9267, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3d3c8d1fcc657e44c96058c253fd778f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -88,14 +90,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AnisoExponent: 244
-    - _AnisoShift: 0
-    - _AnisoStrength: 0.65
+    - _AnisoExponent: 256
+    - _AnisoShift: 0.5
+    - _AnisoStrength: 1.45
     - _AnisoToggle: 1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
+    - _BlendOp: 0
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -103,18 +107,18 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DstBlend: 0
-    - _DstBlendAlpha: 0
+    - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _EmissionToggle: 1
     - _EnvSmooth: 0
-    - _EnvSteps: 1.5
-    - _EnvStrength: 0.42
+    - _EnvSteps: 2
+    - _EnvStrength: 1.84
     - _EnvironmentReflections: 1
-    - _GIStrength: 0
+    - _GIStrength: 2
     - _GlossMapScale: 1
     - _Glossiness: 0.65
     - _GlossyReflections: 1
-    - _Metallic: 0
+    - _Metallic: 0.677
     - _Mode: 0
     - _NormalMapToggle: 0
     - _Occlusion: 1
@@ -125,30 +129,32 @@ Material:
     - _RampSteps: 1.5
     - _RampTexToggle: 0
     - _ReceiveShadows: 1
-    - _RimPower: 3.3
-    - _RimStrength: 1.05
+    - _RimPower: 8
+    - _RimStrength: 2
     - _RimToggle: 1
+    - _SampleGI: 0
     - _Smoothness: 0.65
     - _SmoothnessTextureChannel: 0
     - _SpecSize: 0.2
     - _SpecStrength: 0
     - _SpecularHighlights: 1
-    - _SrcBlend: 1
+    - _SrcBlend: 5
     - _SrcBlendAlpha: 1
-    - _Surface: 0
+    - _Surface: 1
     - _UVSec: 0
     - _WorkflowMode: 1
+    - _XRMotionVectorsPass: 1
     - _ZTest: 4
-    - _ZWrite: 1
+    - _ZWrite: 0
     m_Colors:
-    - _AnisoColor: {r: 1, g: 1, b: 1, a: 1}
+    - _AnisoColor: {r: 1.4002438, g: 1.4844202, b: 1.7159057, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 0.8679245, g: 0.8679245, b: 0.8679245, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 0.49019608}
     - _Emission: {r: 4, g: 4, b: 4, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _EnvColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _RimColor: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowTint: {r: 0, g: 0, b: 0, a: 1}
+    - _EnvColor: {r: 1, g: 1, b: 1, a: 1}
+    - _RimColor: {r: 1.012282, g: 1.249893, b: 1.7735851, a: 1}
+    - _ShadowTint: {r: 0.08610714, g: 0.1004045, b: 0.14150941, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

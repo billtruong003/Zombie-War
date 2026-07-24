@@ -126,6 +126,7 @@ namespace ZombieWar
             var wait = new WaitForSeconds(Mathf.Max(0.01f, wave.spawnInterval));
 
             int spawned = 0;
+            int consecutiveFailures = 0;
             while (spawned < queue.Count)
             {
                 // Respect the concurrency cap - hold spawning while the field is full.
@@ -135,8 +136,22 @@ namespace ZombieWar
                     continue;
                 }
 
-                _spawner.Spawn(queue[spawned]);
-                spawned++;
+                if (_spawner.Spawn(queue[spawned]) != null)
+                {
+                    spawned++;
+                    consecutiveFailures = 0;
+                }
+                else
+                {
+                    consecutiveFailures++;
+                    if (consecutiveFailures >= 8)
+                    {
+                        Debug.LogError($"[WaveDirector] Skipping {queue[spawned].name}: " +
+                                       "no safe reachable spawn after 8 retries.");
+                        spawned++;
+                        consecutiveFailures = 0;
+                    }
+                }
                 yield return wait;
             }
         }

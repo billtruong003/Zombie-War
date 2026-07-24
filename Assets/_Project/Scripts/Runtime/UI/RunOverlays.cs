@@ -49,6 +49,10 @@ namespace ZombieWar
         [SerializeField] private Button replayButton;
         [SerializeField] private Button homeButton;
 
+        [Header("Victory")]
+        [SerializeField] private GameObject victoryRoot;
+        [SerializeField] private Button victoryHomeButton;
+
         [Header("FTUE (§4.12)")]
         [SerializeField] private GameObject ftueRoot;
         [SerializeField] private Button ftueSkipButton;
@@ -72,6 +76,7 @@ namespace ZombieWar
             Wire(reviveSkipButton, CloseRevive);
             Wire(replayButton, () => { Time.timeScale = 1f; GameFlow.RestartGameplay(); });
             Wire(homeButton, () => { Time.timeScale = 1f; GameFlow.ReturnToMenu(); });
+            Wire(victoryHomeButton, () => { Time.timeScale = 1f; GameFlow.ReturnToMenu(); });
             Wire(ftueSkipButton, CompleteFtue);
             if (perkButtons != null)
                 foreach (var b in perkButtons)
@@ -110,11 +115,13 @@ namespace ZombieWar
         private void OnEnable()
         {
             Bill.Events?.Subscribe<GameOverEvent>(OnGameOver);
+            Bill.Events?.Subscribe<AllWavesClearedEvent>(OnVictory);
         }
 
         private void OnDisable()
         {
             Bill.Events?.Unsubscribe<GameOverEvent>(OnGameOver);
+            Bill.Events?.Unsubscribe<AllWavesClearedEvent>(OnVictory);
         }
 
         private void Start()
@@ -131,12 +138,14 @@ namespace ZombieWar
             Time.timeScale = 1f;   // scene unload giữa lúc pause không được để game đứng hình
         }
 
-        private bool GameOverActive => gameOverRoot != null && gameOverRoot.activeSelf;
+        private bool TerminalOverlayActive =>
+            (gameOverRoot != null && gameOverRoot.activeSelf) ||
+            (victoryRoot != null && victoryRoot.activeSelf);
 
         // ------------------------------------------------------------ pause
         public void ShowPause()
         {
-            if (GameOverActive) return;
+            if (TerminalOverlayActive) return;
             Time.timeScale = 0f;
             Show(pauseRoot, true);
         }
@@ -175,7 +184,7 @@ namespace ZombieWar
         // ------------------------------------------------------------ revive (test hook)
         public void ShowRevive()
         {
-            if (GameOverActive) return;
+            if (TerminalOverlayActive) return;
             Time.timeScale = 0f;
             Show(reviveRoot, true);
             Restart(CoReviveCountdown());
@@ -201,7 +210,7 @@ namespace ZombieWar
         // ------------------------------------------------------------ level-up (test hook)
         public void ShowLevelUp()
         {
-            if (GameOverActive) return;
+            if (TerminalOverlayActive) return;
             Time.timeScale = 0f;
             Show(levelUpRoot, true);
         }
@@ -226,9 +235,26 @@ namespace ZombieWar
             Show(reviveRoot, false);
             Show(levelUpRoot, false);
             Show(ftueRoot, false);
+            Show(victoryRoot, false);
             if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
             Time.timeScale = 1f;
             Show(gameOverRoot, true);
+        }
+
+        private void OnVictory(AllWavesClearedEvent e)
+        {
+            Restart(null);
+            StopFtueWatch();
+            Show(pauseRoot, false);
+            Show(confirmRoot, false);
+            Show(settingsRoot, false);
+            Show(reviveRoot, false);
+            Show(levelUpRoot, false);
+            Show(gameOverRoot, false);
+            Show(ftueRoot, false);
+            if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
+            Time.timeScale = 1f;
+            Show(victoryRoot, true);
         }
 
         // ------------------------------------------------------------ ftue
@@ -273,6 +299,7 @@ namespace ZombieWar
             Show(reviveRoot, false);
             Show(levelUpRoot, false);
             Show(gameOverRoot, false);
+            Show(victoryRoot, false);
             Show(ftueRoot, false);
             if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
         }

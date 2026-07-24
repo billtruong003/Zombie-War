@@ -50,7 +50,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Zombie_Mat
-  m_Shader: {fileID: 4800000, guid: aae50df74781a4accba3c532d1db9ab8, type: 3}
+  m_Shader: {fileID: 4800000, guid: 2e18e2b8507daf74c842f0ed8b66ce85, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -65,8 +65,16 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _DissolveNoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: e7da7069dfb82714c93ce5e0fe66e604, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalTexture:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PositionTexture:
@@ -74,10 +82,23 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _DissolveEdgeWidth: 0.08
+    - _ShadowSoftness: 0.08
+    - _ShadowThreshold: 0.45
+    - _SpecIntensity: 0.6
+    - _SpecSize: 0.25
+    - _SpecSteps: 1.5
+    - _UseAnimatedNormals: 0
+    - _UseNoiseTex: 0
     m_Colors:
+    - _AmbientFallback: {r: 0.78, g: 0.78, b: 0.82, a: 1}
+    - _DissolveEdgeColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+    - _DissolveNoiseTiling: {r: 14, g: 14, b: 0, a: 0}
+    - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _PositionMax: {r: 0, g: 0, b: 0, a: 0}
     - _PositionMin: {r: 0, g: 0, b: 0, a: 0}
+    - _ShadowTint: {r: 0.62, g: 0.62, b: 0.75, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!43 &2930058991167313288

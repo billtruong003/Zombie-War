@@ -152,9 +152,17 @@ namespace BillGameCore
         {
             var go = new GameObject("[Bill.CheatConsole]"); UnityEngine.Object.DontDestroyOnLoad(go);
             _doc = go.AddComponent<UIDocument>();
-            var ps = ScriptableObject.CreateInstance<PanelSettings>(); ps.scaleMode = PanelScaleMode.ConstantPixelSize; ps.sortingOrder = 9998;
+            var ps = ScriptableObject.CreateInstance<PanelSettings>();
+            ps.scaleMode = PanelScaleMode.ConstantPixelSize;
+            ps.sortingOrder = 9998;
+            ps.themeStyleSheet = Resources.Load<ThemeStyleSheet>("UI/UnityDefaultRuntimeTheme");
+            if (ps.themeStyleSheet == null)
+                Debug.LogError("[Bill.Cheat] Missing Resources/UI/UnityDefaultRuntimeTheme.tss. Console UI cannot render correctly.");
             _doc.panelSettings = ps;
-            _doc.rootVisualElement.pickingMode = PickingMode.Ignore;
+            var root = _doc.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore;
+            root.style.position = Position.Absolute;
+            root.style.left = root.style.right = root.style.top = root.style.bottom = 0;
 
             _panel = new VisualElement();
             _panel.style.position = Position.Absolute; _panel.style.left = _panel.style.right = _panel.style.bottom = 0; _panel.style.height = 200;

@@ -1,14 +1,15 @@
-// Enemy VAT shader: vertex-animation-texture playback + banded specular, plus the two
+// Enemy VAT shader: vertex-animation-texture playback + toon lighting, plus the two
 // gameplay-driven effects ZombieBase needs - a white hit flash on damage and a dissolve on death.
 //
-// Deliberately UNLIT in the diffuse term. Albedo is used as-authored and the only lighting response
-// is a quantised specular highlight. That is a mobile-performance decision: the diffuse toon ramp,
-// rim fresnel and their tint lerps were the bulk of the per-pixel cost on a screen full of enemies,
-// and the flat cartoon albedo of this art pack reads fine without them.
+// Lighting is a deliberately tiny toon model (one half-lambert band + one banded specular - no
+// rim, no ramp texture, no additional lights) so a screen full of enemies stays mobile-cheap while
+// still reading as lit. The light source resolves in priority order:
+//   1. ToonLightRig globals (_ToonLightDirection/_ToonLightColor) - the map's authored light.
+//   2. The URP main light, when no rig is active.
+//   3. A flat authored ambient (_AmbientFallback) when neither exists - never black.
 //
-// The animated NORMAL map is still required even though there is no diffuse term - the specular
-// highlight is driven by N·H, so with static bind-pose normals the highlight would sit frozen on
-// the mesh while the body animates underneath it.
+// The animated NORMAL map is required for both terms - with static bind-pose normals the diffuse
+// band and specular highlight would sit frozen on the mesh while the body animates underneath it.
 //
 // Both _HitFlash and _Dissolve are PER-INSTANCE so a single shared material can drive a whole
 // pooled horde: ZombieBase writes them through a MaterialPropertyBlock, exactly like VAT_Animator
@@ -24,6 +25,12 @@ Shader "ZombieWar/VAT/EnemyToon"
         [Toggle] _UseAnimatedNormals ("Use Animated Normals", Float) = 0
         _PositionMin ("Position Min (Local Space)", Vector) = (0,0,0,0)
         _PositionMax ("Position Max (Local Space)", Vector) = (0,0,0,0)
+
+        [Header(Toon Diffuse)]
+        _ShadowTint ("Shadow Tint", Color) = (0.62, 0.62, 0.75, 1)
+        _ShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.45
+        _ShadowSoftness ("Shadow Softness", Range(0.001, 0.5)) = 0.08
+        _AmbientFallback ("Ambient Fallback (no rig, no light)", Color) = (0.78, 0.78, 0.82, 1)
 
         [Header(Stepped Specular)]
         _SpecSteps ("Specular Steps", Range(1, 5)) = 1.5
@@ -68,6 +75,10 @@ Shader "ZombieWar/VAT/EnemyToon"
             float4 _PositionMin;
             float4 _PositionMax;
             half _UseAnimatedNormals;
+            half4 _ShadowTint;
+            half _ShadowThreshold;
+            half _ShadowSoftness;
+            half4 _AmbientFallback;
             half _SpecSteps;
             half _SpecSize;
             half _SpecIntensity;
@@ -78,16 +89,38 @@ Shader "ZombieWar/VAT/EnemyToon"
             half _UseNoiseTex;
         CBUFFER_END
 
-        // Global do ToonLightRig push (Shader.SetGlobalVector) — hướng TỚI nguồn sáng.
-        // Nằm ngoài CBUFFER vì là global, không per-material.
+        // Globals do ToonLightRig push (Shader.SetGlobalVector/Color) — hướng TỚI nguồn sáng và
+        // màu × intensity (alpha = 1 là cờ "rig có màu"). Nằm ngoài CBUFFER vì là global.
         float4 _ToonLightDirection;
+        half4 _ToonLightColor;
 
-        // Hướng sáng cho toon term: rig là authority; khi scene không có rig (vector ~0)
-        // fallback về main light để mọi scene cũ vẫn render đúng.
-        float3 ToonLightDir()
+        // Nguồn sáng cho toon shading, theo thứ tự ưu tiên:
+        //   rig active  → hướng + màu của rig (map tự quyết ánh sáng, không cần directional thật);
+        //   không rig   → URP main light (scene cũ vẫn đúng);
+        //   không cả hai→ _AmbientFallback với hướng chéo cố định — KHÔNG bao giờ đen.
+        // Trả về false ở nhánh ambient để frag biết tắt banding (không có hướng sáng thật thì
+        // một dải shadow band giả chỉ gây noise).
+        bool ResolveToonLight(out float3 lightDir, out half3 lightColor)
         {
             float3 rigDir = _ToonLightDirection.xyz;
-            return dot(rigDir, rigDir) > 0.0001 ? normalize(rigDir) : normalize(_MainLightPosition.xyz);
+            if (dot(rigDir, rigDir) > 0.0001)
+            {
+                lightDir = normalize(rigDir);
+                lightColor = _ToonLightColor.a > 0.5 ? _ToonLightColor.rgb : half3(1, 1, 1);
+                return true;
+            }
+
+            float3 mainDir = _MainLightPosition.xyz;
+            if (dot(mainDir, mainDir) > 0.0001 && dot(_MainLightColor.rgb, _MainLightColor.rgb) > 0.0001)
+            {
+                lightDir = normalize(mainDir);
+                lightColor = _MainLightColor.rgb;
+                return true;
+            }
+
+            lightDir = normalize(float3(0.35, 0.75, 0.35));
+            lightColor = _AmbientFallback.rgb;
+            return false;
         }
 
         UNITY_INSTANCING_BUFFER_START(PerInstance)
@@ -243,20 +276,32 @@ Shader "ZombieWar/VAT/EnemyToon"
 
                 half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
 
-                // Unlit base - the art pack's albedo already carries its own shading.
-                half3 result = albedo.rgb;
-
-                // Banded specular: the only lighting term. Remap N·H into the highlight window,
-                // then quantise it into _SpecSteps hard bands (ceil, so band 0 stays fully off).
                 float3 N = normalize(i.normalWS);
                 float3 V = normalize(i.viewDirWS);
-                float3 L = ToonLightDir();
-                float3 H = normalize(L + V);
+                float3 L;
+                half3 lightColor;
+                bool hasDirection = ResolveToonLight(L, lightColor);
 
+                // Toon diffuse: one half-lambert band between _ShadowTint and full light. In the
+                // ambient-fallback case there is no meaningful direction, so the band is forced
+                // fully lit and only the fallback colour tints the albedo.
+                half band = 1.0;
+                if (hasDirection)
+                {
+                    half halfLambert = dot(N, L) * 0.5 + 0.5;
+                    band = smoothstep(_ShadowThreshold - _ShadowSoftness,
+                                      _ShadowThreshold + _ShadowSoftness, halfLambert);
+                }
+                half3 result = albedo.rgb * lerp(_ShadowTint.rgb, half3(1, 1, 1), band) * lightColor;
+
+                // Banded specular: remap N·H into the highlight window, then quantise it into
+                // _SpecSteps hard bands (ceil, so band 0 stays fully off). Tinted by the resolved
+                // light colour and masked by the diffuse band so it never glints inside shadow.
+                float3 H = normalize(L + V);
                 half ndoth  = saturate(dot(N, H));
                 half window = saturate((ndoth - (1.0 - _SpecSize)) / max(_SpecSize, 0.0001));
                 half banded = ceil(window * _SpecSteps) / _SpecSteps;
-                result += banded * _SpecIntensity * albedo.rgb;
+                result += banded * _SpecIntensity * albedo.rgb * lightColor * band;
 
                 // Burning edge glows before the pixel disappears.
                 result = lerp(result, _DissolveEdgeColor.rgb, edge);
@@ -384,6 +429,60 @@ Shader "ZombieWar/VAT/EnemyToon"
                 UNITY_SETUP_INSTANCE_ID(i);
                 ApplyDissolveClip(i.uv);
                 return 0;
+            }
+            ENDHLSL
+        }
+
+        // ── Depth + normals: feeds _CameraNormalsTexture for screen-space outline/SSAO ───────
+        // Must use the ANIMATED position and normal - a bind-pose normal here would make every
+        // normal-based screen-space effect (outline edges, AO) lag behind the visible mesh.
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+
+            ZWrite On
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex vertDepthNormals
+            #pragma fragment fragDepthNormals
+            #pragma multi_compile_instancing
+            #pragma target 3.5
+
+            struct AppDataDN
+            {
+                float4 positionOS : POSITION;
+                float2 uv         : TEXCOORD0;
+                float2 vertexIdUV : TEXCOORD1;
+                float3 normalOS   : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct V2FDN
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                float3 normalWS   : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            V2FDN vertDepthNormals(AppDataDN v)
+            {
+                V2FDN o = (V2FDN)0;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
+                o.positionCS = TransformObjectToHClip(VATPosition(v.vertexIdUV.x));
+                o.normalWS   = TransformObjectToWorldNormal(VATNormal(v.vertexIdUV.x, v.normalOS));
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                return o;
+            }
+
+            half4 fragDepthNormals(V2FDN i) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(i);
+                ApplyDissolveClip(i.uv);
+                return half4(normalize(i.normalWS), 0);
             }
             ENDHLSL
         }

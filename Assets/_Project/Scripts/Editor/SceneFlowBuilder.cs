@@ -141,8 +141,67 @@ namespace ZombieWar.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var go = new GameObject("BootstrapEntry");
             go.AddComponent<BootstrapEntry>();
+            WireCheatAssets(go.AddComponent<ZombieWarCheatPanel>());
             EditorSceneManager.SaveScene(scene, BootstrapScene);
             Log("Built Bootstrap scene.");
+        }
+
+        [MenuItem("ZombieWar/Dev/Install Cheat Panel In Bootstrap")]
+        public static void InstallDevCheatPanel()
+        {
+            var scene = SceneManager.GetSceneByPath(BootstrapScene);
+            bool wasLoaded = scene.IsValid() && scene.isLoaded;
+            if (!wasLoaded)
+                scene = EditorSceneManager.OpenScene(BootstrapScene, OpenSceneMode.Additive);
+
+            var root = scene.GetRootGameObjects().FirstOrDefault(x => x.name == "BootstrapEntry");
+            if (root == null)
+            {
+                root = new GameObject("BootstrapEntry");
+                SceneManager.MoveGameObjectToScene(root, scene);
+                root.AddComponent<BootstrapEntry>();
+            }
+
+            var panel = root.GetComponent<ZombieWarCheatPanel>() ?? root.AddComponent<ZombieWarCheatPanel>();
+            WireCheatAssets(panel);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+
+            if (!wasLoaded)
+                EditorSceneManager.CloseScene(scene, true);
+
+            Log("Installed dev cheat panel in Bootstrap scene.");
+        }
+
+        private static void WireCheatAssets(ZombieWarCheatPanel panel)
+        {
+            var so = new SerializedObject(panel);
+            so.FindProperty("campaignCatalog").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<CampaignCatalog>("Assets/_Project/Data/Campaign/CampaignCatalog.asset");
+
+            var weaponAssets = AssetDatabase.FindAssets("t:WeaponData", new[] { "Assets/_Project/Data/Weapons" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(x => x)
+                .Select(AssetDatabase.LoadAssetAtPath<WeaponData>)
+                .ToArray();
+            var weaponProp = so.FindProperty("weapons");
+            weaponProp.arraySize = weaponAssets.Length;
+            for (int i = 0; i < weaponAssets.Length; i++)
+                weaponProp.GetArrayElementAtIndex(i).objectReferenceValue = weaponAssets[i];
+
+            var costumeAssets = new[]
+            {
+                AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
+                    "Assets/_Project/Data/Character/CasualCostumeCatalog.asset"),
+                AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
+                    "Assets/_Project/Data/Character/ModularCostumeCatalog.asset")
+            };
+            var costumeProp = so.FindProperty("costumeCatalogs");
+            costumeProp.arraySize = costumeAssets.Length;
+            for (int i = 0; i < costumeAssets.Length; i++)
+                costumeProp.GetArrayElementAtIndex(i).objectReferenceValue = costumeAssets[i];
+
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // ---------------------------------------------------------------- Menu scene
@@ -195,13 +254,14 @@ namespace ZombieWar.Editor
             ground.name = "Ground";
             ground.transform.localScale = new Vector3(10f, 1f, 10f);
             if (groundMat != null) ground.GetComponent<MeshRenderer>().sharedMaterial = groundMat;
+            MapNavigationAuthoring.AssignWalkableGround(ground);
             GameObjectUtility.SetStaticEditorFlags(ground, StaticEditorFlags.NavigationStatic | StaticEditorFlags.BatchingStatic);
 
-            // NavMesh bake over the whole scene.
+            // NavMesh bake from sand only. Props remain physical obstacles at runtime but can never
+            // become accidental walkable islands.
             var navRoot = new GameObject("NavMesh");
             var surface = navRoot.AddComponent<NavMeshSurface>();
-            surface.collectObjects = CollectObjects.All;
-            surface.BuildNavMesh();
+            MapNavigationAuthoring.BakeSandOnly(surface);
             Log("Baked NavMesh.");
 
             // Player spawn marker - the player is instantiated at runtime by PlayerSpawner, keeping the

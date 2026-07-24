@@ -118,6 +118,24 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void VatToonShader_HasLightRigContractAndDepthNormals()
+        {
+            var shader = Shader.Find("ZombieWar/VAT/EnemyToon");
+            Assert.IsNotNull(shader, "VAT toon shader missing");
+
+            // Toon-light contract: shadow band + ambient fallback must exist so the shader can
+            // light enemies from the ToonLightRig, the URP main light, or a defined ambient.
+            foreach (var prop in new[] { "_ShadowTint", "_ShadowThreshold", "_ShadowSoftness", "_AmbientFallback" })
+                Assert.IsTrue(shader.FindPropertyIndex(prop) >= 0, $"shader lost property {prop}");
+
+            // Screen-space outline/AO read _CameraNormalsTexture - without this pass VAT enemies
+            // would be invisible to every normal-based screen-space effect.
+            var mat = new Material(shader);
+            Assert.IsTrue(mat.FindPass("DepthNormals") >= 0, "shader lost its DepthNormals pass");
+            Object.DestroyImmediate(mat);
+        }
+
+        [Test]
         public void NormalMap_MatchesPositionMapFrameLayout()
         {
             foreach (var go in BakedEnemies())

@@ -139,6 +139,8 @@ namespace ZombieWar
             _hitReactRoutine = null; // coroutines died with the pooled deactivation
             _hitFlashRoutine = null;
             _attackRoutine = null;
+            _cheapBlockedTime = 0f;
+            _forceFullUntil = 0f; // a pooled instance must not inherit its previous life's promotion
             _agent.isStopped = false;
             if (TryGetComponent(out Collider col)) col.enabled = true;
             SetDissolve(0f);
@@ -198,12 +200,67 @@ namespace ZombieWar
             }
         }
 
-        // Called by ZombieManager at a throttled interval - NOT every frame, NOT via this object's
-        // own Update(). Cheap on purpose: no pathing, no target search, no animation change.
+        // How long a Cheap-tier zombie may push against a NavMesh edge before it earns a temporary
+        // Full-tier promotion (real pathfinding) to walk around the obstacle, and how long that
+        // promotion lasts before the manager may demote it again.
+        private const float CheapBlockedPromoteAfter = 1.5f;
+        private const float CheapPromoteDuration = 4f;
+
+        private float _cheapBlockedTime;
+        private float _forceFullUntil;
+
+        /// <summary>True while a blocked Cheap-tier zombie has requested real pathfinding.
+        /// ZombieManager honours this inside the cheap radius so the straight-line tier cannot
+        /// pin a zombie against an obstacle forever.</summary>
+        public bool NeedsFullTier => Time.time < _forceFullUntil;
+
+        // Called by ZombieManager - cheap on purpose: no pathing, no target search, no animation
+        // change. The step is clamped to the carved NavMesh via NavMesh.Raycast so straight-line
+        // movement can never tunnel through an obstacle footprint; a zombie held at an edge for
+        // CheapBlockedPromoteAfter seconds asks for a temporary Full-tier promotion instead.
         public void CheapTick(Vector3 towardPosition)
         {
             if (_state == State.Dead || _tier != ZombieTier.Cheap) return;
-            transform.position = Vector3.MoveTowards(transform.position, towardPosition, data.moveSpeed * Time.deltaTime);
+
+            Vector3 desired = Vector3.MoveTowards(
+                transform.position, towardPosition, data.moveSpeed * Time.deltaTime);
+
+            if (NavMesh.Raycast(transform.position, desired, out NavMeshHit hit, NavMesh.AllAreas))
+            {
+                desired = hit.hit ? hit.position : transform.position;
+                _cheapBlockedTime += Time.deltaTime;
+                if (_cheapBlockedTime >= CheapBlockedPromoteAfter)
+                {
+                    _forceFullUntil = Time.time + CheapPromoteDuration;
+                    _cheapBlockedTime = 0f;
+                }
+            }
+            else
+            {
+                _cheapBlockedTime = 0f;
+            }
+
+            transform.position = desired;
+        }
+
+        /// <summary>Watchdog recovery for a Full-tier zombie whose agent lost the mesh (legacy
+        /// off-mesh drift, external displacement). Warps to the nearest mesh point when one is
+        /// close; a truly stranded zombie is returned to the pool so it can never hold a wave
+        /// open while being unreachable and unable to attack.</summary>
+        public void RecoverIfOffMesh()
+        {
+            if (_state == State.Dead || _tier != ZombieTier.Full) return;
+            if (!_agent.enabled || _agent.isOnNavMesh) return;
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 4f, NavMesh.AllAreas))
+            {
+                _agent.Warp(hit.position);
+            }
+            else
+            {
+                Debug.LogWarning($"[{name}] stranded off the NavMesh - returning to pool.", this);
+                Bill.Pool?.Return(gameObject);
+            }
         }
 
         private void Update()

@@ -72,13 +72,16 @@ namespace ZombieWar.Editor
                 weaponIds = new[] { "weapon.sidearm.pistol_a", "weapon.smg.generic" },
                 firstCoin = 400, firstGold = 0, firstGem = 0, repeatCoin = 100,
                 bossEnemyId = "",
+                // Density prototype (2026-07-24): ~104 total, cap ramps 12->24, interval
+                // 0.6->0.45s, rests 2.0-2.5s. Keeps the walker-only onboarding of wave 1 but the
+                // field should never be empty around the player.
                 waves = new[]
                 {
-                    new WaveSpec { label = "Scouting",  entries = new[]{(Pup,6)},               interval=1.1f, maxConcurrent=6,  rest=5f },
-                    new WaveSpec { label = "Small Pack",entries = new[]{(Pup,8),(Meow,4)},      interval=0.9f, maxConcurrent=8,  rest=5f },
-                    new WaveSpec { label = "Dry Bones", entries = new[]{(Meow,8),(Skel,4)},     interval=0.9f, maxConcurrent=10, rest=5f },
-                    new WaveSpec { label = "Thickening",entries = new[]{(Pup,10),(Skel,8)},     interval=0.8f, maxConcurrent=12, rest=6f },
-                    new WaveSpec { label = "Runners",   entries = new[]{(Skel,10),(Bark,3)},    interval=0.8f, maxConcurrent=14, rest=0f },
+                    new WaveSpec { label = "Scouting",  entries = new[]{(Pup,12)},                     interval=0.6f, maxConcurrent=12, rest=2.5f },
+                    new WaveSpec { label = "Small Pack",entries = new[]{(Pup,12),(Meow,8)},            interval=0.55f,maxConcurrent=16, rest=2.5f },
+                    new WaveSpec { label = "Dry Bones", entries = new[]{(Meow,10),(Skel,8)},           interval=0.5f, maxConcurrent=20, rest=2f },
+                    new WaveSpec { label = "Thickening",entries = new[]{(Pup,12),(Skel,12)},           interval=0.5f, maxConcurrent=22, rest=2f },
+                    new WaveSpec { label = "Runners",   entries = new[]{(Skel,16),(Bark,6),(Pup,8)},   interval=0.45f,maxConcurrent=24, rest=0f },
                 },
             },
 
@@ -135,15 +138,18 @@ namespace ZombieWar.Editor
                 weaponIds = new[] { "weapon.smg.generic", "weapon.assault_rifle.scar_l", "weapon.shotgun.benelli_m4" },
                 firstCoin = 1600, firstGold = 15, firstGem = 1, repeatCoin = 340,
                 bossEnemyId = MoleKing,
+                // Density prototype (2026-07-24): ~187 total, cap ramps 20->32, interval
+                // 0.45->0.3s, rests 1.5-2.0s. The boss wave keeps a 30-alive minion swarm running
+                // so the finale is louder than the wave before it, not quieter.
                 waves = new[]
                 {
-                    new WaveSpec { label = "Swift Claws", entries = new[]{(Bolt,6),(Bark,6)},              interval=0.8f, maxConcurrent=12, rest=5f },
-                    new WaveSpec { label = "Thunderbolt", entries = new[]{(Lightning,6),(Bolt,6)},         interval=0.75f,maxConcurrent=14, rest=5f },
-                    new WaveSpec { label = "Burrowers",   entries = new[]{(Mole,5),(Bolt,8)},              interval=0.75f,maxConcurrent=14, rest=6f },
-                    new WaveSpec { label = "Heavy Press", entries = new[]{(Bowwow,4),(Lightning,8)},       interval=0.7f, maxConcurrent=16, rest=6f },
-                    new WaveSpec { label = "The Swarm",   entries = new[]{(Bolt,10),(Lightning,8),(Mole,5)},interval=0.7f,maxConcurrent=18, rest=6f },
-                    new WaveSpec { label = "Predators",   entries = new[]{(Bowwow,6),(Mole,6),(Bark,8)},   interval=0.65f,maxConcurrent=18, rest=8f },
-                    new WaveSpec { label = "BOSS",       entries = new[]{(MoleKing,1),(Mole,4),(Bolt,6)}, interval=1.1f, maxConcurrent=12, rest=0f },
+                    new WaveSpec { label = "Swift Claws", entries = new[]{(Bolt,10),(Bark,10)},                        interval=0.45f,maxConcurrent=20, rest=2f },
+                    new WaveSpec { label = "Thunderbolt", entries = new[]{(Lightning,10),(Bolt,10)},                   interval=0.4f, maxConcurrent=24, rest=2f },
+                    new WaveSpec { label = "Burrowers",   entries = new[]{(Mole,6),(Bolt,14)},                         interval=0.4f, maxConcurrent=26, rest=2f },
+                    new WaveSpec { label = "Heavy Press", entries = new[]{(Bowwow,6),(Lightning,14),(Bark,8)},         interval=0.35f,maxConcurrent=28, rest=1.5f },
+                    new WaveSpec { label = "The Swarm",   entries = new[]{(Bolt,16),(Lightning,12),(Mole,6)},          interval=0.35f,maxConcurrent=30, rest=1.5f },
+                    new WaveSpec { label = "Predators",   entries = new[]{(Bowwow,8),(Mole,8),(Bark,14)},              interval=0.3f, maxConcurrent=32, rest=1.5f },
+                    new WaveSpec { label = "BOSS",       entries = new[]{(MoleKing,1),(Mole,8),(Bolt,16),(Lightning,10)},interval=0.35f,maxConcurrent=30, rest=0f },
                 },
             },
 

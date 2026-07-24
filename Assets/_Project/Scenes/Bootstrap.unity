@@ -478,6 +478,7 @@ GameObject:
   m_Component:
   - component: {fileID: 957270290}
   - component: {fileID: 957270289}
+  - component: {fileID: 957270291}
   m_Layer: 0
   m_Name: BootstrapEntry
   m_TagString: Untagged
@@ -512,6 +513,48 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &957270291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 957270288}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3bfa1291dec2d34faa08df55ea5da11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.ZombieWarCheatPanel
+  weapons:
+  - {fileID: 11400000, guid: 2697d52d5ae793b43906bbc0af670fe3, type: 2}
+  - {fileID: 11400000, guid: 074c1f8b73f41c74cb1a6856a74e38c2, type: 2}
+  - {fileID: 11400000, guid: 7fdb532fb7307254f926bef1a584502f, type: 2}
+  - {fileID: 11400000, guid: 0f75e64b74b62674aa80313c6dbf10b1, type: 2}
+  - {fileID: 11400000, guid: 8531089df69f2034583e0eb200e5cb72, type: 2}
+  - {fileID: 11400000, guid: 76d646e5718d4e941817c4fdd6d3623d, type: 2}
+  - {fileID: 11400000, guid: 5e7f501296d04af4daef58ec1fd0f5cc, type: 2}
+  - {fileID: 11400000, guid: 96ada70baa88a2c479a948b97350391a, type: 2}
+  - {fileID: 11400000, guid: fa0fb0ad674e7e74b85aa72f9e75a468, type: 2}
+  - {fileID: 11400000, guid: 2f74f05b332b9c343a040be3badbf056, type: 2}
+  - {fileID: 11400000, guid: 882b6388cad2c2d4c8aa338c5e9295e7, type: 2}
+  - {fileID: 11400000, guid: c3e18ba78e9386c42b6ad33d757920e2, type: 2}
+  - {fileID: 11400000, guid: 3217fcb3678d04d4da7e5b82aec17939, type: 2}
+  - {fileID: 11400000, guid: 0f155a5206a66b842a4b541bc280478a, type: 2}
+  - {fileID: 11400000, guid: 373898d771e3eb149b095510bbfb5272, type: 2}
+  - {fileID: 11400000, guid: 3cdc668852a56dd44a5289537c954610, type: 2}
+  - {fileID: 11400000, guid: a80e7bb07ff9da347a00cda0e385b668, type: 2}
+  - {fileID: 11400000, guid: e0720726b9059614ba29fcfeead961f1, type: 2}
+  - {fileID: 11400000, guid: 4c2d4db8fb554a144b0506e9c22f02d2, type: 2}
+  - {fileID: 11400000, guid: c74ed9a44005fcf43a5efe2912c0b76e, type: 2}
+  - {fileID: 11400000, guid: 07bb574cf39559242813b4f9232a84cf, type: 2}
+  - {fileID: 11400000, guid: c8e62c92d0651b34ea6dc302992be51a, type: 2}
+  - {fileID: 11400000, guid: 877929d5ffbbf7747bd9f35b9c9ee83a, type: 2}
+  - {fileID: 11400000, guid: b791d3723268e8744a72925cab598382, type: 2}
+  - {fileID: 11400000, guid: d8fe1ae3e11a94e45b7bd1fe38d197ad, type: 2}
+  campaignCatalog: {fileID: 11400000, guid: f0510d2d44ec4f64cabf9bfbe08dd072, type: 2}
+  costumeCatalogs:
+  - {fileID: 11400000, guid: 0aff2677f6dd932468540aa5455ad961, type: 2}
+  - {fileID: 11400000, guid: afa195913535b064c883d69c26b80b45, type: 2}
 --- !u!1 &959663955
 GameObject:
   m_ObjectHideFlags: 0
@@ -829,7 +872,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Loading..."
+  m_text: Loading...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

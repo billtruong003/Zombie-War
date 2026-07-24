@@ -1,158 +1,314 @@
+// Interaction model inspired by Bian-Sh/UniJoystick:
+// https://github.com/Bian-Sh/UniJoystick (MIT).
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
 namespace BillGameCore
 {
     /// <summary>
-    /// Virtual joystick chuẩn mobile cho mọi game BillGameCore.
-    ///
-    /// Kỹ thuật (theo các implementation joystick tốt nhất cho uGUI):
-    /// - Floating origin: background NHẢY ĐẾN điểm chạm đầu tiên (trong vùng hit của component)
-    ///   rồi mới tính drag từ đó — hết hẳn cảm giác "lệch" khi chạm rìa vùng điều khiển.
-    /// - Pointer-id lock: chỉ ngón đặt xuống đầu tiên điều khiển; ngón thứ hai (bấm bomb,
-    ///   pause...) không cướp/teleport joystick.
-    /// - Radius theo rect thật (rect.width, không phải sizeDelta) — đúng cả khi anchor stretch
-    ///   hoặc canvas scale khác 1.
-    /// - Dead zone: dưới ngưỡng trả zero, trên ngưỡng remap 0..1 mượt (không nhảy bậc).
-    /// - Handle clamp trong local space của background qua ScreenPointToLocalPointInRectangle
-    ///   với đúng camera của event — đúng cho cả Overlay lẫn Screen Space Camera.
-    ///
-    /// Zero allocation mỗi frame; không Update — chỉ event-driven.
+    /// Pivot-independent mobile joystick for uGUI.
+    /// Supports fixed/floating bases, one-pointer ownership, axis filtering,
+    /// remapped dead zone, optional direction indicator, and event callbacks.
     /// </summary>
     [DisallowMultipleComponent]
     public class BillVirtualJoystick : MonoBehaviour, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
         public enum Mode
         {
-            /// <summary>Background đứng yên tại chỗ author.</summary>
             Fixed,
-            /// <summary>Background nhảy đến điểm chạm, thả tay trở về chỗ author.</summary>
             Floating,
         }
 
+        public enum Axis
+        {
+            Both,
+            Horizontal,
+            Vertical,
+        }
+
+        [Serializable]
+        public sealed class Vector2Event : UnityEvent<Vector2>
+        {
+        }
+
+        [Header("References")]
         [SerializeField] private RectTransform background;
         [SerializeField] private RectTransform handle;
+        [Tooltip("Optional arrow or marker. Its local +X direction is treated as forward.")]
+        [SerializeField] private RectTransform directionIndicator;
 
-        [Tooltip("Floating = joystick hiện tại điểm chạm (khuyên dùng cho survivor/top-down).")]
+        [Header("Behaviour")]
+        [Tooltip("Floating centers the background on the first touch and restores it on release.")]
         [SerializeField] private Mode mode = Mode.Floating;
+        [SerializeField] private Axis activeAxes = Axis.Both;
 
-        [Tooltip("Bán kính chết: |input| dưới ngưỡng này (0..1) trả zero — chống trôi do rung tay.")]
+        [Tooltip("Normalized input below this threshold is ignored, then the remaining range is remapped to 0..1.")]
         [Range(0f, 0.5f)]
         [SerializeField] private float deadZone = 0.08f;
 
-        [Tooltip("Handle đi tối đa bao nhiêu phần bán kính background (1 = chạm mép).")]
-        [Range(0.5f, 1f)]
+        [Tooltip("Fraction of the available visual travel used by the handle.")]
+        [Range(0.1f, 1f)]
         [SerializeField] private float handleRange = 1f;
 
-        /// <summary>Hướng input đã qua dead-zone, độ dài 0..1.</summary>
-        public Vector2 Direction { get; private set; }
+        [Tooltip("Keeps the whole handle inside the circular background instead of only clamping its center.")]
+        [SerializeField] private bool keepHandleInsideBackground = true;
 
-        /// <summary>Đang có ngón tay giữ joystick không.</summary>
+        [Header("Events")]
+        [SerializeField] private Vector2Event onValueChanged = new Vector2Event();
+        [SerializeField] private Vector2Event onPointerDown = new Vector2Event();
+        [SerializeField] private Vector2Event onPointerUp = new Vector2Event();
+
+        public Vector2 Direction { get; private set; }
+        public float Horizontal => Direction.x;
+        public float Vertical => Direction.y;
         public bool IsHeld => _activePointerId != Unclaimed;
 
+        public Mode OperatingMode
+        {
+            get => mode;
+            set
+            {
+                if (mode == value) return;
+                ReleaseJoystick();
+                mode = value;
+            }
+        }
+
+        public Axis ActiveAxes
+        {
+            get => activeAxes;
+            set
+            {
+                if (activeAxes == value) return;
+                activeAxes = value;
+                ApplyDirection(FilterAxes(Direction));
+            }
+        }
+
+        public Vector2Event OnValueChanged => onValueChanged;
+        public Vector2Event OnPointerDownEvent => onPointerDown;
+        public Vector2Event OnPointerUpEvent => onPointerUp;
+
         private const int Unclaimed = int.MinValue;
+        private const float DirectionEpsilon = 0.000001f;
 
         private int _activePointerId = Unclaimed;
-        private Vector2 _restPosition;
-        private bool _restCaptured;
+        private Vector2 _backgroundRestPosition;
+        private Vector2 _handleRestPosition;
+        private bool _restPoseCaptured;
 
         protected virtual void Awake()
         {
-            if (background == null || handle == null)
+            if (!HasValidReferences())
             {
-                Debug.LogError("[BillVirtualJoystick] Thiếu background/handle — joystick tắt.", this);
+                Debug.LogError("[BillVirtualJoystick] Background and handle references are required.", this);
                 enabled = false;
                 return;
             }
-            CaptureRestPosition();
+
+            CaptureRestPose();
+            SetIndicatorVisible(false);
         }
 
-        private void CaptureRestPosition()
+        protected virtual void OnDisable()
         {
-            if (_restCaptured) return;
-            _restPosition = background.anchoredPosition;
-            _restCaptured = true;
+            ReleaseJoystick();
+        }
+
+        private void Reset()
+        {
+            background = transform as RectTransform;
+            if (transform.childCount > 0)
+                handle = transform.GetChild(0) as RectTransform;
+        }
+
+        private void OnValidate()
+        {
+            deadZone = Mathf.Clamp(deadZone, 0f, 0.5f);
+            handleRange = Mathf.Clamp(handleRange, 0.1f, 1f);
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (_activePointerId != Unclaimed) return;   // ngón khác đang giữ
+            if (!CanClaim(eventData) || !HasValidReferences()) return;
+
             _activePointerId = eventData.pointerId;
-            CaptureRestPosition();
+            CaptureRestPose();
+            background.ForceUpdateRectTransforms();
 
             if (mode == Mode.Floating)
-                MoveBackgroundTo(eventData);
+                MoveBackgroundCenterTo(eventData);
 
-            // Fixed: chạm là bắt đầu kéo từ điểm chạm (không teleport handle như bản cũ);
-            // Floating: background vừa nhảy đến ngón tay nên input mở đầu = zero.
             UpdateInput(eventData);
+            onPointerDown?.Invoke(eventData.position);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (eventData.pointerId != _activePointerId) return;
+            if (eventData == null || eventData.pointerId != _activePointerId) return;
             UpdateInput(eventData);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (eventData.pointerId != _activePointerId) return;
+            if (eventData == null || eventData.pointerId != _activePointerId) return;
+
+            Vector2 pointerPosition = eventData.position;
+            ReleaseJoystick();
+            onPointerUp?.Invoke(pointerPosition);
+        }
+
+        public void ResetInput()
+        {
             ReleaseJoystick();
         }
 
-        protected virtual void OnDisable() => ReleaseJoystick();
+        private bool CanClaim(PointerEventData eventData)
+        {
+            return eventData != null
+                && eventData.button == PointerEventData.InputButton.Left
+                && _activePointerId == Unclaimed;
+        }
+
+        private bool HasValidReferences()
+        {
+            return background != null && handle != null;
+        }
+
+        private void CaptureRestPose()
+        {
+            if (_restPoseCaptured || !HasValidReferences()) return;
+
+            _backgroundRestPosition = background.anchoredPosition;
+            _handleRestPosition = handle.anchoredPosition;
+            _restPoseCaptured = true;
+        }
 
         private void ReleaseJoystick()
         {
             _activePointerId = Unclaimed;
-            Direction = Vector2.zero;
-            handle.anchoredPosition = Vector2.zero;
-            if (mode == Mode.Floating && _restCaptured)
-                background.anchoredPosition = _restPosition;
+            ApplyDirection(Vector2.zero);
+
+            if (handle != null && _restPoseCaptured)
+                handle.anchoredPosition = _handleRestPosition;
+
+            if (background != null && mode == Mode.Floating && _restPoseCaptured)
+                background.anchoredPosition = _backgroundRestPosition;
+
+            SetIndicatorVisible(false);
         }
 
-        private void MoveBackgroundTo(PointerEventData eventData)
+        private void MoveBackgroundCenterTo(PointerEventData eventData)
         {
-            var parent = background.parent as RectTransform;
-            if (parent == null) return;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parent, eventData.position, eventData.pressEventCamera, out var local))
-            {
-                // anchoredPosition tính từ anchor; local tính từ pivot của parent — quy đổi qua
-                // hiệu giữa vị trí hiện tại và local point hiện tại của background.
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parent, ScreenPointOf(background, eventData.pressEventCamera), eventData.pressEventCamera, out var currentLocal);
-                background.anchoredPosition += local - currentLocal;
-            }
-        }
+            if (!(background.parent is RectTransform parent)) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    parent, eventData.position, eventData.pressEventCamera, out Vector2 pointerInParent))
+                return;
 
-        private static Vector2 ScreenPointOf(RectTransform rt, Camera cam)
-            => RectTransformUtility.WorldToScreenPoint(cam, rt.position);
+            Vector3 centerWorld = background.TransformPoint(background.rect.center);
+            Vector2 centerInParent = parent.InverseTransformPoint(centerWorld);
+            background.anchoredPosition += pointerInParent - centerInParent;
+        }
 
         private void UpdateInput(PointerEventData eventData)
         {
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    background, eventData.position, eventData.pressEventCamera, out var local))
+                    background, eventData.position, eventData.pressEventCamera, out Vector2 pointerLocal))
                 return;
 
-            float radius = background.rect.width * 0.5f;
-            if (radius <= 0f) return;
-
-            Vector2 raw = local / radius;
-            float magnitude = raw.magnitude;
-
-            if (magnitude < deadZone)
+            float inputRadius = GetInputRadius();
+            if (inputRadius <= Mathf.Epsilon)
             {
-                Direction = Vector2.zero;
-                handle.anchoredPosition = Vector2.zero;
+                ApplyDirection(Vector2.zero);
                 return;
             }
 
-            // Remap [deadZone..1] → [0..1] để input không nhảy bậc khi vừa qua ngưỡng.
-            Vector2 unit = raw / magnitude;
-            float mapped = Mathf.Min(1f, (magnitude - deadZone) / (1f - deadZone));
-            Direction = unit * mapped;
-            handle.anchoredPosition = unit * (mapped * radius * handleRange);
+            Vector2 offset = FilterAxes(pointerLocal - background.rect.center);
+            float distance = offset.magnitude;
+            Vector2 unit = distance > Mathf.Epsilon ? offset / distance : Vector2.zero;
+            float normalizedDistance = Mathf.Clamp01(distance / inputRadius);
+            float magnitude = normalizedDistance <= deadZone
+                ? 0f
+                : (normalizedDistance - deadZone) / (1f - deadZone);
+
+            Vector2 nextDirection = unit * magnitude;
+            ApplyDirection(nextDirection);
+            UpdateHandle(nextDirection, inputRadius);
+            UpdateIndicator(nextDirection);
+        }
+
+        private Vector2 FilterAxes(Vector2 value)
+        {
+            switch (activeAxes)
+            {
+                case Axis.Horizontal:
+                    value.y = 0f;
+                    break;
+                case Axis.Vertical:
+                    value.x = 0f;
+                    break;
+            }
+
+            return value;
+        }
+
+        private float GetInputRadius()
+        {
+            Rect rect = background.rect;
+            return Mathf.Min(Mathf.Abs(rect.width), Mathf.Abs(rect.height)) * 0.5f;
+        }
+
+        private float GetHandleTravel(float inputRadius)
+        {
+            float travel = inputRadius;
+            if (keepHandleInsideBackground)
+            {
+                Vector2 scaledHandleSize = Vector2.Scale(handle.rect.size, Abs(handle.localScale));
+                float handleRadius = Mathf.Max(scaledHandleSize.x, scaledHandleSize.y) * 0.5f;
+                travel = Mathf.Max(0f, inputRadius - handleRadius);
+            }
+
+            return travel * handleRange;
+        }
+
+        private void UpdateHandle(Vector2 direction, float inputRadius)
+        {
+            handle.anchoredPosition = _handleRestPosition + direction * GetHandleTravel(inputRadius);
+        }
+
+        private void UpdateIndicator(Vector2 direction)
+        {
+            if (directionIndicator == null) return;
+
+            bool visible = direction.sqrMagnitude > DirectionEpsilon;
+            SetIndicatorVisible(visible);
+            if (visible)
+            {
+                float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+                directionIndicator.localRotation = Quaternion.Euler(0f, 0f, angle);
+            }
+        }
+
+        private void SetIndicatorVisible(bool visible)
+        {
+            if (directionIndicator != null && directionIndicator.gameObject.activeSelf != visible)
+                directionIndicator.gameObject.SetActive(visible);
+        }
+
+        private void ApplyDirection(Vector2 value)
+        {
+            value = Vector2.ClampMagnitude(value, 1f);
+            if ((Direction - value).sqrMagnitude <= DirectionEpsilon) return;
+
+            Direction = value;
+            onValueChanged?.Invoke(Direction);
+        }
+
+        private static Vector2 Abs(Vector3 value)
+        {
+            return new Vector2(Mathf.Abs(value.x), Mathf.Abs(value.y));
         }
     }
 }

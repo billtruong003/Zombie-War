@@ -171,7 +171,14 @@ half3 STW_ToonLighting(STWToonSurface s, STWToonParams p, float4 shadowCoord, ha
 #endif
 
     // --- GI / Ambient (SH) ---
-    half3 gi = SampleSH(s.normalWS) * s.albedo * p.giStrength * s.occlusion;
+    half occlusion = s.occlusion;
+#if defined(_SCREEN_SPACE_OCCLUSION)
+    // ZombieWar patch (2026-07-24, same single-hunk policy as the URPCompat rig patch):
+    // URP SSAO chỉ nhân vào ambient/GI — KHÔNG đụng vào direct toon band/specular, giữ
+    // nguyên mảng sáng cel. Renderer không bật SSAO thì keyword tắt, nhánh này biến mất.
+    occlusion *= SampleAmbientOcclusion(s.screenUV);
+#endif
+    half3 gi = SampleSH(s.normalWS) * s.albedo * p.giStrength * occlusion;
     result += gi;
 
     // --- Rim / Fresnel ---

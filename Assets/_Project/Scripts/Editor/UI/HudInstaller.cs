@@ -152,7 +152,7 @@ namespace ZombieWar.Editor.UI
             var revive = BuildReviveModal(overlays, out var reviveCount, out var reviveAd, out var reviveSkip);
             var levelUp = BuildLevelUpOverlay(overlays, out var perkBtns);
             var gameOver = BuildGameOver(overlays, out var replayBtn, out var homeBtn);
-            var victory = BuildVictory(overlays);
+            var victory = BuildVictory(overlays, out var victoryHomeBtn);
             var ftue = BuildFtue(overlays, joyRt, out var ftueSkip);
 
             var resumeCount = K.Text(overlays, "ResumeCount", "3", 200, UITheme.Gold, FontStyles.Bold);
@@ -203,6 +203,8 @@ namespace ZombieWar.Editor.UI
             K.Wire(soRun, "gameOverRoot", gameOver);
             K.Wire(soRun, "replayButton", replayBtn);
             K.Wire(soRun, "homeButton", homeBtn);
+            K.Wire(soRun, "victoryRoot", victory);
+            K.Wire(soRun, "victoryHomeButton", victoryHomeBtn);
             K.Wire(soRun, "ftueRoot", ftue);
             K.Wire(soRun, "ftueSkipButton", ftueSkip);
             var pPerks = soRun.FindProperty("perkButtons");
@@ -470,14 +472,18 @@ namespace ZombieWar.Editor.UI
             return root.gameObject;
         }
 
-        static GameObject BuildVictory(RectTransform parent)
+        static GameObject BuildVictory(RectTransform parent, out Button home)
         {
             var root = K.Rect("VictoryPanel", parent);
             K.Full(root);
-            var dim = K.Image(root, "Dim", null, new Color(0f, 0.25f, 0.08f, 0.65f));
+            var dim = K.Image(root, "Dim", null, new Color(0.015f, 0.08f, 0.035f, 0.94f));
             K.Full(dim.rectTransform);
             var t = K.Text(root, "Label", "SURVIVED!", 96, UITheme.Green, FontStyles.Bold);
-            K.Place(t.rectTransform, A.C, new Vector2(0, 120), new Vector2(800, 140));
+            K.Place(t.rectTransform, A.C, new Vector2(0, 180), new Vector2(800, 140));
+            var sub = K.Text(root, "Subtitle", "Area secured", UITheme.FontBody, UITheme.TextDim, FontStyles.Normal);
+            K.Place(sub.rectTransform, A.C, new Vector2(0, 80), new Vector2(700, 64));
+            home = K.BtnPrimary(root, "BackToMapBtn", "BACK TO MAP", new Vector2(760, 132),
+                A.C, new Vector2(0, -100));
             root.gameObject.SetActive(false);
             return root.gameObject;
         }

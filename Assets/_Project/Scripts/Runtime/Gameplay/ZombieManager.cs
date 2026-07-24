@@ -91,16 +91,23 @@ namespace ZombieWar
             }
         }
 
+        // Reverse iteration: RecoverIfOffMesh may pool-return a stranded zombie, which unregisters
+        // it (OnDisable) and mutates the list mid-walk.
         private void ReevaluateTiers(Vector3 playerPosition)
         {
-            for (int i = 0; i < _zombies.Count; i++)
+            for (int i = _zombies.Count - 1; i >= 0; i--)
             {
                 var zombie = _zombies[i];
                 float distance = Vector3.Distance(zombie.transform.position, playerPosition);
 
                 if (distance <= fullTierRadius) zombie.SetTier(ZombieTier.Full);
-                else if (distance <= cheapTierRadius) zombie.SetTier(ZombieTier.Cheap);
+                // A blocked Cheap zombie that asked for real pathfinding keeps Full tier inside the
+                // cheap radius, so it can walk around the obstacle instead of grinding against it.
+                else if (distance <= cheapTierRadius)
+                    zombie.SetTier(zombie.NeedsFullTier ? ZombieTier.Full : ZombieTier.Cheap);
                 else zombie.SetTier(ZombieTier.Inactive);
+
+                zombie.RecoverIfOffMesh();
             }
         }
     }

@@ -182,7 +182,7 @@ namespace ZombieWar.Editor
             var spawnPositions = BuildSpawnRing(scene, roots.FirstOrDefault(r => r.name == "SpawnPoints"), occupancy);
 
             int tiles = BuildGround(env.transform, rng);
-            int cliffs = BuildBoundary(env.transform);
+            int cliffs = BuildBoundary(env.transform, occupancy);
             // Gameplay objects claim their ground FIRST; decorative rocks fill in around them.
             // The other way round, a dense scatter leaves no 6 m clearing anywhere and every
             // barrel cluster silently fails to place.
@@ -214,7 +214,7 @@ namespace ZombieWar.Editor
 
             var navRoot = scene.GetRootGameObjects().FirstOrDefault(r => r.name == "NavMesh");
             var surface = navRoot != null ? navRoot.GetComponent<NavMeshSurface>() : null;
-            if (surface != null) surface.BuildNavMesh();
+            if (surface != null) MapNavigationAuthoring.BakeSandOnly(surface);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -242,20 +242,20 @@ namespace ZombieWar.Editor
 
             public void Reserve(Vector3 pos, float radius) => _entries.Add((pos, radius));
 
-            /// <summary>True when a new object with footprint <paramref name="radius"/> fits at
-            /// <paramref name="pos"/>. Each pair must clear the LARGER of the two spacings.</summary>
+            /// <summary>True when a new footprint fits without intersecting any reserved disc.</summary>
             public bool IsFree(Vector3 pos, float radius)
             {
                 for (int i = 0; i < _entries.Count; i++)
                 {
-                    float required = Mathf.Max(_entries[i].radius, radius);
+                    float required = _entries[i].radius + radius;
                     if ((_entries[i].pos - pos).sqrMagnitude < required * required) return false;
                 }
                 return true;
             }
         }
 
-        static GameObject Place(Transform parent, string prefabPath, Vector3 pos, float yaw, float scale = 1f)
+        static GameObject Place(Transform parent, string prefabPath, Vector3 pos, float yaw,
+                                float scale = 1f, bool obstacle = true)
         {
             var src = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (src == null) return null;
@@ -263,7 +263,27 @@ namespace ZombieWar.Editor
             go.transform.position = pos;
             go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             go.transform.localScale = Vector3.one * scale;
+            if (obstacle) MapNavigationAuthoring.EnsureConvexObstacleColliders(go);
             return go;
+        }
+
+        static bool TryPlaceOccupied(Transform parent, string prefabPath, Vector3 pos, float yaw,
+                                     float scale, float edgePadding, Occupancy occupancy)
+        {
+            var go = Place(parent, prefabPath, pos, yaw, scale);
+            if (go == null) return false;
+
+            MapNavigationAuthoring.GetHorizontalFootprint(go, out Vector3 footprintCenter,
+                                                         out float footprintRadius);
+            float radius = footprintRadius + Mathf.Max(0f, edgePadding) * 0.5f;
+            if (!occupancy.IsFree(footprintCenter, radius))
+            {
+                Object.DestroyImmediate(go);
+                return false;
+            }
+
+            occupancy.Reserve(footprintCenter, radius);
+            return true;
         }
 
         int BuildGround(Transform parent, System.Random rng)
@@ -276,7 +296,9 @@ namespace ZombieWar.Editor
             for (int x = -half; x <= half; x++)
             for (int z = -half; z <= half; z++)
                 if (Place(holder, Pack + "Ground_01.prefab",
-                          new Vector3(x * TileSize, 0f, z * TileSize), rng.Next(0, 4) * 90f) != null) count++;
+                          new Vector3(x * TileSize, 0f, z * TileSize),
+                          rng.Next(0, 4) * 90f, 1f, false) != null) count++;
+            MapNavigationAuthoring.AssignWalkableGround(holder.gameObject);
             return count;
         }
 
@@ -285,7 +307,7 @@ namespace ZombieWar.Editor
         /// out so their INNER faces line up with the wall inner faces instead of stepping into the
         /// arena. Corner yaw is chosen so the L's mass points outward at each corner.
         /// </summary>
-        int BuildBoundary(Transform parent)
+        int BuildBoundary(Transform parent, Occupancy occupancy)
         {
             var holder = new GameObject("Boundary").transform;
             holder.SetParent(parent, false);
@@ -319,6 +341,7 @@ namespace ZombieWar.Editor
                     var go = Place(holder, Pack + "Cliff_01.prefab", along * t + outward * wallEdge, 0f);
                     if (go == null) continue;
                     go.transform.rotation = rot;
+                    ReserveObstacle(go, occupancy);
                     count++;
                 }
             }
@@ -335,9 +358,21 @@ namespace ZombieWar.Editor
                 ( cornerEdge, -cornerEdge,   0f),   // needs mass -X,+Z
             };
             foreach (var (x, z, yaw) in corners)
-                if (Place(holder, Pack + "CliffCorner_01.prefab", new Vector3(x, 0f, z), yaw) != null) count++;
+            {
+                var go = Place(holder, Pack + "CliffCorner_01.prefab",
+                               new Vector3(x, 0f, z), yaw);
+                if (go == null) continue;
+                ReserveObstacle(go, occupancy);
+                count++;
+            }
 
             return count;
+        }
+
+        static void ReserveObstacle(GameObject go, Occupancy occupancy)
+        {
+            MapNavigationAuthoring.GetHorizontalFootprint(go, out Vector3 center, out float radius);
+            occupancy.Reserve(center, radius);
         }
 
         int ScatterProps(Transform parent, System.Random rng, Occupancy occupancy)
@@ -345,12 +380,12 @@ namespace ZombieWar.Editor
             var holder = new GameObject("Props").transform;
             holder.SetParent(parent, false);
 
-            var table = new (string prefab, float weight, float minGap)[]
+            var table = new (string prefab, float weight, float edgePadding)[]
             {
-                ("Rock_04",   0.22f, 1.2f), ("Rock_05",   0.20f, 1.0f),
-                ("Rock_01",   0.14f, 2.0f), ("Rock_02",   0.10f, 2.4f),
-                ("Rock_03",   0.08f, 2.6f), ("Cactus_03", 0.12f, 2.0f),
-                ("Cactus_01", 0.08f, 2.4f), ("Tree_01",   0.06f, 3.0f),
+                ("Rock_04",   0.22f, 0.15f), ("Rock_05",   0.20f, 0.15f),
+                ("Rock_01",   0.14f, 0.20f), ("Rock_02",   0.10f, 0.25f),
+                ("Rock_03",   0.08f, 0.25f), ("Cactus_03", 0.12f, 0.20f),
+                ("Cactus_01", 0.08f, 0.25f), ("Tree_01",   0.06f, 0.35f),
             };
             float totalWeight = table.Sum(t => t.weight);
 
@@ -366,12 +401,10 @@ namespace ZombieWar.Editor
                 var entry = table[0];
                 foreach (var t in table) { roll -= t.weight; if (roll <= 0) { entry = t; break; } }
 
-                if (!occupancy.IsFree(pos, entry.minGap)) continue;
-
                 float scale = 0.85f + (float)rng.NextDouble() * 0.5f;
-                if (Place(holder, Pack + entry.prefab + ".prefab", pos,
-                          (float)rng.NextDouble() * 360f, scale) == null) continue;
-                occupancy.Reserve(pos, entry.minGap);
+                if (!TryPlaceOccupied(holder, Pack + entry.prefab + ".prefab", pos,
+                                      (float)rng.NextDouble() * 360f, scale,
+                                      entry.edgePadding, occupancy)) continue;
                 count++;
             }
             return count;
@@ -387,8 +420,8 @@ namespace ZombieWar.Editor
 
             // Footprints. Crates keep a wide berth so loot stays reachable; a barrel inside its own
             // cluster only needs body clearance - the cluster look IS barrels standing close.
-            const float CrateGap = 3f;
-            const float BarrelGap = 1.1f;
+            const float CrateGap = 0.6f;
+            const float BarrelGap = 0.1f;
             const float ClusterGap = 6f;
 
             float half = arenaSize * 0.5f - 4f;
@@ -397,10 +430,9 @@ namespace ZombieWar.Editor
             for (int a = 0; a < crateCount * 14 && count < crateCount; a++)
             {
                 var pos = RandomPoint(rng, half);
-                if (!occupancy.IsFree(pos, CrateGap)) continue;
-                if (Place(holder, PropDir + crates[rng.Next(crates.Length)] + ".prefab", pos,
-                          (float)rng.NextDouble() * 360f) == null) continue;
-                occupancy.Reserve(pos, CrateGap);
+                if (!TryPlaceOccupied(holder, PropDir + crates[rng.Next(crates.Length)] + ".prefab",
+                                      pos, (float)rng.NextDouble() * 360f, 1f,
+                                      CrateGap, occupancy)) continue;
                 count++;
             }
 
@@ -427,10 +459,10 @@ namespace ZombieWar.Editor
                     float angle = (float)(rng.NextDouble() * Mathf.PI * 2);
                     float r = 0.9f + (float)rng.NextDouble() * 0.8f;
                     var pos = centre + new Vector3(Mathf.Cos(angle) * r, 0f, Mathf.Sin(angle) * r);
-                    if (!occupancy.IsFree(pos, BarrelGap)) continue;
-                    if (Place(holder, PropDir + barrels[rng.Next(barrels.Length)] + ".prefab", pos,
-                              (float)rng.NextDouble() * 360f) == null) continue;
-                    occupancy.Reserve(pos, BarrelGap);
+                    if (!TryPlaceOccupied(holder,
+                                          PropDir + barrels[rng.Next(barrels.Length)] + ".prefab",
+                                          pos, (float)rng.NextDouble() * 360f, 1f,
+                                          BarrelGap, occupancy)) continue;
                     placedInCluster++;
                     count++;
                 }
