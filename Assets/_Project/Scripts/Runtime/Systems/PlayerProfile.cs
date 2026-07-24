@@ -402,7 +402,7 @@ namespace ZombieWar
 
         public static void SetBalanceForDev(CurrencyKind kind, long value)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             SetBalance(kind, Math.Max(0, value));
             SaveNow();
             WalletChanged?.Invoke();
@@ -705,7 +705,7 @@ namespace ZombieWar
 
         public static int UnlockAllWeaponsForDev(IReadOnlyList<WeaponData> weapons)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             if (weapons == null) return 0;
             int added = 0;
             for (int i = 0; i < weapons.Count; i++)
@@ -1308,7 +1308,7 @@ namespace ZombieWar
         /// Idempotent — chi them guid con thieu. Tra ve so entry moi duoc them.
         public static int UnlockAllCostumes(ModularCostumeCatalog catalog)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             if (catalog == null) return 0;
             var owned = Data.ownedCostumeGuids;
             var backupCount = owned.Count;
@@ -1356,7 +1356,7 @@ namespace ZombieWar
         /// loadout va moi field khac GIU NGUYEN. 1 save, 1 event.
         public static void ResetCostumeProgressForDev(ModularCostumeCatalog catalog)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             if (catalog == null)
             {
                 Debug.LogError("[PlayerProfile] Costume catalog missing.");
@@ -1480,7 +1480,7 @@ namespace ZombieWar
         /// se migrate lai tu chung (dung de test migration lap lai).
         public static void ResetForDev()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             var storage = Storage;
             storage.Delete(SaveKey);
             storage.Flush();

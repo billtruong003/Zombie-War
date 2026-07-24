@@ -15,7 +15,7 @@ namespace ZombieWar
         [SerializeField] private CampaignCatalog campaignCatalog;
         [SerializeField] private ModularCostumeCatalog[] costumeCatalogs = Array.Empty<ModularCostumeCatalog>();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
         private const int OverlaySortOrder = 10000;
         private static readonly Color PanelColor = new(0.035f, 0.045f, 0.06f, 0.98f);
         private static readonly Color ButtonColor = new(0.12f, 0.15f, 0.20f, 1f);
