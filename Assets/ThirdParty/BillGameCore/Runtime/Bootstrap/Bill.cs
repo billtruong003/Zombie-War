@@ -21,7 +21,7 @@ namespace BillGameCore
         public static INetworkService Net => ServiceLocator.Get<INetworkService>();
         public static GameStateMachine State => ServiceLocator.Get<GameStateMachine>();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
         public static CheatConsole Cheat => ServiceLocator.Get<CheatConsole>();
         public static DebugOverlay Debug => ServiceLocator.Get<DebugOverlay>();
         public static AnalyticsTracker Analytics => ServiceLocator.Get<AnalyticsTracker>();
@@ -164,7 +164,7 @@ namespace BillGameCore
                 ServiceLocator.Register<INetworkService, NetworkService>(new NetworkService());
             });
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             Step("Dev Tools", () =>
             {
                 if (_cfg.includeDebugOverlay) ServiceLocator.Register(new DebugOverlay());
