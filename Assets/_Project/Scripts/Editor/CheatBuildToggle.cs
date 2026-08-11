@@ -22,6 +22,7 @@ namespace ZombieWar.Editor
             NamedBuildTarget.Android,
             NamedBuildTarget.Standalone,
             NamedBuildTarget.iOS,
+            NamedBuildTarget.WebGL,
         };
 
         [MenuItem(MenuPath)]
