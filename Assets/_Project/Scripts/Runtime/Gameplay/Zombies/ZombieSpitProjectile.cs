@@ -14,12 +14,20 @@ namespace ZombieWar
         private Vector3 _velocity;
         private float _damage;
         private float _life;
+        private string _impactSfxKey;
 
-        public void Launch(Vector3 direction, float speed, float damage)
+        /// <param name="impactSfxKey">
+        /// The shooter's own impact cue, carried on the projectile. A ranged enemy's shot is the one
+        /// hit the player never sees coming, so it has to be audible - and the key travels with the
+        /// projectile rather than being hardcoded here so a bone caster and a plant spitter do not
+        /// land with the same sound.
+        /// </param>
+        public void Launch(Vector3 direction, float speed, float damage, string impactSfxKey = null)
         {
             _velocity = direction * speed;
             _damage = damage;
             _life = lifeTime;
+            _impactSfxKey = impactSfxKey;
         }
 
         private void Update()
@@ -38,6 +46,8 @@ namespace ZombieWar
 
             if (Vector3.Distance(transform.position, player.transform.position) <= hitRadius)
             {
+                if (!string.IsNullOrEmpty(_impactSfxKey))
+                    Bill.Audio?.PlayCue(_impactSfxKey, transform.position, SfxPriority.Medium, 0.66f);
                 player.GetComponentInParent<IDamageable>()?.TakeDamage(_damage);
                 ReturnToPool();
             }

@@ -117,6 +117,18 @@ namespace BillGameCore
             ReleaseJoystick();
         }
 
+        // Focus loss / app pause can swallow the matching pointer-up on mobile; a still-held
+        // joystick would keep steering with a stale vector when the app resumes.
+        protected virtual void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus) ReleaseJoystick();
+        }
+
+        protected virtual void OnApplicationPause(bool paused)
+        {
+            if (paused) ReleaseJoystick();
+        }
+
         private void Reset()
         {
             background = transform as RectTransform;

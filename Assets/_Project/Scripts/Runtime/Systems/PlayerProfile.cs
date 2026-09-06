@@ -753,14 +753,30 @@ namespace ZombieWar
 
             if (string.IsNullOrEmpty(d.pistol))
             {
-                // Starter = khau 1-tay co CatalogOrder NHO NHAT — khong phu thuoc thu tu list
-                // cua caller (Player roster va Loadout card array co the khac thu tu serialize).
+                // M7.0: the starter is an EXPLICIT catalog flag, not "lowest CatalogOrder".
+                // catalogOrder is presentation-only and must be safe to reorder; deriving the
+                // starter from it meant re-ordering the shop list could silently hand new players
+                // a different first weapon. The catalog entry says which weapon it is.
                 WeaponData starter = null;
-                for (int i = 0; i < arsenal.Count; i++)
+                var catalogStarter = WeaponCatalog.Active?.Starter;
+                if (catalogStarter != null && catalogStarter.data != null && !catalogStarter.data.twoHanded)
                 {
-                    var w = arsenal[i];
-                    if (w == null || w.twoHanded || string.IsNullOrEmpty(w.WeaponId)) continue;
-                    if (starter == null || w.CatalogOrder < starter.CatalogOrder) starter = w;
+                    // Only accept it if it is actually in this arsenal, so a stale catalog can never
+                    // seed a weapon the player cannot equip.
+                    for (int i = 0; i < arsenal.Count; i++)
+                        if (arsenal[i] != null && arsenal[i].WeaponId == catalogStarter.weaponId) { starter = arsenal[i]; break; }
+                }
+
+                // Fallback: the pre-M7.0 rule, kept so a missing/!unbuilt catalog degrades to the
+                // previous behaviour rather than leaving a new profile with no weapon.
+                if (starter == null)
+                {
+                    for (int i = 0; i < arsenal.Count; i++)
+                    {
+                        var w = arsenal[i];
+                        if (w == null || w.twoHanded || string.IsNullOrEmpty(w.WeaponId)) continue;
+                        if (starter == null || w.CatalogOrder < starter.CatalogOrder) starter = w;
+                    }
                 }
                 if (starter != null)
                 {

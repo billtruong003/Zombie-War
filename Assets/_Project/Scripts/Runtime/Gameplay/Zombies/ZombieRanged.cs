@@ -22,7 +22,9 @@ namespace ZombieWar
 
             var projectile = Bill.Pool?.Spawn<ZombieSpitProjectile>(
                 projectilePoolKey, origin, Quaternion.LookRotation(direction));
-            projectile?.Launch(direction, projectileSpeed, Data.damage);
+            // The cast itself is already cued by the base FSM (FaceAndAttack -> PlayAttackAudio);
+            // this hands the projectile the shooter's impact cue so the landing is audible too.
+            projectile?.Launch(direction, projectileSpeed, Data.damage, Data.impactSfxKey);
         }
     }
 }

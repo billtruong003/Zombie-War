@@ -81,9 +81,36 @@ namespace BillGameCore
         /// <summary>Play with an extra pitch multiplier on top of the AudioLibrary entry's own pitch+variation
         /// (e.g. scale SFX pitch by throw/hit power for juice).</summary>
         void PlayPitched(string key, float pitchMultiplier, float volume = 1f);
+        /// <summary>Play at an explicit priority and get back the real duration of the variant that
+        /// was chosen, so a caller can time a follow-up cue against it instead of guessing.</summary>
+        float PlayCue(string key, SfxPriority priority, float volume = 1f);
+        float PlayCue(string key, UnityEngine.Vector3 position, SfxPriority priority, float volume = 1f);
         void PlayMusic(string key);
         void PlayMusic(string key, float fadeDuration);
         void StopMusic(float fadeDuration = 0f);
+        /// <summary>Key currently on the music bus, or "" when stopped.</summary>
+        string CurrentMusicKey { get; }
+        /// <summary>Attenuate a channel until the returned token is released. Overlapping ducks are
+        /// resolved by depth, so releasing one never restores over another that is still held.</summary>
+        int Duck(AudioChannel channel, float amount, float attack);
+        /// <summary>Duck a cue group. Attenuates voices ALREADY playing, not just future ones.</summary>
+        int DuckGroup(CueGroup group, float amount, float attack);
+        void Unduck(int token, float release);
+        void ConfigureVoices(VoicePolicy policy);
+        /// <summary>Play a cue that can be stopped later. Reserve for cues that genuinely need
+        /// cancelling - the handle bookkeeping is not free.</summary>
+        AudioCueHandle PlayManagedCue(string key, SfxPriority priority, CueGroup group, float volume = 1f);
+        /// <summary>Restart a cue on the SAME dedicated voice at exact caller cadence. Built for
+        /// automatic-weapon fire, where per-shot one-shots either stack voices or get dropped by the
+        /// per-key policy - both of which read as fake gaps. Pass the previous handle back in.</summary>
+        AudioCueHandle RetriggerCue(string key, AudioCueHandle handle, SfxPriority priority, float volume = 1f);
+        /// <summary>Play a cue that must never be silently dropped, bounded to its own small
+        /// same-key voice budget. For player weapon shots: every visible shot gets a transient,
+        /// and once the budget is full the key's oldest (nearly finished) voice is recycled rather
+        /// than the new shot being discarded by the global per-key limit.</summary>
+        AudioCueHandle PlayGuaranteedTransient(string key, SfxPriority priority, int maxSameKeyVoices, float volume = 1f);
+        void StopCue(AudioCueHandle handle, float fadeOut);
+        bool IsCueAlive(AudioCueHandle handle);
         void SetVolume(AudioChannel channel, float volume);
         float GetVolume(AudioChannel channel);
         void Mute(AudioChannel channel);

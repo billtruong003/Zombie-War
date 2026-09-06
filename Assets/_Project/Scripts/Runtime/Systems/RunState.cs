@@ -44,12 +44,23 @@ namespace ZombieWar
 
         public static event Action Changed;
 
+        /// <summary>Raised when XP crosses one or more level thresholds, with the number of levels
+        /// gained in that grant. This is the level-up UI's trigger - without a listener the level-up
+        /// is silent, which the M5 audit flagged as scaffolding (S6).</summary>
+        public static event Action<int> LevelsGained;
+
         private readonly List<RunPerk> _perks = new List<RunPerk>();
         private bool _paidOut;
 
         public int Kills { get; private set; }
         public int WaveReached { get; private set; }
         public int Level { get; private set; } = 1;
+
+        /// M7.2 — the deterministic seed the level-up offer builder draws from. Set once per run so
+        /// the same run reproduces the same offers; additive, and nothing existing reads it.
+        public int Seed { get; private set; } = 20260815;
+
+        public void SetSeed(int seed) => Seed = seed;
         public int Xp { get; private set; }
         public long Coin { get; private set; }
         public long Gold { get; private set; }
@@ -67,6 +78,14 @@ namespace ZombieWar
 
         public static RunState Begin(string levelId)
         {
+            // M7.2c — clear every run-scoped static BEFORE the new run exists.
+            //
+            // Reset happens at run START, not run end: a quit, a crash or an unexpected exit can skip
+            // an end-of-run hook, but nothing can start a run without coming through here. This is
+            // the single place run state is cleared — see RunScope. Do not scatter Clear() calls into
+            // OnEnable handlers; that is how the skill build and the pickup registry both leaked.
+            RunScope.ResetAll();
+
             Current = new RunState { LevelId = levelId };
             Changed?.Invoke();
             return Current;
@@ -104,19 +123,37 @@ namespace ZombieWar
             if (IsOver || data == null) return;
 
             Kills++;
-            if (bankCoin) Coin += Mathf.Max(0, data.coinReward);
+            if (bankCoin) Coin += ScaleCoin(Mathf.Max(0, data.coinReward));
             AddXp(Mathf.Max(0, data.xpReward));
             Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// M7.3 — spends banked run Coin. This is the first IN-RUN sink Coin has ever had: before
+        /// Supply Cache, Coin was earned all run and only mattered at settlement. Returns false when
+        /// the player cannot afford it, so callers never go negative.
+        /// </summary>
+        public bool SpendCoin(long amount)
+        {
+            if (IsOver || amount <= 0 || Coin < amount) return false;
+            Coin -= amount;
+            Changed?.Invoke();
+            return true;
         }
 
         public void AddCurrency(PlayerProfile.CurrencyKind kind, long amount)
         {
             if (IsOver || amount <= 0) return;
-            if (kind == PlayerProfile.CurrencyKind.Coin) Coin += amount;
+            if (kind == PlayerProfile.CurrencyKind.Coin) Coin += ScaleCoin(amount);
             else if (kind == PlayerProfile.CurrencyKind.Gold) Gold += amount;
             else Gem += amount;
             Changed?.Invoke();
         }
+
+        // The CoinGain perk is consumed here - the single place Coin enters the ledger - so kill
+        // banking and physical pickups scale identically and nothing can double-apply it.
+        private long ScaleCoin(long amount) =>
+            (long)Math.Round(amount * Multiplier(RunPerkKind.CoinGain));
 
         /// <summary>Adds XP and levels up as many times as the XP covers. Returns how many levels were
         /// gained, so the caller can queue that many perk choices.</summary>
@@ -132,7 +169,11 @@ namespace ZombieWar
                 Level++;
                 gained++;
             }
-            if (gained > 0) Changed?.Invoke();
+            if (gained > 0)
+            {
+                Changed?.Invoke();
+                LevelsGained?.Invoke(gained);
+            }
             return gained;
         }
 
@@ -165,17 +206,31 @@ namespace ZombieWar
         public RunSummary Snapshot() =>
             new RunSummary(Outcome, Kills, WaveReached, Level, Xp, Coin, Gold, Gem, Duration);
 
+        /// <summary>What the payout actually credited, frozen by the first <see cref="Payout"/> call.
+        /// On a defeat this differs from the earned totals - the result screen must show these, not
+        /// the raw run numbers, or it lies about what the player kept.</summary>
+        public long BankedCoin { get; private set; }
+        public long BankedGold { get; private set; }
+        public long BankedGem { get; private set; }
+
         /// <summary>Banks this run's currency into the persistent profile. Idempotent - the second and
         /// later calls are no-ops and return false, which is what makes replay/home/result-screen
-        /// races safe.</summary>
-        public bool Payout()
+        /// races safe. The outcome-dependent fractions are decided by <see cref="RunClosure"/>, not
+        /// here - this method only applies them.</summary>
+        /// <param name="coinFraction">Portion of earned Coin to keep (GDD §11: defeat keeps 25%).</param>
+        /// <param name="includeRare">False drops Gold and Gem entirely (defeat loses rare reward).</param>
+        public bool Payout(float coinFraction = 1f, bool includeRare = true)
         {
             if (_paidOut) return false;
             _paidOut = true;
 
-            if (Coin > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, Coin);
-            if (Gold > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gold, Gold);
-            if (Gem > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, Gem);
+            BankedCoin = (long)(Coin * Mathf.Clamp01(coinFraction));
+            BankedGold = includeRare ? Gold : 0;
+            BankedGem = includeRare ? Gem : 0;
+
+            if (BankedCoin > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, BankedCoin);
+            if (BankedGold > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gold, BankedGold);
+            if (BankedGem > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, BankedGem);
             return true;
         }
 

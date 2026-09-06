@@ -35,10 +35,15 @@ namespace ZombieWar.UI
         [SerializeField] private UIScreen passScreen;
         [SerializeField] private UIScreen settingsScreen;
 
+        [Header("Campaign")]
+        [Tooltip("Compact stage selector above PLAY. When unassigned, PLAY keeps its original " +
+                 "behaviour so an un-wired prefab still launches the default stage.")]
+        [SerializeField] private CampaignSelectorView campaignSelector;
+
         protected override void Awake()
         {
             base.Awake();
-            Wire(playButton, GameFlow.StartGameplay);
+            Wire(playButton, LaunchSelectedStage);
             Wire(loadoutButton, () => Open(loadoutScreen, "LOADOUT"));
             Wire(shopButton, () => OpenShop(0));
             Wire(costumeButton, () => Open(costumeScreen, "COSTUME"));
@@ -51,8 +56,27 @@ namespace ZombieWar.UI
             Wire(missionButton, () => Open(passScreen, "BATTLE PASS"));
         }
 
+        // Guards against a double tap loading the map twice: the scene load is async, so a second
+        // press before GameplayState is entered would otherwise start a second additive load.
+        private bool _launching;
+
+        /// <summary>
+        /// PLAY routes through the selector so the chosen stage is what launches. If the selector is
+        /// absent or has nothing playable, this falls back to the original direct start rather than
+        /// leaving PLAY dead.
+        /// </summary>
+        private void LaunchSelectedStage()
+        {
+            if (_launching) return;
+            _launching = true;
+
+            if (campaignSelector == null || !campaignSelector.LaunchSelected())
+                GameFlow.StartGameplay();
+        }
+
         private void OnEnable()
         {
+            _launching = false;   // back on the Hub: PLAY is armed again
             PlayerProfile.MissionsChanged += RefreshMissionUi;
             PlayerProfile.LoadoutChanged += RefreshBadges;
             PlayerProfile.CostumeChanged += RefreshBadges;

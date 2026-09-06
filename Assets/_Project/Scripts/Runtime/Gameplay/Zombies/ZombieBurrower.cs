@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
+using BillGameCore;
 
 namespace ZombieWar
 {
@@ -85,7 +85,7 @@ namespace ZombieWar
             // ---- dive ---------------------------------------------------------------------
             _phase = Phase.Diving;
             CancelPendingAttack();
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = true;
+            Motor.IsStopped = true;
             yield return PlayAndWait(Data.burrowInClip, 0.6f);
 
             // ---- underground --------------------------------------------------------------
@@ -94,7 +94,8 @@ namespace ZombieWar
             if (!string.IsNullOrEmpty(Data.burrowLoopClip)) Vat.Play(Data.burrowLoopClip);
 
             float speed = Data.moveSpeed * undergroundSpeedMultiplier;
-            if (Agent.enabled) { Agent.isStopped = false; Agent.speed = speed; }
+            Motor.IsStopped = false;
+            Motor.Speed = speed;
 
             float elapsed = 0f;
             while (elapsed < maxUndergroundDuration)
@@ -104,7 +105,7 @@ namespace ZombieWar
                 if (player == null) break;
 
                 Vector3 spot = EmergeSpot(player.transform.position);
-                if (Agent.enabled && Agent.isOnNavMesh) Agent.SetDestination(spot);
+                Motor.SetDestination(spot);
 
                 if (Vector3.Distance(FlattenY(transform.position), FlattenY(spot)) <= 0.6f) break;
                 yield return null;
@@ -112,13 +113,16 @@ namespace ZombieWar
 
             // ---- emerge -------------------------------------------------------------------
             _phase = Phase.Emerging;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = true;
-            Agent.speed = Data.moveSpeed;
+            Motor.IsStopped = true;
+            Motor.Speed = Data.moveSpeed;
 
             // Telegraph: back on screen and clearly about to erupt, but still not damageable, so the
             // player reads the mound and moves rather than trading shots with an invulnerable target.
             SetHidden(false);
             if (!string.IsNullOrEmpty(Data.burrowOutClip)) Vat.Play(Data.burrowOutClip);
+            // Emerge runs under SuppressBaseFsm and so never reaches the base attack cue. Cued on
+            // the telegraph rather than the hit, so the sound is the warning the visual promises.
+            PlayAttackAudio(SfxPriority.High);
             yield return new WaitForSeconds(Mathf.Max(0f, emergeTelegraph));
 
             DealAreaDamage(transform.position, emergeRadius, Data.damage * emergeDamageMultiplier);
@@ -126,22 +130,24 @@ namespace ZombieWar
             // ---- back to normal -----------------------------------------------------------
             _phase = Phase.Surface;
             _phaseTimer = surfaceDuration;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = false;
+            Motor.IsStopped = false;
             Vat.CrossFade(Data.idleClip, 0.15f);
             _cycle = null;
         }
 
-        /// <summary>A point near the player but never closer than <see cref="emergeMinDistance"/>,
-        /// snapped onto the NavMesh so it cannot surface inside geometry.</summary>
+        /// <summary>A point near the player but never closer than <see cref="emergeMinDistance"/>.
+        ///
+        /// M4: the NavMesh snap is gone. It existed to stop the burrower surfacing inside baked
+        /// geometry; the streamed world has no such geometry - procedural decoration carries no
+        /// collider - so the emergence point only has to be a valid spot on the gameplay plane.</summary>
         private Vector3 EmergeSpot(Vector3 playerPos)
         {
             Vector3 away = FlattenY(transform.position - playerPos);
             if (away.sqrMagnitude < 0.01f) away = Vector3.forward;
             Vector3 wanted = playerPos + away.normalized * emergeMinDistance;
 
-            return NavMesh.SamplePosition(wanted, out var hit, 3f, NavMesh.AllAreas)
-                ? hit.position
-                : wanted;
+            wanted.y = 0f;
+            return wanted;
         }
 
         private IEnumerator PlayAndWait(string clip, float fallbackDuration)

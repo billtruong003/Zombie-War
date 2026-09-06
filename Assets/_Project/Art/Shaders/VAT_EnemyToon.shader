@@ -316,6 +316,61 @@ Shader "ZombieWar/VAT/EnemyToon"
             ENDHLSL
         }
 
+        // ── VAT-aware outline selection mask ─────────────────────────────────────────────────
+        // Selection mask for the character-only screen-space outline. This pass deliberately
+        // lives on the VAT material instead of using the renderer feature's generic override
+        // material: an override sees only the baked bind-pose POSITION stream and therefore
+        // produces a rigid, offset silhouette while the visible body is animated by VAT.
+        Pass
+        {
+            Name "OutlineSelectionMask"
+            Tags { "LightMode" = "OutlineSelectionMask" }
+
+            ZWrite Off
+            ZTest LEqual
+            Cull Back
+            ColorMask R
+
+            HLSLPROGRAM
+            #pragma vertex vertOutlineSelectionMask
+            #pragma fragment fragOutlineSelectionMask
+            #pragma multi_compile_instancing
+            #pragma target 3.5
+
+            struct AppDataOutlineMask
+            {
+                float4 positionOS : POSITION;
+                float2 uv         : TEXCOORD0;
+                float2 vertexIdUV : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct V2FOutlineMask
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            V2FOutlineMask vertOutlineSelectionMask(AppDataOutlineMask v)
+            {
+                V2FOutlineMask o = (V2FOutlineMask)0;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
+                o.positionCS = TransformObjectToHClip(VATPosition(v.vertexIdUV.x));
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                return o;
+            }
+
+            half4 fragOutlineSelectionMask(V2FOutlineMask i) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(i);
+                ApplyDissolveClip(i.uv);
+                return half4(1, 0, 0, 1);
+            }
+            ENDHLSL
+        }
+
         // ── Shadow caster: same VAT deform + same dissolve clip ──────────────────────────────
         Pass
         {

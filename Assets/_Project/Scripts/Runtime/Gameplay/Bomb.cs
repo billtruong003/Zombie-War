@@ -22,6 +22,7 @@ namespace ZombieWar
         private Rigidbody _rb;
         private float _fuseTimer;
         private bool _exploded;
+        private float _nextBounceSfxTime;
 
         private void Awake()
         {
@@ -36,6 +37,7 @@ namespace ZombieWar
             if (_rb == null) _rb = GetComponent<Rigidbody>();
             _fuseTimer = fuseTime;
             _exploded = false;
+            _nextBounceSfxTime = 0f;
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
             if (trail != null) trail.Clear();
@@ -57,6 +59,14 @@ namespace ZombieWar
             if (_fuseTimer <= 0f) Explode();
         }
 
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (_exploded || Time.time < _nextBounceSfxTime || collision.relativeVelocity.sqrMagnitude < 2.25f)
+                return;
+            _nextBounceSfxTime = Time.time + 0.12f;
+            Bill.Audio?.Play("sfx.player.bomb.bounce", transform.position, 0.48f);
+        }
+
         private void Explode()
         {
             _exploded = true;
@@ -68,7 +78,7 @@ namespace ZombieWar
             if (explosionPrefab != null)
                 FxPool.Play(explosionPrefab, transform.position, Quaternion.identity);
 
-            Bill.Audio?.Play(explosionSfxKey, transform.position);
+            Bill.Audio?.PlayCue(explosionSfxKey, transform.position, SfxPriority.High);
 
             if (Camera.main != null && Camera.main.TryGetComponent(out CameraFollow cameraFollow))
                 cameraFollow.Shake(cameraShakeAmount);

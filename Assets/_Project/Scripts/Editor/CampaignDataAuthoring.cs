@@ -23,7 +23,11 @@ namespace ZombieWar.Editor
         const string CampaignDir = "Assets/_Project/Data/Campaign";
         const string ZombieDir = "Assets/_Project/Data/Zombies";
 
-        /// <summary>One authored wave: which enemies, how many, and its pacing.</summary>
+        /// <summary>One authored wave: which enemies, how many, and its pacing.
+        ///
+        /// The pressure block (targetAlive..recoveryInterval) is optional - a stage that leaves it at
+        /// zero gets the original one-enemy-per-interval feed, which is what stages 2-5 are balanced
+        /// against. Only Stage 1 authors it today.</summary>
         struct WaveSpec
         {
             public string label;
@@ -31,6 +35,13 @@ namespace ZombieWar.Editor
             public float interval;
             public int maxConcurrent;
             public float rest;
+
+            public int targetAlive;
+            public int visibleFloor;
+            public int reserveFloor;
+            public int initialBurst;
+            public int batch;
+            public float recoveryInterval;
         }
 
         struct StageSpec
@@ -41,6 +52,17 @@ namespace ZombieWar.Editor
             public int firstCoin, firstGold, firstGem, repeatCoin;
             public string bossEnemyId;
             public WaveSpec[] waves;
+
+            /// <summary>
+            /// Stage nay co duoc ghi vao CATALOG cua production hay khong.
+            ///
+            /// M4 chot huong san pham: MOT the gioi thu tuc vo tan, choi trong `Map_Level1`. Stage 2-5
+            /// khong con la noi dung tien trinh. Chung van duoc author ra WaveData de noi dung khong
+            /// mat va co the phuc hoi, nhung KHONG vao catalog — ma catalog la thu duy nhat bo chon
+            /// stage, hub UI va luong nap scene doc toi. Bo mot dong `production = true` la du de dua
+            /// mot stage tro lai.
+            /// </summary>
+            public bool production;
         }
 
         // Enemy shorthand -> stable ID.
@@ -66,22 +88,33 @@ namespace ZombieWar.Editor
             // Only walkers, then one runner late. Teaches movement and shooting, nothing else.
             new StageSpec
             {
+                production = true,
                 levelId = "level.1", displayName = "Outbreak", sceneName = "Map_Level1",
                 waveAsset = "WD_Level1", minimumPower = 0, recommendedPower = 300,
                 families = new[] { "Pistol", "SMG" },
                 weaponIds = new[] { "weapon.sidearm.pistol_a", "weapon.smg.generic" },
                 firstCoin = 400, firstGold = 0, firstGem = 0, repeatCoin = 100,
                 bossEnemyId = "",
-                // Density prototype (2026-07-24): ~104 total, cap ramps 12->24, interval
-                // 0.6->0.45s, rests 2.0-2.5s. Keeps the walker-only onboarding of wave 1 but the
-                // field should never be empty around the player.
+                // Horde Core (2026-08-07): 244 total, alive target ramps 24->60, peaking at ~30
+                // enemies actually on screen. The density prototype before this one authored a
+                // 12->24 cap but fed the field one enemy per ~0.5s, so the cap was almost never
+                // reached - playtest showed 0-3 visible enemies and 5-8 second holes. Pressure
+                // fields, not the cap, are what fill the screen now: initialBurst opens the wave,
+                // batch tops it up, and visible/reserve floors trigger the recovery band whenever
+                // the screen thins out. maxConcurrent stays as the hard ceiling only.
+                // Teaching curve is unchanged: walkers alone, then mixed walkers, runners last.
                 waves = new[]
                 {
-                    new WaveSpec { label = "Scouting",  entries = new[]{(Pup,12)},                     interval=0.6f, maxConcurrent=12, rest=2.5f },
-                    new WaveSpec { label = "Small Pack",entries = new[]{(Pup,12),(Meow,8)},            interval=0.55f,maxConcurrent=16, rest=2.5f },
-                    new WaveSpec { label = "Dry Bones", entries = new[]{(Meow,10),(Skel,8)},           interval=0.5f, maxConcurrent=20, rest=2f },
-                    new WaveSpec { label = "Thickening",entries = new[]{(Pup,12),(Skel,12)},           interval=0.5f, maxConcurrent=22, rest=2f },
-                    new WaveSpec { label = "Runners",   entries = new[]{(Skel,16),(Bark,6),(Pup,8)},   interval=0.45f,maxConcurrent=24, rest=0f },
+                    new WaveSpec { label = "Scouting",  entries = new[]{(Pup,30)},                     interval=0.35f,maxConcurrent=28, rest=1.5f,
+                                   targetAlive=24, visibleFloor=12, reserveFloor=6,  initialBurst=12, batch=8,  recoveryInterval=0.12f },
+                    new WaveSpec { label = "Small Pack",entries = new[]{(Pup,24),(Meow,16)},           interval=0.3f, maxConcurrent=38, rest=1.5f,
+                                   targetAlive=32, visibleFloor=16, reserveFloor=8,  initialBurst=16, batch=10, recoveryInterval=0.11f },
+                    new WaveSpec { label = "Dry Bones", entries = new[]{(Meow,24),(Skel,24)},          interval=0.26f,maxConcurrent=46, rest=1.2f,
+                                   targetAlive=40, visibleFloor=20, reserveFloor=10, initialBurst=20, batch=12, recoveryInterval=0.1f },
+                    new WaveSpec { label = "Thickening",entries = new[]{(Pup,24),(Skel,32)},           interval=0.22f,maxConcurrent=56, rest=1f,
+                                   targetAlive=48, visibleFloor=24, reserveFloor=12, initialBurst=24, batch=12, recoveryInterval=0.09f },
+                    new WaveSpec { label = "Runners",   entries = new[]{(Skel,40),(Bark,12),(Pup,18)}, interval=0.18f,maxConcurrent=70, rest=0f,
+                                   targetAlive=60, visibleFloor=30, reserveFloor=15, initialBurst=30, batch=15, recoveryInterval=0.08f },
                 },
             },
 
@@ -191,9 +224,14 @@ namespace ZombieWar.Editor
             var catalog = LoadOrCreate<CampaignCatalog>($"{CampaignDir}/CampaignCatalog.asset");
             var catalogSo = new SerializedObject(catalog);
             var levelsProp = catalogSo.FindProperty("levels");
-            levelsProp.arraySize = Stages.Length;
+
+            // Catalog chi nhan stage production. WaveData thi van author DU CA — noi dung cua stage
+            // 2-5 khong bi xoa, chi khong con duong nao dan toi no tu runtime.
+            var production = Stages.Where(st => st.production).ToArray();
+            levelsProp.arraySize = production.Length;
 
             var missing = new HashSet<string>();
+            int catalogIndex = 0;
 
             for (int i = 0; i < Stages.Length; i++)
             {
@@ -216,13 +254,22 @@ namespace ZombieWar.Editor
                         spawnInterval = spec.interval,
                         maxConcurrent = spec.maxConcurrent,
                         restAfterClear = spec.rest,
+                        targetAlive = spec.targetAlive,
+                        visibleFloor = spec.visibleFloor,
+                        reserveFloor = spec.reserveFloor,
+                        initialBurst = spec.initialBurst,
+                        spawnBatchSize = spec.batch,
+                        recoverySpawnInterval = spec.recoveryInterval,
                     });
                 }
 
                 waveData.waves = waves.ToArray();
                 EditorUtility.SetDirty(waveData);
 
-                var e = levelsProp.GetArrayElementAtIndex(i);
+                // Stage khong thuoc production dung lai o day: WaveData da duoc ghi, catalog thi khong.
+                if (!stage.production) continue;
+
+                var e = levelsProp.GetArrayElementAtIndex(catalogIndex++);
                 e.FindPropertyRelative("levelId").stringValue = stage.levelId;
                 e.FindPropertyRelative("displayName").stringValue = stage.displayName;
                 e.FindPropertyRelative("sceneName").stringValue = stage.sceneName;
@@ -247,8 +294,10 @@ namespace ZombieWar.Editor
             if (missing.Count > 0)
                 Debug.LogError($"[CampaignData] Unresolved enemy IDs (bake them first): {string.Join(", ", missing)}");
 
-            Debug.Log($"[CampaignData] Authored {Stages.Length} stages -> {CampaignDir}/CampaignCatalog.asset " +
-                      $"and {Stages.Length} WaveData assets in {WaveDir}.");
+            Debug.Log($"[CampaignData] Authored {production.Length} PRODUCTION stage(s) -> " +
+                      $"{CampaignDir}/CampaignCatalog.asset, and {Stages.Length} WaveData assets in {WaveDir} " +
+                      $"({Stages.Length - production.Length} deprecated stage(s) keep their wave data but " +
+                      "stay out of the catalog).");
         }
 
         static void SetStringArray(SerializedProperty prop, string[] values)

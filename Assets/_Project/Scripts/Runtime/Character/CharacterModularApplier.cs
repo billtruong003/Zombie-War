@@ -29,6 +29,10 @@ namespace ZombieWar
         // Slot noi bo cho Body composite (2 renderer): body full + head/tai.
         private const string BodyRendererSlot = "Body";
         private const string BodyHeadRendererSlot = "BodyHead";
+        // Must match the material-driven skinned-player bit consumed by BillOutlineFeature.
+        // Runtime costume renderers do not exist in the authored Player prefab, so the editor
+        // migration cannot tag them ahead of time.
+        private const uint PlayerOutlineRenderingBit = 1u << 3;
 
         public ModularCostumeCatalog Catalog => catalog;
 
@@ -107,6 +111,8 @@ namespace ZombieWar
             smr.sharedMesh = entry.skinnedMesh;
             smr.sharedMaterials = entry.materials;
             smr.bones = bones;
+            if (GetComponentInParent<PlayerMovement>() != null)
+                smr.renderingLayerMask |= PlayerOutlineRenderingBit;
             if (!string.IsNullOrEmpty(entry.rootBoneName) && _boneMap.TryGetValue(entry.rootBoneName, out var rb))
                 smr.rootBone = rb;
             smr.updateWhenOffscreen = false;

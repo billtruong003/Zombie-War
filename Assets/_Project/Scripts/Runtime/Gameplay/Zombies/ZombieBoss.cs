@@ -52,10 +52,14 @@ namespace ZombieWar
         {
             _specialTimer = specialCooldown;
             CancelPendingAttack();
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = true;
+            Motor.IsStopped = true;
 
             string clip = !string.IsNullOrEmpty(slamClip) ? slamClip : Data.specialClip;
             if (!string.IsNullOrEmpty(clip)) Vat.CrossFade(clip, 0.1f);
+            // The slam bypasses the base FSM (SuppressBaseFsm), so it also bypasses the attack
+            // audio FaceAndAttack would normally fire. Cue it here or the boss's biggest move is
+            // the only silent one. Sounds on the wind-up, matching the telegraph the player reacts to.
+            PlayAttackAudio(SfxPriority.High);
 
             // Wind-up before the shockwave, so the player can still get clear of it.
             float windup = Data.specialWindup > 0f ? Data.specialWindup : 0.4f;
@@ -69,7 +73,7 @@ namespace ZombieWar
                 DealAreaDamage(transform.position, specialRadius, Data.damage * specialDamageMultiplier);
             }
 
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = false;
+            Motor.IsStopped = false;
             _slam = null;
         }
 

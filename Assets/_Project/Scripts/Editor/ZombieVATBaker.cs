@@ -506,28 +506,18 @@ namespace ZombieWar.Editor
             vatAnim.animationData = vatData;
             vatAnim.defaultClipIndex = 0;
 
-            // Fake contact shadow: a flat quad under the root, all enemies sharing ONE material and
-            // the same local placement. A real shadow-caster pass per enemy is far too expensive for
-            // a mobile horde, and a blob reads better at this camera angle anyway. Sized from the
-            // measured capsule so a boss's blob is not pup-sized.
-            var shadow = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            shadow.name = "ShadowBlob";
-            UnityEngine.Object.DestroyImmediate(shadow.GetComponent<Collider>());
-            shadow.transform.SetParent(go.transform, false);
-            shadow.transform.localPosition = new Vector3(0f, 0.02f, 0f);   // just above the ground
-            shadow.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            float blob = Mathf.Max(0.8f, radius * 4.5f);
-            shadow.transform.localScale = new Vector3(blob, blob, 1f);
-            var shadowRenderer = shadow.GetComponent<MeshRenderer>();
-            shadowRenderer.sharedMaterial = VatLookApplier.EnsureShadowMaterial();
-            shadowRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            shadowRenderer.receiveShadows = false;
+            // KHÔNG dựng ShadowBlob nữa.
+            //
+            // Quad bóng riêng cho từng con là một renderer TRONG SUỐT, mà hình trong suốt sắp xếp theo
+            // từng object nên không bao giờ gộp được: đo được 30 quái = 30 draw, đúng toàn bộ phần chi
+            // phí render còn tăng tuyến tính theo số quái. Bóng giờ nằm trong một mesh gộp duy nhất do
+            // CharacterContactShadows sở hữu, và quái chỉ cần ĐĂNG KÝ lúc OnEnable — không mang theo
+            // renderer nào cả. Bake lại cũng không được phép dựng lại nó.
 
             var zb = go.AddComponent(cfg.componentType);
             var so = new SerializedObject(zb);
             SetRef(so, "data", zData);
             SetRef(so, "bodyRenderer", mr);
-            SetRef(so, "shadowRenderer", shadowRenderer);
             if (cfg.tuning != null)
             {
                 foreach (var (prop, value) in cfg.tuning)

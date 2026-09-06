@@ -13,8 +13,8 @@ namespace ZombieWar
     /// Sequence: Crouch (telegraph, stationary) -> Leap (fast, committed, damages on arrival)
     ///           -> Recover (stationary, vulnerable) -> cooldown.
     ///
-    /// Motion is driven through NavMeshAgent.Move rather than a transform lerp, so a leap can never
-    /// punch the creature through a wall or off the mesh.
+    /// Motion is driven through the planar motor under explicit external control, so the committed
+    /// leap cannot be bent mid-air by crowd separation and always lands back on the gameplay plane.
     /// </summary>
     public sealed class ZombiePouncer : ZombieRunner
     {
@@ -68,8 +68,9 @@ namespace ZombieWar
 
             // ---- crouch: commit to a direction, then stop steering -------------------------
             _phase = Phase.Crouch;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = true;
+            Motor.BeginExternalControl();
             Vat.CrossFade(Data.specialClip, 0.1f);
+            PlayAttackAudio();
 
             Vector3 aim = FlattenY(player.position - transform.position).normalized;
             if (aim.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(aim);
@@ -85,8 +86,7 @@ namespace ZombieWar
             {
                 t += Time.deltaTime;
                 if (CurrentState == State.Dead) break;
-                if (Agent.enabled && Agent.isOnNavMesh)
-                    Agent.Move(aim * leapSpeed * Time.deltaTime);
+                Motor.Move(aim * leapSpeed * Time.deltaTime);
                 yield return null;
             }
 
@@ -99,7 +99,7 @@ namespace ZombieWar
             yield return new WaitForSeconds(recoverDuration);
 
             _phase = Phase.None;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = false;
+            Motor.EndExternalControl();
             _pounce = null;
         }
 

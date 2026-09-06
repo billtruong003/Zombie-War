@@ -43,6 +43,16 @@ namespace ZombieWar
         public bool HasTarget { get; private set; }
         public float AimTargetDistance { get; private set; } = float.MaxValue;
 
+        /// <summary>Transform of the currently auto-selected target, or null. Read-only on purpose:
+        /// this exposes WHAT was selected so ballistics can be measured against it, and grants no
+        /// ability to change or override the selection.</summary>
+        public Transform AimTargetTransform => _aimTarget?.Transform;
+
+        /// <summary>The selected target itself, for the weapon's fire-time validity re-check. The
+        /// aim lock is updated in FixedUpdate, so within a frame the lock can point at an enemy
+        /// that just died - the shot, not the lock, is where staleness must be refused.</summary>
+        public ITargetable AimTarget => _aimTarget;
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
@@ -65,7 +75,8 @@ namespace ZombieWar
             if (input.sqrMagnitude > 1f) input.Normalize();
 
             Vector3 move = new Vector3(input.x, 0f, input.y);
-            _rb.MovePosition(_rb.position + move * moveSpeed * Time.fixedDeltaTime);
+            float perkSpeed = RunState.Current?.Multiplier(RunPerkKind.MoveSpeed) ?? 1f;
+            _rb.MovePosition(_rb.position + move * (moveSpeed * perkSpeed) * Time.fixedDeltaTime);
 
             // Aim first: the body faces the AIM axis, NOT the move axis. This twin-stick decoupling is
             // what lets the player strafe/backpedal while keeping the gun on the target - the legs

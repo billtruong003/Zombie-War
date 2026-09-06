@@ -10,10 +10,9 @@ namespace ZombieWar
     /// broadcast everything needed, so the run/campaign concern stays in one file instead of being
     /// smeared across the wave and player systems.
     ///
-    /// Terminal handling is the delicate part. Victory and Defeat both route through
-    /// <see cref="Finish"/>, which is guarded so the run is banked exactly once - RunState.Payout is
-    /// itself idempotent, and completion/first-clear writes are idempotent in PlayerProfile, so even
-    /// a doubled event cannot double-pay.
+    /// Terminal handling is the delicate part, and it lives in <see cref="RunClosure"/> rather than
+    /// here so it can be tested without a scene. This component only translates gameplay events into
+    /// one close call and broadcasts the result.
     /// </summary>
     public class RunDirector : MonoBehaviour
     {
@@ -46,36 +45,28 @@ namespace ZombieWar
 
         private void Finish(RunOutcome outcome)
         {
-            var run = RunState.Current;
-            if (run == null || _finished) return;
+            if (_finished) return;
+
+            var result = RunClosure.Close(RunState.Current, outcome, campaign);
+            if (!result.Closed) return;   // no run, or something already closed this one
             _finished = true;
 
-            var summary = run.Finish(outcome);
-            run.Payout();   // idempotent: the run's earned currency is banked exactly once
-
-            if (outcome != RunOutcome.Victory) return;
-
-            // Clearing a stage unlocks the next one and pays its first-clear bonus once, ever.
-            // Replays still reach here, but both writes below refuse to repeat themselves.
-            string levelId = run.LevelId;
-            if (string.IsNullOrEmpty(levelId)) return;
-
-            PlayerProfile.MarkLevelCompleted(levelId);
-
-            var level = campaign != null ? campaign.Find(levelId) : null;
-            if (level != null)
-                PlayerProfile.TryClaimFirstClear(levelId,
-                    level.firstClearCoin, level.firstClearGold, level.firstClearGem);
-
-            Bill.Events?.Fire(new RunFinishedEvent(summary));
+            // Fired for EVERY terminal outcome, exactly once. This used to sit behind a
+            // victory-only early-return and a level-id early-return, so a defeat - or a win on a map
+            // with no campaign entry - ended the run silently: no result screen, and MissionTracker
+            // never counted the run as finished.
+            Bill.Events?.Fire(new RunFinishedEvent(result));
         }
     }
 
     /// <summary>Fired once a run has ended and been banked. The result screen reads the snapshot
-    /// from here rather than querying RunState, which may already have been cleared.</summary>
+    /// from here rather than querying RunState, which may already have been cleared. Carries the
+    /// full close result so the screen can show banked amounts, which on a defeat are NOT the
+    /// earned totals.</summary>
     public readonly struct RunFinishedEvent : IEvent
     {
-        public readonly RunSummary Summary;
-        public RunFinishedEvent(RunSummary summary) { Summary = summary; }
+        public readonly RunClosure.Result Result;
+        public RunSummary Summary => Result.Summary;
+        public RunFinishedEvent(RunClosure.Result result) { Result = result; }
     }
 }

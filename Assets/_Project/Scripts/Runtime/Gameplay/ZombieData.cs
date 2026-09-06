@@ -51,6 +51,16 @@ namespace ZombieWar
         public string hitClip = "Hit";
         public string deathClip = "Death";
 
+        [Header("Audio cues (Bill.Audio runtime keys)")]
+        [Tooltip("3D vocal/foley played when this enemy commits to a normal or special attack.")]
+        public string attackSfxKey = "";
+        [Tooltip("3D vocal reaction sampled on damage; physical hit material is kept separate.")]
+        public string hurtSfxKey = "";
+        [Tooltip("3D final vocal/foley played once when the enemy dies.")]
+        public string deathSfxKey = "";
+        [Tooltip("3D physical bullet-impact family for this creature's body material.")]
+        public string impactSfxKey = "sfx.impact.flesh.light";
+
         [Header("Optional special clips (empty = ability unavailable)")]
         [Tooltip("Runner/Pouncer lunge, boss dash or heavy slam - played instead of attackClip.")]
         public string specialClip = "";

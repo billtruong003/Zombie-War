@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace ZombieWar
 {
-    // Vai trò tactical + routing cho HUD icon / shop card / build archetype. Xem Docs/WEAPON_DESIGN.md §2.
+    // Vai trò tactical + routing cho HUD icon / shop card / build archetype. Xem Docs/Reference/Design/WEAPON_DESIGN.md §2.
     public enum WeaponClass
     {
         Sidearm, SMG, AssaultRifle, Shotgun, LMG,
         Marksman, Railgun, Flamethrower, Tesla, Laser, Rocket
     }
 
-    // Cách đạn tương tác thế giới. Xem Docs/WEAPON_DESIGN.md §3.
+    // Cách đạn tương tác thế giới. Xem Docs/Reference/Design/WEAPON_DESIGN.md §3.
     public enum FireMode
     {
         SingleHitscan,       // 1 ray, dừng ở target đầu (pistol/AR/LMG)
@@ -22,7 +22,7 @@ namespace ZombieWar
         ChainLightning       // hit đầu → nhảy sang target gần (tesla)
     }
 
-    // Độ hiếm → màu shop/HUD + hệ số giá. Xem Docs/WEAPON_DESIGN.md §5.
+    // Độ hiếm → màu shop/HUD + hệ số giá. Xem Docs/Reference/Design/WEAPON_DESIGN.md §5.
     public enum WeaponTier { Common, Uncommon, Rare, Epic, Legendary }
 
     // Loại đạn dùng chung cho kinh tế shop (mua 1 thùng Heavy → nhiều súng dùng). §4.
@@ -58,7 +58,37 @@ namespace ZombieWar
         public IReadOnlyList<string> LegacyAliases => legacyAliases;
 
         // ─────────────────────────────────────────────────────────────────
-        // IDENTITY / SHOP (Docs/WEAPON_DESIGN.md §2,§5,§6,§9)
+        // AUTHORING GATE (M7.1)
+        // The owner hand-authors every grip/muzzle anchor. Nothing infers them. A weapon onboarded
+        // from a vendor pack therefore arrives UNPLAYABLE and stays that way until the owner has
+        // placed its anchors and signed it off, so a half-authored gun can never reach the Hub.
+        // Default is Ready so all 25 previously shipped weapons keep their behaviour untouched.
+        // ─────────────────────────────────────────────────────────────────
+        public enum AuthoringStatus
+        {
+            /// Anchors authored and signed off by the owner. Equippable.
+            Ready = 0,
+            /// Onboarded as data only. Grip/muzzle NOT placed. Must never be equippable.
+            PendingOwnerAuthoring = 1,
+            /// Needs a runtime capability that does not exist yet (e.g. FireMode.Projectile).
+            BlockedNeedsProjectileFireMode = 2,
+            /// Geometry is far outside the arsenal's poly envelope. Held out of the playable pool
+            /// even after anchors are authored, until the owner decides keep / decimate / cut.
+            BlockedNeedsDecimation = 3,
+        }
+
+        [Header("Authoring gate (M7.1)")]
+        [Tooltip("PendingOwnerAuthoring = onboarded as data, anchors not yet hand-authored by the " +
+                 "owner. Such a weapon must never be equippable or reach Hub/shop/loadout.")]
+        [SerializeField] private AuthoringStatus authoringStatus = AuthoringStatus.Ready;
+
+        public AuthoringStatus Authoring => authoringStatus;
+
+        /// <summary>True only when the owner has authored anchors and no capability is missing.</summary>
+        public bool IsPlayable => authoringStatus == AuthoringStatus.Ready;
+
+        // ─────────────────────────────────────────────────────────────────
+        // IDENTITY / SHOP (Docs/Reference/Design/WEAPON_DESIGN.md §2,§5,§6,§9)
         // ─────────────────────────────────────────────────────────────────
         [Header("Identity / Shop")]
         public WeaponClass weaponClass = WeaponClass.AssaultRifle;
@@ -79,7 +109,7 @@ namespace ZombieWar
         public bool twoHanded = true;
 
         // ─────────────────────────────────────────────────────────────────
-        // FIRE MODEL (Docs/WEAPON_DESIGN.md §3)
+        // FIRE MODEL (Docs/Reference/Design/WEAPON_DESIGN.md §3)
         // ─────────────────────────────────────────────────────────────────
         [Header("Fire model")]
         public FireMode fireMode = FireMode.SingleHitscan;
@@ -132,18 +162,24 @@ namespace ZombieWar
         [Range(0f, 1f)] public float chainDamageFalloff = 0.8f;
 
         // ─────────────────────────────────────────────────────────────────
-        // RESOURCE MODEL (Docs/WEAPON_DESIGN.md §4)
+        // RESOURCE MODEL (Docs/Reference/Design/WEAPON_DESIGN.md §4)
         // ─────────────────────────────────────────────────────────────────
         [Header("Resource model")]
         public ResourceModel resourceModel = ResourceModel.Magazine;
         [Tooltip("Loại đạn dùng chung cho kinh tế shop. §4.")]
         public AmmoType ammoType = AmmoType.Light;
 
-        [Header("Magazine / Reload")]
-        [Tooltip("So dan moi bang. 0 = vo han, khong can nap.")]
-        public int magazineSize = 12;
-        [Tooltip("Thoi gian nap dan (giay) khi het bang - tao khoang khung 'gai dan'.")]
-        public float reloadDuration = 1.2f;
+        // M4: `magazineSize` and `reloadDuration` are GONE. Weapons no longer have a magazine and
+        // never reload - while a valid target is in range the weapon fires continuously at its
+        // effective fire rate, and weapon identity comes from cadence and per-weapon behaviour
+        // instead of from magazine downtime. Unity drops the two retired keys from the 25 weapon
+        // assets on their next save; nothing at runtime reads them any more.
+        //
+        // `reloadSfxKey` deliberately SURVIVES. Gameplay no longer plays it, but the addressable
+        // audio catalog tooling reads and writes this field, and that work is in flight and not
+        // owned by this milestone. Removing the field would break that tooling for no gameplay gain.
+        [Tooltip("KHÔNG còn dùng trong gameplay từ M4 (súng không nạp đạn nữa). " +
+                 "Giữ lại vì công cụ catalog audio addressable đang đọc/ghi trường này.")]
         public string reloadSfxKey = "gun_reload";
 
         [Header("Heat (laser / tesla / flamethrower)")]
@@ -218,7 +254,7 @@ namespace ZombieWar
             return Mathf.Max(0f, damageFalloffCurve.Evaluate(Mathf.Clamp01(distance01)));
         }
 
-        /// <summary>Màu tier cho shop/HUD (Docs/WEAPON_DESIGN.md §5).</summary>
+        /// <summary>Màu tier cho shop/HUD (Docs/Reference/Design/WEAPON_DESIGN.md §5).</summary>
         public Color TierColor => tier switch
         {
             WeaponTier.Common     => new Color(0.72f, 0.76f, 0.80f), // #B8C2CC

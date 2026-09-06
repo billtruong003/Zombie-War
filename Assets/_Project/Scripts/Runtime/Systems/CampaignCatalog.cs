@@ -16,9 +16,11 @@ namespace ZombieWar
         public WaveData waves;
 
         [Header("Gate")]
-        [Tooltip("Hard requirement. Below this the stage cannot be started.")]
+        [Tooltip("LEGACY - no longer a gate. Previous-stage completion is the only hard campaign " +
+                 "gate (see CAMPAIGN_AND_PROGRESSION.md §3). Kept because it is authored in the " +
+                 "existing asset and removing it would rewrite the catalog's serialized data.")]
         public int minimumPower = 0;
-        [Tooltip("Shown as advice. Not enforced.")]
+        [Tooltip("Advisory. Below this the selector warns but the stage still launches.")]
         public int recommendedPower = 0;
 
         [Header("Advice")]
@@ -71,11 +73,17 @@ namespace ZombieWar
         }
 
         /// <summary>
-        /// Whether the stage may be started, and why not when it may not.
+        /// Whether the stage may be started, and what to warn about when it may.
         ///
-        /// Two independent gates: the previous stage must be cleared (progression) and the player's
-        /// Combat Power must reach the authored floor (capability). Stage 1 is always open so a
-        /// fresh profile is never locked out of its own game.
+        /// ONE hard gate: the previous stage must be cleared. Combat Power is advice only - an
+        /// under-recommended stage returns <see cref="LevelGate.Status.Underpowered"/>, which still
+        /// reports <see cref="LevelGate.CanPlay"/> true.
+        ///
+        /// Power used to be a second hard gate, and that made the progression line lie: the player
+        /// could clear Stage N, see Stage N+1 open on the map, and still be refused. A linear
+        /// completion path has to keep its promise, so the capability check became a warning
+        /// (CAMPAIGN_AND_PROGRESSION.md §3, LOCKED). Stage 1 is always open so a fresh profile is
+        /// never locked out of its own game.
         /// </summary>
         public LevelGate Evaluate(int index, int playerPower)
         {
@@ -89,9 +97,10 @@ namespace ZombieWar
                     return LevelGate.Locked($"Complete {previous.displayName} first.");
             }
 
-            if (playerPower < level.minimumPower)
+            // Advisory only. recommendedPower is the authored advice number; minimumPower is legacy.
+            if (level.recommendedPower > 0 && playerPower < level.recommendedPower)
                 return LevelGate.Underpowered(
-                    $"Requires {level.minimumPower} Combat Power (you have {playerPower}).");
+                    $"Recommended {level.recommendedPower} Combat Power (you have {playerPower}).");
 
             return LevelGate.Open();
         }
@@ -107,7 +116,12 @@ namespace ZombieWar
 
         private LevelGate(Status state, string reason) { State = state; Reason = reason; }
 
-        public bool CanPlay => State == Status.Open;
+        /// <summary>Only <see cref="Status.Locked"/> blocks play. Underpowered is a warning the
+        /// player may accept - see <see cref="CampaignCatalog.Evaluate"/>.</summary>
+        public bool CanPlay => State != Status.Locked;
+
+        /// <summary>True when there is advice worth surfacing even though play is allowed.</summary>
+        public bool HasWarning => State == Status.Underpowered;
 
         public static LevelGate Open() => new LevelGate(Status.Open, "");
         public static LevelGate Locked(string reason) => new LevelGate(Status.Locked, reason);

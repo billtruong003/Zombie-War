@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using BillGameCore;
 
 namespace ZombieWar
 {
@@ -73,7 +74,7 @@ namespace ZombieWar
 
             // ---- telegraph: lock the line the boss will travel ----------------------------
             _phase = Phase.Telegraph;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = true;
+            Motor.BeginExternalControl();
             Vat.CrossFade(Data.specialClip, 0.1f);
 
             Vector3 dir = FlattenY(player.position - transform.position).normalized;
@@ -91,8 +92,7 @@ namespace ZombieWar
                 t += Time.deltaTime;
                 if (CurrentState == State.Dead) break;
 
-                if (Agent.enabled && Agent.isOnNavMesh)
-                    Agent.Move(dir * chargeSpeed * Time.deltaTime);
+                Motor.Move(dir * chargeSpeed * Time.deltaTime);
 
                 // One hit per charge, no matter how many frames the player stays in the path.
                 if (!_hitThisCharge)
@@ -102,6 +102,9 @@ namespace ZombieWar
                         Vector3.Distance(FlattenY(p.transform.position), FlattenY(transform.position)) <= chargeWidth)
                     {
                         _hitThisCharge = true;
+                        // Charge runs under SuppressBaseFsm, so the base attack cue never fires for
+                        // it. Gated by _hitThisCharge, so it speaks once per charge, not per frame.
+                        PlayAttackAudio(SfxPriority.High);
                         DealAreaDamage(transform.position, chargeWidth, Data.damage * chargeDamageMultiplier);
                     }
                 }
@@ -114,7 +117,7 @@ namespace ZombieWar
             yield return new WaitForSeconds(recoverDuration);
 
             _phase = Phase.None;
-            if (Agent.enabled && Agent.isOnNavMesh) Agent.isStopped = false;
+            Motor.EndExternalControl();
             _charge = null;
         }
 

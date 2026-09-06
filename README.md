@@ -6,7 +6,7 @@ Current project status: [`Docs/HANDOFF.md`](Docs/HANDOFF.md).
 
 Active work: [`Docs/TASK_BREAKDOWN.md`](Docs/TASK_BREAKDOWN.md).
 
-Gameplay design: [`Docs/GAMEPLAY_DESIGN.md`](Docs/GAMEPLAY_DESIGN.md).
+Gameplay design: [`Docs/Reference/Design/GAMEPLAY_DESIGN.md`](Docs/Reference/Design/GAMEPLAY_DESIGN.md).
 
 ## Current foundation
 

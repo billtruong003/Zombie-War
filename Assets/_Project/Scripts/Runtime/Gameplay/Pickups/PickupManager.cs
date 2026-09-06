@@ -41,9 +41,24 @@ namespace ZombieWar
         public static void Register(Pickup p) { if (!Live.Contains(p)) Live.Add(p); }
         public static void Unregister(Pickup p) => Live.Remove(p);
 
+        /// <summary>Live pickups currently registered. Exposed so a run boundary can be asserted.</summary>
+        public static int LiveCount => Live.Count;
+
+        /// <summary>
+        /// M7.2c — `Live` is a STATIC list, so it survived scene unloads and accumulated entries from
+        /// every previous run (including destroyed ones). Cleared through RunScope at run start; the
+        /// pickup objects themselves belong to the pool and are released with the scene.
+        /// </summary>
+        public static void ClearRegistry()
+        {
+            Live.Clear();
+            Scratch.Clear();
+        }
+
         private void OnEnable()
         {
             Instance = this;
+            EnsureMagnetRegistered();
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
             Bill.Events?.Subscribe<WaveClearedEvent>(OnWaveCleared);
         }
@@ -70,8 +85,41 @@ namespace ZombieWar
             for (int i = 0; i < Scratch.Count; i++)
             {
                 var p = Scratch[i];
-                if (p != null) p.Tick(dt, playerPos, magnetRadius, false);
+                if (p != null) p.Tick(dt, playerPos, magnetRadius, _magnetSweepUntil > Time.time);
             }
+        }
+
+        // ── magnet sweep ────────────────────────────────────────────────────────────────────
+        // Run-scoped: registered with RunScope below so a sweep cannot survive into the next run.
+        private static float _magnetSweepUntil;
+        private static bool _magnetRegistered;
+
+        [Header("Magnet pickup (TUNING)")]
+        [Tooltip("How long the sweep keeps pulling. Long enough for distant coins to arrive.")]
+        [SerializeField] private float magnetSweepSeconds = 2.5f;
+        [Tooltip("Chance an elite/boss kill drops a magnet.")]
+        [SerializeField, Range(0f, 1f)] private float magnetDropChance = 0.12f;
+        [SerializeField] private string magnetPoolKey = "pickup_magnet";
+
+        /// <summary>
+        /// Pulls EVERY pickup on the ground to the player for a short window. Global rather than a
+        /// radius: a magnet that only grabbed nearby coins would be indistinguishable from walking.
+        /// </summary>
+        public static void BeginMagnetSweep(float seconds = 2.5f)
+        {
+            _magnetSweepUntil = Time.time + seconds;
+        }
+
+        public static bool MagnetSweepActive => _magnetSweepUntil > Time.time;
+
+        /// <summary>Run-scoped reset: a sweep in progress must not carry into a new run.</summary>
+        public static void ResetMagnet() => _magnetSweepUntil = 0f;
+
+        void EnsureMagnetRegistered()
+        {
+            if (_magnetRegistered) return;
+            _magnetRegistered = true;
+            RunScope.Register(ResetMagnet);
         }
 
         /// <summary>
@@ -103,6 +151,15 @@ namespace ZombieWar
                 }
             }
 
+            // M7.3b — the magnet drop. Elites and bosses only, so it stays an event rather than
+            // background noise, and so the player associates it with a fight they chose.
+            //
+            // FALLBACK, and it matters more than the magnet: a player who never sees one loses
+            // nothing. Coins sit on the ground indefinitely and are collected by walking over them,
+            // exactly as before. The magnet is a convenience reward, never the only route to loot.
+            if (data.isElite && Random.value < magnetDropChance)
+                Spawn(PlayerProfile.CurrencyKind.Coin, 0, magnetPoolKey, origin);
+
             // Gems stay rare and authored: elites and bosses only.
             if (data.isElite && Random.value < eliteGemChance)
                 Spawn(PlayerProfile.CurrencyKind.Gem, eliteGemAmount, gemPoolKey, origin);
@@ -131,14 +188,36 @@ namespace ZombieWar
                 go.transform.localScale = Vector3.one * GemScaleFor(amount);
         }
 
+        /// <summary>
+        /// M7.3 — a station reward, scattered on the floor. Deliberately NOT auto-credited: with
+        /// wave-clear auto-collect removed, walking to loot is the point.
+        /// </summary>
+        public void DropReward(Vector3 at, int coin = 60, int gem = 1)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                var offset = new Vector3(Mathf.Cos(i * 1.05f), 0f, Mathf.Sin(i * 1.05f)) * 1.6f;
+                Spawn(PlayerProfile.CurrencyKind.Coin, Mathf.Max(1, coin / 6), coinPoolKey, at + offset);
+            }
+            if (gem > 0) Spawn(PlayerProfile.CurrencyKind.Gem, gem, gemPoolKey, at);
+        }
+
         /// <summary>Gem visual scale from its value. Sub-linear so a 10-gem is noticeably bigger than
         /// a 1-gem without being ten times the size.</summary>
         public static float GemScaleFor(int amount) =>
             Mathf.Clamp(0.8f + Mathf.Log(Mathf.Max(1, amount) + 1f, 2f) * 0.35f, 0.8f, 2.5f);
 
-        /// <summary>Sweeps up everything still on the floor when a wave ends, so the player never
-        /// has to walk the arena picking up stragglers before the result screen.</summary>
-        private void OnWaveCleared(WaveClearedEvent e) => CollectAll();
+        /// <summary>
+        /// M7.3 — auto-collect on wave clear is REMOVED.
+        ///
+        /// An endless world has no reliable wave boundary, so the trigger was unreliable to begin
+        /// with; worse, sweeping the floor removed the reason to move toward loot at all. Loot is now
+        /// walked to, which is what makes the magnet pickup and station rewards mean anything.
+        ///
+        /// `CollectAll()` is kept as public API — the result/settlement path may still want it — but
+        /// nothing subscribes it to WaveClearedEvent any more.
+        /// </summary>
+        private void OnWaveCleared(WaveClearedEvent e) { /* intentionally empty — see summary */ }
 
         public static void CollectAll()
         {

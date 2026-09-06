@@ -51,6 +51,7 @@ namespace ZombieWar
 
         private float _health;
         private bool _destroyed;
+        private float _nextHitSfxTime;
 
         public PropKind Kind => kind;
 
@@ -58,6 +59,7 @@ namespace ZombieWar
         {
             _health = maxHealth;
             _destroyed = false;
+            _nextHitSfxTime = 0f;
         }
 
         public void TakeDamage(float amount)
@@ -65,6 +67,13 @@ namespace ZombieWar
             if (_destroyed || amount <= 0f) return;
 
             _health -= amount;
+            if (Time.time >= _nextHitSfxTime)
+            {
+                _nextHitSfxTime = Time.time + 0.08f;
+                Bill.Audio?.Play(kind == PropKind.ExplosiveBarrel
+                    ? "sfx.prop.barrel.hit"
+                    : "sfx.prop.crate.hit", transform.position, 0.62f);
+            }
             if (_health > 0f) return;
 
             Break();
@@ -76,7 +85,11 @@ namespace ZombieWar
             _destroyed = true;
 
             if (kind == PropKind.ExplosiveBarrel) Explode();
-            else DropLoot();
+            else
+            {
+                Bill.Audio?.Play("sfx.prop.crate.break", transform.position, 0.78f);
+                DropLoot();
+            }
 
             // Scenery is authored into the scene, not pooled, so it is simply switched off. Leaving
             // the GameObject alive keeps any chain-reaction coroutine on a sibling valid.
@@ -113,6 +126,7 @@ namespace ZombieWar
 
         private void Explode()
         {
+            Bill.Audio?.PlayCue("sfx.prop.barrel.explode", transform.position, SfxPriority.High, 0.84f);
             if (!string.IsNullOrEmpty(explosionVfxKey))
                 Bill.Pool?.Spawn(explosionVfxKey, transform.position, Quaternion.identity);
 

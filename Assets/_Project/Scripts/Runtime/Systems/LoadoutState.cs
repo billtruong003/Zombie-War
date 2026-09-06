@@ -37,6 +37,9 @@ namespace ZombieWar
         public static EquipResult TryEquip(int slot, WeaponData data)
         {
             if (slot < 0 || slot > 2) return EquipResult.InvalidSlot;
+            // M7.1 authoring gate: a weapon whose anchors the owner has not authored yet is not a
+            // valid equip target and must never reach a loadout slot.
+            if (data != null && !data.IsPlayable) return EquipResult.InvalidWeapon;
             if (data == null || string.IsNullOrEmpty(data.WeaponId)) return EquipResult.InvalidWeapon;
             bool slotWantsTwoHanded = slot != 0;
             if (data.twoHanded != slotWantsTwoHanded) return EquipResult.Incompatible;

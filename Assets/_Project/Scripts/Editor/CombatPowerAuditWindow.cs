@@ -30,9 +30,9 @@ namespace ZombieWar.Editor
 
         void Reload()
         {
-            _weapons = AssetDatabase.FindAssets("t:WeaponData")
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(AssetDatabase.LoadAssetAtPath<WeaponData>)
+            // A5: catalog-driven. The old scan was project-wide (no folder filter), so it also swept
+            // any stray WeaponData outside the roster.
+            _weapons = ZombieWar.EditorTools.WeaponCatalogAccess.AllWeaponsForBuild()
                 .Where(w => w != null)
                 .OrderByDescending(w => CombatPower.EffectiveDps(w, 1))
                 .ToList();

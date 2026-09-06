@@ -24,7 +24,25 @@ namespace ZombieWar
         /// "power" number. Pure presentation - it cannot change the ORDER of any comparison.</summary>
         public const float PowerScale = 10f;
 
-        /// <summary>Sustained damage per second including reload downtime and star scaling.</summary>
+        /// <summary>
+        /// Sustained damage per second at continuous fire, with star scaling.
+        ///
+        /// M4 removed the magazine/reload cycle from this model because it no longer exists in the
+        /// game. The old formula amortised a full magazine over "time to empty it + one reload",
+        /// which was the correct description of a weapon that had to stop. Weapons never stop now,
+        /// so sustained DPS is simply what the weapon does every second it holds a target:
+        ///
+        ///     damage per shot x pellets x shots per second
+        ///
+        /// This raises every weapon's number, but it does not silently reorder them: reload downtime
+        /// was the only term that differed between weapons here beyond damage and rate, so removing
+        /// it rescales rather than reshuffles - except where a weapon's identity was specifically a
+        /// long reload, which is called out in the M4 balance table in the design doc.
+        ///
+        /// Splash, penetration and other conditional effects are deliberately NOT modelled. They are
+        /// situational multipliers whose real value depends on enemy density, and inventing a
+        /// coefficient for them would be false precision in a number the player reads as authoritative.
+        /// </summary>
         public static float EffectiveDps(WeaponData weapon, int starLevel)
         {
             if (weapon == null) return 0f;
@@ -34,13 +52,7 @@ namespace ZombieWar
             float fireRate = WeaponUpgradeMath.EffectiveFireRate(weapon, starLevel);
             if (fireRate <= 0f) return 0f;
 
-            // A full magazine costs (shots / rate) seconds to fire plus one reload before the next.
-            int magazine = Mathf.Max(1, weapon.magazineSize);
-            float firingTime = magazine / fireRate;
-            float cycleTime = firingTime + Mathf.Max(0f, weapon.reloadDuration);
-            if (cycleTime <= 0f) return 0f;
-
-            return damagePerShot * magazine / cycleTime;
+            return damagePerShot * fireRate;
         }
 
         /// <summary>Power contributed by a single weapon.</summary>

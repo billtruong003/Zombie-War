@@ -91,7 +91,10 @@ namespace ZombieWar
             var tab = CreateButton(canvasGo.transform, "CheatTab", "CHEAT", new Color(0.05f, 0.06f, 0.08f, 0.48f), 24);
             var tabRt = (RectTransform)tab.transform;
             tabRt.anchorMin = tabRt.anchorMax = tabRt.pivot = new Vector2(0f, 1f);
-            tabRt.anchoredPosition = new Vector2(18f, -18f);
+            // Upper-left edge, below the hub's avatar chip and mission bar and above the result
+            // screen's payout card (which starts at y -560). The old top-left spot sat on the hub's
+            // avatar/BEST badge (M5 audit, dev-only).
+            tabRt.anchoredPosition = new Vector2(18f, -360f);
             tabRt.sizeDelta = new Vector2(132f, 54f);
             tab.onClick.AddListener(() => SetPanelVisible(true));
 
@@ -213,7 +216,15 @@ namespace ZombieWar
 
         private void UnlockWeapons()
         {
-            int count = PlayerProfile.UnlockAllWeaponsForDev(weapons);
+            // A5: the serialized `weapons` array lives on a prefab this run may not edit, so it falls
+            // back to the catalog when empty. That keeps newly onboarded weapons reachable from the
+            // cheat panel without touching a prefab.
+            var source = (weapons != null && weapons.Length > 0)
+                ? (System.Collections.Generic.IReadOnlyList<WeaponData>)weapons
+                : (WeaponCatalog.Active != null
+                    ? WeaponCatalog.Active.AllData()
+                    : (System.Collections.Generic.IReadOnlyList<WeaponData>)System.Array.Empty<WeaponData>());
+            int count = PlayerProfile.UnlockAllWeaponsForDev(source);
             SetStatus($"Weapons unlocked: +{count} ({PlayerProfile.OwnedWeaponIds.Count} owned)");
         }
 

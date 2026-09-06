@@ -15,15 +15,36 @@ namespace ZombieWar
 
         public event Action<float> OnDamaged;
         public event Action OnDeath;
+        /// Raised when Kinetic Shield ate an incoming hit, so the HUD can show it.
+        public event Action OnDamageAbsorbed;
+
+        // Only the player's Health may spend a Kinetic Shield charge. Resolved once in Awake rather
+        // than per hit.
+        private bool _isPlayer;
 
         private void Awake()
         {
             _current = maxHealth;
+            _isPlayer = GetComponent<PlayerMovement>() != null;
         }
 
         public void TakeDamage(float amount)
         {
             if (IsDead || amount <= 0f) return;
+
+            // M7.2b — Kinetic Shield. PLAYER ONLY: an enemy must never spend the player's charge, so
+            // this is gated on the owner actually being the player rather than on "any Health".
+            if (_isPlayer)
+            {
+                var skills = ZombieWar.Skills.SkillRuntime.Active;
+                if (skills != null && skills.TryAbsorbDamage())
+                {
+                    // Make it legible. A hit that silently vanishes reads as a bug, not as a card.
+                    ZombieWar.Skills.SkillCombatDriver.Instance?.PlayShieldBreak();
+                    OnDamageAbsorbed?.Invoke();
+                    return;
+                }
+            }
 
             _current = Mathf.Max(0f, _current - amount);
             OnDamaged?.Invoke(amount);
@@ -53,6 +74,17 @@ namespace ZombieWar
         {
             maxHealth = max;
             _current = max;
+        }
+
+        /// <summary>Raises max health by a multiplier and grants the added headroom as current
+        /// health, so picking a Max Health perk is felt immediately instead of only mattering after
+        /// the next full heal. Run-scoped: pooled/respawned owners re-Configure and wipe it.</summary>
+        public void IncreaseMax(float multiplier)
+        {
+            if (IsDead || multiplier <= 1f) return;
+            float added = maxHealth * (multiplier - 1f);
+            maxHealth += added;
+            _current += added;
         }
     }
 }

@@ -12,12 +12,21 @@ namespace ZombieWar.Rendering.BillSSOutline
     public class OutlineFeature : ScriptableRendererFeature
     {
         // Static Event để các hệ thống render thủ công (như Foliage) đăng ký vẽ vào Mask
-        public static event Action<RasterCommandBuffer, LayerMask> OnRenderFoliageMask;
+        public static event Action<RasterCommandBuffer, uint> OnRenderFoliageMask;
 
         class LayerMaskPass : ScriptableRenderPass
         {
+            // Rendering layer 2 is reserved for VAT enemies by GameplayOutlineLayerTool.
+            // They cannot use the generic override material: replacing their material also
+            // replaces VATPosition(), which freezes the selection silhouette in bind pose.
+            private const uint VatRenderingLayerMask = 1u << 2;
+            // Only VAT requires its authored material pass. Regular Unity SkinnedMeshRenderers
+            // keep their animated vertex stream when rendered with an override material.
+            private const uint MaterialDrivenRenderingLayerMask = VatRenderingLayerMask;
+            private static readonly ShaderTagId MaterialMaskShaderTag = new ShaderTagId("OutlineSelectionMask");
+
             private Material maskMaterial;
-            private LayerMask layerMask;
+            private uint renderingLayerMask;
             private FilteringSettings filteringSettings;
             private readonly ShaderTagId[] shaderTags;
             private string profilerTag;
@@ -41,16 +50,30 @@ namespace ZombieWar.Rendering.BillSSOutline
                 filteringSettings = new FilteringSettings(RenderQueueRange.all);
             }
 
-            public void Setup(LayerMask mask)
+            /// <summary>
+            /// Chọn đối tượng vào mặt nạ theo RENDERING LAYER, không theo GameObject layer.
+            ///
+            /// GameObject layer là tầng VẬT LÝ: ma trận va chạm, raycast ngắm bắn, `WalkableGround`
+            /// đều lọc theo nó. Mượn nó để chọn viền nghĩa là muốn viền một mảnh hình thì phải đổi
+            /// tầng vật lý của mảnh đó — và những mảnh dùng chung GameObject với collider thì đành
+            /// bỏ, để lộ lỗ hổng trên bóng nhân vật. `renderingLayerMask` là kênh THUẦN HÌNH ẢNH,
+            /// nên chọn được đúng mọi renderer mà không đụng một byte nào của vật lý.
+            /// </summary>
+            public void Setup(uint mask)
             {
-                this.layerMask = mask;
-                filteringSettings.layerMask = mask;
+                this.renderingLayerMask = mask;
+                filteringSettings.renderingLayerMask = mask;
+                // GameObject layer để mở hoàn toàn: việc chọn lọc đã do rendering layer đảm nhiệm.
+                filteringSettings.layerMask = ~0;
                 if (maskMaterial == null) maskMaterial = CoreUtils.CreateEngineMaterial(Shader.Find("Hidden/Outline/SelectionMask"));
             }
 
             private class MaskData
             {
-                public RendererListHandle rendererList;
+                public RendererListHandle genericRendererList;
+                public RendererListHandle vatRendererList;
+                public bool drawGeneric;
+                public bool drawVat;
                 public TextureHandle maskDest;
             }
 
@@ -58,7 +81,7 @@ namespace ZombieWar.Rendering.BillSSOutline
             {
                 MaskTexture = TextureHandle.nullHandle;
 
-                if (maskMaterial == null || layerMask == 0) return;
+                if (maskMaterial == null || renderingLayerMask == 0) return;
 
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
@@ -78,37 +101,77 @@ namespace ZombieWar.Rendering.BillSSOutline
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 TextureHandle depthTexture = resourceData.activeDepthTexture;
 
-                RendererListParams rlParams = new RendererListParams(
-                    renderingData.cullResults,
-                    new DrawingSettings(shaderTags[0], new SortingSettings(cameraData.camera))
-                    {
-                        overrideMaterial = maskMaterial,
-                        overrideMaterialPassIndex = 0
-                    },
-                    filteringSettings
-                );
+                uint materialDrivenMask = renderingLayerMask & MaterialDrivenRenderingLayerMask;
+                uint genericMask = renderingLayerMask & ~MaterialDrivenRenderingLayerMask;
 
-                for (int i = 1; i < shaderTags.Length; ++i)
-                    rlParams.drawSettings.SetShaderPassName(i, shaderTags[i]);
+                RendererListHandle genericRendererList = default;
+                if (genericMask != 0)
+                {
+                    FilteringSettings genericFiltering = filteringSettings;
+                    genericFiltering.renderingLayerMask = genericMask;
+                    RendererListParams genericParams = new RendererListParams(
+                        renderingData.cullResults,
+                        // enableInstancing phải nói ra tường minh. DrawingSettings dựng bằng constructor
+                        // này KHÔNG kế thừa thiết lập instancing của pipeline, nên pass mặt nạ vẽ từng
+                        // renderer một trong khi pass hiển thị của cùng những object đó lại được gộp.
+                        new DrawingSettings(shaderTags[0], new SortingSettings(cameraData.camera))
+                        {
+                            overrideMaterial = maskMaterial,
+                            overrideMaterialPassIndex = 0,
+                            enableInstancing = true
+                        },
+                        genericFiltering
+                    );
 
-                RendererListHandle rendererList = renderGraph.CreateRendererList(rlParams);
+                    for (int i = 1; i < shaderTags.Length; ++i)
+                        genericParams.drawSettings.SetShaderPassName(i, shaderTags[i]);
+
+                    genericRendererList = renderGraph.CreateRendererList(genericParams);
+                }
+
+                RendererListHandle vatRendererList = default;
+                if (materialDrivenMask != 0)
+                {
+                    FilteringSettings vatFiltering = filteringSettings;
+                    vatFiltering.renderingLayerMask = materialDrivenMask;
+                    RendererListParams vatParams = new RendererListParams(
+                        renderingData.cullResults,
+                        // Keep the VAT material. Its dedicated pass samples the archetype VAT texture
+                        // and the same per-instance animation/crossfade/dissolve values as the visible
+                        // pass, so the mask follows the animated silhouette exactly.
+                        //
+                        // enableInstancing tường minh vì lý do như trên: nếu không, mặt nạ viền của
+                        // đám đông tăng tuyến tính theo SỐ CON trong khi thân của chính chúng đã gộp.
+                        new DrawingSettings(MaterialMaskShaderTag, new SortingSettings(cameraData.camera))
+                        {
+                            enableInstancing = true
+                        },
+                        vatFiltering
+                    );
+                    vatRendererList = renderGraph.CreateRendererList(vatParams);
+                }
 
                 using (var builder = renderGraph.AddRasterRenderPass<MaskData>(profilerTag, out var passData))
                 {
-                    passData.rendererList = rendererList;
+                    passData.genericRendererList = genericRendererList;
+                    passData.vatRendererList = vatRendererList;
+                    passData.drawGeneric = genericMask != 0;
+                    passData.drawVat = materialDrivenMask != 0;
                     passData.maskDest = MaskTexture;
 
-                    builder.UseRendererList(passData.rendererList);
+                    if (passData.drawGeneric) builder.UseRendererList(passData.genericRendererList);
+                    if (passData.drawVat) builder.UseRendererList(passData.vatRendererList);
                     builder.SetRenderAttachment(passData.maskDest, 0, AccessFlags.Write);
 
                     if (depthTexture.IsValid()) builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.Read);
 
                     // Copy LayerMask to local variable to avoid closure capture issues
-                    LayerMask currentMask = layerMask;
+                    uint currentMask = renderingLayerMask;
 
                     builder.SetRenderFunc((MaskData data, RasterGraphContext context) =>
                     {
-                        context.cmd.DrawRendererList(data.rendererList);
+                        if (data.drawGeneric) context.cmd.DrawRendererList(data.genericRendererList);
+                        if (data.drawVat) context.cmd.DrawRendererList(data.vatRendererList);
 
                         // Trigger Foliage Rendering
                         OnRenderFoliageMask?.Invoke(context.cmd, currentMask);
@@ -279,20 +342,30 @@ namespace ZombieWar.Rendering.BillSSOutline
                                       && settings.selectionLayer.value != 0;
                 if (wantsSelection)
                 {
-                    selectionPass.Setup(settings.selectionLayer.value);
+                    selectionPass.Setup(unchecked((uint)settings.selectionLayer.value.value));
                     renderer.EnqueuePass(selectionPass);
                 }
                 if (settings.occlusionLayer.value != 0)
                 {
-                    occlusionPass.Setup(settings.occlusionLayer.value);
+                    occlusionPass.Setup(unchecked((uint)settings.occlusionLayer.value.value));
                     renderer.EnqueuePass(occlusionPass);
                 }
 
-                // Optimization over stock: request only the renderer inputs the active feature set
-                // needs. Stock requested Color|Depth|Normal unconditionally - the Color (opaque
-                // texture) copy is never sampled by the composite (it reads the blit source), and
-                // the DepthNormals prepass is pure waste when normal edges are disabled.
-                var inputs = ScriptableRenderPassInput.None;
+                // Request only the renderer inputs the active feature set needs: the DepthNormals
+                // prepass is pure waste when normal edges are disabled.
+                //
+                // Color is NOT optional though, and dropping it was the bug that made the whole
+                // effect silently vanish. The composite blits the active colour target into a temp
+                // texture, so that target has to be a sampleable RenderGraph texture. With no input
+                // requested, URP is free to render the game camera straight into the backbuffer —
+                // and a backbuffer cannot be sampled, so `RecordRenderGraph` hit its
+                // `isActiveTargetBackBuffer` guard and returned without drawing anything. The
+                // profile looked perfectly configured while rendering nothing at all.
+                //
+                // Asking for Color only while the outline is active makes URP allocate the
+                // intermediate colour target exactly when it is needed, instead of forcing
+                // "Always Intermediate" on both renderer assets for every camera.
+                var inputs = ScriptableRenderPassInput.Color;
                 if (settings.useDepth.value || settings.useDistanceFade.value || settings.useHeightFade.value)
                     inputs |= ScriptableRenderPassInput.Depth;
                 if (settings.useNormals.value)

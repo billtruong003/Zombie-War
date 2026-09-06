@@ -31,6 +31,9 @@ namespace ZombieWar.Editor.Audio
         [MenuItem("Zombie War/Audio/Import Approved SFX Library")]
         public static void ImportApprovedLibrary()
         {
+            ZombieWarCuratedAudioBuilder.Build();
+            return;
+#pragma warning disable CS0162
             var sourceManifest = Path.Combine(SourceRoot, "_Manifests", "zombiewar_sfx_manifest.v1.json");
             var manifest = ReadAndValidateManifest(sourceManifest);
             var importedPaths = CopyApprovedFiles(manifest, sourceManifest);
@@ -41,11 +44,15 @@ namespace ZombieWar.Editor.Audio
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             Debug.Log($"[ZombieWar Audio] Imported and addressed {importedPaths.Count}/{ExpectedAssetCount} approved clips.");
+#pragma warning restore CS0162
         }
 
         [MenuItem("Zombie War/Audio/Validate Approved SFX Library")]
         public static void ValidateApprovedLibrary()
         {
+            ZombieWarCuratedAudioBuilder.Validate();
+            return;
+#pragma warning disable CS0162
             var sourceManifest = Path.Combine(SourceRoot, "_Manifests", "zombiewar_sfx_manifest.v1.json");
             var manifest = ReadAndValidateManifest(sourceManifest);
             var paths = manifest.entries.ToDictionary(
@@ -59,6 +66,7 @@ namespace ZombieWar.Editor.Audio
                     name => settings.FindGroup(name)?.entries.Count ?? 0);
             ValidateImportedLibrary(manifest, paths, counts);
             Debug.Log($"[ZombieWar Audio] Validation PASS: {ExpectedAssetCount} clips.");
+#pragma warning restore CS0162
         }
 
         private static AudioManifest ReadAndValidateManifest(string sourceManifest)

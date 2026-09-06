@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// Design tokens — nguồn chuẩn, khớp 100% Docs/UI_REDESIGN_SPEC.md §2.
+    /// Design tokens — nguồn chuẩn, khớp 100% Docs/Reference/UI/UI_REDESIGN_SPEC.md §2.
     /// Palette v2 POLISH. Đừng chế màu mới ngoài bảng này.
     /// </summary>
     public static class UITheme

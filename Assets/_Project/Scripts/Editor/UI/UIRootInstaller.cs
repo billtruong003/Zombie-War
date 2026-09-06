@@ -34,8 +34,10 @@ namespace ZombieWar.Editor.UI
             if (scaler == null) scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(UITheme.RefWidth, UITheme.RefHeight);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            // The UI is authored against a portrait 1080x1920 frame. Expand keeps that entire
+            // frame visible on landscape/WebGL instead of averaging width and height, which
+            // compressed the vertical canvas and made PLAY overlap the campaign card.
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
             if (go.GetComponent<GraphicRaycaster>() == null) go.AddComponent<GraphicRaycaster>();
             if (go.GetComponent<UIManager>() == null) go.AddComponent<UIManager>();

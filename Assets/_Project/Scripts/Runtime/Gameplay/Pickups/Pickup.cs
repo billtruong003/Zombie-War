@@ -21,7 +21,12 @@ namespace ZombieWar
     /// </summary>
     /// <summary>What collecting this pickup actually does. Authored on the prefab, because the
     /// prefab already knows what it is - the spawner should not have to say.</summary>
-    public enum PickupEffect { Currency, Health, Bomb }
+    /// <summary>
+    /// M7.3b — <c>Magnet</c> added. Collecting one sweeps every pickup currently on the ground to the
+    /// player. Blanket auto-collect on wave clear stays removed: loot is walked to by default, and the
+    /// magnet is the reward that makes a big sweep feel earned rather than automatic.
+    /// </summary>
+    public enum PickupEffect { Currency, Health, Bomb, Magnet }
 
     public class Pickup : MonoBehaviour
     {
@@ -116,6 +121,12 @@ namespace ZombieWar
                     health?.Heal(healAmount);
                     break;
 
+                case PickupEffect.Magnet:
+                    // A travelling pull, not an instant credit: the coins visibly fly in, which is
+                    // the entire point of the pickup.
+                    PickupManager.BeginMagnetSweep();
+                    break;
+
                 case PickupEffect.Bomb:
                     Bill.Events?.Fire(new BombPickedUpEvent());
                     break;
@@ -125,7 +136,7 @@ namespace ZombieWar
                     break;
             }
 
-            Bill.Events?.Fire(new PickupCollectedEvent(_kind, _amount));
+            Bill.Events?.Fire(new PickupCollectedEvent(_kind, _amount, effect));
 
             if (!string.IsNullOrEmpty(_poolKey) && Bill.Pool != null) Bill.Pool.Return(gameObject);
             else gameObject.SetActive(false);
@@ -142,9 +153,13 @@ namespace ZombieWar
     {
         public readonly PlayerProfile.CurrencyKind Kind;
         public readonly int Amount;
+        public readonly PickupEffect Effect;
         public PickupCollectedEvent(PlayerProfile.CurrencyKind kind, int amount)
+            : this(kind, amount, PickupEffect.Currency) { }
+
+        public PickupCollectedEvent(PlayerProfile.CurrencyKind kind, int amount, PickupEffect effect)
         {
-            Kind = kind; Amount = amount;
+            Kind = kind; Amount = amount; Effect = effect;
         }
     }
 }

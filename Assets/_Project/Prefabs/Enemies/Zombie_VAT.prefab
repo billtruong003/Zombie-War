@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3590909228196904589}
-  - component: {fileID: 1607685277379707884}
   - component: {fileID: 8565816481657127348}
   - component: {fileID: 3733820332827172090}
   - component: {fileID: 7546043011106411297}
+  - component: {fileID: 3667068696841100970}
   m_Layer: 0
   m_Name: Zombie_VAT
   m_TagString: Untagged
@@ -36,28 +36,6 @@ Transform:
   - {fileID: 9134733174605433742}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!195 &1607685277379707884
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6963190353131660942}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.35
-  m_Speed: 3.2
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 1.2800001
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 1.5
-  m_BaseOffset: 0
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
 --- !u!136 &8565816481657127348
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -117,6 +95,34 @@ MonoBehaviour:
   knockbackDuration: 0.15
   damageNumberHeight: 1.7
   hitFlashDuration: 0.12
+--- !u!114 &3667068696841100970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6963190353131660942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b553ff1b5b283fe4dbc96038f1ba7d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.PlanarEnemyMotor
+  speed: 3.2
+  acceleration: 18
+  deceleration: 24
+  turnSpeed: 720
+  separationRadius: 1.2
+  separationWeight: 1.6
+  obstacleProbeDistance: 1.5
+  obstacleAvoidWeight: 2.2
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  stuckSpeedThreshold: 0.35
+  stuckDuration: 0.8
+  bypassDuration: 1.1
+  bypassWeight: 2.4
+  knockbackDamping: 9
 --- !u!1 &7652758974749684365
 GameObject:
   m_ObjectHideFlags: 0
@@ -181,7 +187,7 @@ MeshRenderer:
   m_SmallMeshCulling: 1
   m_ForceMeshLod: -1
   m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 5
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2527615630069581243, guid: 3b7f1f74a1ea0d749bc313d13559a483, type: 2}

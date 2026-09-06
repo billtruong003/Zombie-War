@@ -33,6 +33,31 @@ namespace ZombieWar.Editor
 
         static readonly string[] ProMaterialNames = { "ColorA", "ColorB", "ColorC", "ColorD" };
 
+        const string CharacterMaterialDir = "Assets/_Project/Art/Materials/Character";
+        const string GlassRole = "ColorB";
+
+        /// <summary>
+        /// Vai trò material của FBX -> material do DỰ ÁN sở hữu (M5+ H1 đã được duyệt).
+        ///
+        /// Đây là nơi duy nhất định nghĩa ánh xạ. Không có bản sao nào trong ThirdParty, và không có
+        /// đường lùi âm thầm về ColorA/B/C/D của vendor.
+        ///
+        /// ColorC -> Toon là một QUYẾT ĐỊNH CẮT PHẠM VI của MVP, không phải thiếu sót. Vai trò metal
+        /// riêng đã bị bỏ: ở cỡ nhìn thực tế trong game nó không tăng khả năng đọc hình, còn noise/
+        /// brushed grain thì hoặc biến mất hoặc trông như vết bẩn. Hình học, UV và MÀU ATLAS gốc của
+        /// phần metal cũ giữ nguyên — chỉ hợp đồng chiếu sáng đổi sang Toon thường. Đổi lại, cảnh bớt
+        /// một material/shader role.
+        ///
+        /// Ba vai trò production còn lại: Toon, ToonAlt, Glass.
+        /// </summary>
+        static readonly Dictionary<string, string> RoleToProjectMaterial = new(StringComparer.Ordinal)
+        {
+            { "ColorA", CharacterMaterialDir + "/M_Character_Toon.mat" },
+            { "ColorB", CharacterMaterialDir + "/M_Character_Glass.mat" },
+            { "ColorC", CharacterMaterialDir + "/M_Character_Toon.mat" },
+            { "ColorD", CharacterMaterialDir + "/M_Character_ToonAlt.mat" },
+        };
+
         // Vendor mesh prefix -> logical slot. Body is special (digits-only = player-facing, rest = assembly).
         static readonly Dictionary<string, string> PrefixToSlot = new()
         {
@@ -44,36 +69,55 @@ namespace ZombieWar.Editor
             { "Body_", "Body" }, { "Bottom_", "Legs" }, { "Shoes_", "Feet" },
         };
 
+        /// <summary>
+        /// Trỏ bốn vai trò material của FBX sang material DO DỰ ÁN SỞ HỮU (M5+).
+        ///
+        /// Bản cũ sao chép ColorA/B/C/D của vendor sang một thư mục khác — vẫn nằm trong ThirdParty —
+        /// rồi remap FBX vào bản sao đó. Hệ quả: material "production" nằm trong thư mục vendor, mọi
+        /// lần bake lại kéo về lại shader toon của vendor, và toàn bộ hướng nhìn đã duyệt của M5+ bị
+        /// xoá lặng lẽ.
+        ///
+        /// Điểm điều khiển DUY NHẤT là bảng remap của ModelImporter: <see cref="Generate"/> đọc
+        /// <c>smr.sharedMaterials</c> ngay từ FBX, nên sửa ở đây là cả 453 part đi theo. Không cần —
+        /// và không được — vá tay từng entry trong catalog.
+        /// </summary>
         [MenuItem("ZombieWar/Costume/Prepare Pro Casual Materials")]
         public static void PrepareProMaterials()
         {
-            EnsureAssetFolder(ProMaterialDir);
             var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(ProAtlas);
             if (atlas == null) { Debug.LogError($"[ProCasualMaterial] atlas not found: {ProAtlas}"); return; }
 
             var materials = new Dictionary<string, Material>(StringComparer.Ordinal);
-            foreach (string materialName in ProMaterialNames)
+            foreach (var pair in RoleToProjectMaterial)
             {
-                string sourcePath = $"{FreeMaterialDir}/{materialName}.mat";
-                string destinationPath = $"{ProMaterialDir}/{materialName}.mat";
-                if (AssetDatabase.LoadAssetAtPath<Material>(destinationPath) == null
-                    && !AssetDatabase.CopyAsset(sourcePath, destinationPath))
+                var material = AssetDatabase.LoadAssetAtPath<Material>(pair.Value);
+                if (material == null)
                 {
-                    Debug.LogError($"[ProCasualMaterial] cannot copy {sourcePath} -> {destinationPath}");
+                    // Thiếu material là lỗi lắp đặt, KHÔNG được lặng lẽ lùi về vendor: lùi về sẽ dựng
+                    // lại catalog bằng shader cũ mà không ai thấy gì bất thường.
+                    Debug.LogError(
+                        $"[ProCasualMaterial] thiếu material dự án cho vai trò '{pair.Key}': {pair.Value}. " +
+                        "Catalog KHÔNG được dựng lại cho tới khi nó tồn tại.");
                     return;
                 }
 
-                var material = AssetDatabase.LoadAssetAtPath<Material>(destinationPath);
-                if (material == null) { Debug.LogError($"[ProCasualMaterial] cannot load {destinationPath}"); return; }
-                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", atlas);
-                if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", atlas);
-                if (material.HasProperty("_EmissionMap")) material.SetTexture("_EmissionMap", atlas);
-                EditorUtility.SetDirty(material);
-                materials[materialName] = material;
+                // Atlas chỉ gán cho các vai trò lấy màu từ atlas. Kính cố ý không có atlas.
+                if (!pair.Key.Equals(GlassRole, StringComparison.Ordinal) && material.HasProperty("_BaseMap"))
+                {
+                    if (material.GetTexture("_BaseMap") != atlas)
+                    {
+                        material.SetTexture("_BaseMap", atlas);
+                        EditorUtility.SetDirty(material);
+                    }
+                }
+
+                materials[pair.Key] = material;
             }
 
             var importer = AssetImporter.GetAtPath(CharacterFbx) as ModelImporter;
             if (importer == null) { Debug.LogError($"[ProCasualMaterial] ModelImporter not found: {CharacterFbx}"); return; }
+
+            bool remapChanged = false;
             foreach (var pair in materials)
             {
                 var identifier = new AssetImporter.SourceAssetIdentifier
@@ -81,11 +125,20 @@ namespace ZombieWar.Editor
                     type = typeof(Material),
                     name = pair.Key,
                 };
+
+                // Chỉ ghi khi khác — nhờ vậy chạy lần hai không làm asset trôi (idempotent).
+                var externals = importer.GetExternalObjectMap();
+                if (externals.TryGetValue(identifier, out var current) && current == pair.Value) continue;
+
                 importer.AddRemap(identifier, pair.Value);
+                remapChanged = true;
             }
+
             AssetDatabase.SaveAssets();
-            importer.SaveAndReimport();
-            Debug.Log($"[ProCasualMaterial] Prepared {materials.Count} URP materials with Pro atlas and remapped {CharacterFbx}.");
+            if (remapChanged) importer.SaveAndReimport();
+
+            Debug.Log($"[ProCasualMaterial] {materials.Count} vai trò trỏ sang material dự án "
+                + $"(remap {(remapChanged ? "cập nhật" : "đã đúng, bỏ qua")}). Vendor ColorA/B/C/D không bị đụng tới.");
         }
 
         [MenuItem("ZombieWar/Costume/Audit Pro Casual Source")]

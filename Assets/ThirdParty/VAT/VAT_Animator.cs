@@ -106,12 +106,68 @@ public class VAT_Animator : MonoBehaviour
             meshFilter.sharedMesh = animationData.bakedMesh;
         }
 
-        _renderer.GetPropertyBlock(_propertyBlock);
-        _propertyBlock.SetTexture(PositionTexID, animationData.positionTexture);
-        _propertyBlock.SetVector(PositionMinID, animationData.positionMinBounds);
-        _propertyBlock.SetVector(PositionMaxID, animationData.positionMaxBounds);
-        _renderer.SetPropertyBlock(_propertyBlock);
+        ValidateArchetypeConstantsOnSharedMaterial();
         return true;
+    }
+
+    /// <summary>
+    /// Đưa dữ liệu VAT BẤT BIẾN lên material dùng chung của archetype, không phải lên
+    /// MaterialPropertyBlock của từng con.
+    ///
+    /// Đây là lỗi làm hỏng batching, và nó im lặng: texture vị trí, min và max là hằng số của
+    /// archetype — mọi con DogPup dùng đúng một texture, đúng một cặp bounds — nhưng bản cũ ghi cả ba
+    /// vào MPB RIÊNG của từng renderer. Một TEXTURE trong MPB thì không instance được, nên GPU
+    /// instancing tự động bị vô hiệu hoàn toàn và mỗi enemy thành một draw riêng, dù material đã bật
+    /// enableInstancing. Đo được: 26 con = +88 batch (~3.4/con).
+    ///
+    /// MPB từ đây chỉ còn giữ thứ THẬT SỰ khác nhau giữa các con: thời gian animation, trọng số
+    /// crossfade, hit flash, dissolve.
+    ///
+    /// Ghi qua <c>sharedMaterial</c> chứ không phải <c>material</c>: chạm vào <c>material</c> sẽ tạo
+    /// một bản sao runtime cho từng renderer, đúng thứ vừa mới gỡ bỏ. Chỉ ghi khi giá trị KHÁC, nên
+    /// đây là thao tác một lần cho mỗi archetype chứ không phải mỗi frame.
+    /// </summary>
+    private void ValidateArchetypeConstantsOnSharedMaterial()
+    {
+        var material = _renderer != null ? _renderer.sharedMaterial : null;
+        if (material == null) return;
+
+        // KIỂM TRA, KHÔNG GHI.
+        //
+        // Bản trước tự ghi giá trị lên sharedMaterial lúc chạy. Nó che mất một asset thiếu dữ liệu:
+        // material đi vào bản build không có position texture, và chỉ "đúng" sau khi một
+        // MonoBehaviour kịp chạy — nghĩa là frame đầu vẫn sai, và ngoài Editor thì không ai vá hộ.
+        // Hằng số của archetype giờ do VatMaterialAuthoring ghi sẵn vào asset lúc bake.
+        if (material.HasProperty(PositionTexID) &&
+            material.GetTexture(PositionTexID) != animationData.positionTexture)
+        {
+            Debug.LogError(
+                $"[VAT] '{name}': material '{material.name}' mang _PositionTexture " +
+                $"'{(material.GetTexture(PositionTexID) != null ? material.GetTexture(PositionTexID).name : "NULL")}' " +
+                $"nhưng VAT_AnimationData '{animationData.name}' cần " +
+                $"'{(animationData.positionTexture != null ? animationData.positionTexture.name : "NULL")}'. " +
+                "Chạy ZombieWar/VAT/Author VAT constants onto materials.", this);
+            return;
+        }
+
+        if (material.HasProperty(PositionMinID) &&
+            (Vector3)material.GetVector(PositionMinID) != animationData.positionMinBounds)
+        {
+            Debug.LogError(
+                $"[VAT] '{name}': material '{material.name}' có _PositionMin sai " +
+                $"({(Vector3)material.GetVector(PositionMinID)} thay vì {animationData.positionMinBounds}). " +
+                "Chạy ZombieWar/VAT/Author VAT constants onto materials.", this);
+            return;
+        }
+
+        if (material.HasProperty(PositionMaxID) &&
+            (Vector3)material.GetVector(PositionMaxID) != animationData.positionMaxBounds)
+        {
+            Debug.LogError(
+                $"[VAT] '{name}': material '{material.name}' có _PositionMax sai " +
+                $"({(Vector3)material.GetVector(PositionMaxID)} thay vì {animationData.positionMaxBounds}). " +
+                "Chạy ZombieWar/VAT/Author VAT constants onto materials.", this);
+        }
     }
 
     private void InitializeAndPlayDefault()
@@ -123,18 +179,34 @@ public class VAT_Animator : MonoBehaviour
         }
     }
 
-    public void Play(string clipName)
+    public void Play(string clipName) => Play(clipName, 0f);
+
+    /// <summary>
+    /// Starts a clip at <paramref name="normalizedStartPhase"/> of its length instead of frame zero.
+    ///
+    /// Exists for LOOPING LOCOMOTION only. A wave batch-spawns dozens of enemies within a frame or
+    /// two, and every one of them entered idle/move at phase zero, so the whole crowd bobbed in
+    /// lockstep - which reads as synchronized hopping even when their positions are calm. A stable
+    /// per-instance phase breaks that up without touching baked data or playback speed.
+    ///
+    /// Never pass a non-zero phase for gameplay-timed one-shots (attack, hit, death, pounce,
+    /// charge, burrow): their damage and telegraph windows are measured from frame zero.
+    /// </summary>
+    public void Play(string clipName, float normalizedStartPhase)
     {
         if (animationData == null || !animationData.TryGetClipInfo(clipName, out var newClip)) return;
 
         _currentClip = newClip;
-        _currentTimeSeconds = 0;
+        _currentTimeSeconds = StartTimeFor(newClip, normalizedStartPhase);
         _isBlending = false;
         _crossFadeTimer = 0;
         _previousClip = null;
     }
 
-    public void CrossFade(string clipName, float duration)
+    public void CrossFade(string clipName, float duration) => CrossFade(clipName, duration, 0f);
+
+    /// <inheritdoc cref="Play(string,float)"/>
+    public void CrossFade(string clipName, float duration, float normalizedStartPhase)
     {
         if (animationData == null || !animationData.TryGetClipInfo(clipName, out var newClip)) return;
         if (_currentClip != null && _currentClip.name == newClip.name) return;
@@ -142,11 +214,28 @@ public class VAT_Animator : MonoBehaviour
         _previousClip = _currentClip;
         _previousTimeSeconds = _currentTimeSeconds;
         _currentClip = newClip;
-        _currentTimeSeconds = 0;
+        _currentTimeSeconds = StartTimeFor(newClip, normalizedStartPhase);
         _crossFadeDuration = Mathf.Max(0, duration);
         _crossFadeTimer = 0;
         _isBlending = duration > 0.001f && _previousClip != null;
     }
+
+    /// <summary>Phase is only meaningful on a looping clip; a one-shot always starts at zero even
+    /// if a caller asks otherwise, so no gameplay timing can be skipped by accident.</summary>
+    private static float StartTimeFor(VAT_AnimationData.ClipInfo clip, float normalizedStartPhase)
+    {
+        if (clip.wrapMode != WrapMode.Loop || clip.duration <= 0f || normalizedStartPhase <= 0f) return 0f;
+        return Mathf.Repeat(normalizedStartPhase, 1f) * clip.duration;
+    }
+
+    /// <summary>Normalized position inside the current clip, for tests and diagnostics.</summary>
+    public float CurrentNormalizedPhase =>
+        _currentClip != null && _currentClip.duration > 0f
+            ? Mathf.Repeat(_currentTimeSeconds / _currentClip.duration, 1f)
+            : 0f;
+
+    /// <summary>Name of the clip currently playing, or empty.</summary>
+    public string CurrentClipName => _currentClip != null ? _currentClip.name : "";
 
     private void UpdateTimers(float adjustedDeltaTime)
     {

@@ -5,7 +5,7 @@ using BillGameCore;
 namespace ZombieWar
 {
     // Data-driven weapon hand IK. Final architecture (researched against the installed
-    // com.unity.animation.rigging@1.4.1 source - see Docs/PlayerRigSocketIncident.md):
+    // com.unity.animation.rigging@1.4.1 source - see Docs/Reference/Technical/PlayerRigSocketIncident.md):
     //
     //   WeaponRig (Rig)
     //     ChestAim   (MultiAimConstraint:   chest    <- AimTarget)        evaluated 1st

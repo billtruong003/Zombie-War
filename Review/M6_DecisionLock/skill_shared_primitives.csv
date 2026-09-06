@@ -1,0 +1,10 @@
+primitiveId,name,description,cardsServed,cardCount
+P1,Per-enemy status / record carrier,"A timed modifier bag attached to an enemy (slow, Exposed, marked, per-target hit count) that decays and is read at damage time",Focus Fire; Breach Round; Concussion; Hunter's Mark,4
+P2,Autonomous power framework,"A cooldown-driven power slot with trigger hook, cooldown state and HUD readout; every autonomous card is one instance of it",Chain Lightning; Ordnance Core; Soul Burst; Emergency Detonation,4
+P3,Multi-target spatial query,"Selection of N enemies by a spatial rule: chain-to-nearest, densest cluster, cone overlap, priority override. NO cluster or density query exists in runtime today",Static Build-up; Shockwave Belt; Chain Lightning; Ordnance Core; Hunter's Mark,5
+P4,Player distance accumulator,An odometer of player travel with a reset/consume rule,Quickstep Round; Kinetic Shield,2
+P5,Ramp / charge accumulator with decay,"A value that builds while a condition holds and decays or resets when it stops (velocity, continuous fire, consecutive hits, shot count)",Run & Gun; Static Build-up; Bullet Hose; Breach Round; Heavy Pressure,5
+P6,Damage-path interception hook,A point in the damage pipeline where a card may read target HP / distance / flags and modify or intercept the result,Quickstep Round; Execution Round; Kinetic Shield,3
+P7,Distance-scaled damage curve,An authored curve of damage vs distance; extends the existing WeaponData.RangeFalloff rather than replacing it,Point Blank; Longshot,2
+P8,Stat soft-cap curve,Diminishing returns on stacked stat picks so repeat stat cards stop being strictly correct,Fire Rate Up; Move Speed Up,2
+P9,Power VFX / HUD kit,"Arc VFX, wave VFX, charge meter, cooldown readout - the shared presentation layer for P2 and P3 cards",Static Build-up; Shockwave Belt; Chain Lightning; Ordnance Core,4

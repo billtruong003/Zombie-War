@@ -67,6 +67,10 @@ GameObject:
   - component: {fileID: 3476368919433124477}
   - component: {fileID: 3632390246254132501}
   - component: {fileID: 8425562027805119888}
+  - component: {fileID: 5859497971464676819}
+  - component: {fileID: 2043023434753208999}
+  - component: {fileID: 8694213064035318181}
+  - component: {fileID: 4636200563275553700}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -227,6 +231,7 @@ MonoBehaviour:
   longSlotB: {fileID: 0}
   drawGizmos: 1
   gizmoAimLength: 6
+  fireAlignmentConeDegrees: 5
 --- !u!114 &8598557128601071783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -350,6 +355,114 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.WeaponPoseAuthoring
   liveSyncTargetsToGrips: 0
+--- !u!114 &5859497971464676819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1befbfc4bdca86e4ca4346ef94b5b9e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillCombatDriver
+  chainArcFx: {fileID: 19884342, guid: 5e8a137808d7d374487f34e236c723db, type: 3}
+  explosionFx: {fileID: 19849376, guid: d16221e794fe16e4e8994a7f8c770561, type: 3}
+  ordnanceMarkerFx: {fileID: 198756107662936000, guid: 6bea1543e5b3fca40a6c415bb1ecabe3, type: 3}
+  soulBurstFx: {fileID: 198071127191036932, guid: cb8a83b63e008134da9393db9af8915f, type: 3}
+  emergencyFx: {fileID: 198807330505795946, guid: d9e3deb54a0d566438734cb2731448ea, type: 3}
+  shieldBreakFx: {fileID: 198825297873863668, guid: 6e3db7afa59301e48bc3999ec41f1410, type: 3}
+  chainDamage: 22
+  blastDamage: 55
+  chainJumpRange: 9
+  scanRadius: 22
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &2043023434753208999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af85b2565e671f64899e44ed61892826, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillFxDirector
+  arcMaterial: {fileID: 2100000, guid: 9c3e0b2ba36f4c64b9f57ce35ce5cee5, type: 2}
+  arcColor: {r: 0.55, g: 0.85, b: 1, a: 1}
+  arcWidth: 0.12
+  arcLifetime: 0.18
+  arcJitter: 0.22
+  arcSegments: 6
+  arcPoolSize: 12
+  markMaterial: {fileID: 2100000, guid: 21276158bb9dbe04db8e522737244be4, type: 2}
+  markPoolSize: 24
+--- !u!114 &8694213064035318181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3c663a34059d334d8b1de27b16bfe5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Stations.StationDirector
+  relayBody: {fileID: 537418705699489904, guid: 96e415326ea19534aadbb6f5193d8974, type: 3}
+  cacheBody: {fileID: 6495731284744314453, guid: cd51b4ca62cb3f34a8dece1a71dcab88, type: 3}
+  beaconBody: {fileID: 7599183871988448042, guid: acf46b6459546524285277e1e9e54edd, type: 3}
+  signalLineMaterial: {fileID: 2100000, guid: ada817444b490824f98952655243be2e, type: 2}
+  cellRadius: 1
+  releaseDistance: 110
+  bossRoster:
+  - {fileID: 11400000, guid: 311510995a120c7439ee7b53d1742898, type: 2}
+  - {fileID: 11400000, guid: f8cf8818ab64e664dbf282bd4c84d541, type: 2}
+  - {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+--- !u!114 &4636200563275553700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bec57361f624a4b4c904f96d5ca19342, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Threat.ThreatDirector
+  driveSpawning: 1
+  tier0Basic:
+  - {fileID: 11400000, guid: 85c30d759b8a43c45b700899eb3e97f1, type: 2}
+  - {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}
+  - {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
+  tier1Specialist:
+  - {fileID: 11400000, guid: e257e7bb54689a14b8fe89e0e0db3a3c, type: 2}
+  - {fileID: 11400000, guid: 73571edaceef4b6458b6e05cabfe7565, type: 2}
+  - {fileID: 11400000, guid: a9733e8143d7df94cbe7ad70dd21b23a, type: 2}
+  tier2Mixed:
+  - {fileID: 11400000, guid: ba8922089ac82014090a808dc89ba681, type: 2}
+  - {fileID: 11400000, guid: fd8d54e5f79d40b42b4484b3b48535cd, type: 2}
+  - {fileID: 11400000, guid: 77ec4f179c16a404fa19b220ec2b673e, type: 2}
+  tier3Heavy:
+  - {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+  - {fileID: 11400000, guid: b4c30108ac4346b4cb208604f5d917b7, type: 2}
+  baseSpawnInterval: 0.8
+  intervalTightenPerTier: 0.82
+  baseAlive: 18
+  alivePerTier: 8
+  metresPerDistanceBand: 90
+  secondsPerTimeStep: 75
+  maxTimePressure: 1
+  maxTier: 3
+  sectorsPerCycle: 8
+  leadSeconds: 2.5
+  spawnBurst: 1
+  intervalJitter: 0.45
 --- !u!1 &1610907586400478597
 GameObject:
   m_ObjectHideFlags: 0
@@ -509,7 +622,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5568527397217658466}
   - component: {fileID: 9043893043654184484}
-  - component: {fileID: 829266549869859308}
   - component: {fileID: 9119801533614832053}
   m_Layer: 0
   m_Name: Plane
@@ -541,55 +653,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3344283251334125047}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &829266549869859308
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3344283251334125047}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 2
-  m_LightProbeUsage: 0
-  m_ReflectionProbeUsage: 0
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 930d618f98fc2d245a7cd19dcece991e, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &9119801533614832053
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -609,7 +672,7 @@ MeshCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &3451971998559222572
@@ -1072,6 +1135,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8963932859702379336, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: -8963932859702379336, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_ReflectionProbeUsage
       value: 0
       objectReference: {fileID: 0}
@@ -1119,6 +1186,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8115632981870852999, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7747869704558312121, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -5704538882660295140, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -1134,6 +1209,10 @@ PrefabInstance:
     - target: {fileID: -5704538882660295140, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_LightProbeUsage
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5704538882660295140, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: -5704538882660295140, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_ReflectionProbeUsage
@@ -1143,6 +1222,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 5fb2d559d6447304698b8c72062bc539, type: 2}
+    - target: {fileID: -2987546585672445446, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 389927918129217600, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -1158,6 +1241,10 @@ PrefabInstance:
     - target: {fileID: 389927918129217600, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_LightProbeUsage
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 389927918129217600, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 389927918129217600, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_ReflectionProbeUsage
@@ -1171,6 +1258,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CharacterModel
       objectReference: {fileID: 0}
+    - target: {fileID: 1322052777395640004, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1547105700221842474, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -1186,6 +1277,10 @@ PrefabInstance:
     - target: {fileID: 1547105700221842474, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_LightProbeUsage
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1547105700221842474, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 1547105700221842474, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_ReflectionProbeUsage
@@ -1195,6 +1290,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 5fb2d559d6447304698b8c72062bc539, type: 2}
+    - target: {fileID: 5127403749930286666, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6911730080022580165, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_CastShadows
       value: 0
@@ -1210,6 +1309,10 @@ PrefabInstance:
     - target: {fileID: 6911730080022580165, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_LightProbeUsage
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6911730080022580165, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6911730080022580165, guid: c454f51b04522644c89185e6e811bd7c, type: 3}
       propertyPath: m_ReflectionProbeUsage

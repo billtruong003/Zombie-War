@@ -42,7 +42,8 @@ namespace ZombieWar.Editor
 
             Space();
             EditorGUILayout.LabelField("UNLOCK CHEATS", EditorStyles.boldLabel);
-            if (GUILayout.Button("Unlock all 25 weapons")) UnlockWeapons();
+            // Label was hard-coded to 25 and is now wrong twice over. Read the catalog instead.
+            if (GUILayout.Button($"Unlock all {ZombieWar.EditorTools.WeaponCatalogAccess.LoadCatalog()?.Entries.Count ?? 0} weapons")) UnlockWeapons();
             if (GUILayout.Button("Unlock all Pro Casual costume items")) UnlockCostumes();
 
             Space();
@@ -83,9 +84,9 @@ namespace ZombieWar.Editor
 
         static void UnlockWeapons()
         {
-            var weapons = AssetDatabase.FindAssets("t:WeaponData", new[] { WeaponDataDir })
-                .Select(g => AssetDatabase.LoadAssetAtPath<WeaponData>(AssetDatabase.GUIDToAssetPath(g)))
-                .Where(x => x != null).OrderBy(x => x.WeaponId).ToList();
+            // A5: catalog-driven, so a newly onboarded weapon is unlockable without editing this tool.
+            var weapons = ZombieWar.EditorTools.WeaponCatalogAccess.AllWeaponsForBuild()
+                .OrderBy(x => x.WeaponId).ToList();
             int added = PlayerProfile.UnlockAllWeaponsForDev(weapons);
             Debug.Log($"[DevProfileTools] Weapons: +{added}, owned {PlayerProfile.OwnedWeaponIds.Count}/{weapons.Count}.");
         }

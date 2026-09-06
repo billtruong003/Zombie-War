@@ -1,6 +1,6 @@
 // ShopBackground.shader — animated portrait shop background.
 // Kỹ thuật chung (KHÔNG copy asset gốc): screen-independent UV + scrolling plasma pattern
-// + vertical 3-stop gradient + vignette. Xem Docs/WEAPON_DESIGN.md §9.
+// + vertical 3-stop gradient + vignette. Xem Docs/Reference/Design/WEAPON_DESIGN.md §9.
 // Unlit, pipeline-agnostic (chạy cả URP lẫn Built-in). Procedural => không cần gán texture.
 Shader "ZombieWar/ShopBackground"
 {

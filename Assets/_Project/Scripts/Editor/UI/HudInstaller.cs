@@ -435,13 +435,14 @@ namespace ZombieWar.Editor.UI
 
             var recPill = K.Image(root, "RecordPill", K.Pill, UITheme.Alpha(UITheme.Surface, 0.9f), false);
             K.Place(recPill.rectTransform, A.TC, new Vector2(0, -260), new Vector2(420, 72));
-            var recT = K.Text(recPill.rectTransform, "L", "BEST  Wave 12", 34, UITheme.TextDim, FontStyles.Bold);
+            var recT = K.Text(recPill.rectTransform, "L", "Reached  Wave 0", 34, UITheme.TextDim, FontStyles.Bold);
             K.Full(recT.rectTransform);
 
-            // Payout card — số liệu placeholder (WalletService/payout backend chưa có)
+            // Payout card — RunOverlays.BindGameOver overwrites every value from RunClosure.Result
+            // at runtime. Defaults are zeros, never invented numbers (M5 audit S5).
             var card = K.Card(root, "PayoutCard", A.TC, new Vector2(0, -560), new Vector2(952, 520), out _, out _, out _);
-            string[] rows = { "Collected in run", "Wave bonus", "First-clear bonus" };
-            string[] vals = { "+1,250", "+350", "+580" };
+            string[] rows = { "Collected in run", "Kept", "First-clear bonus" };
+            string[] vals = { "+0", "+0", "+0" };
             for (int i = 0; i < 3; i++)
             {
                 float y = -36 - i * 84;
@@ -454,9 +455,9 @@ namespace ZombieWar.Editor.UI
             K.Place(divider.rectTransform, A.TC, new Vector2(0, -300), new Vector2(872, 2));
             var totL = K.Text(card, "TotalL", "Total", UITheme.FontSub, UITheme.TextMain, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(totL.rectTransform, A.TL, new Vector2(40, -320), new Vector2(300, 70));
-            var totV = K.Text(card, "TotalV", "2,180", 64, UITheme.Gold, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
+            var totV = K.Text(card, "TotalV", "0", 64, UITheme.Gold, FontStyles.Bold, TextAlignmentOptions.MidlineRight);
             K.Place(totV.rectTransform, A.TR, new Vector2(-40, -320), new Vector2(400, 70));
-            var kc = K.Text(card, "KcRow", "Gems collected  +5", 34, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
+            var kc = K.Text(card, "KcRow", "Gems kept  +0", 34, UITheme.Cyan, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
             K.Place(kc.rectTransform, A.BL, new Vector2(40, 24), new Vector2(500, 52));
 
             K.ProgressBar(root, "PassXpBar", A.TC, new Vector2(0, -1130), new Vector2(952, 20), 0.4f, UITheme.RarityColor(3));

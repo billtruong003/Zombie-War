@@ -23,7 +23,7 @@ description: How to write gameplay C# in the Zombie War Unity project using the 
 
 ## Architecture in 60 seconds
 
-- **Auto-bootstrap** (`Bootstrap/Bill.cs` → `BillBootstrap`): runs via `[RuntimeInitializeOnLoadMethod]`. Reads `BillBootstrapConfig` from a `Resources/` folder (create via menu **BillGameCore ▸ Bootstrap Config** — **not yet created in this project, needed before any `Bill.*` call works**). Creates a `DontDestroyOnLoad` root + a `CoroutineRunner` whose `Update`/`LateUpdate` drive `ServiceLocator.TickAll/LateTickAll` — **this tick is what drives `Bill.Tween`, `Bill.Timer`, etc. Nothing animates if bootstrap didn't run.**
+- **Auto-bootstrap** (`Bootstrap/Bill.cs` → `BillBootstrap`): runs via `[RuntimeInitializeOnLoadMethod]`. Reads `BillBootstrapConfig` from a `Resources/` folder — **`Assets/Resources/BillBootstrapConfig.asset` already exists here**; it also holds `defaultAudioLibrary`, which `AddressableAudioRuntime` overwrites at runtime with the loaded cue set. Creates a `DontDestroyOnLoad` root + a `CoroutineRunner` whose `Update`/`LateUpdate` drive `ServiceLocator.TickAll/LateTickAll` — **this tick is what drives `Bill.Tween`, `Bill.Timer`, etc. Nothing animates if bootstrap didn't run.**
 - **ServiceLocator** (`Infrastructure/ServiceLocator.cs`): `Register`, `Get<T>`, `TryGet<T>`, `Has<T>`. Auto-calls `Initialize()`/`Cleanup()`, auto-adds `ITickable`/`ILateTickable`.
 - **`Bill` facade**: `Tween, Scene, Pool, Audio, Save, UI, Timer, Config, Events, Net, State` + `IsReady`. Dev-only: `Cheat, Debug, Analytics` (`#if UNITY_EDITOR || DEVELOPMENT_BUILD`).
 
@@ -47,15 +47,18 @@ BillTween.Fade(canvasGroup, 0f, 0.5f)?.SetEase(EaseType.InQuad);
 BillTween.DelayedCall(0.4f, () => Fire());
 ```
 
-**⚠️ `BillTween.Move/LocalMove/ScaleTo` (multi-axis) build 3 axis tweens via `Float()` — which already adds them to the active list — then `Append/Join` them into a sequence too, so they'd double-tick if misused.** `Weapon.cs`'s recoil already works around this correctly: it builds the 3 axis tweens itself via `BillTween.LocalMoveX/Y/Z` (each with its own `.SetEase`) and joins THOSE into a fresh `BillTween.Sequence()`, rather than calling `LocalMove(...)` directly and then also trying to add an ease. Copy that pattern for any new multi-axis + custom-ease tween.
+**⚠️ `BillTween.Move/LocalMove/ScaleTo` (multi-axis) build 3 axis tweens via `Float()` — which already adds them to the active list — then `Append/Join` them into a sequence too, so they'd double-tick if misused.** For a multi-axis tween with per-axis easing, build the 3 axis tweens yourself via `BillTween.LocalMoveX/Y/Z` (each with its own `.SetEase`) and `Join` THOSE into a fresh `BillTween.Sequence()` — don't call `LocalMove(...)` and then try to add an ease.
+
+**Where BillTween is actually used today:** UI only — `UI/Core/UIFx.cs`, `UIFxPress`, `UIFxPulse`, `UIFxBreathe`, `UIToggleVisual`. Weapon recoil is deliberately NOT a tween: it is a hand-rolled `SmoothDamp` spring on `RecoilPivot` (`Gameplay/Weapon.cs:175-184, 524-543`) because it must be re-impulsed every shot and settle continuously, which a fire-and-forget tween can't do. Don't "convert it back" to BillTween.
 
 ## Services cheat-sheet (full signatures in reference/services.md)
 
 ```csharp
-Bill.Pool.Spawn("zombie_batty", pos, rot);   // string-key pool; auto-loads Resources/Pools/<key> if unregistered
+Bill.Pool.Spawn("pickup_coin", pos, rot);    // string-key pool; auto-loads Resources/Pools/<key> if unregistered
 Bill.Pool.Return(go);                        // or go.ReturnToPool(delay) extension
 Bill.Timer.Delay(0.4f, Fire);                // -> TimerHandle (.Cancel()); Repeat(interval,cb,count)
-Bill.Audio.Play("gun_fire");                 // keys from AudioLibrary; PlayMusic/StopMusic/SetVolume(AudioChannel,..)
+Bill.Audio.Play("sfx.weapon.ak47.fire");     // dotted cue keys from AddressableAudioCatalog (330 of them)
+Bill.Audio.Play(key, worldPos);              // PlayPitched/PlayMusic/StopMusic/SetVolume(AudioChannel,..)
 Bill.Events.Fire(new WaveStartedEvent{ WaveIndex = i });   // struct : IEvent, game-wide signals only
 Bill.State.GoTo<GameplayState>();            // Boot/Menu/Loading/Gameplay/Pause/GameOver built in
 ```
@@ -77,15 +80,25 @@ public class ZombieData : ScriptableObject
 
 ## Project-specific recipes
 
-- **Zombie pooling (Phase 3):** `ZombieAI.cs` already calls `Bill.Pool?.Return(gameObject)` on death. The missing half is `Bill.Pool.Register(key, prefab, warmCount)` per `ZombieData` at level start, and `Bill.Pool.Spawn(key, pos, rot)` from `WaveSpawner.cs` (Phase 4, not yet written) instead of `Instantiate`.
-- **Weapon recoil / camera shake:** see the `BillTween` caution above — `Weapon.cs` and `CameraFollow.cs` are the two existing examples of the correct multi-axis + custom-ease pattern (`CameraFollow.cs` doesn't use BillTween at all for shake, by design — it samples an assigned noise texture directly, see `NoiseTextureSampler.cs`).
-- **SFX:** route everything through `Bill.Audio.Play(key)` once an `AudioLibrary` asset exists (not yet created) — don't call `AudioSource.PlayOneShot` directly in new gameplay code.
-- **Bootstrap config still needed:** nothing under `Bill.*` will actually run until a `BillBootstrapConfig` asset exists in a `Resources/` folder (menu **BillGameCore ▸ Bootstrap Config**) and a bootstrap scene is set up — this hasn't been done yet in this project (see `Docs/EDITOR_SETUP_CHECKLIST.md`), add it as a checklist item when wiring up Bill.Audio/Bill.Pool for the first time.
+- **Zombie pooling — DONE, don't rebuild it.** `ZombieSpawner.cs` registers a pool per `ZombieData` (`EnsureRegistered`) and spawns through `Bill.Pool`; `ZombieBase` returns itself on death with a pool-safe reset. `WaveDirector` pre-warms every pool of every wave before the run starts. The old `ZombieAI.cs`/`WaveSpawner.cs` names in earlier docs no longer exist — current files are `Gameplay/Zombies/ZombieBase.cs` (+ 6 subclasses), `Gameplay/Waves/ZombieSpawner.cs`, `Gameplay/Waves/WaveDirector.cs`.
+- **Other pools already in place:** `FxPool` (impact/muzzle), `TracerPool` (`MeshTracer`), `DamageNumberSpawner`, `PickupManager` (`Resources/Pools/pickup_*`).
+- **Weapon recoil / camera shake — intentionally NOT tweens.** `Weapon.cs` runs a `SmoothDamp` spring on `RecoilPivot` re-impulsed per shot; `CameraFollow.Shake` samples an assigned noise texture (`NoiseTextureSampler.cs`). Both need continuous re-impulse, which a fire-and-forget tween can't express. Leave them alone.
+- **SFX:** the library **exists** — `Assets/Resources/Audio/ZombieWarRuntimeAudioLibrary.asset` is filled at runtime by `AddressableAudioRuntime` from `AddressableAudioCatalog` (330 dotted cue keys / 970 clips). Route everything through `Bill.Audio.Play(key)`; never `AudioSource.PlayOneShot` in gameplay code. Only 3 cues are wired today — wiring the rest is the current top priority (`Docs/REMAINING_FEATURES.md` P0).
+- **Bootstrap is done:** `Assets/Resources/BillBootstrapConfig.asset` exists and `Bootstrap.unity` is the entry scene (`BootstrapEntry` → `GameFlow.EnterMenu`). Always Play from `Bootstrap.unity`; playing `Menu`/`Map_*` directly gives `SERVICE NOT FOUND` spam, which is expected, not a bug.
 
 ## Gotchas
 
-- A `[Bill] SERVICE NOT FOUND` error → bootstrap didn't run (no `BillBootstrapConfig` yet, or you accessed a service before `GameReadyEvent`).
+- A `[Bill] SERVICE NOT FOUND` error → bootstrap didn't run: you Played a scene other than `Bootstrap.unity`, or accessed a service before `GameReadyEvent`.
 - Tween/Timer "not animating" → same root cause (no `CoroutineRunner` tick).
 - Don't add DOTween (rule #1). Don't strip an asmdef to "fix" a missing-type error (rule #3) — add one to the orphaned folder instead.
-- `Bill.Cheat/Debug/Analytics` only exist in editor/dev builds.
+- `Bill.Cheat/Debug/Analytics` are gated `UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS`. ⚠️ `ZW_CHEATS` is currently ENABLED for Android/iOS/Standalone (`ProjectSettings.asset:833-835`), so release builds currently ship the cheat panel — toggle it off via the `CheatBuildToggle` menu before any store build.
 - `DynamicAnimationEventHub` (`Runtime/Utils/DevTools.cs`... actually `Runtime/DevTools/DevTools.cs`, moved there to fix an asmdef issue — see rule #3) is a **global-namespace** component (string→UnityEvent map, `Trigger(id)`) — handy for animation-event wiring, e.g. a zombie attack animation firing a hit event.
+
+## Where the project stands (2026-07-31)
+
+Read `Docs/CURRENT_STATE.md` before assuming a system is missing. Short version of what is
+already wired: combat core, auto-aim, pooling, VAT enemies, spawn safety, save/economy/gacha.
+What is built but NOT connected: audio (970 clips, only 3 cues playing), campaign level select,
+level-up perks (picking one has no effect), run result screen, haptics, bomb pickup.
+Full evidence with `file:line` is in that doc; the prioritized fix order is in
+`Docs/REMAINING_FEATURES.md`.

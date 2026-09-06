@@ -515,6 +515,237 @@ namespace ZombieWar.EditorTools
             else { report.AppendLine("  ✗ UIPrototypeCatalog: order does NOT match catalogOrder"); fails++; }
         }
 
+        // ================================================================ M7.0 CATALOG + GATES
+
+        const string CatalogAssetPath = "Assets/_Project/Resources/WeaponCatalog.asset";
+
+        /// <summary>
+        /// M7.0 Task 2 — build/refresh the authoritative <see cref="ZombieWar.WeaponCatalog"/>.
+        ///
+        /// Deliberately idempotent and non-destructive on identity: an entry that already exists
+        /// keeps its weaponId, variant relationship and unlockMethod. Only derived fields (data
+        /// reference, family, tier, catalogOrder) are refreshed from the assets. That is what makes
+        /// it safe to re-run against a live save.
+        /// </summary>
+        [MenuItem("ZombieWar/Weapons/Factory/Build Weapon Catalog")]
+        public static void BuildCatalog()
+        {
+            var all = AssetDatabase.FindAssets("t:WeaponData", new[] { WeaponsDataDir })
+                .Select(g => AssetDatabase.LoadAssetAtPath<WeaponData>(AssetDatabase.GUIDToAssetPath(g)))
+                .Where(w => w != null)
+                .OrderBy(w => w.CatalogOrder)
+                .ToList();
+
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources"))
+                AssetDatabase.CreateFolder("Assets/_Project", "Resources");
+
+            var catalog = AssetDatabase.LoadAssetAtPath<ZombieWar.WeaponCatalog>(CatalogAssetPath);
+            bool creating = catalog == null;
+            if (creating) catalog = ScriptableObject.CreateInstance<ZombieWar.WeaponCatalog>();
+
+            // Preserve everything identity-bearing from the existing asset.
+            var existing = new Dictionary<string, ZombieWar.WeaponCatalog.Entry>(StringComparer.Ordinal);
+            foreach (var e in catalog.Entries)
+                if (e != null && !string.IsNullOrEmpty(e.weaponId)) existing[e.weaponId] = e;
+
+            var entries = new List<ZombieWar.WeaponCatalog.Entry>();
+            foreach (var w in all)
+            {
+                if (string.IsNullOrEmpty(w.WeaponId))
+                {
+                    Debug.LogError($"[Catalog] '{w.name}' has no weaponId — refusing to invent one. Run Execute() first.");
+                    continue;
+                }
+                existing.TryGetValue(w.WeaponId, out var prev);
+                entries.Add(new ZombieWar.WeaponCatalog.Entry
+                {
+                    weaponId = w.WeaponId,                       // never derived, never regenerated
+                    data = w,
+                    family = w.weaponClass.ToString(),
+                    catalogOrder = w.CatalogOrder,
+                    tier = w.tier,
+                    // identity-bearing fields survive a rebuild
+                    variantGroupId = prev != null ? prev.variantGroupId : "",
+                    baseWeaponId = prev != null ? prev.baseWeaponId : "",
+                    unlockMethod = prev != null ? prev.unlockMethod : ZombieWar.WeaponCatalog.UnlockMethod.Purchase,
+                });
+            }
+
+            ApplyKnownCatalogFacts(entries);
+            catalog.SetEntries(entries);
+
+            if (creating) AssetDatabase.CreateAsset(catalog, CatalogAssetPath);
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+
+            var errors = catalog.Validate();
+            if (errors.Count == 0)
+                Debug.Log($"[Catalog] {(creating ? "Created" : "Updated")} {CatalogAssetPath} with {entries.Count} entries — contract OK.");
+            else
+                Debug.LogError($"[Catalog] {entries.Count} entries but {errors.Count} contract failure(s):\n  " + string.Join("\n  ", errors));
+        }
+
+        /// <summary>
+        /// The two facts M7.0 locks in: the starter, and the duplicate-shotgun variant group.
+        /// Applied on every rebuild so a fresh catalog cannot silently lose them.
+        /// </summary>
+        static void ApplyKnownCatalogFacts(List<ZombieWar.WeaponCatalog.Entry> entries)
+        {
+            // W1: WPN_Shotgun_BenelliM4 and WPN_Shotgun_Generic are the SAME MESH (2133 tris,
+            // 0.082 x 0.302 x 1.465). Generic becomes a variant of BenelliM4. NEITHER weaponId is
+            // deleted or reused — a player may already own either one, and both must keep loading.
+            const string shotgunBase = "weapon.shotgun.benelli_m4";
+            const string shotgunVariant = "weapon.shotgun.generic";
+            var base_ = entries.FirstOrDefault(e => e.weaponId == shotgunBase);
+            var variant = entries.FirstOrDefault(e => e.weaponId == shotgunVariant);
+            if (base_ != null && variant != null)
+            {
+                base_.variantGroupId = shotgunBase;
+                base_.baseWeaponId = "";
+                variant.variantGroupId = shotgunBase;
+                variant.baseWeaponId = shotgunBase;
+                // Folded into its base for display. Still owned, still equippable, still resolvable.
+                variant.unlockMethod = ZombieWar.WeaponCatalog.UnlockMethod.Disabled;
+            }
+
+            // Starter is an explicit flag, never "lowest catalogOrder" — otherwise re-ordering the
+            // presentation list would silently change which weapon a new player starts with.
+            if (!entries.Any(e => e.unlockMethod == ZombieWar.WeaponCatalog.UnlockMethod.Starter))
+            {
+                var starter = entries
+                    .Where(e => e.data != null && !e.data.twoHanded)
+                    .OrderBy(e => e.catalogOrder)
+                    .FirstOrDefault();
+                if (starter != null) starter.unlockMethod = ZombieWar.WeaponCatalog.UnlockMethod.Starter;
+            }
+        }
+
+        /// <summary>
+        /// M7.0 Task 5 — the G1..G8 onboarding gates from
+        /// Review/M6_DecisionLock/WEAPON_ONBOARDING_GATE.md, run over the whole arsenal.
+        ///
+        /// G1..G4 are AUTOMATIC and BLOCKING. G5 is MANUAL and blocking, fed by
+        /// WeaponGripValidationCapture. G6..G8 are advisory and never block.
+        /// </summary>
+        [MenuItem("ZombieWar/Weapons/Factory/Run Onboarding Gates G1-G8")]
+        public static void RunOnboardingGates()
+        {
+            var all = AssetDatabase.FindAssets("t:WeaponData", new[] { WeaponsDataDir })
+                .Select(g => AssetDatabase.LoadAssetAtPath<WeaponData>(AssetDatabase.GUIDToAssetPath(g)))
+                .Where(w => w != null && w.weaponPrefab != null)
+                .OrderBy(w => w.CatalogOrder)
+                .ToList();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("weaponId,assetName,G1a_shader,G1b_notVendorOwned,G2_outline,G3_duplicate,G4_grip,G6_tris,G7_silhouette,G8_colour,blockingFailures,notes");
+
+            var signatures = new Dictionary<string, string>(StringComparer.Ordinal);
+            int blockedTotal = 0;
+            var counts = new Dictionary<string, int>();
+            void Bump(string k, bool pass) { if (!pass) counts[k] = counts.TryGetValue(k, out var c) ? c + 1 : 1; }
+
+            foreach (var w in all)
+            {
+                string path = AssetDatabase.GetAssetPath(w.weaponPrefab);
+                var contents = PrefabUtility.LoadPrefabContents(path);
+                var notes = new List<string>();
+
+                var renderers = contents.GetComponentsInChildren<Renderer>(true);
+                var mats = renderers.SelectMany(r => r.sharedMaterials).Where(m => m != null).ToList();
+
+                // G1 has two independent halves and they fail for different reasons, so they are
+                // reported separately. Collapsing them into one boolean produced a useless
+                // "25/25 blocking failure" with an empty diagnosis.
+                //
+                //   G1a — shader contract: every material on the project toon shader.
+                //   G1b — ownership: no material owned by a vendor folder. A vendor .mat can be
+                //         restored or overwritten by a pack reimport, which would silently restyle
+                //         the whole arsenal.
+                bool g1a = mats.Count > 0 && mats.All(m =>
+                    m.shader != null && m.shader.name.Contains("Toon"));
+                bool g1b = mats.Count > 0 && mats.All(m =>
+                    !AssetDatabase.GetAssetPath(m).StartsWith("Assets/ThirdParty"));
+                bool g1 = g1a && g1b;
+
+                if (!g1a)
+                {
+                    var bad = mats.Where(m => m.shader == null || !m.shader.name.Contains("Toon"))
+                                  .Select(m => m.shader != null ? m.shader.name : "null").Distinct().Take(2);
+                    notes.Add("G1a non-toon shader: " + string.Join("|", bad));
+                }
+                if (!g1b)
+                {
+                    var vendorMats = mats.Where(m => AssetDatabase.GetAssetPath(m).StartsWith("Assets/ThirdParty"))
+                                         .Select(m => m.name).Distinct().Take(2);
+                    notes.Add("G1b vendor-owned material: " + string.Join("|", vendorMats));
+                }
+
+                // G2 — the toon outline must actually be enabled, not merely available.
+                bool g2 = mats.Count > 0 && mats.All(m =>
+                    !m.HasProperty("_OutlineWidth") || m.GetFloat("_OutlineWidth") > 0f);
+                if (!g2) notes.Add("G2 outline width 0");
+
+                // G3 — mesh signature (tri count + bounds), the check that caught BenelliM4/Generic.
+                var filters = contents.GetComponentsInChildren<MeshFilter>(true);
+                int tris = 0; var bounds = new Bounds();
+                bool first = true;
+                foreach (var f in filters)
+                {
+                    if (f.sharedMesh == null) continue;
+                    tris += f.sharedMesh.triangles.Length / 3;
+                    if (first) { bounds = f.sharedMesh.bounds; first = false; }
+                    else bounds.Encapsulate(f.sharedMesh.bounds);
+                }
+                string sig = $"{tris}|{bounds.size.x:F3}x{bounds.size.y:F3}x{bounds.size.z:F3}";
+                bool g3 = !signatures.ContainsKey(sig);
+                if (!g3) notes.Add("G3 duplicate of " + signatures[sig]);
+                else signatures[sig] = w.name;
+
+                // G4 — authored grip contract present and complete.
+                var grips = contents.GetComponentInChildren<WeaponGripPoints>(true);
+                bool g4 = grips != null && grips.RightHandGrip != null
+                          && grips.LeftHandGrip != null && grips.MuzzlePoint != null
+                          && w.useAuthoredGripPositions;
+                if (!g4) notes.Add("G4 grip/muzzle incomplete");
+
+                // G6 — triangle budget, advisory. Shipped arsenal spans 2133..11614.
+                bool g6 = tris <= 12000;
+                if (!g6) notes.Add($"G6 {tris} tris");
+
+                // G7 — silhouette separation, heuristic, advisory. 3D mesh-bounds proportions;
+                // 2D pixel mass is a REJECTED proxy and is not used.
+                string shapeKey = $"{w.weaponClass}|{bounds.size.x / Mathf.Max(bounds.size.z, 0.001f):F1}";
+                bool g7 = !signatures.ContainsKey("shape:" + shapeKey);
+                if (!g7) notes.Add("G7 proportions close to " + signatures["shape:" + shapeKey]);
+                else signatures["shape:" + shapeKey] = w.name;
+
+                // G8 — colour identity, heuristic, advisory.
+                bool g8 = mats.Any(m => m.HasProperty("_BaseColor") &&
+                    (m.GetColor("_BaseColor").maxColorComponent - m.GetColor("_BaseColor").grayscale) > 0.06f);
+                if (!g8) notes.Add("G8 no distinguishing colour");
+
+                PrefabUtility.UnloadPrefabContents(contents);
+
+                int blocking = (g1 ? 0 : 1) + (g2 ? 0 : 1) + (g3 ? 0 : 1) + (g4 ? 0 : 1);
+                blockedTotal += blocking > 0 ? 1 : 0;
+                Bump("G1a", g1a); Bump("G1b", g1b); Bump("G2", g2); Bump("G3", g3); Bump("G4", g4);
+                Bump("G6", g6); Bump("G7", g7); Bump("G8", g8);
+
+                csv.AppendLine($"{w.WeaponId},{w.name},{g1a},{g1b},{g2},{g3},{g4},{tris},{g7},{g8},{blocking},\"{string.Join("; ", notes)}\"");
+            }
+
+            string outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..",
+                "Review", "M7_0_Factory", "g1_g8_gate_results.csv"));
+            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            File.WriteAllText(outPath, csv.ToString());
+
+            var summary = string.Join(", ", counts.OrderBy(k => k.Key).Select(k => $"{k.Key} fail={k.Value}"));
+            Debug.Log($"[Gates] Ran G1-G8 over {all.Count} weapons. {blockedTotal} weapon(s) have >=1 BLOCKING failure. " +
+                      $"{(summary.Length == 0 ? "no failures" : summary)}. " +
+                      "G5 is MANUAL (see Review/M7_0_Factory/G5_GRIP_VALIDATION.md). " +
+                      "CSV -> Review/M7_0_Factory/g1_g8_gate_results.csv");
+        }
+
         // ================================================================ CONTACT SHEET
 
         [MenuItem("ZombieWar/Weapons/Roster/Generate Referenced Contact Sheet")]

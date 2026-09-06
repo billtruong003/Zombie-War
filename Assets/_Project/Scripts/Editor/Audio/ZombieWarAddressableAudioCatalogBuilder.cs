@@ -35,6 +35,9 @@ namespace ZombieWar.Editor.Audio
         [MenuItem("Zombie War/Audio/Build Runtime Addressables Catalog")]
         public static void Build()
         {
+            ZombieWarCuratedAudioBuilder.Build();
+            return;
+#pragma warning disable CS0162
             var manifest = ReadManifest();
             EnsureFolder("Assets/Resources/Audio");
             ConfigurePlayerBuild();
@@ -79,11 +82,15 @@ namespace ZombieWar.Editor.Audio
             Debug.Log(
                 $"[ZombieWar Audio] Runtime Addressables catalog built: "
                 + $"{ExpectedCueCount} cues / {ExpectedVariantCount} variants.");
+#pragma warning restore CS0162
         }
 
         [MenuItem("Zombie War/Audio/Validate Runtime Addressables Catalog")]
         public static void Validate()
         {
+            ZombieWarCuratedAudioBuilder.Validate();
+            return;
+#pragma warning disable CS0162
             var catalog = AssetDatabase.LoadAssetAtPath<AddressableAudioCatalog>(CatalogPath)
                 ?? throw new InvalidDataException("Runtime audio catalog is missing.");
             var config = AssetDatabase.LoadAssetAtPath<BillBootstrapConfig>(
@@ -111,10 +118,11 @@ namespace ZombieWar.Editor.Audio
 
             var cueKeys = catalog.Variants.Select(variant => variant.cueKey)
                 .ToHashSet(StringComparer.Ordinal);
-            foreach (var guid in AssetDatabase.FindAssets("t:WeaponData", new[] { "Assets/_Project/Data/Weapons" }))
+            // A5: catalog-driven, and it throws when the catalog and the folder disagree.
+            foreach (var data in ZombieWar.EditorTools.WeaponCatalogAccess.WeaponsRequiringAudio())
             {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var serialized = new SerializedObject(AssetDatabase.LoadMainAssetAtPath(path));
+                var path = AssetDatabase.GetAssetPath(data);
+                var serialized = new SerializedObject(data);
                 var fire = serialized.FindProperty("fireSfxKey")?.stringValue;
                 var reload = serialized.FindProperty("reloadSfxKey")?.stringValue;
                 if (!cueKeys.Contains(fire) || !cueKeys.Contains(reload))
@@ -124,6 +132,7 @@ namespace ZombieWar.Editor.Audio
             Debug.Log(
                 $"[ZombieWar Audio] Runtime validation PASS: "
                 + $"{ExpectedCueCount} cues / {ExpectedVariantCount} variants.");
+#pragma warning restore CS0162
         }
 
         private static AddressableAudioCatalog.Variant ToVariant(ManifestEntry entry)
@@ -150,11 +159,10 @@ namespace ZombieWar.Editor.Audio
                 .Select(key => key["sfx.weapon.".Length..^".fire".Length])
                 .ToArray();
 
-            foreach (var guid in AssetDatabase.FindAssets("t:WeaponData", new[] { "Assets/_Project/Data/Weapons" }))
+            foreach (var data in ZombieWar.EditorTools.WeaponCatalogAccess.AllWeaponsForBuild())
             {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var asset = AssetDatabase.LoadMainAssetAtPath(path);
-                var serialized = new SerializedObject(asset);
+                var path = AssetDatabase.GetAssetPath(data);
+                var serialized = new SerializedObject(data);
                 var token = ResolveWeaponToken(Path.GetFileNameWithoutExtension(path), fireTokens);
                 var fireKey = $"sfx.weapon.{token}.fire";
                 var reloadKey = $"sfx.weapon.{token}.reload";
@@ -164,7 +172,7 @@ namespace ZombieWar.Editor.Audio
                 serialized.FindProperty("fireSfxKey").stringValue = fireKey;
                 serialized.FindProperty("reloadSfxKey").stringValue = reloadKey;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(asset);
+                EditorUtility.SetDirty(data);
             }
         }
 

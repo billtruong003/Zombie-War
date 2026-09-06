@@ -13,7 +13,7 @@ namespace ZombieWar
         protected override void Chase(Transform target)
         {
             float distance = Vector3.Distance(transform.position, target.position);
-            Agent.speed = distance <= lungeRange
+            Motor.Speed = distance <= lungeRange
                 ? Data.moveSpeed * lungeSpeedMultiplier
                 : Data.moveSpeed;
             base.Chase(target);

@@ -27,8 +27,8 @@ namespace ZombieWar
         [SerializeField] private TMP_Text bombLabel;            // "x3" / cooldown
         [SerializeField] private Button weaponButton;           // tap = switch weapon
         [SerializeField] private Image weaponIcon;              // xoay 1 vòng khi reload
-        [SerializeField] private TMP_Text weaponLabel;          // "Rifle 30/30"
-        [SerializeField] private Image ammoRing;                // ring radial fill = đạn còn
+        [SerializeField] private TMP_Text weaponLabel;          // ten sung dang cam (M4: khong con dan)
+        [SerializeField] private Image ammoRing;                // M4: khong con y nghia, bi tat luc chay
 
         [Header("Overlays (legacy — thay ở đợt overlay screens)")]
         [SerializeField] private GameObject gameOverPanel;
@@ -45,10 +45,11 @@ namespace ZombieWar
         private float _hp01 = 1f;
 
         // Cache giá trị đã hiển thị — TMP .text set mỗi frame là nguồn GC string chính của HUD.
-        private int _shownAmmo = int.MinValue;
+        private WeaponData _labelBound;
         private int _shownBombs = int.MinValue;
         private int _shownCooldownTenths = int.MinValue;
         private long _shownRunCoin = long.MinValue;
+        private int _shownLevel = 1;
 
         /// <summary>Phase Pause/GameOver wire vào đây (PauseOverlay). Null → nút pause log fail-safe.</summary>
         public System.Action PauseRequested;
@@ -128,11 +129,6 @@ namespace ZombieWar
 
             if (weaponIcon)
             {
-                // reload đọc bằng icon xoay đúng 1 vòng — không có nút reload
-                float z = _weapon.IsReloading ? -360f * _weapon.ReloadProgress : 0f;
-                var e = weaponIcon.rectTransform.localEulerAngles;
-                weaponIcon.rectTransform.localEulerAngles = new Vector3(e.x, e.y, z);
-
                 if (_weapon.Current != _iconBound && prototypeCatalog != null)
                 {
                     _iconBound = _weapon.Current;
@@ -141,19 +137,34 @@ namespace ZombieWar
                 }
             }
 
-            if (ammoRing && _weapon.MagazineSize > 0)
-                ammoRing.fillAmount = (float)_weapon.AmmoInMag / _weapon.MagazineSize;
+            // M4: weapons have no magazine, so the ring has nothing to report. It is HIDDEN rather
+            // than left full - a permanently complete gauge tells the player ammunition still exists
+            // and is merely topped up, which is exactly the wrong reading.
+            //
+            // The Image is disabled from code instead of deleted from the prefab: HUD prefabs are
+            // owner-authored, and silently restructuring one to satisfy a gameplay change is not
+            // this milestone's call.
+            if (ammoRing && ammoRing.enabled) ammoRing.enabled = false;
 
-            if (weaponLabel && _weapon.AmmoInMag != _shownAmmo)
+            // The label now carries weapon IDENTITY instead of a round count - the thing that still
+            // varies and that the player actually chooses between.
+            if (weaponLabel && !ReferenceEquals(_weapon.Current, _labelBound))
             {
-                _shownAmmo = _weapon.AmmoInMag;
-                weaponLabel.text = _weapon.Current != null ? _shownAmmo.ToString() : "";
+                _labelBound = _weapon.Current;
+                weaponLabel.text = _labelBound != null ? _labelBound.weaponName : "";
             }
         }
 
         // Coin pill bind RunState thật: nhặt vàng/nổ thùng/giết quái → số nhảy ngay.
         private void OnRunChanged()
         {
+            int level = RunState.Current?.Level ?? 1;
+            if (level != _shownLevel)
+            {
+                _shownLevel = level;
+                RefreshWavePill();
+            }
+
             if (coinPill == null) return;
             long coin = RunState.Current?.Coin ?? 0;
             if (coin == _shownRunCoin) return;
@@ -191,13 +202,17 @@ namespace ZombieWar
 
         private void OnWaveCleared(WaveClearedEvent e)
         {
-            if (wavePill) wavePill.text = $"Wave {e.WaveNumber} ✓";
+            // U+2713 CHECK MARK is not in LiberationSans SDF, so TMP substituted U+25A1 (a box) and
+            // warned on every wave clear. Replaced with a character the shipped font actually has.
+            if (wavePill) wavePill.text = $"Wave {e.WaveNumber} OK";
         }
 
+        // Terminal presentation is owned by RunOverlays via RunFinishedEvent (first-wins,
+        // M5.1.2 CP3). Raw wave/game-over events may only touch non-terminal HUD text here -
+        // toggling the result roots from them let a late GameOverEvent repaint a locked Victory.
         private void OnAllWavesCleared(AllWavesClearedEvent e)
         {
             if (wavePill) wavePill.text = "ALL CLEAR";
-            if (victoryPanel) victoryPanel.SetActive(true);
         }
 
         private void OnZombieCountChanged(ZombieCountChangedEvent e)
@@ -208,7 +223,9 @@ namespace ZombieWar
 
         private void RefreshWavePill()
         {
-            if (wavePill) wavePill.text = $"Wave {_wave} — {_alive}";
+            // Level rides on the wave pill so the silent-level-up gap (M5 audit S6) is closed
+            // without new HUD geometry; a real XP bar is redesign-phase work.
+            if (wavePill) wavePill.text = $"Wave {_wave} — {_alive} · Lv {_shownLevel}";
         }
 
         private void OnPlayerDamaged(PlayerDamagedEvent e)
@@ -237,7 +254,7 @@ namespace ZombieWar
 
         private void OnGameOver(GameOverEvent e)
         {
-            if (gameOverPanel) gameOverPanel.SetActive(true);
+            // Intentionally empty for terminal roots - see the note on OnAllWavesCleared.
         }
     }
 }

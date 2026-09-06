@@ -76,14 +76,15 @@ namespace ZombieWar.Tests
                 Assert.IsNotNull(vats[0].animationData, $"{go.name} has no VAT_AnimationData");
                 Assert.IsTrue(vats[0].animationData.IsValid(), $"{go.name} has invalid VAT data");
 
-                // Exactly one BODY renderer (on Visual, next to the VAT_Animator). The only other
-                // renderer permitted is the flat blob shadow.
+                // Đúng MỘT renderer: thân VAT. Không còn quad bóng riêng cho từng con — bóng nằm trong
+                // mesh gộp của CharacterContactShadows, và quái chỉ đăng ký chứ không mang renderer.
                 Assert.IsNotNull(vats[0].GetComponent<MeshRenderer>(),
                     $"{go.name}: VAT_Animator must sit on the MeshRenderer it drives");
 
                 var renderers = go.GetComponentsInChildren<MeshRenderer>(true);
-                Assert.AreEqual(2, renderers.Length,
-                    $"{go.name} must have exactly two MeshRenderers: the VAT body and the blob shadow");
+                Assert.AreEqual(1, renderers.Length,
+                    $"{go.name} must have exactly one MeshRenderer: the VAT body. " +
+                    "Per-character shadow renderers were retired - shadows come from the batched mesh.");
             }
         }
 
@@ -118,7 +119,7 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void VatToonShader_HasLightRigContractAndDepthNormals()
+        public void VatToonShader_HasLightRigContractAndAnimatedScreenSpacePasses()
         {
             var shader = Shader.Find("ZombieWar/VAT/EnemyToon");
             Assert.IsNotNull(shader, "VAT toon shader missing");
@@ -132,6 +133,8 @@ namespace ZombieWar.Tests
             // would be invisible to every normal-based screen-space effect.
             var mat = new Material(shader);
             Assert.IsTrue(mat.FindPass("DepthNormals") >= 0, "shader lost its DepthNormals pass");
+            Assert.IsTrue(mat.FindPass("OutlineSelectionMask") >= 0,
+                "shader lost its VAT-aware outline mask pass; a generic override would draw the bind pose");
             Object.DestroyImmediate(mat);
         }
 
@@ -152,20 +155,25 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void EveryEnemy_HasColliderAndAgentSized()
+        public void EveryEnemy_HasColliderAndPlanarMotorAndNoNavMeshAgent()
         {
+            // M4 inverted this test. It used to require a sized NavMeshAgent on every enemy; the
+            // agent is now the defect, and PlanarEnemyMotor is what must be present. The collider is
+            // still checked because it became MORE important - with the agent gone, the collider is
+            // what the spawner measures to size an enemy's footprint.
             foreach (var go in BakedEnemies())
             {
-                var agent = go.GetComponent<NavMeshAgent>();
                 var col = go.GetComponent<CapsuleCollider>();
+                var motor = go.GetComponent<ZombieWar.PlanarEnemyMotor>();
 
-                Assert.IsNotNull(agent, $"{go.name} has no NavMeshAgent");
+                Assert.IsNull(go.GetComponent<NavMeshAgent>(),
+                    $"{go.name} still carries a NavMeshAgent - M4 removed the runtime dependency on it");
+                Assert.IsNotNull(motor, $"{go.name} has no PlanarEnemyMotor");
                 Assert.IsNotNull(col, $"{go.name} has no CapsuleCollider");
-                Assert.AreEqual(0.35f, agent.radius, 0.001f, $"{go.name} agent radius must be the authored 0.35");
                 Assert.AreEqual(0.35f, col.radius, 0.001f, $"{go.name} collider radius must be the authored 0.35");
-                Assert.Greater(agent.height, 0.4f, $"{go.name} agent height was not measured");
+                Assert.Greater(col.height, 0.4f, $"{go.name} collider height was not measured");
                 // Idle standing height, not the all-frame animation bounds a jump would inflate.
-                Assert.Less(agent.height, 5f, $"{go.name} height looks inflated by a jump/pounce frame");
+                Assert.Less(col.height, 5f, $"{go.name} height looks inflated by a jump/pounce frame");
             }
         }
 
@@ -257,33 +265,66 @@ namespace ZombieWar.Tests
             }
         }
 
+        /// <summary>
+        /// THAY HỢP ĐỒNG, không nới khẳng định.
+        ///
+        /// Bản cũ đòi mỗi con phải CÓ một `ShadowBlob` dùng chung material. Hợp đồng đó nay sai hướng:
+        /// đúng cái quad trong suốt ấy là toàn bộ phần chi phí render tăng tuyến tính (30 con = 30
+        /// draw, vì hình trong suốt sắp xếp theo từng object nên không gộp được). Bản mới đòi điều
+        /// ngược lại — KHÔNG con nào được mang renderer bóng riêng.
+        ///
+        /// Test cũ còn từng xanh vì lý do sai: node vẫn còn đó, chỉ bị tắt renderer, nên tiền đề cũ
+        /// vẫn thoả trong khi production đã đổi hẳn kiến trúc.
+        /// </summary>
         [Test]
-        public void EveryEnemy_SharesOneBlobShadowMaterialAndPlacement()
+        public void NoEnemy_CarriesAPerCharacterShadowRenderer()
         {
-            Material shared = null;
             foreach (var go in BakedEnemies())
             {
-                var blob = go.transform.Find("ShadowBlob");
-                Assert.IsNotNull(blob, $"{go.name} has no ShadowBlob");
+                Assert.IsNull(go.transform.Find("ShadowBlob"),
+                    $"{go.name} still carries a legacy ShadowBlob node; it must be retired, not hidden.");
 
-                // Same local placement on every enemy, so the shadow always sits under the feet.
-                Assert.AreEqual(0f, blob.localPosition.x, 0.001f);
-                Assert.AreEqual(0f, blob.localPosition.z, 0.001f);
-                Assert.Greater(blob.localPosition.y, 0f, "blob must sit above the ground to avoid z-fighting");
-                Assert.AreEqual(90f, blob.localEulerAngles.x, 0.01f, "blob must lie flat");
-
-                var r = blob.GetComponent<MeshRenderer>();
-                Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, r.shadowCastingMode,
-                    "a fake shadow must not itself cast one");
-                Assert.IsFalse(r.receiveShadows);
-
-                // ONE material across the whole roster - that is what keeps the blobs batching.
-                shared ??= r.sharedMaterial;
-                Assert.AreSame(shared, r.sharedMaterial,
-                    $"{go.name} uses a different blob material; all enemies must share one");
+                foreach (var r in go.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    var m = r.sharedMaterial;
+                    bool legacyBlobMaterial = m != null && m.name.Contains("BlobShadow");
+                    Assert.IsFalse(legacyBlobMaterial,
+                        $"{go.name}/{r.name} still renders the legacy blob material.");
+                }
             }
-            Assert.IsNotNull(shared, "no enemies were checked");
-            Assert.IsTrue(shared.enableInstancing, "the shared blob material must be GPU-instanced");
+        }
+
+        /// <summary>Bóng của cả người chơi lẫn quái phải đến từ đúng một material tác giả đặt sẵn.</summary>
+        [Test]
+        public void ContactShadowMaterialAsset_IsAuthoredAndShared()
+        {
+            const string path = "Assets/_Project/Art/Materials/M_CharacterContactShadow.mat";
+            var mat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(path);
+
+            Assert.IsNotNull(mat, $"shared contact-shadow material missing at {path}");
+            Assert.AreEqual("ZombieWar/Environment/CharacterContactShadow", mat.shader.name,
+                "contact-shadow material must use the project-owned analytic shader");
+            Assert.AreEqual(1, mat.shader.passCount,
+                "contact shadow must stay a single pass - no depth, shadow or outline passes");
+        }
+
+        /// <summary>Người chơi giữ collider nhưng KHÔNG còn renderer bóng cũ.</summary>
+        [Test]
+        public void PlayerPlane_KeepsItsColliderButHasNoLegacyRenderer()
+        {
+            var player = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Player.prefab");
+            Assert.IsNotNull(player, "Player.prefab missing");
+
+            var plane = player.transform.Find("Plane");
+            Assert.IsNotNull(plane, "Player/Plane must be preserved - it owns a gameplay collider");
+
+            var collider = plane.GetComponent<MeshCollider>();
+            Assert.IsNotNull(collider, "Player/Plane lost its MeshCollider");
+            Assert.IsNotNull(collider.sharedMesh, "Player/Plane collider lost its mesh");
+            Assert.IsFalse(collider.isTrigger, "Player/Plane collider must stay a solid collider");
+
+            Assert.IsNull(plane.GetComponent<MeshRenderer>(),
+                "Player/Plane still renders the legacy player blob on top of the batched contact shadow.");
         }
 
         [Test]

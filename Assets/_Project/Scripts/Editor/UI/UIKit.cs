@@ -8,7 +8,7 @@ namespace ZombieWar.Editor.UI
 {
     /// <summary>
     /// Thư viện builder dùng chung cho mọi HubInstaller/*Installer.
-    /// Mọi số liệu theo Docs/UI_REDESIGN_SPEC.md (ref 1080×1920). Không chế màu ngoài UITheme.
+    /// Mọi số liệu theo Docs/Reference/UI/UI_REDESIGN_SPEC.md (ref 1080×1920). Không chế màu ngoài UITheme.
     /// Sprites structural do UISpriteFactory sinh (rounded/pill/glow/dashed) — không dùng stock UISprite.
     /// </summary>
     public static class UIKit

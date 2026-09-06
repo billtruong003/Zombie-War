@@ -21,8 +21,6 @@ namespace ZombieWar.Tests
             w.damage = damage;
             w.fireRate = fireRate;
             w.pelletCount = pellets;
-            w.magazineSize = mag;
-            w.reloadDuration = reload;
             return w;
         }
 
@@ -45,6 +43,8 @@ namespace ZombieWar.Tests
                 e.FindPropertyRelative("displayName").stringValue = $"Stage {i + 1}";
                 e.FindPropertyRelative("sceneName").stringValue = $"Map_Level{i + 1}";
                 e.FindPropertyRelative("minimumPower").intValue = i * 1000;
+                // recommendedPower is what drives the advisory warning now; minimumPower is legacy.
+                e.FindPropertyRelative("recommendedPower").intValue = i * 1000;
             }
             so.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -57,12 +57,19 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void EffectiveDps_AccountsForPelletsAndReload()
+        public void EffectiveDps_AccountsForPelletsAtContinuousFire()
         {
-            // Shotgun: 8 dmg x 8 pellets = 64 per shot, 6 shots per magazine = 384 damage,
-            // over (6 / 1.5) + 2.5 = 6.5 s  ->  ~59 dps.
+            // M4: no magazine, no reload, so sustained DPS is just what the weapon does every second.
+            // Shotgun: 8 dmg x 8 pellets = 64 per shot, at 1.5 shots/s -> 96 dps.
+            // The old expectation amortised 6 rounds over "time to empty + 2.5s reload" (~59 dps);
+            // that cycle no longer exists in the game, so asserting it would pin a dead model.
             float dps = CombatPower.EffectiveDps(_shotgun, 1);
-            Assert.AreEqual(384f / 6.5f, dps, 0.5f);
+
+            float expected = WeaponUpgradeMath.EffectiveDamage(_shotgun, 1)
+                             * _shotgun.pelletCount
+                             * WeaponUpgradeMath.EffectiveFireRate(_shotgun, 1);
+            Assert.AreEqual(expected, dps, 0.5f);
+            Assert.AreEqual(96f, dps, 0.5f);
         }
 
         [Test]
@@ -120,16 +127,19 @@ namespace ZombieWar.Tests
             StringAssert.Contains("Stage 1", gate.Reason, "the lock must name the stage that unlocks it");
         }
 
+        // CONTRACT CHANGED (CAMPAIGN_AND_PROGRESSION.md §3, LOCKED 2026-08-08): Combat Power used to
+        // be a second hard gate, which let the progression line promise a stage it then refused. It is
+        // now advisory - this asserts the warning is reported AND that play is still allowed.
         [Test]
-        public void ClearedPrevious_ButUnderpowered_ReportsPowerNotLock()
+        public void ClearedPrevious_ButUnderpowered_WarnsWithoutBlocking()
         {
             PlayerProfile.MarkLevelCompleted("level.1");
             try
             {
                 var gate = _catalog.Evaluate(1, 10);
-                Assert.IsFalse(gate.CanPlay);
-                Assert.AreEqual(LevelGate.Status.Underpowered, gate.State,
-                    "with the previous stage cleared the blocker must be power, not progression");
+                Assert.IsTrue(gate.CanPlay, "power is advisory - it must not block a completed path");
+                Assert.IsTrue(gate.HasWarning, "an under-recommended stage must still surface advice");
+                Assert.AreEqual(LevelGate.Status.Underpowered, gate.State);
             }
             finally { ResetCampaign(); }
         }

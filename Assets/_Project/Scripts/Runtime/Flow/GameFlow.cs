@@ -16,6 +16,11 @@ namespace ZombieWar
         public const string MenuScene = "Menu";
         public const string DefaultGameplayScene = "Map_Level1";
 
+        /// <summary>Campaign id that belongs to <see cref="DefaultGameplayScene"/>. A direct
+        /// Play-from-editor start is Stage 1, not an anonymous run - without this the run banked no
+        /// stage completion and no first-clear reward.</summary>
+        public const string DefaultLevelId = "level.1";
+
         /// <summary>The campaign level the player selected. Null means "not chosen" and the flow
         /// falls back to the default scene, so a direct Play-from-editor still works.</summary>
         public static CampaignLevel SelectedLevel { get; private set; }
@@ -27,6 +32,29 @@ namespace ZombieWar
             SelectedLevel != null && !string.IsNullOrEmpty(SelectedLevel.sceneName)
                 ? SelectedLevel.sceneName
                 : DefaultGameplayScene;
+
+        /// <summary>The campaign id for the run that <see cref="StartGameplay"/> would begin now.</summary>
+        public static string PendingLevelId => LevelIdForScene(PendingGameplayScene);
+
+        /// <summary>
+        /// Resolves which campaign stage a gameplay scene represents.
+        ///
+        /// Derived from the SCENE rather than straight from <see cref="SelectedLevel"/> on purpose.
+        /// Restart reloads <see cref="ActiveGameplayScene"/>, which is not always the selected level -
+        /// reading the selection there could bank a clear against a stage the player is not on. Tying
+        /// both the scene and the id to the same argument makes that disagreement unrepresentable.
+        ///
+        /// Returns "" for a scene with no campaign entry (a test map). That is a valid run: it simply
+        /// earns no stage completion, and RunDirector still reports it as finished.
+        /// </summary>
+        public static string LevelIdForScene(string scene)
+        {
+            if (SelectedLevel != null && SelectedLevel.sceneName == scene &&
+                !string.IsNullOrEmpty(SelectedLevel.levelId))
+                return SelectedLevel.levelId;
+
+            return scene == DefaultGameplayScene ? DefaultLevelId : "";
+        }
 
         public static void SelectLevel(CampaignLevel level)
         {
@@ -108,7 +136,7 @@ namespace ZombieWar
                 SceneManager.SetActiveScene(sc);
 
             ActiveGameplayScene = scene;
-            RunState.Begin(SelectedLevel != null ? SelectedLevel.levelId : "");
+            RunState.Begin(LevelIdForScene(scene));
             Bill.State.GoTo<GameplayState>();
         }
     }

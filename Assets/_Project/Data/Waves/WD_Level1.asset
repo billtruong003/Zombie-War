@@ -16,45 +16,75 @@ MonoBehaviour:
   - label: Scouting
     entries:
     - zombie: {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}
-      count: 12
-    spawnInterval: 0.6
-    maxConcurrent: 12
-    restAfterClear: 2.5
+      count: 30
+    spawnInterval: 0.35
+    maxConcurrent: 28
+    restAfterClear: 1.5
+    targetAlive: 24
+    visibleFloor: 8
+    reserveFloor: 6
+    initialBurst: 4
+    spawnBatchSize: 8
+    recoverySpawnInterval: 0.12
   - label: Small Pack
     entries:
     - zombie: {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}
-      count: 12
+      count: 24
     - zombie: {fileID: 11400000, guid: ac99118185fce204cbdf22cb595f4754, type: 2}
-      count: 8
-    spawnInterval: 0.55
-    maxConcurrent: 16
-    restAfterClear: 2.5
+      count: 16
+    spawnInterval: 0.3
+    maxConcurrent: 38
+    restAfterClear: 1.5
+    targetAlive: 32
+    visibleFloor: 16
+    reserveFloor: 8
+    initialBurst: 16
+    spawnBatchSize: 10
+    recoverySpawnInterval: 0.11
   - label: Dry Bones
     entries:
     - zombie: {fileID: 11400000, guid: ac99118185fce204cbdf22cb595f4754, type: 2}
-      count: 10
+      count: 24
     - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
-      count: 8
-    spawnInterval: 0.5
-    maxConcurrent: 20
-    restAfterClear: 2
+      count: 24
+    spawnInterval: 0.26
+    maxConcurrent: 46
+    restAfterClear: 1.2
+    targetAlive: 40
+    visibleFloor: 20
+    reserveFloor: 10
+    initialBurst: 20
+    spawnBatchSize: 12
+    recoverySpawnInterval: 0.1
   - label: Thickening
     entries:
     - zombie: {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}
-      count: 12
+      count: 24
     - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
-      count: 12
-    spawnInterval: 0.5
-    maxConcurrent: 22
-    restAfterClear: 2
+      count: 32
+    spawnInterval: 0.22
+    maxConcurrent: 56
+    restAfterClear: 1
+    targetAlive: 48
+    visibleFloor: 24
+    reserveFloor: 12
+    initialBurst: 24
+    spawnBatchSize: 12
+    recoverySpawnInterval: 0.09
   - label: Runners
     entries:
     - zombie: {fileID: 11400000, guid: 102fc1650a0c9f941afb2ef5f80f8d2a, type: 2}
-      count: 16
+      count: 40
     - zombie: {fileID: 11400000, guid: fe859b9b05892c745aea1774800026dd, type: 2}
-      count: 6
+      count: 12
     - zombie: {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}
-      count: 8
-    spawnInterval: 0.45
-    maxConcurrent: 24
+      count: 18
+    spawnInterval: 0.18
+    maxConcurrent: 70
     restAfterClear: 0
+    targetAlive: 60
+    visibleFloor: 30
+    reserveFloor: 15
+    initialBurst: 30
+    spawnBatchSize: 15
+    recoverySpawnInterval: 0.08
