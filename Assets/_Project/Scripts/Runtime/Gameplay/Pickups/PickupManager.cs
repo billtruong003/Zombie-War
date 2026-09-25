@@ -60,14 +60,12 @@ namespace ZombieWar
             Instance = this;
             EnsureMagnetRegistered();
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
-            Bill.Events?.Subscribe<WaveClearedEvent>(OnWaveCleared);
         }
 
         private void OnDisable()
         {
             if (Instance == this) Instance = null;
             Bill.Events?.Unsubscribe<ZombieKilledEvent>(OnZombieKilled);
-            Bill.Events?.Unsubscribe<WaveClearedEvent>(OnWaveCleared);
         }
 
         private void Update()
@@ -206,25 +204,5 @@ namespace ZombieWar
         /// a 1-gem without being ten times the size.</summary>
         public static float GemScaleFor(int amount) =>
             Mathf.Clamp(0.8f + Mathf.Log(Mathf.Max(1, amount) + 1f, 2f) * 0.35f, 0.8f, 2.5f);
-
-        /// <summary>
-        /// M7.3 — auto-collect on wave clear is REMOVED.
-        ///
-        /// An endless world has no reliable wave boundary, so the trigger was unreliable to begin
-        /// with; worse, sweeping the floor removed the reason to move toward loot at all. Loot is now
-        /// walked to, which is what makes the magnet pickup and station rewards mean anything.
-        ///
-        /// `CollectAll()` is kept as public API — the result/settlement path may still want it — but
-        /// nothing subscribes it to WaveClearedEvent any more.
-        /// </summary>
-        private void OnWaveCleared(WaveClearedEvent e) { /* intentionally empty — see summary */ }
-
-        public static void CollectAll()
-        {
-            Scratch.Clear();
-            Scratch.AddRange(Live);
-            for (int i = 0; i < Scratch.Count; i++)
-                if (Scratch[i] != null) Scratch[i].CollectImmediate();
-        }
     }
 }

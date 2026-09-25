@@ -38,8 +38,6 @@ namespace ZombieWar.Editor.UI
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
             // legacy runtime-built menu cũ không còn đường vào (HubScreen bỏ fallback) — dọn khỏi scene
-            RemoveLegacy<LoadoutMenuController>();
-            RemoveLegacy<CostumeMenuController>();
 
             var stage = MenuCharacterStageInstaller.EnsureInOpenScene();
 

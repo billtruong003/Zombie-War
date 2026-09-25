@@ -7,9 +7,8 @@ using ZombieWar;
 namespace ZombieWar.Tests
 {
     /// <summary>
-    /// The terminal-run contract. Every case here is one that previously either paid the player
-    /// twice or ended a run silently - a defeat used to produce no RunFinishedEvent at all, so the
-    /// result screen never appeared and the Battle Pass never counted the run.
+    /// The terminal-run contract for the endless mode: a run ends by death (25% of Coin banked) or by
+    /// walking away (0%), exactly once, and Gem is never at risk because it was secured on pickup.
     /// </summary>
     public class RunClosureTests
     {
@@ -41,42 +40,18 @@ namespace ZombieWar.Tests
             public void Flush() { }
         }
 
-        private InMemorySave _save;
-        private CampaignCatalog _campaign;
-        private const string Level = "level.closure_test";
-        private const string Unlisted = "level.not_in_catalog";
-
-        static CampaignCatalog MakeCatalog(string levelId, int coin, int gold, int gem)
-        {
-            var catalog = ScriptableObject.CreateInstance<CampaignCatalog>();
-            var so = new UnityEditor.SerializedObject(catalog);
-            var levels = so.FindProperty("levels");
-            levels.arraySize = 1;
-            var e = levels.GetArrayElementAtIndex(0);
-            e.FindPropertyRelative("levelId").stringValue = levelId;
-            e.FindPropertyRelative("firstClearCoin").intValue = coin;
-            e.FindPropertyRelative("firstClearGold").intValue = gold;
-            e.FindPropertyRelative("firstClearGem").intValue = gem;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            return catalog;
-        }
-
         [SetUp]
         public void SetUp()
         {
-            _save = new InMemorySave();
-            PlayerProfile.StorageOverride = _save;
+            PlayerProfile.StorageOverride = new InMemorySave();
             PlayerProfile.LegacyReadString = _ => "";
             PlayerProfile.LegacyReadInt = _ => 0;
             PlayerProfile.ResetCacheForTests();
-
-            _campaign = MakeCatalog(Level, 500, 5, 1);
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (_campaign != null) Object.DestroyImmediate(_campaign);
             RunState.Abandon();
 
             PlayerProfile.StorageOverride = null;
@@ -85,162 +60,89 @@ namespace ZombieWar.Tests
             PlayerProfile.ResetCacheForTests();
         }
 
-        static RunState BeginRunWorth(long coin, string levelId = Level)
+        static RunState BeginRunWorth(long coin)
         {
-            var run = RunState.Begin(levelId);
+            var run = RunState.Begin();
             run.AddCurrency(PlayerProfile.CurrencyKind.Coin, coin);
             return run;
         }
 
         [Test]
-        public void Victory_ClosesOnce_BanksRunCoin_CompletesStage_AndClaimsFirstClear()
+        public void Death_BanksAQuarterOfTheCoin()
         {
             long before = PlayerProfile.Coin;
             var run = BeginRunWorth(40);
 
-            var result = RunClosure.Close(run, RunOutcome.Victory, _campaign);
-
-            Assert.IsTrue(result.Closed, "victory must produce a terminal result");
-            Assert.AreEqual(RunOutcome.Victory, result.Summary.Outcome);
-            Assert.IsTrue(result.BankedPayout);
-            Assert.IsTrue(result.MarkedComplete);
-            Assert.IsTrue(result.ClaimedFirstClear);
-            Assert.IsTrue(PlayerProfile.IsLevelCompleted(Level));
-            Assert.AreEqual(before + 40 + 500, PlayerProfile.Coin, "run coin + first-clear coin");
-        }
-
-        [Test]
-        public void Defeat_StillCloses_AndBanksTheDefeatFraction()
-        {
-            long before = PlayerProfile.Coin;
-            var run = BeginRunWorth(100);
-            run.SetWave(3);
-
-            var result = RunClosure.Close(run, RunOutcome.Defeat, _campaign);
-
-            Assert.IsTrue(result.Closed, "a defeat is a finished run - it must report");
-            Assert.AreEqual(RunOutcome.Defeat, result.Summary.Outcome);
-            Assert.AreEqual(3, result.Summary.WaveReached);
-            Assert.AreEqual(100, result.Summary.Coin, "the summary reports what was EARNED");
-            Assert.IsTrue(result.BankedPayout, "a lost run still banks its fraction");
-            long expected = (long)(100 * RunClosure.DefeatCoinFraction);
-            Assert.AreEqual(expected, result.BankedCoin, "the result reports what was KEPT");
-            Assert.AreEqual(before + expected, PlayerProfile.Coin,
-                "GDD closure rule: defeat banks only the defeat fraction of Coin");
-        }
-
-        [Test]
-        public void Defeat_LosesRareCurrencyEntirely()
-        {
-            long goldBefore = PlayerProfile.Gold;
-            long gemBefore = PlayerProfile.Gem;
-            var run = RunState.Begin(Level);
-            run.AddCurrency(PlayerProfile.CurrencyKind.Gold, 10);
-            run.AddCurrency(PlayerProfile.CurrencyKind.Gem, 3);
-
-            var result = RunClosure.Close(run, RunOutcome.Defeat, _campaign);
-
-            Assert.AreEqual(0, result.BankedGold);
-            Assert.AreEqual(0, result.BankedGem);
-            Assert.AreEqual(goldBefore, PlayerProfile.Gold, "defeat loses unbanked Gold");
-            Assert.AreEqual(gemBefore, PlayerProfile.Gem, "defeat loses unbanked Gem");
-        }
-
-        [Test]
-        public void Defeat_DoesNotCompleteTheStageOrPayFirstClear()
-        {
-            var run = BeginRunWorth(0);
-
-            var result = RunClosure.Close(run, RunOutcome.Defeat, _campaign);
-
-            Assert.IsFalse(result.MarkedComplete);
-            Assert.IsFalse(result.ClaimedFirstClear);
-            Assert.IsFalse(PlayerProfile.IsLevelCompleted(Level));
-        }
-
-        [Test]
-        public void DuplicateClose_IsRefused_AndCannotPayTwice()
-        {
-            long before = PlayerProfile.Coin;
-            var run = BeginRunWorth(30);
-
-            var first = RunClosure.Close(run, RunOutcome.Victory, _campaign);
-            var second = RunClosure.Close(run, RunOutcome.Victory, _campaign);
-
-            Assert.IsTrue(first.Closed);
-            Assert.IsFalse(second.Closed, "the second close must produce no terminal event");
-            Assert.AreEqual(before + 30 + 500, PlayerProfile.Coin, "paid exactly once");
-        }
-
-        [Test]
-        public void ConflictingClose_KeepsTheFirstOutcome()
-        {
-            var run = BeginRunWorth(0);
-
-            var victory = RunClosure.Close(run, RunOutcome.Victory, _campaign);
-            var defeat = RunClosure.Close(run, RunOutcome.Defeat, _campaign);
-
-            Assert.AreEqual(RunOutcome.Victory, victory.Summary.Outcome);
-            Assert.IsFalse(defeat.Closed, "a late defeat cannot overwrite a win");
-            Assert.AreEqual(RunOutcome.Victory, run.Outcome);
-        }
-
-        [Test]
-        public void FirstClearRewardCannotBeClaimedTwiceAcrossRuns()
-        {
-            long before = PlayerProfile.Coin;
-
-            var first = RunClosure.Close(BeginRunWorth(10), RunOutcome.Victory, _campaign);
-            RunState.Abandon();
-            var replay = RunClosure.Close(BeginRunWorth(10), RunOutcome.Victory, _campaign);
-
-            Assert.IsTrue(first.ClaimedFirstClear);
-            Assert.IsFalse(replay.ClaimedFirstClear, "first clear is once, ever");
-            Assert.IsTrue(replay.MarkedComplete, "a replay still counts as a completion");
-            Assert.AreEqual(before + 10 + 500 + 10, PlayerProfile.Coin,
-                "both runs' coin, but only one first-clear bonus");
-        }
-
-        [Test]
-        public void VictoryWithNoCatalogEntry_StillClosesAndStillCompletes()
-        {
-            var run = BeginRunWorth(15, Unlisted);
-
-            var result = RunClosure.Close(run, RunOutcome.Victory, _campaign);
-
-            Assert.IsTrue(result.Closed, "a missing campaign entry must not suppress the terminal event");
-            Assert.IsTrue(result.MarkedComplete);
-            Assert.IsFalse(result.ClaimedFirstClear, "no authored entry means no authored bonus");
-            Assert.IsTrue(PlayerProfile.IsLevelCompleted(Unlisted));
-        }
-
-        [Test]
-        public void VictoryWithNullCatalog_StillCloses()
-        {
-            var result = RunClosure.Close(BeginRunWorth(5), RunOutcome.Victory, null);
+            var result = RunClosure.Close(run, RunOutcome.Died);
 
             Assert.IsTrue(result.Closed);
-            Assert.IsTrue(result.MarkedComplete);
-            Assert.IsFalse(result.ClaimedFirstClear);
+            Assert.AreEqual(RunOutcome.Died, result.Summary.Outcome);
+            Assert.AreEqual(10, result.BankedCoin);
+            Assert.AreEqual(before + 10, PlayerProfile.Coin);
         }
 
         [Test]
-        public void VictoryWithEmptyLevelId_StillCloses_ButBanksNoProgression()
+        public void WalkingAway_BanksNoCoin()
         {
-            var result = RunClosure.Close(BeginRunWorth(20, ""), RunOutcome.Victory, _campaign);
+            long before = PlayerProfile.Coin;
+            var run = BeginRunWorth(40);
 
-            Assert.IsTrue(result.Closed, "an unidentified map is still a finished run");
-            Assert.IsTrue(result.BankedPayout);
-            Assert.IsFalse(result.MarkedComplete);
-            Assert.IsFalse(result.ClaimedFirstClear);
+            var result = RunClosure.Close(run, RunOutcome.Abandoned);
+
+            Assert.IsTrue(result.Closed);
+            Assert.AreEqual(RunOutcome.Abandoned, result.Summary.Outcome);
+            Assert.AreEqual(0, result.BankedCoin);
+            Assert.AreEqual(before, PlayerProfile.Coin, "quitting before danger must never pay");
         }
 
         [Test]
-        public void CloseIsNullSafeAndRejectsInProgress()
+        public void Gem_IsSecuredOnPickup_AndSurvivesEveryEnding()
         {
-            Assert.IsFalse(RunClosure.Close(null, RunOutcome.Victory, _campaign).Closed);
-            Assert.IsFalse(RunClosure.Close(BeginRunWorth(0), RunOutcome.InProgress, _campaign).Closed,
-                "InProgress is not a terminal outcome");
+            long before = PlayerProfile.Gem;
+            var run = RunState.Begin();
+            run.AddCurrency(PlayerProfile.CurrencyKind.Gem, 3);
+
+            Assert.AreEqual(before + 3, PlayerProfile.Gem, "the gem is in the profile the moment it is picked up");
+
+            var result = RunClosure.Close(run, RunOutcome.Abandoned);
+            Assert.AreEqual(3, result.Summary.Gem, "the result still reports what was picked up");
+            Assert.AreEqual(before + 3, PlayerProfile.Gem, "and closing never pays it a second time");
+        }
+
+        [Test]
+        public void Close_IsFirstWins_AndPaysOnce()
+        {
+            long before = PlayerProfile.Coin;
+            var run = BeginRunWorth(40);
+
+            var died = RunClosure.Close(run, RunOutcome.Died);
+            var walked = RunClosure.Close(run, RunOutcome.Abandoned);
+
+            Assert.IsTrue(died.Closed);
+            Assert.IsFalse(walked.Closed, "a second ending in the same frame must be a no-op");
+            Assert.AreEqual(RunOutcome.Died, run.Outcome);
+            Assert.AreEqual(before + 10, PlayerProfile.Coin);
+        }
+
+        [Test]
+        public void Close_RecordsTheLongestSurvivalOnly()
+        {
+            var first = RunState.Begin();
+            first.Tick(90f);
+            Assert.IsTrue(RunClosure.Close(first, RunOutcome.Died).NewSurvivalRecord);
+            Assert.AreEqual(90f, PlayerProfile.BestSurvivalSeconds, 0.001f);
+
+            var shorter = RunState.Begin();
+            shorter.Tick(30f);
+            Assert.IsFalse(RunClosure.Close(shorter, RunOutcome.Died).NewSurvivalRecord);
+            Assert.AreEqual(90f, PlayerProfile.BestSurvivalSeconds, 0.001f);
+        }
+
+        [Test]
+        public void Close_RejectsNoRunAndInProgress()
+        {
+            Assert.IsFalse(RunClosure.Close(null, RunOutcome.Died).Closed);
+            Assert.IsFalse(RunClosure.Close(BeginRunWorth(0), RunOutcome.InProgress).Closed);
         }
     }
 }

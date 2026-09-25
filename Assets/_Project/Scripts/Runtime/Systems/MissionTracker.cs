@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
+using ZombieWar.Stations;
 
 namespace ZombieWar
 {
@@ -23,14 +24,14 @@ namespace ZombieWar
             _active.AddRange(PassMissions.ActiveFor(DateTime.UtcNow));
 
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
-            Bill.Events?.Subscribe<WaveClearedEvent>(OnWaveCleared);
+            Bill.Events?.Subscribe<StationCompletedEvent>(OnStationCompleted);
             Bill.Events?.Subscribe<RunFinishedEvent>(OnRunFinished);
         }
 
         private void OnDisable()
         {
             Bill.Events?.Unsubscribe<ZombieKilledEvent>(OnZombieKilled);
-            Bill.Events?.Unsubscribe<WaveClearedEvent>(OnWaveCleared);
+            Bill.Events?.Unsubscribe<StationCompletedEvent>(OnStationCompleted);
             Bill.Events?.Unsubscribe<RunFinishedEvent>(OnRunFinished);
         }
 
@@ -51,7 +52,11 @@ namespace ZombieWar
             if (data.isElite) Report(MissionMetric.KillElite, 1);
         }
 
-        private void OnWaveCleared(WaveClearedEvent e) => Report(MissionMetric.ClearWave, 1);
+        private void OnStationCompleted(StationCompletedEvent e)
+        {
+            Report(MissionMetric.CompleteStation, 1);
+            if (e.Kind == StationKind.BossBeacon) Report(MissionMetric.DefeatBoss, 1);
+        }
 
         private void OnRunFinished(RunFinishedEvent e)
         {
@@ -61,27 +66,14 @@ namespace ZombieWar
             // Coin missions count what the run actually earned, matching the ledger the player saw.
             if (s.Coin > 0) Report(MissionMetric.CollectCoin, (int)Math.Min(int.MaxValue, s.Coin));
 
-            if (s.Outcome != RunOutcome.Victory) return;
-
-            Report(MissionMetric.FinishStage, 1);
-            Report(MissionMetric.ClearAllStages, 0);   // recomputed below from real progress
-
-            // "Clear all 5 stages" is a state, not a counter - read the actual completed set so it
-            // can never drift from what the campaign screen shows.
-            int cleared = PlayerProfile.CompletedLevelIds.Count;
-            foreach (var m in _active)
-                if (m.metric == MissionMetric.ClearAllStages)
-                    SetAtLeast(m, cleared);
+            // Records are states, not counters: a 6-minute run completes "survive 5 minutes" once,
+            // it does not add six to it.
+            RaiseTo(MissionMetric.SurviveMinutes, Mathf.FloorToInt(s.Duration / 60f));
+            RaiseTo(MissionMetric.ReachThreatTier, s.PeakThreatTier);
         }
 
-        /// <summary>Called by the level-up UI when the player takes a perk.</summary>
-        public static void ReportPerkChosen() => ReportStatic(MissionMetric.ChoosePerk, 1);
-
-        /// <summary>Called by the weapon switcher during combat.</summary>
-        public static void ReportWeaponSwitched() => ReportStatic(MissionMetric.SwitchWeapon, 1);
-
-        /// <summary>Called when a stage boss dies.</summary>
-        public static void ReportBossDefeated() => ReportStatic(MissionMetric.DefeatStageBoss, 1);
+        /// <summary>Called by the level-up UI when the player takes a card.</summary>
+        public static void ReportCardChosen() => ReportStatic(MissionMetric.ChooseCard, 1);
 
         private void Report(MissionMetric metric, int amount)
         {
@@ -91,14 +83,18 @@ namespace ZombieWar
                     PlayerProfile.AddMissionProgress(_active[i].id, amount);
         }
 
-        private static void SetAtLeast(PassMission mission, int value)
+        private void RaiseTo(MissionMetric metric, int value)
         {
-            int current = PlayerProfile.GetMissionProgress(mission.id);
-            if (value > current) PlayerProfile.AddMissionProgress(mission.id, value - current);
+            for (int i = 0; i < _active.Count; i++)
+            {
+                if (_active[i].metric != metric) continue;
+                int current = PlayerProfile.GetMissionProgress(_active[i].id);
+                if (value > current) PlayerProfile.AddMissionProgress(_active[i].id, value - current);
+            }
         }
 
         /// <summary>Static path for callers that have no tracker reference. Resolves the active set
-        /// on demand - slightly more work per call, but these fire rarely (perk picks, weapon swaps).</summary>
+        /// on demand - slightly more work per call, but card picks are rare.</summary>
         private static void ReportStatic(MissionMetric metric, int amount)
         {
             if (amount <= 0) return;

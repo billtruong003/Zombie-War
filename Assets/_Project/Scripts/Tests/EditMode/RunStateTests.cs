@@ -30,7 +30,7 @@ namespace ZombieWar.Tests
         [Test]
         public void Begin_StartsCleanRun()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
 
             Assert.AreSame(run, RunState.Current);
             Assert.AreEqual(0, run.Kills);
@@ -43,7 +43,7 @@ namespace ZombieWar.Tests
         [Test]
         public void RecordKill_BanksCoinAndXp()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             run.RecordKill(_walker);
             run.RecordKill(_walker);
 
@@ -54,8 +54,8 @@ namespace ZombieWar.Tests
         [Test]
         public void RecordKill_DoesNothingAfterRunEnds()
         {
-            var run = RunState.Begin("level.1");
-            run.Finish(RunOutcome.Defeat);
+            var run = RunState.Begin();
+            run.Finish(RunOutcome.Died);
             run.RecordKill(_walker);
 
             Assert.AreEqual(0, run.Kills, "a finished run must not keep accruing rewards");
@@ -65,7 +65,7 @@ namespace ZombieWar.Tests
         [Test]
         public void AddXp_LevelsUpAndReturnsLevelsGained()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             int need = run.XpForNextLevel;
 
             int gained = run.AddXp(need);
@@ -78,7 +78,7 @@ namespace ZombieWar.Tests
         [Test]
         public void AddXp_HandlesMultipleLevelsInOneGrant()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             int gained = run.AddXp(500);
 
             Assert.Greater(gained, 1);
@@ -88,7 +88,7 @@ namespace ZombieWar.Tests
         [Test]
         public void Multiplier_IsOneWithoutPerks_AndStacks()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             Assert.AreEqual(1f, run.Multiplier(RunPerkKind.Damage), 0.0001f);
 
             run.AddPerk(new RunPerk("a", "", "", RunPerkKind.Damage, 1.5f));
@@ -103,26 +103,28 @@ namespace ZombieWar.Tests
         [Test]
         public void Finish_FirstOutcomeWins()
         {
-            var run = RunState.Begin("level.1");
-            run.Finish(RunOutcome.Defeat);
-            run.Finish(RunOutcome.Victory);
+            var run = RunState.Begin();
+            run.Finish(RunOutcome.Died);
+            run.Finish(RunOutcome.Abandoned);
 
-            Assert.AreEqual(RunOutcome.Defeat, run.Outcome,
-                "a later Victory must not overwrite the Defeat that already ended the run");
+            Assert.AreEqual(RunOutcome.Died, run.Outcome,
+                "a later walk-away must not overwrite the death that already ended the run");
         }
 
         [Test]
         public void Snapshot_MatchesLedger()
         {
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             run.RecordKill(_walker);
-            run.SetWave(4);
-            var snap = run.Finish(RunOutcome.Victory);
+            run.ReportThreatTier(4);
+            run.Tick(12.5f);
+            var snap = run.Finish(RunOutcome.Died);
 
-            Assert.AreEqual(RunOutcome.Victory, snap.Outcome);
+            Assert.AreEqual(RunOutcome.Died, snap.Outcome);
             Assert.AreEqual(1, snap.Kills);
-            Assert.AreEqual(4, snap.WaveReached);
+            Assert.AreEqual(4, snap.PeakThreatTier);
             Assert.AreEqual(3, snap.Coin);
+            Assert.AreEqual(12.5f, snap.Duration, 0.0001f);
         }
 
         [Test]
@@ -130,26 +132,36 @@ namespace ZombieWar.Tests
         {
             long before = PlayerProfile.Coin;
 
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             run.RecordKill(_walker);      // 3 coin
-            run.Finish(RunOutcome.Victory);
+            run.Finish(RunOutcome.Died);
 
-            Assert.IsTrue(run.Payout(), "first payout should bank the run");
-            Assert.IsFalse(run.Payout(), "second payout must be refused");
-            Assert.IsFalse(run.Payout());
+            Assert.IsTrue(run.Payout(1f), "first payout should bank the run");
+            Assert.IsFalse(run.Payout(1f), "second payout must be refused");
+            Assert.IsFalse(run.Payout(1f));
 
             Assert.AreEqual(before + 3, PlayerProfile.Coin,
                 "currency must be credited exactly once no matter how often Payout is called");
         }
 
         [Test]
-        public void SetWave_OnlyMovesForward()
+        public void ThreatTier_RecordsThePeakOnly()
         {
-            var run = RunState.Begin("level.1");
-            run.SetWave(5);
-            run.SetWave(2);
+            var run = RunState.Begin();
+            run.ReportThreatTier(5);
+            run.ReportThreatTier(2);
 
-            Assert.AreEqual(5, run.WaveReached);
+            Assert.AreEqual(5, run.PeakThreatTier);
+        }
+
+        [Test]
+        public void EveryRun_GetsItsOwnSeed()
+        {
+            int first = RunState.Begin().Seed;
+            System.Threading.Thread.Sleep(20);
+            int second = RunState.Begin().Seed;
+
+            Assert.AreNotEqual(first, second, "two runs must not deal the same level-up offers");
         }
 
         [Test]
@@ -157,7 +169,7 @@ namespace ZombieWar.Tests
         {
             long before = PlayerProfile.Coin;
 
-            var run = RunState.Begin("level.1");
+            var run = RunState.Begin();
             run.RecordKill(_walker);
             RunState.Abandon();
 

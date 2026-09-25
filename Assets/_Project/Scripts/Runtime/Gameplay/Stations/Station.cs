@@ -196,6 +196,8 @@ namespace ZombieWar.Stations
                     StationDirector.Instance?.GrantSupplies(transform.position);
                     break;
             }
+
+            StationDirector.ReportCompleted(Anchor.kind);
         }
 
         /// <summary>Called when the director gives up on this station (player left the ring).</summary>

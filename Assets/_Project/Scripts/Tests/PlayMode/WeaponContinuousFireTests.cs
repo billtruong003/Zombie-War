@@ -95,10 +95,9 @@ namespace ZombieWar.Tests
             _weapon = _host.AddComponent<Weapon>();
 
             _fast = MakeWeapon("Fast", 10f);
-            _slow = MakeWeapon("Slow", 1f, twoHanded: true);   // slot 1-2 chi nhan sung hai tay
+            _slow = MakeWeapon("Slow", 1f, twoHanded: true);
 
-            _weapon.EquipToSlot(0, _fast);
-            _weapon.EquipSlot(0);
+            _weapon.Equip(_fast);
 
             Weapon.ShotProbe += OnShot;
         }
@@ -177,8 +176,7 @@ namespace ZombieWar.Tests
         [Test]
         public void SlowWeapon_KeepsItsOwnCadence()
         {
-            _weapon.EquipToSlot(1, _slow);
-            _weapon.EquipSlot(1);
+            _weapon.Equip(_slow);
             Accumulator = 0f;
 
             int shots = FireFor(seconds: 10f, step: 1f / 60f);
@@ -191,8 +189,7 @@ namespace ZombieWar.Tests
         {
             int fast = FireFor(5f, 1f / 60f);
 
-            _weapon.EquipToSlot(1, _slow);
-            _weapon.EquipSlot(1);
+            _weapon.Equip(_slow);
             Accumulator = 0f;
             int slow = FireFor(5f, 1f / 60f);
 
@@ -242,13 +239,11 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void SwitchingWeapons_DoesNotBankABurst()
+        public void Equipping_DoesNotBankABurst()
         {
-            _weapon.EquipToSlot(1, _slow);
-
-            // Tích đầy bộ đếm rồi đổi súng: lần đổi phải xoá sạch thời gian còn nợ.
+            // Fill the accumulator, then equip: a new weapon must never inherit owed firing time.
             Accumulator = 10f;
-            _weapon.EquipSlot(1);
+            _weapon.Equip(_slow);
 
             Assert.AreEqual(0f, Accumulator, 1e-4f, "Đổi súng mà vẫn giữ thời gian bắn còn nợ.");
 
@@ -275,8 +270,7 @@ namespace ZombieWar.Tests
             var broken = MakeWeapon("Broken", 0f, twoHanded: true);
             try
             {
-                _weapon.EquipToSlot(1, broken);
-                _weapon.EquipSlot(1);
+                _weapon.Equip(broken);
 
                 _shots = 0;
                 for (int i = 0; i < 120; i++) Tick(1f / 60f);

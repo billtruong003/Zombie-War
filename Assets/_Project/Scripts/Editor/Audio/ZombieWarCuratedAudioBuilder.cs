@@ -64,7 +64,6 @@ namespace ZombieWar.Editor.Audio
             BuildRuntimeCatalog(selected);
             UpdateWeaponKeys();
             UpdateZombieKeys();
-            UpdateBombKey();
             WriteReports(inventory, selected);
 
             AssetDatabase.SaveAssets();
@@ -506,22 +505,6 @@ namespace ZombieWar.Editor.Audio
                     : family == "flesh" ? "sfx.impact.flesh.light" : "sfx.impact.fur.light";
                 EditorUtility.SetDirty(data);
             }
-        }
-
-        private static void UpdateBombKey()
-        {
-            const string path = "Assets/_Project/Prefabs/Gameplay/Bomb.prefab";
-            var root = PrefabUtility.LoadPrefabContents(path);
-            try
-            {
-                var bomb = root.GetComponentInChildren<Bomb>(true)
-                    ?? throw new InvalidDataException("Bomb component is missing from Bomb.prefab.");
-                var serialized = new SerializedObject(bomb);
-                serialized.FindProperty("explosionSfxKey").stringValue = "sfx.player.bomb.explode";
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         private static string GroupFor(AudioAssetPlan plan) => plan.profile switch

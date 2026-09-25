@@ -103,9 +103,9 @@ namespace ZombieWar.Tests
             Assert.AreEqual(0, PlayerProfile.Gold);
             Assert.AreEqual(0, PlayerProfile.Gem);
             Assert.IsEmpty(PlayerProfile.OwnedWeaponIds);
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(0));
+            Assert.AreEqual("", PlayerProfile.EquippedWeaponId);
             Assert.IsTrue(PlayerProfile.HasProfile, "Truy cap dau tien phai tao va luu profile.");
-            StringAssert.Contains("\"version\":1", _save.store[$"s0_{PlayerProfile.SaveKey}"]);
+            StringAssert.Contains($"\"version\":{PlayerProfile.SchemaVersion}", _save.store[$"s0_{PlayerProfile.SaveKey}"]);
         }
 
         [Test]
@@ -114,8 +114,7 @@ namespace ZombieWar.Tests
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 123);
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, 7);
             PlayerProfile.AddOwnedWeapon("weapon.smg.generic");
-            PlayerProfile.SetWeaponSlot(0, "weapon.sidearm.pistol_a");
-            PlayerProfile.SetWeaponSlot(1, "weapon.assault_rifle.generic");
+            PlayerProfile.SetEquippedWeapon("weapon.assault_rifle.generic");
             PlayerProfile.SetPart("Hair", "guid-hair-01");
             PlayerProfile.AddOwnedCostume("guid-hair-01");
 
@@ -124,8 +123,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(123, PlayerProfile.Coin);
             Assert.AreEqual(7, PlayerProfile.Gem);
             Assert.IsTrue(PlayerProfile.IsWeaponOwned("weapon.smg.generic"));
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0));
-            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.GetWeaponSlot(1));
+            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.EquippedWeaponId);
             Assert.AreEqual("guid-hair-01", PlayerProfile.GetPart("Hair"));
             Assert.IsTrue(PlayerProfile.IsCostumeOwned("guid-hair-01"));
         }
@@ -141,9 +139,8 @@ namespace ZombieWar.Tests
             _legacyInts["wallet_coin"] = 250;
             _legacyInts["wallet_gold"] = 40;
 
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0));
-            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.GetWeaponSlot(1));
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(2), "Slot trong hop le phai giu trong.");
+            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.EquippedWeaponId,
+                "the migrated run weapon is the long gun the player chose over the handed-out pistol");
             Assert.AreEqual(250, PlayerProfile.Coin);
             Assert.AreEqual(40, PlayerProfile.Gold);
             Assert.AreEqual(0, PlayerProfile.Gem);
@@ -159,13 +156,11 @@ namespace ZombieWar.Tests
 
             PlayerProfile.EnsureValidLoadout(DefaultArsenal());
 
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0));
-            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.GetWeaponSlot(1));
-            Assert.IsTrue(PlayerProfile.IsWeaponOwned("weapon.sidearm.pistol_a"));
+            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.EquippedWeaponId);
             Assert.IsTrue(PlayerProfile.IsWeaponOwned("weapon.assault_rifle.generic"));
 
             ReloadFromStorage();
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0), "Id chuan phai duoc luu lai.");
+            Assert.AreEqual("weapon.assault_rifle.generic", PlayerProfile.EquippedWeaponId, "Id chuan phai duoc luu lai.");
         }
 
         [Test]
@@ -174,7 +169,7 @@ namespace ZombieWar.Tests
             _legacyStrings["zw.loadout"] = "{{{not json";
             _legacyInts["wallet_coin"] = 99;
 
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(0));
+            Assert.AreEqual("", PlayerProfile.EquippedWeaponId);
             Assert.AreEqual(99, PlayerProfile.Coin);
             Assert.AreEqual("{{{not json", PlayerProfile.LegacyReadString("zw.loadout"), "Key cu phai giu nguyen.");
         }
@@ -197,7 +192,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(7, PlayerProfile.Coin);
             Assert.IsEmpty(PlayerProfile.OwnedWeaponIds);
             Assert.IsEmpty(PlayerProfile.Parts);
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(0));
+            Assert.AreEqual("", PlayerProfile.EquippedWeaponId);
         }
 
         [Test]
@@ -207,11 +202,11 @@ namespace ZombieWar.Tests
 
             PlayerProfile.EnsureValidLoadout(DefaultArsenal());
 
-            Assert.AreEqual("weapon.unknown.gone", PlayerProfile.GetWeaponSlot(0),
+            Assert.AreEqual("weapon.unknown.gone", PlayerProfile.EquippedWeaponId,
                 "Id la khong duoc lang le thay bang sung khac.");
             Assert.IsFalse(PlayerProfile.IsWeaponOwned("weapon.unknown.gone"));
             Assert.IsFalse(PlayerProfile.IsWeaponOwned("weapon.sidearm.pistol_a"),
-                "Slot 0 co id (du la) -> khong seed starter de len.");
+                "a saved id (even unknown) is never overwritten by the starter");
         }
 
         [Test]
@@ -268,7 +263,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(long.MaxValue, PlayerProfile.Gold, "long phai round-trip khong mat chinh xac.");
         }
 
-        // ===== Starter seeding + slot rules =====
+        // ===== Starter seeding =====
 
         [Test]
         public void FreshProfile_EnsureValidLoadout_SeedsFirstOneHandedAsStarter()
@@ -283,11 +278,9 @@ namespace ZombieWar.Tests
             };
             PlayerProfile.EnsureValidLoadout(arsenal);
 
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0),
+            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.EquippedWeaponId,
                 "Starter = khau 1-tay co CatalogOrder nho nhat (khop Player roster).");
             Assert.IsTrue(PlayerProfile.IsWeaponOwned("weapon.sidearm.pistol_a"), "Starter phai duoc own.");
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(1), "Long slot duoc phep trong.");
-            Assert.AreEqual("", PlayerProfile.GetWeaponSlot(2));
         }
 
         [Test]
@@ -301,11 +294,27 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void SlotZero_RejectsEmptyId()
+        public void RunWeapon_RejectsEmptyId()
         {
-            PlayerProfile.SetWeaponSlot(0, "weapon.sidearm.pistol_a");
-            PlayerProfile.SetWeaponSlot(0, "");
-            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.GetWeaponSlot(0));
+            PlayerProfile.SetEquippedWeapon("weapon.sidearm.pistol_a");
+            PlayerProfile.SetEquippedWeapon("");
+            Assert.AreEqual("weapon.sidearm.pistol_a", PlayerProfile.EquippedWeaponId,
+                "a player can never be left without a run weapon");
+        }
+
+        [Test]
+        public void V1Profile_MigratesItsSlotsToOneRunWeapon()
+        {
+            _save.store[$"s0_{PlayerProfile.SaveKey}"] =
+                "{\"version\":1,\"pistol\":\"weapon.sidearm.pistol_a\",\"longA\":\"\",\"longB\":\"weapon.shotgun.generic\"}";
+
+            Assert.AreEqual("weapon.shotgun.generic", PlayerProfile.EquippedWeaponId,
+                "a long gun wins over the pistol even from the second long slot");
+
+            ReloadFromStorage();
+            Assert.AreEqual("weapon.shotgun.generic", PlayerProfile.EquippedWeaponId, "the migration persists");
+            StringAssert.DoesNotContain("weapon.sidearm.pistol_a", _save.store[$"s0_{PlayerProfile.SaveKey}"],
+                "the legacy slots are cleared so they can never be read again");
         }
     }
 }

@@ -63,8 +63,7 @@ namespace ZombieWar.Audio
         {
             if (_subscribed) return;
             Bill.Events.Subscribe<StateChangedEvent>(OnStateChanged);
-            Bill.Events.Subscribe<WaveStartedEvent>(OnWaveStarted);
-            Bill.Events.Subscribe<WaveClearedEvent>(OnWaveCleared);
+            Bill.Events.Subscribe<Threat.ThreatTierChangedEvent>(OnThreatTierChanged);
             Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
             Bill.Events.Subscribe<PlayerDamagedEvent>(OnPlayerDamaged);
             Bill.Events.Subscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -78,8 +77,7 @@ namespace ZombieWar.Audio
             if (_subscribed && Bill.Events != null)
             {
                 Bill.Events.Unsubscribe<StateChangedEvent>(OnStateChanged);
-                Bill.Events.Unsubscribe<WaveStartedEvent>(OnWaveStarted);
-                Bill.Events.Unsubscribe<WaveClearedEvent>(OnWaveCleared);
+                Bill.Events.Unsubscribe<Threat.ThreatTierChangedEvent>(OnThreatTierChanged);
                 Bill.Events.Unsubscribe<RunFinishedEvent>(OnRunFinished);
                 Bill.Events.Unsubscribe<PlayerDamagedEvent>(OnPlayerDamaged);
                 Bill.Events.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -217,7 +215,9 @@ namespace ZombieWar.Audio
 
             _desiredMusic = "";
             CancelResultSequence();
-            _resultRoutine = StartCoroutine(ResultSequence(e.Summary.Outcome == RunOutcome.Victory));
+            // An endless run always ends in a loss; beating the personal best is the one ending worth
+            // celebrating, so a new record gets the triumphant stinger.
+            _resultRoutine = StartCoroutine(ResultSequence(e.Result.NewSurvivalRecord));
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace ZombieWar.Audio
         /// squarely on top of the stinger. Waiting for its real length minus one short tail
         /// crossfade is the difference between a transition and a collision.
         /// </summary>
-        private IEnumerator ResultSequence(bool victory)
+        private IEnumerator ResultSequence(bool newRecord)
         {
             int generation = ++_transition;
 
@@ -245,7 +245,7 @@ namespace ZombieWar.Audio
             _worldDuckToken = Bill.Audio?.DuckGroup(CueGroup.World, AudioTuning.ResultStingerSfxDuck, AudioTuning.ResultDuckAttack) ?? 0;
 
             _resultStinger = Bill.Audio?.PlayManagedCue(
-                victory ? "stinger.victory" : "stinger.defeat",
+                newRecord ? "stinger.victory" : "stinger.defeat",
                 SfxPriority.Critical, CueGroup.Critical, 0.9f) ?? AudioCueHandle.None;
             float stingerLength = _resultStinger.Duration;
 
@@ -262,11 +262,14 @@ namespace ZombieWar.Audio
             _resultRoutine = null;
         }
 
-        private void OnWaveStarted(WaveStartedEvent e) => StartCoroutine(WaveCue("stinger.wave.start", 0.78f));
+        // Pressure stepping up is the endless run's only "wave" moment; stepping down (walking back
+        // toward the origin) is not worth announcing.
+        private void OnThreatTierChanged(Threat.ThreatTierChangedEvent e)
+        {
+            if (e.Rising) StartCoroutine(WaveCue("stinger.wave.start", 0.78f));
+        }
 
-        private void OnWaveCleared(WaveClearedEvent e) => StartCoroutine(WaveCue("stinger.wave.clear", 0.82f));
-
-        /// <summary>Wave cues dip the bed briefly so they cut through without a full result-style duck.</summary>
+        /// <summary>Threat cues dip the bed briefly so they cut through without a full result-style duck.</summary>
         private IEnumerator WaveCue(string key, float volume)
         {
             if (!AddressableAudioRuntime.IsReady) yield break;
@@ -289,7 +292,6 @@ namespace ZombieWar.Audio
             string key = e.Effect switch
             {
                 PickupEffect.Health => "sfx.pickup.health",
-                PickupEffect.Bomb => "sfx.pickup.bomb",
                 _ => e.Kind == PlayerProfile.CurrencyKind.Gem ? "sfx.pickup.gem" : "sfx.pickup.coin",
             };
             Bill.Audio?.PlayCue(key, SfxPriority.Medium, 0.55f);

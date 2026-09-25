@@ -32,7 +32,7 @@ namespace ZombieWar.Tests
         [Test]
         public void RecycleCounterIsRunScoped_AndResetsWithTheRun()
         {
-            RunState.Begin("test");
+            RunState.Begin();
             // Simulate a run that recycled a tail.
             typeof(ZombieManager).GetProperty("RecycledCount",
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
@@ -40,7 +40,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(42, ZombieManager.RecycledCount);
 
             RunState.Abandon();
-            RunState.Begin("test");
+            RunState.Begin();
 
             Assert.AreEqual(0, ZombieManager.RecycledCount,
                 "recycles from the previous run must not carry into the next one");

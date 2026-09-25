@@ -11,7 +11,6 @@ namespace ZombieWar.Tests
         const string PlayerPrefab = "Assets/_Project/Prefabs/Player.prefab";
         const string EnemyFolder = "Assets/_Project/Prefabs/Enemies";
         const string WeaponFolder = "Assets/_Project/Prefabs/Weapons";
-        const string BombPrefab = "Assets/_Project/Prefabs/Gameplay/Bomb.prefab";
         const string ToonShader = "StylizedToonWorldKit/Toon/Toon Lit";
 
         [Test]
@@ -140,17 +139,6 @@ namespace ZombieWar.Tests
                 "every WeaponData's prefab must be present in the weapon prefab folder and swept");
             Assert.Greater(renderers, 0, "the sweep found no renderers at all");
             Assert.GreaterOrEqual(renderers, prefabs, "each weapon prefab must contribute at least one renderer");
-        }
-
-        [Test]
-        public void BombRenderers_StayOnDefaultRenderingLayerOnly()
-        {
-            GameObject bomb = AssetDatabase.LoadAssetAtPath<GameObject>(BombPrefab);
-            Assert.IsNotNull(bomb);
-            Renderer[] renderers = bomb.GetComponentsInChildren<Renderer>(true);
-            Assert.IsNotEmpty(renderers);
-            foreach (Renderer renderer in renderers)
-                Assert.AreEqual(1u, renderer.renderingLayerMask, $"Bomb/{renderer.name} gained a selection bit");
         }
 
         [Test]

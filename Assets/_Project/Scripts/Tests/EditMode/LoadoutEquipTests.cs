@@ -7,8 +7,8 @@ using ZombieWar;
 
 namespace ZombieWar.Tests
 {
-    /// EditMode tests cho LoadoutState.TryEquip (slot contract + ownership + duplicate rule).
-    /// Storage/legacy gia lap nhu PlayerProfileTests — khong cham PlayerPrefs that.
+    /// LoadoutState.TryEquip for the one-weapon contract: ownership, authoring gate, persistence.
+    /// Storage and legacy reads are faked as in PlayerProfileTests - the real PlayerPrefs are untouched.
     public class LoadoutEquipTests
     {
         private class InMemorySave : ISaveService
@@ -76,90 +76,69 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void OwnedCompatible_Equips_AndPersistsCanonicalId()
+        public void OwnedWeapon_Equips_AndPersistsCanonicalId()
         {
             PlayerProfile.AddOwnedWeapon(_rifle.WeaponId);
-            var result = LoadoutState.TryEquip(1, _rifle);
+            var result = LoadoutState.TryEquip(_rifle);
             Assert.AreEqual(LoadoutState.EquipResult.Equipped, result);
-            Assert.AreEqual("weapon.assault_rifle.generic", LoadoutState.GetWeaponId(1));
+            Assert.AreEqual("weapon.assault_rifle.generic", LoadoutState.WeaponId);
+        }
+
+        [Test]
+        public void AnyFamily_CanBeTheRunWeapon()
+        {
+            // One weapon per run: a sidearm and a two-handed gun are equally valid choices.
+            PlayerProfile.AddOwnedWeapon(_pistol.WeaponId);
+            PlayerProfile.AddOwnedWeapon(_shotgun.WeaponId);
+
+            Assert.AreEqual(LoadoutState.EquipResult.Equipped, LoadoutState.TryEquip(_shotgun));
+            Assert.AreEqual("weapon.shotgun.generic", LoadoutState.WeaponId);
+            Assert.AreEqual(LoadoutState.EquipResult.Equipped, LoadoutState.TryEquip(_pistol));
+            Assert.AreEqual("weapon.sidearm.pistol_a", LoadoutState.WeaponId, "equipping replaces, never adds");
         }
 
         [Test]
         public void Reopen_RestoresEquippedState()
         {
             PlayerProfile.AddOwnedWeapon(_rifle.WeaponId);
-            LoadoutState.TryEquip(1, _rifle);
-            PlayerProfile.ResetCacheForTests(); // giu nguyen StorageOverride -> reload tu store
-            Assert.AreEqual("weapon.assault_rifle.generic", LoadoutState.GetWeaponId(1));
+            LoadoutState.TryEquip(_rifle);
+            PlayerProfile.ResetCacheForTests(); // same StorageOverride -> reload from the store
+            Assert.AreEqual("weapon.assault_rifle.generic", LoadoutState.WeaponId);
         }
 
         [Test]
         public void LockedWeapon_Rejected_NoStateChange()
         {
-            string before = LoadoutState.GetWeaponId(1);
-            var result = LoadoutState.TryEquip(1, _rifle); // chua own
+            string before = LoadoutState.WeaponId;
+            var result = LoadoutState.TryEquip(_rifle); // not owned
             Assert.AreEqual(LoadoutState.EquipResult.NotOwned, result);
-            Assert.AreEqual(before, LoadoutState.GetWeaponId(1));
+            Assert.AreEqual(before, LoadoutState.WeaponId);
         }
 
         [Test]
-        public void IncompatibleSlot_Rejected()
-        {
-            PlayerProfile.AddOwnedWeapon(_pistol.WeaponId);
-            PlayerProfile.AddOwnedWeapon(_rifle.WeaponId);
-            Assert.AreEqual(LoadoutState.EquipResult.Incompatible, LoadoutState.TryEquip(0, _rifle),
-                "Sung 2-tay khong duoc vao slot 0.");
-            Assert.AreEqual(LoadoutState.EquipResult.Incompatible, LoadoutState.TryEquip(1, _pistol),
-                "Sung 1-tay khong duoc vao slot dai.");
-            Assert.AreEqual("", LoadoutState.GetWeaponId(1));
-        }
-
-        [Test]
-        public void EmptyLongSlot_Supported()
-        {
-            PlayerProfile.AddOwnedWeapon(_rifle.WeaponId);
-            LoadoutState.TryEquip(1, _rifle);
-            LoadoutState.SetWeaponId(1, "");
-            Assert.AreEqual("", LoadoutState.GetWeaponId(1));
-        }
-
-        [Test]
-        public void DuplicateAcrossLongSlots_MovesInsteadOfCopies()
-        {
-            PlayerProfile.AddOwnedWeapon(_rifle.WeaponId);
-            LoadoutState.TryEquip(1, _rifle);
-            var result = LoadoutState.TryEquip(2, _rifle);
-            Assert.AreEqual(LoadoutState.EquipResult.Equipped, result);
-            Assert.AreEqual("weapon.assault_rifle.generic", LoadoutState.GetWeaponId(2));
-            Assert.AreEqual("", LoadoutState.GetWeaponId(1), "Mot khau chi nam 1 slot — slot cu phai duoc go.");
-        }
-
-        [Test]
-        public void ReEquipSameSlot_Idempotent()
+        public void ReEquip_IsIdempotent()
         {
             PlayerProfile.AddOwnedWeapon(_shotgun.WeaponId);
-            LoadoutState.TryEquip(1, _shotgun);
-            Assert.AreEqual(LoadoutState.EquipResult.Equipped, LoadoutState.TryEquip(1, _shotgun));
-            Assert.AreEqual("weapon.shotgun.generic", LoadoutState.GetWeaponId(1));
+            LoadoutState.TryEquip(_shotgun);
+            Assert.AreEqual(LoadoutState.EquipResult.Equipped, LoadoutState.TryEquip(_shotgun));
+            Assert.AreEqual("weapon.shotgun.generic", LoadoutState.WeaponId);
         }
 
         [Test]
         public void InvalidInputs_FailSafely()
         {
-            Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, LoadoutState.TryEquip(1, null));
-            Assert.AreEqual(LoadoutState.EquipResult.InvalidSlot, LoadoutState.TryEquip(3, _rifle));
-            Assert.AreEqual(LoadoutState.EquipResult.InvalidSlot, LoadoutState.TryEquip(-1, _rifle));
+            Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, LoadoutState.TryEquip(null));
             var noId = MakeWeapon("", twoHanded: true);
-            Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, LoadoutState.TryEquip(1, noId));
+            Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, LoadoutState.TryEquip(noId));
         }
 
         [Test]
         public void MissingCatalogWeapon_ResolveReturnsNull_NoReplacement()
         {
-            PlayerProfile.SetWeaponSlot(1, "weapon.gone.forever");
+            PlayerProfile.SetEquippedWeapon("weapon.gone.forever");
             var arsenal = new List<WeaponData> { _pistol, _rifle, _shotgun };
             Assert.IsNull(LoadoutState.Resolve("weapon.gone.forever", arsenal));
-            Assert.AreEqual("weapon.gone.forever", LoadoutState.GetWeaponId(1), "Id la phai duoc giu nguyen.");
+            Assert.AreEqual("weapon.gone.forever", LoadoutState.WeaponId, "an unknown id is kept, never replaced");
         }
     }
 }

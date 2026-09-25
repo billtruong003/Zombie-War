@@ -75,7 +75,6 @@ namespace ZombieWar
             // the corpse fully playable (running around post-mortem). Kill the core inputs.
             foreach (var m in GetComponentsInChildren<PlayerMovement>()) m.enabled = false;
             foreach (var w in GetComponentsInChildren<Weapon>()) w.enabled = false;
-            foreach (var b in GetComponentsInChildren<BombThrower>()) b.enabled = false;
         }
 
         private void PlayDeathVisuals()

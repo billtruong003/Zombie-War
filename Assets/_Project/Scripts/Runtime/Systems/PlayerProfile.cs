@@ -17,7 +17,8 @@ namespace ZombieWar
     /// "wallet_coin/gold/gem" cu. Key cu KHONG bi xoa/ghi de — giu nguyen de rollback.
     public static class PlayerProfile
     {
-        public const int SchemaVersion = 1;
+        /// v2: the three weapon slots collapsed into the single run weapon (M6 one-weapon contract).
+        public const int SchemaVersion = 2;
         public const string SaveKey = "zw.profile";
 
         public enum CurrencyKind { Coin, Gold, Gem }
@@ -51,6 +52,9 @@ namespace ZombieWar
             public long gold;
             public long gem;
             public List<string> ownedWeaponIds = new();
+            // The one weapon the player carries into a run (M6: no in-run switching).
+            public string weapon = "";
+            // Pre-v2 three-slot loadout. Read once by Normalize to seed `weapon`, then cleared.
             public string pistol = "";
             public string longA = "";
             public string longB = "";
@@ -69,11 +73,8 @@ namespace ZombieWar
             // Giu cho phase Upgrades — persist duoc ngay tu v1 de khoi phai migrate schema sau.
             public List<WeaponUpgradeEntry> weaponUpgrades = new();
             public List<WeaponShardEntry> weaponShards = new();
-            // Campaign progress. Stored as stable level IDs, never indices, so reordering or
-            // inserting a stage can never silently re-lock or re-unlock the wrong one.
-            public List<string> completedLevelIds = new();
-            public List<string> claimedFirstClearIds = new();
-            public string lastSelectedLevelId = "";
+            // Endless-run personal best (seconds survived in one run).
+            public float bestSurvivalSeconds;
             // Battle Pass. Progress is keyed by mission ID; the reset keys record which UTC
             // day/week the current daily/weekly progress belongs to, so a rollover wipes only the
             // scope that actually expired.
@@ -141,7 +142,11 @@ namespace ZombieWar
                     var loaded = storage.Get<ProfileData>(SaveKey); // null neu JSON hong (Get<T> catch)
                     if (loaded != null)
                     {
+                        // An older schema is migrated by Normalize and written back once, so the
+                        // upgrade is persisted rather than silently re-run on every launch.
+                        bool outdated = loaded.version < SchemaVersion;
                         _data = Normalize(loaded);
+                        if (outdated) SaveNow();
                         return _data;
                     }
                     if (!_warnedCorrupt)
@@ -164,58 +169,19 @@ namespace ZombieWar
             storage.Flush();
         }
 
-        // ===== Campaign progress =====
+        // ===== Run records =====
 
-        /// Progress doi (Campaign screen nghe event nay de ve lai trang thai khoa/mo).
-        public static event Action CampaignChanged;
+        /// <summary>Longest single run, in seconds. The endless mode's personal best - there is no
+        /// stage to clear, so time survived is the record the Hub shows.</summary>
+        public static float BestSurvivalSeconds => Data.bestSurvivalSeconds;
 
-        public static bool IsLevelCompleted(string levelId) =>
-            !string.IsNullOrEmpty(levelId) && Data.completedLevelIds.Contains(levelId);
-
-        public static bool IsFirstClearClaimed(string levelId) =>
-            !string.IsNullOrEmpty(levelId) && Data.claimedFirstClearIds.Contains(levelId);
-
-        public static IReadOnlyList<string> CompletedLevelIds => Data.completedLevelIds;
-
-        public static string LastSelectedLevelId
+        /// <summary>Keeps the longer of the stored and the given survival time. Returns true when it
+        /// set a new record.</summary>
+        public static bool RecordSurvival(float seconds)
         {
-            get => Data.lastSelectedLevelId;
-            set
-            {
-                if (Data.lastSelectedLevelId == value) return;
-                Data.lastSelectedLevelId = value ?? "";
-                SaveNow();
-            }
-        }
-
-        /// Danh dau man da qua. Idempotent: goi lai khong nhan doi gi.
-        public static void MarkLevelCompleted(string levelId)
-        {
-            if (string.IsNullOrEmpty(levelId) || Data.completedLevelIds.Contains(levelId)) return;
-            Data.completedLevelIds.Add(levelId);
+            if (seconds <= Data.bestSurvivalSeconds) return false;
+            Data.bestSurvivalSeconds = seconds;
             SaveNow();
-            CampaignChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Tra thuong lan dau qua man, dung MOT lan duy nhat.
-        ///
-        /// The claim flag is written BEFORE the currency is granted, so if anything throws between
-        /// the two the player loses a reward rather than being able to farm it - the safe failure
-        /// direction. Returns false when it was already claimed.
-        /// </summary>
-        public static bool TryClaimFirstClear(string levelId, long coin, long gold, long gem)
-        {
-            if (string.IsNullOrEmpty(levelId) || Data.claimedFirstClearIds.Contains(levelId)) return false;
-
-            Data.claimedFirstClearIds.Add(levelId);
-            SaveNow();
-
-            if (coin > 0) Add(CurrencyKind.Coin, coin);
-            if (gold > 0) Add(CurrencyKind.Gold, gold);
-            if (gem > 0) Add(CurrencyKind.Gem, gem);
-
-            CampaignChanged?.Invoke();
             return true;
         }
 
@@ -343,16 +309,6 @@ namespace ZombieWar
             Data.passXp = 0;
             SaveNow();
             MissionsChanged?.Invoke();
-        }
-
-        /// Xoa tien do campaign. Chi dung cho test/dev — khong dung trong gameplay.
-        public static void ClearCampaignProgressForTests()
-        {
-            Data.completedLevelIds.Clear();
-            Data.claimedFirstClearIds.Clear();
-            Data.lastSelectedLevelId = "";
-            SaveNow();
-            CampaignChanged?.Invoke();
         }
 
         // ===== Wallet =====
@@ -721,79 +677,71 @@ namespace ZombieWar
 #endif
         }
 
-        // ===== Equipped weapon slots (0=pistol, 1-2=long) =====
+        // ===== Run weapon =====
 
-        public static string GetWeaponSlot(int slot) =>
-            slot == 0 ? Data.pistol : slot == 1 ? Data.longA : slot == 2 ? Data.longB : "";
+        /// <summary>WeaponId of the one weapon the player takes into a run. "" only on a fresh profile
+        /// before <see cref="EnsureValidLoadout"/> has seeded the starter.</summary>
+        public static string EquippedWeaponId => Data.weapon;
 
-        /// id = "" nghia la slot trong (chi hop le cho slot 1-2; slot 0 khong duoc de trong).
-        public static void SetWeaponSlot(int slot, string id)
+        public static void SetEquippedWeapon(string id)
         {
-            id ??= "";
-            if (slot == 0) { if (id.Length == 0) return; Data.pistol = id; }
-            else if (slot == 1) Data.longA = id;
-            else if (slot == 2) Data.longB = id;
-            else return;
+            if (string.IsNullOrEmpty(id) || Data.weapon == id) return;
+            Data.weapon = id;
             SaveNow();
             LoadoutChanged?.Invoke();
         }
 
-        /// Chuan hoa loadout theo arsenal that truoc khi trang bi (goi tu LoadoutState.ApplyTo):
-        /// - Slot 0 trong -> seed starter = khau 1-tay DAU TIEN trong arsenal (dung rule tu-fill
-        ///   co san cua Weapon.Start, khong hard-code id) va cap so huu.
-        /// - Id resolve qua legacy alias -> nang cap ve WeaponId chuan (migrate-on-load cu).
-        /// - Id khong resolve duoc -> canh bao 1 lan, GIU NGUYEN save, khong thay sung khac.
-        /// - Moi sung dang trang bi (resolve duoc) deu phai owned.
-        /// Pure data — khong dung den Weapon component nen EditMode test duoc.
+        /// Makes the run weapon valid against the real arsenal before it is shown or equipped:
+        /// - Empty -> seed the catalog's starter (an explicit flag, never "lowest CatalogOrder") and
+        ///   grant ownership.
+        /// - Resolved through a legacy alias -> upgraded to the canonical WeaponId.
+        /// - Unresolvable -> warned once and KEPT; nothing is silently swapped in.
+        /// - The equipped weapon is always owned.
+        /// Pure data - no Weapon component involved, so EditMode tests cover it.
         public static void EnsureValidLoadout(IReadOnlyList<WeaponData> arsenal)
         {
             if (arsenal == null || arsenal.Count == 0) return;
             var d = Data;
             bool changed = false;
 
-            if (string.IsNullOrEmpty(d.pistol))
+            if (string.IsNullOrEmpty(d.weapon))
             {
-                // M7.0: the starter is an EXPLICIT catalog flag, not "lowest CatalogOrder".
-                // catalogOrder is presentation-only and must be safe to reorder; deriving the
-                // starter from it meant re-ordering the shop list could silently hand new players
-                // a different first weapon. The catalog entry says which weapon it is.
-                WeaponData starter = null;
-                var catalogStarter = WeaponCatalog.Active?.Starter;
-                if (catalogStarter != null && catalogStarter.data != null && !catalogStarter.data.twoHanded)
-                {
-                    // Only accept it if it is actually in this arsenal, so a stale catalog can never
-                    // seed a weapon the player cannot equip.
-                    for (int i = 0; i < arsenal.Count; i++)
-                        if (arsenal[i] != null && arsenal[i].WeaponId == catalogStarter.weaponId) { starter = arsenal[i]; break; }
-                }
-
-                // Fallback: the pre-M7.0 rule, kept so a missing/!unbuilt catalog degrades to the
-                // previous behaviour rather than leaving a new profile with no weapon.
-                if (starter == null)
-                {
-                    for (int i = 0; i < arsenal.Count; i++)
-                    {
-                        var w = arsenal[i];
-                        if (w == null || w.twoHanded || string.IsNullOrEmpty(w.WeaponId)) continue;
-                        if (starter == null || w.CatalogOrder < starter.CatalogOrder) starter = w;
-                    }
-                }
+                var starter = ResolveStarter(arsenal);
                 if (starter != null)
                 {
-                    d.pistol = starter.WeaponId;
+                    d.weapon = starter.WeaponId;
                     changed = true;
                 }
             }
 
-            changed |= CanonicalizeSlot(ref d.pistol, arsenal, d);
-            changed |= CanonicalizeSlot(ref d.longA, arsenal, d);
-            changed |= CanonicalizeSlot(ref d.longB, arsenal, d);
+            changed |= CanonicalizeSlot(ref d.weapon, arsenal, d);
 
             if (changed)
             {
                 SaveNow();
                 LoadoutChanged?.Invoke();
             }
+        }
+
+        static WeaponData ResolveStarter(IReadOnlyList<WeaponData> arsenal)
+        {
+            // Only accept the catalog's starter if it is actually in this arsenal, so a stale catalog
+            // can never seed a weapon the player cannot equip.
+            var catalogStarter = WeaponCatalog.Active?.Starter;
+            if (catalogStarter != null && catalogStarter.data != null)
+                for (int i = 0; i < arsenal.Count; i++)
+                    if (arsenal[i] != null && arsenal[i].WeaponId == catalogStarter.weaponId) return arsenal[i];
+
+            // Fallback so a missing catalog degrades to "first authored sidearm" rather than leaving a
+            // new profile unarmed.
+            WeaponData starter = null;
+            for (int i = 0; i < arsenal.Count; i++)
+            {
+                var w = arsenal[i];
+                if (w == null || w.twoHanded || string.IsNullOrEmpty(w.WeaponId)) continue;
+                if (starter == null || w.CatalogOrder < starter.CatalogOrder) starter = w;
+            }
+            return starter;
         }
 
         private static bool CanonicalizeSlot(ref string id, IReadOnlyList<WeaponData> arsenal, ProfileData d)
@@ -1522,20 +1470,13 @@ namespace ZombieWar
             d.ownedBodyEars = DedupeNonEmpty(d.ownedBodyEars);
             d.gachaPity ??= new List<GachaPityEntry>();
             d.unseenItems = DedupeNonEmpty(d.unseenItems);
-            // Campaign lists: a profile saved before the campaign existed has these as null.
-            // Dedupe matters - a duplicated claim ID would be harmless, but a duplicated completion
-            // would misreport progress counts to Pass missions.
-            d.completedLevelIds = DedupeNonEmpty(d.completedLevelIds);
-            d.claimedFirstClearIds = DedupeNonEmpty(d.claimedFirstClearIds);
-            d.lastSelectedLevelId ??= "";
+            if (float.IsNaN(d.bestSurvivalSeconds) || d.bestSurvivalSeconds < 0f) d.bestSurvivalSeconds = 0f;
             d.missionProgress ??= new List<MissionProgressEntry>();
             d.claimedMissionIds = DedupeNonEmpty(d.claimedMissionIds);
+            MigrateToSingleWeapon(d);
             if (d.passXp < 0) d.passXp = 0;
             d.bodyColor ??= "";
             d.bodyEar ??= "";
-            d.pistol ??= "";
-            d.longA ??= "";
-            d.longB ??= "";
 
             if (d.coin < 0 || d.gold < 0 || d.gem < 0)
             {
@@ -1548,9 +1489,22 @@ namespace ZombieWar
             if (d.version <= 0) d.version = SchemaVersion;
             else if (d.version > SchemaVersion)
                 Debug.LogWarning($"[PlayerProfile] Profile version {d.version} moi hon build ({SchemaVersion}) — doc theo schema hien tai.");
-            // version < SchemaVersion: chua co buoc upgrade nao (v1 la schema dau tien).
+            // version < SchemaVersion: v1 -> v2 is MigrateToSingleWeapon above, idempotent by design.
             d.version = Math.Max(d.version, SchemaVersion);
             return d;
+        }
+
+        /// v1 -> v2: the run weapon is the first filled legacy slot, long guns first - a player who
+        /// equipped a rifle chose it over the pistol they were handed. The slots are then cleared so
+        /// they can never be read again.
+        private static void MigrateToSingleWeapon(ProfileData d)
+        {
+            d.weapon ??= "";
+            if (d.weapon.Length == 0)
+                d.weapon = !string.IsNullOrEmpty(d.longA) ? d.longA
+                         : !string.IsNullOrEmpty(d.longB) ? d.longB
+                         : d.pistol ?? "";
+            d.pistol = d.longA = d.longB = "";
         }
 
         private static List<string> DedupeNonEmpty(List<string> list)

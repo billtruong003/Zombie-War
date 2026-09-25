@@ -6,9 +6,9 @@ using UnityEngine.UI;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// Màn 01 HUB (wireframe): PLAY lớn giữa-dưới, dock 5 tab (HOME/LOADOUT/SHOP/COSTUME/PASS),
-    /// currency cluster góc phải trên, record (best score) dưới avatar, mission card bind Pass thật.
-    /// Notify dot là object authored sẵn trong prefab (Icon/Notify + UIFxPulse) — runtime chỉ bật/tắt.
+    /// The Hub: PLAY enters the endless world, a 5-tab dock (HOME/LOADOUT/SHOP/COSTUME/PASS), the
+    /// currency cluster, the best survival time under the avatar and a mission card bound to the Pass.
+    /// Notify dots are authored in the prefab (Icon/Notify + UIFxPulse); runtime only toggles them.
     /// </summary>
     public sealed class HubScreen : UIScreen
     {
@@ -35,15 +35,10 @@ namespace ZombieWar.UI
         [SerializeField] private UIScreen passScreen;
         [SerializeField] private UIScreen settingsScreen;
 
-        [Header("Campaign")]
-        [Tooltip("Compact stage selector above PLAY. When unassigned, PLAY keeps its original " +
-                 "behaviour so an un-wired prefab still launches the default stage.")]
-        [SerializeField] private CampaignSelectorView campaignSelector;
-
         protected override void Awake()
         {
             base.Awake();
-            Wire(playButton, LaunchSelectedStage);
+            Wire(playButton, Play);
             Wire(loadoutButton, () => Open(loadoutScreen, "LOADOUT"));
             Wire(shopButton, () => OpenShop(0));
             Wire(costumeButton, () => Open(costumeScreen, "COSTUME"));
@@ -60,18 +55,11 @@ namespace ZombieWar.UI
         // press before GameplayState is entered would otherwise start a second additive load.
         private bool _launching;
 
-        /// <summary>
-        /// PLAY routes through the selector so the chosen stage is what launches. If the selector is
-        /// absent or has nothing playable, this falls back to the original direct start rather than
-        /// leaving PLAY dead.
-        /// </summary>
-        private void LaunchSelectedStage()
+        private void Play()
         {
             if (_launching) return;
             _launching = true;
-
-            if (campaignSelector == null || !campaignSelector.LaunchSelected())
-                GameFlow.StartGameplay();
+            GameFlow.StartGameplay();
         }
 
         private void OnEnable()
@@ -166,10 +154,8 @@ namespace ZombieWar.UI
         private void RefreshRecord()
         {
             if (recordLabel == null) return;
-            int best = PlayerPrefs.GetInt("best_score", 0);
-            recordLabel.text = best > 0
-                ? $"WAVE {CurrencyClusterWidget.Format(best)}"
-                : "—";
+            int best = Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds);
+            recordLabel.text = best > 0 ? HudController.FormatClock(best) : "—";
         }
 
         private void OpenShop(int tab)

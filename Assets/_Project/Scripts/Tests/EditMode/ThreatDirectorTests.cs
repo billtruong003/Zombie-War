@@ -110,25 +110,15 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void ShipsDisabledSoWavesKeepDrivingTheGame()
-        {
-            var go = new GameObject("threat3");
-            var d = go.AddComponent<ThreatDirector>();
-            Assert.IsFalse(d.DrivingSpawning,
-                "it must ship OFF: a half-migrated spawner that spawns nothing is worse than waves");
-            Object.DestroyImmediate(go);
-        }
-
-        [Test]
         public void ObjectiveProgressIsRunScopedAndResets()
         {
-            RunState.Begin("test");
+            RunState.Begin();
             ThreatDirector.ReportObjectiveCompleted();
             ThreatDirector.ReportObjectiveCompleted();
             Assert.AreEqual(2, ThreatDirector.ObjectiveProgress);
 
             RunState.Abandon();
-            RunState.Begin("test");
+            RunState.Begin();
 
             Assert.AreEqual(0, ThreatDirector.ObjectiveProgress,
                 "threat earned in the last run must not carry into the next one");

@@ -15,9 +15,9 @@ namespace ZombieWar.Tests
         public void TearDown() => PlayerProfile.ClearMissionProgressForTests();
 
         [Test]
-        public void Catalog_HasTwentyMissionsWithUniqueIds()
+        public void Catalog_HasEighteenMissionsWithUniqueIds()
         {
-            Assert.AreEqual(20, PassMissions.All.Count);
+            Assert.AreEqual(18, PassMissions.All.Count);
             CollectionAssert.AllItemsAreUnique(PassMissions.All.Select(m => m.id).ToList());
         }
 

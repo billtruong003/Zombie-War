@@ -165,11 +165,11 @@ namespace ZombieWar.Tests
         [Test]
         public void StartingANewRunClearsStationState()
         {
-            RunState.Begin("test");
+            RunState.Begin();
             StationRegistry.SetStatus(StationAnchors.IdFor(4, 4), StationRegistry.Status.Completed, 0f);
 
             RunState.Abandon();
-            RunState.Begin("test");
+            RunState.Begin();
 
             Assert.AreEqual(StationRegistry.Status.Untouched,
                 StationRegistry.StatusOf(StationAnchors.IdFor(4, 4), Time.time),
@@ -254,7 +254,7 @@ namespace ZombieWar.Tests
         [Test]
         public void SupplyCacheCoinSinkCannotOverdraw()
         {
-            var run = RunState.Begin("test");
+            var run = RunState.Begin();
             run.AddCurrency(PlayerProfile.CurrencyKind.Coin, 50);
 
             Assert.IsFalse(run.SpendCoin(80), "cannot spend more Coin than the run has earned");
@@ -262,15 +262,6 @@ namespace ZombieWar.Tests
 
             Assert.IsTrue(run.SpendCoin(40));
             Assert.AreEqual(10, run.Coin, "the first in-run Coin sink must actually deduct");
-        }
-
-        [Test]
-        public void WaveClearNoLongerAutoCollectsPickups()
-        {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Pickups/PickupManager.cs");
-            Assert.IsFalse(src.Contains("OnWaveCleared(WaveClearedEvent e) => CollectAll()"),
-                "auto-collect on wave clear removes the reason to walk toward loot");
         }
     }
 }

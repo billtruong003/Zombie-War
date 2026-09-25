@@ -94,7 +94,6 @@ namespace ZombieWar.Editor
             root.AddComponent<PlayerMovement>();
             root.AddComponent<Health>();
             root.AddComponent<Weapon>();
-            root.AddComponent<BombThrower>();
 
             // Character model: Layer Lab humanoid. Animator + Avatar go on the ROOT (alongside
             // RigBuilder) so the Animation Rigging constraints resolve humanoid bones under the nested
@@ -176,9 +175,6 @@ namespace ZombieWar.Editor
         private static void WireCheatAssets(ZombieWarCheatPanel panel)
         {
             var so = new SerializedObject(panel);
-            so.FindProperty("campaignCatalog").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<CampaignCatalog>("Assets/_Project/Data/Campaign/CampaignCatalog.asset");
-
             var weaponAssets = AssetDatabase.FindAssets("t:WeaponData", new[] { "Assets/_Project/Data/Weapons" })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .OrderBy(x => x)
@@ -270,16 +266,10 @@ namespace ZombieWar.Editor
             spawnPointGo.transform.position = new Vector3(0f, 0f, 0f);
             spawnPointGo.AddComponent<PlayerSpawnPoint>(); // isPrimary defaults to true
 
-            // Wave system: ZombieManager (3-tier distance authority, see GAMEPLAY_DESIGN.md mục 4) +
-            // WaveDirector (core-loop driver; RequireComponent auto-adds ZombieSpawner). The level's
-            // waves are authored as the WD_Level1 asset - designer data, no spawn logic in scene.
+            // Enemy systems: ZombieManager (distance tiers, leash, attacker cap) + the placement
+            // service. Spawning itself is driven by the ThreatDirector on the Player prefab.
             new GameObject("ZombieManager").AddComponent<ZombieManager>();
-
-            var waveGo = new GameObject("WaveDirector");
-            var director = waveGo.AddComponent<WaveDirector>();
-            var waveData = AssetDatabase.LoadAssetAtPath<WaveData>("Assets/_Project/Data/Waves/WD_Level1.asset");
-            if (waveData != null) SetRef(director, "waveData", waveData);
-            else LogErr("WD_Level1.asset not found - WaveDirector will not run.");
+            new GameObject("ZombieSpawner").AddComponent<ZombieSpawner>();
 
             // Camera follow
             var cam = new GameObject("Main Camera").AddComponent<Camera>();

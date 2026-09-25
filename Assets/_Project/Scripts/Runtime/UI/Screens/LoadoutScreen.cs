@@ -6,13 +6,14 @@ using UnityEngine.UI;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// Màn 02 LOADOUT (spec §4.2) — wired thật từ Slice 2. Presentation vẫn authored sẵn trong
-    /// prefab (installer bake 25 card + 3 slot); runtime chỉ bind data và xử lý tương tác:
-    /// - Ownership đọc từ PlayerProfile (cheatUnlockAll KHÔNG có tác dụng ở màn này).
-    /// - 3 slot equipped đọc/ghi qua LoadoutState (slot đang chọn = active target).
-    /// - Click card: luôn xem chi tiết; nếu owned + hợp slot thì equip qua LoadoutState.TryEquip
-    ///   (persist ngay vào PlayerProfile), ngược lại shake báo không hợp lệ.
-    /// - Refresh theo PlayerProfile.LoadoutChanged (subscribe OnEnable / unsubscribe OnDisable).
+    /// LOADOUT: pick the ONE weapon the next run is played with (M6 one-weapon contract).
+    /// Presentation is authored in the prefab; runtime binds data and handles interaction:
+    /// - Ownership comes from PlayerProfile.
+    /// - The first slot view shows the run weapon. The prefab still has the retired second and third
+    ///   slots and the bomb row; they are hidden here until the owner removes them.
+    /// - Tapping a card always shows its details, and equips it when it is owned; otherwise the card
+    ///   shakes and nothing changes.
+    /// - Refreshes on PlayerProfile.LoadoutChanged.
     /// </summary>
     public sealed class LoadoutScreen : UIScreen
     {
@@ -25,14 +26,13 @@ namespace ZombieWar.UI
         [SerializeField] private UIPrototypeCatalog catalog;
 
         [Header("Authored views")]
-        [SerializeField] private LoadoutSlotView[] slotViews;      // 3 equipped slots
+        [SerializeField] private LoadoutSlotView[] slotViews;      // [0] = run weapon; the rest are retired
         [SerializeField] private WeaponItemCardView[] ownedCards;  // 1 card / WeaponData, bake sẵn
         [SerializeField] private Image infoIcon;
         [SerializeField] private TMP_Text infoNameLabel;
         [SerializeField] private Image[] statBars;                 // DMG / TỐC BẮN / TẦM fills
 
         private WeaponItemCardView _selected;
-        private int _activeSlot;
         private List<WeaponData> _arsenal;
         private readonly HashSet<string> _warnedIds = new();
 
@@ -52,12 +52,11 @@ namespace ZombieWar.UI
                         c.button.onClick.AddListener(() => OnCardClicked(c));
                 }
             if (slotViews != null)
-                for (int i = 0; i < slotViews.Length; i++)
-                {
-                    int slot = i;
-                    if (slotViews[i] != null && slotViews[i].button != null)
-                        slotViews[i].button.onClick.AddListener(() => SetActiveSlot(slot));
-                }
+                for (int i = 1; i < slotViews.Length; i++)
+                    if (slotViews[i] != null) slotViews[i].gameObject.SetActive(false);
+
+            var bombRow = FindDeep(transform, "BombRow");
+            if (bombRow != null) bombRow.gameObject.SetActive(false);
         }
 
         private void OnEnable() => PlayerProfile.LoadoutChanged += RefreshFromState;
@@ -71,7 +70,7 @@ namespace ZombieWar.UI
             PlayerProfile.EnsureValidLoadout(Arsenal);
             PlayerProfile.ClearUnseenWeapons(); // xem súng mới -> tắt badge
             RefreshFromState();
-            SetActiveSlot(_activeSlot);
+            ShowEquippedDetails();
         }
 
         public override bool OnEscape() { UIManager.Instance.Pop(); return true; }
@@ -104,7 +103,7 @@ namespace ZombieWar.UI
         {
             if (!IsShown) return;
             RefreshOwnership();
-            RefreshSlots();
+            RefreshRunWeapon();
         }
 
         private void RefreshOwnership()
@@ -126,30 +125,20 @@ namespace ZombieWar.UI
             }
         }
 
-        private void RefreshSlots()
+        private void RefreshRunWeapon()
         {
-            if (slotViews == null) return;
-            for (int i = 0; i < slotViews.Length && i < 3; i++)
-            {
-                if (slotViews[i] == null) continue;
-                string id = LoadoutState.GetWeaponId(i);
-                WeaponData d = LoadoutState.Resolve(id, Arsenal);
-                if (d == null && !string.IsNullOrEmpty(id))
-                    WarnOnce(id, $"Slot {i} lưu id '{id}' không có trong catalog — hiển thị trống, KHÔNG thay thế");
-                slotViews[i].Bind(d, d != null && catalog != null ? catalog.GetWeaponIcon(d) : null);
-            }
+            if (slotViews == null || slotViews.Length == 0 || slotViews[0] == null) return;
+            string id = LoadoutState.WeaponId;
+            WeaponData d = LoadoutState.Resolve(id, Arsenal);
+            if (d == null && !string.IsNullOrEmpty(id))
+                WarnOnce(id, $"Run weapon id '{id}' is not in the catalog — shown empty, NOT replaced");
+            slotViews[0].Bind(d, d != null && catalog != null ? catalog.GetWeaponIcon(d) : null);
+            slotViews[0].SetSelected(true);
         }
 
-        private void SetActiveSlot(int slot)
+        private void ShowEquippedDetails()
         {
-            _activeSlot = Mathf.Clamp(slot, 0, 2);
-            if (slotViews != null)
-                for (int i = 0; i < slotViews.Length; i++)
-                    if (slotViews[i] != null)
-                        slotViews[i].SetSelected(i == _activeSlot);
-
-            // Panel chi tiết đi theo súng đang nằm trong slot vừa chọn (nếu có).
-            var equipped = LoadoutState.Resolve(LoadoutState.GetWeaponId(_activeSlot), Arsenal);
+            var equipped = LoadoutState.Resolve(LoadoutState.WeaponId, Arsenal);
             var card = FindCard(equipped) ?? _selected ?? FirstCard();
             if (card != null) ShowDetails(card);
         }
@@ -161,9 +150,9 @@ namespace ZombieWar.UI
             if (card == null || card.data == null) return;
             ShowDetails(card);
 
-            var result = LoadoutState.TryEquip(_activeSlot, card.data);
-            if (result == LoadoutState.EquipResult.Equipped) return; // LoadoutChanged sẽ refresh slot views
-            UIFx.Shake((RectTransform)card.transform); // locked/incompatible: xem được chi tiết, không đổi state
+            var result = LoadoutState.TryEquip(card.data);
+            if (result == LoadoutState.EquipResult.Equipped) return; // LoadoutChanged refreshes the slot
+            UIFx.Shake((RectTransform)card.transform); // locked: details are shown, state is unchanged
         }
 
         private void ShowDetails(WeaponItemCardView card)
@@ -213,6 +202,18 @@ namespace ZombieWar.UI
             if (statBars == null || i >= statBars.Length || statBars[i] == null) return;
             var rt = statBars[i].rectTransform;
             rt.anchorMax = new Vector2(Mathf.Clamp01(v01), 1f);
+        }
+
+        private static Transform FindDeep(Transform root, string name)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child.name == name) return child;
+                var hit = FindDeep(child, name);
+                if (hit != null) return hit;
+            }
+            return null;
         }
 
         private void WarnOnce(string key, string message)

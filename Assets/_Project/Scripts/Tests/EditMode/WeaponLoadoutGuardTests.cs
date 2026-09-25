@@ -10,9 +10,9 @@ namespace ZombieWar.Tests
     /// Softlock guards for a player who ends up with no usable weapon - an empty roster, a saved
     /// weapon id that no longer resolves, or a WeaponData whose prefab was deleted.
     ///
-    /// Before these guards, an empty `weapons` list turned the HUD's switch button into a
-    /// DivideByZeroException (`% weapons.Count`) and the auto-fire tick into a NullReferenceException
-    /// once per frame (`Current.range`). Neither is recoverable in a shipped build.
+    /// Before these guards, an empty `weapons` list turned the auto-fire tick into a
+    /// NullReferenceException once per frame (`Current.range`), which is not recoverable in a
+    /// shipped build.
     ///
     /// Start() does not run in EditMode, so the equip-on-spawn fallback is a manual check; what is
     /// asserted here is that every public entry point survives the degenerate state.
@@ -62,10 +62,6 @@ namespace ZombieWar.Tests
         private static void ExpectRefusal(string weaponName) =>
             LogAssert.Expect(LogType.Error, $"[Weapon] Equip refused: '{weaponName}' has no weaponPrefab.");
 
-        /// <summary>Declares the refusal logged for a null hole in the roster.</summary>
-        private static void ExpectNullRefusal() =>
-            LogAssert.Expect(LogType.Error, "[Weapon] Equip refused: WeaponData is null.");
-
         [TearDown]
         public void TearDown()
         {
@@ -75,20 +71,11 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void SwitchWeapon_OnEmptyRoster_DoesNotThrow()
+        public void Equip_Null_IsRefusedWithoutThrowing()
         {
             var weapon = MakeWeapon();
-            Assert.DoesNotThrow(() => weapon.SwitchWeapon(), "`% weapons.Count` on an empty list");
-        }
-
-        [Test]
-        public void SwitchWeapon_OnEmptyRoster_IsRepeatable()
-        {
-            var weapon = MakeWeapon();
-            Assert.DoesNotThrow(() =>
-            {
-                for (int i = 0; i < 5; i++) weapon.SwitchWeapon();
-            });
+            Assert.IsFalse(weapon.Equip(null));
+            Assert.IsNull(weapon.Current);
         }
 
         [Test]
@@ -109,41 +96,27 @@ namespace ZombieWar.Tests
         [Test]
         public void TryFire_WithRosterEntryButNoEquippedInstance_DoesNotThrow()
         {
-            // Current can fall back to a roster entry that was never instantiated (Start has not run).
-            // The muzzle lookup dereferences the live instance, so this path must bail out early.
+            // A roster entry that was never instantiated (Start has not run) is not a weapon in hand.
             var weapon = MakeWeapon(MakeData("WD_Test"));
+            Assert.IsNull(weapon.Current, "an un-instantiated roster entry must not read as armed");
             Assert.DoesNotThrow(() => weapon.TryFire(Vector3.forward));
         }
 
         [Test]
-        public void SwitchWeapon_WithOnlyUnusableEntries_DoesNotThrowOrLoop()
-        {
-            // Every entry lacks a prefab, so no equip can succeed. The cycle must terminate after one
-            // pass rather than spinning forever looking for a valid one.
-            var weapon = MakeWeapon(MakeData("WD_A"), MakeData("WD_B"));
-            ExpectRefusal("WD_B");
-            ExpectRefusal("WD_A");
-            Assert.DoesNotThrow(() => weapon.SwitchWeapon());
-            Assert.IsNull(weapon.Current, "a refused equip must not leave a half-equipped weapon");
-        }
-
-        [Test]
-        public void RosterWithNullHoles_DoesNotThrow()
-        {
-            // Cycle order from index 0 is: 1 (WD_Real, no prefab) -> 2 (null) -> 0 (null).
-            var weapon = MakeWeapon(null, MakeData("WD_Real"), null);
-            ExpectRefusal("WD_Real");
-            ExpectNullRefusal();
-            ExpectNullRefusal();
-            Assert.DoesNotThrow(() => weapon.SwitchWeapon());
-            Assert.DoesNotThrow(() => weapon.TryFire(Vector3.forward));
-        }
-
-        [Test]
-        public void WeaponsRosterIsExposedForTheHudEvenWhenEmpty()
+        public void Equip_UnusableWeapon_KeepsThePlayerUnarmedRatherThanHalfEquipped()
         {
             var weapon = MakeWeapon();
-            Assert.IsNotNull(weapon.Weapons, "HUD rebuilds from this - it must never be null");
+            ExpectRefusal("WD_A");
+            Assert.IsFalse(weapon.Equip(MakeData("WD_A")));
+            Assert.IsNull(weapon.Current, "a refused equip must not leave a half-equipped weapon");
+            Assert.DoesNotThrow(() => weapon.TryFire(Vector3.forward));
+        }
+
+        [Test]
+        public void WeaponsRosterIsExposedEvenWhenEmpty()
+        {
+            var weapon = MakeWeapon();
+            Assert.IsNotNull(weapon.Weapons, "the loadout fallback reads this - it must never be null");
             Assert.AreEqual(0, weapon.Weapons.Count);
         }
 

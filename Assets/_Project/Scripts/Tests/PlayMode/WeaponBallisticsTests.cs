@@ -93,8 +93,6 @@ namespace ZombieWar.Tests
             _sniper.twoHanded = true;
             _sniper.weaponPrefab = _model;
 
-            typeof(Weapon).GetField("useSlotSystem", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(_weapon, false);
             F("_currentData").SetValue(_weapon, _sniper);
             F("_currentInstance").SetValue(_weapon, _model);
         }

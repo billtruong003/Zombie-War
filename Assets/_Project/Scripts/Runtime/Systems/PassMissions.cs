@@ -13,15 +13,15 @@ namespace ZombieWar
         KillRanged,
         KillBurrower,
         KillElite,
-        ClearWave,
-        FinishStage,
         CollectCoin,
-        ChoosePerk,
-        SwitchWeapon,
+        ChooseCard,
         FinishRun,
-        DefeatStageBoss,
-        ClearAllStages,
-        FlawlessStage,
+        DefeatBoss,
+        CompleteStation,
+        /// <summary>Best single-run survival, in whole minutes. A state, not a counter.</summary>
+        SurviveMinutes,
+        /// <summary>Highest threat tier reached in one run. A state, not a counter.</summary>
+        ReachThreatTier,
     }
 
     /// <summary>One authored mission. Pure data - no behaviour, so it is trivially testable.</summary>
@@ -58,28 +58,26 @@ namespace ZombieWar
         public static readonly IReadOnlyList<PassMission> All = new List<PassMission>
         {
             // ---- Daily pool ---------------------------------------------------------------
-            new PassMission("daily.kill50",      "Kill 50 monsters",                MissionScope.Daily,  MissionMetric.KillAny,        50,  100, 200),
-            new PassMission("daily.kill150",     "Kill 150 monsters",               MissionScope.Daily,  MissionMetric.KillAny,       150,  200, 400),
-            new PassMission("daily.wave5",       "Clear 5 waves",                   MissionScope.Daily,  MissionMetric.ClearWave,       5,  100, 200),
-            new PassMission("daily.stage1",      "Complete 1 campaign stage",       MissionScope.Daily,  MissionMetric.FinishStage,     1,  150, 300),
-            new PassMission("daily.coin250",     "Collect 250 Coins in a stage",    MissionScope.Daily,  MissionMetric.CollectCoin,   250,  100, 200),
-            new PassMission("daily.perk3",       "Choose 3 temporary perks",        MissionScope.Daily,  MissionMetric.ChoosePerk,      3,  100, 200),
-            new PassMission("daily.runner20",    "Kill 20 sprinting monsters",      MissionScope.Daily,  MissionMetric.KillRunner,     20,  150, 250),
-            new PassMission("daily.ranged10",    "Kill 10 ranged monsters",         MissionScope.Daily,  MissionMetric.KillRanged,     10,  150, 250),
-            new PassMission("daily.burrow8",     "Kill 8 burrowing monsters",       MissionScope.Daily,  MissionMetric.KillBurrower,    8,  150, 250),
-            new PassMission("daily.elite1",      "Defeat 1 elite or boss",          MissionScope.Daily,  MissionMetric.KillElite,       1,  200, 350),
-            new PassMission("daily.recommended", "Clear a stage with the suggested weapon", MissionScope.Daily, MissionMetric.FinishStage, 1, 150, 300),
-            new PassMission("daily.switch10",    "Switch weapons 10 times in battle", MissionScope.Daily, MissionMetric.SwitchWeapon,  10,  100, 200),
+            new PassMission("daily.kill50",    "Kill 50 monsters",                  MissionScope.Daily,  MissionMetric.KillAny,          50, 100, 200),
+            new PassMission("daily.kill150",   "Kill 150 monsters",                 MissionScope.Daily,  MissionMetric.KillAny,         150, 200, 400),
+            new PassMission("daily.survive5",  "Survive 5 minutes in one run",      MissionScope.Daily,  MissionMetric.SurviveMinutes,    5, 150, 300),
+            new PassMission("daily.coin250",   "Collect 250 Coins",                 MissionScope.Daily,  MissionMetric.CollectCoin,     250, 100, 200),
+            new PassMission("daily.card3",     "Choose 3 level-up cards",           MissionScope.Daily,  MissionMetric.ChooseCard,        3, 100, 200),
+            new PassMission("daily.runner20",  "Kill 20 sprinting monsters",        MissionScope.Daily,  MissionMetric.KillRunner,       20, 150, 250),
+            new PassMission("daily.ranged10",  "Kill 10 ranged monsters",           MissionScope.Daily,  MissionMetric.KillRanged,       10, 150, 250),
+            new PassMission("daily.burrow8",   "Kill 8 burrowing monsters",         MissionScope.Daily,  MissionMetric.KillBurrower,      8, 150, 250),
+            new PassMission("daily.elite1",    "Defeat 1 elite or boss",            MissionScope.Daily,  MissionMetric.KillElite,         1, 200, 350),
+            new PassMission("daily.station2",  "Activate 2 stations",               MissionScope.Daily,  MissionMetric.CompleteStation,   2, 150, 300),
+            new PassMission("daily.run3",      "Play 3 runs",                       MissionScope.Daily,  MissionMetric.FinishRun,         3, 100, 200),
 
-            // ---- Weekly / campaign pool ----------------------------------------------------
-            new PassMission("weekly.kill1000",   "Kill 1,000 monsters",             MissionScope.Weekly, MissionMetric.KillAny,      1000,  600, 1500),
-            new PassMission("weekly.wave25",     "Clear 25 waves",                  MissionScope.Weekly, MissionMetric.ClearWave,      25,  500, 1200),
-            new PassMission("weekly.run10",      "Finish 10 campaign runs",         MissionScope.Weekly, MissionMetric.FinishRun,      10,  500, 1200),
-            new PassMission("weekly.hugo",       "Defeat the final boss once",      MissionScope.Weekly, MissionMetric.DefeatStageBoss, 1,  600, 1500),
-            new PassMission("weekly.allstages",  "Clear all 5 stages at least once", MissionScope.Weekly, MissionMetric.ClearAllStages, 5,  800, 2000),
-            new PassMission("weekly.coin5000",   "Earn 5,000 Coins from runs",      MissionScope.Weekly, MissionMetric.CollectCoin,  5000,  600, 1500),
-            new PassMission("weekly.eachboss",   "Defeat every stage boss",         MissionScope.Weekly, MissionMetric.DefeatStageBoss, 4,  700, 1800),
-            new PassMission("weekly.flawless",   "Clear a stage without falling",   MissionScope.Weekly, MissionMetric.FlawlessStage,   1,  700, 1800),
+            // ---- Weekly pool --------------------------------------------------------------
+            new PassMission("weekly.kill1000", "Kill 1,000 monsters",               MissionScope.Weekly, MissionMetric.KillAny,        1000, 600, 1500),
+            new PassMission("weekly.run10",    "Play 10 runs",                      MissionScope.Weekly, MissionMetric.FinishRun,        10, 500, 1200),
+            new PassMission("weekly.boss1",    "Defeat a Boss Beacon boss",         MissionScope.Weekly, MissionMetric.DefeatBoss,        1, 600, 1500),
+            new PassMission("weekly.coin5000", "Collect 5,000 Coins",               MissionScope.Weekly, MissionMetric.CollectCoin,    5000, 600, 1500),
+            new PassMission("weekly.survive10","Survive 10 minutes in one run",     MissionScope.Weekly, MissionMetric.SurviveMinutes,   10, 700, 1800),
+            new PassMission("weekly.station15","Activate 15 stations",              MissionScope.Weekly, MissionMetric.CompleteStation,  15, 600, 1500),
+            new PassMission("weekly.threat4",  "Reach threat tier 4 in one run",    MissionScope.Weekly, MissionMetric.ReachThreatTier,   4, 700, 1800),
         };
 
         public static PassMission Find(string id)

@@ -74,7 +74,6 @@ namespace ZombieWar.Editor.Audio
             var cueKeys = variants.Select(variant => variant.cueKey)
                 .ToHashSet(StringComparer.Ordinal);
             UpdateWeaponKeys(cueKeys);
-            UpdateBombKey(cueKeys);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -196,39 +195,6 @@ namespace ZombieWar.Editor.Audio
                 .FirstOrDefault(token => comparableName.Contains(Alphanumeric(token)));
             return match ?? throw new InvalidDataException(
                 $"Cannot map weapon asset '{assetName}' to an approved audio cue.");
-        }
-
-        private static void UpdateBombKey(HashSet<string> cueKeys)
-        {
-            const string key = "sfx.player.bomb.explode";
-            if (!cueKeys.Contains(key))
-                throw new InvalidDataException($"Approved cue is missing: {key}");
-
-            const string prefabPath = "Assets/_Project/Prefabs/Gameplay/Bomb.prefab";
-            var root = PrefabUtility.LoadPrefabContents(prefabPath);
-            try
-            {
-                var updated = false;
-                foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
-                {
-                    if (behaviour == null)
-                        continue;
-                    var serialized = new SerializedObject(behaviour);
-                    var property = serialized.FindProperty("explosionSfxKey");
-                    if (property == null)
-                        continue;
-                    property.stringValue = key;
-                    serialized.ApplyModifiedPropertiesWithoutUndo();
-                    updated = true;
-                }
-                if (!updated)
-                    throw new InvalidDataException("Bomb explosionSfxKey property was not found.");
-                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
         }
 
         private static Manifest ReadManifest()

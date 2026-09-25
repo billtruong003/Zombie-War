@@ -5,28 +5,18 @@ using BillGameCore;
 namespace ZombieWar.Threat
 {
     /// <summary>
-    /// M7.3d — the endless-world pressure model that replaces designed waves.
+    /// The endless-world pressure model and the only thing that spawns enemies.
     ///
-    /// <code>ThreatTier = base + objectiveProgress + distanceBand + boundedTimePressure</code>
+    /// <code>ThreatTier = objectiveProgress + distanceBand + boundedTimePressure</code>
     ///
-    /// The rule that shapes every number below: <b>composition changes before stats.</b> Eleven of the
-    /// sixteen enemy assets were unused in production — ranged, burrowers, an elite and two bosses —
-    /// so pressure is expressed by WHO shows up, not by multiplying health. A tier introduces at most
-    /// one new tactical question.
-    ///
-    /// <b>Ships DISABLED behind <see cref="enabled"/>.</b> Waves still drive the game. A half-migrated
-    /// spawner that spawns nothing would be far worse than a game that still uses waves, so this runs
-    /// only when switched on deliberately.
+    /// The rule that shapes every number below: <b>composition changes before stats.</b> Pressure is
+    /// expressed by WHO shows up, not by multiplying health. A tier introduces at most one new
+    /// tactical question.
     /// </summary>
     [DisallowMultipleComponent]
     public class ThreatDirector : MonoBehaviour
     {
         public static ThreatDirector Instance { get; private set; }
-
-        [Header("Migration")]
-        [Tooltip("OFF by default. While off, WaveDirector/WavePressurePlan keep driving every spawn " +
-                 "exactly as before and this component only observes.")]
-        [SerializeField] private bool driveSpawning = false;
 
         [Header("Roster — composition IS the difficulty (TUNING)")]
         [Tooltip("Tier 0: the baseline crowd. Walkers and runners only.")]
@@ -86,7 +76,6 @@ namespace ZombieWar.Threat
         /// <summary>Total arrivals this run — lets a probe measure arrival RATE, not just alive count.</summary>
         public static int ArrivalsThisRun { get; private set; }
         public static void ResetArrivals() => ArrivalsThisRun = 0;
-        public bool DrivingSpawning => driveSpawning;
 
         /// <summary>Stations completed this run. Each one raises pressure — progress costs safety.</summary>
         public static int ObjectiveProgress => _objectiveProgress;
@@ -105,8 +94,26 @@ namespace ZombieWar.Threat
         void Start()
         {
             _spawner = FindFirstObjectByType<ZombieSpawner>();
+            if (_spawner == null)
+                Debug.LogError("[ThreatDirector] No ZombieSpawner in the scene - nothing will spawn.", this);
+            else
+                WarmPools();
+
             var pm = PlayerMovement.Instance;
             if (pm != null) _player = pm.transform;
+        }
+
+        // Every roster type is registered up front, sized to the crowd it can reach at the top tier,
+        // so the first spawn of a late-tier enemy never falls back to Instantiate mid-fight.
+        void WarmPools()
+        {
+            int peak = AliveTargetFor(maxTier);
+            Pool.Clear();
+            Append(Pool, tier0Basic);
+            Append(Pool, tier1Specialist);
+            Append(Pool, tier2Mixed);
+            Append(Pool, tier3Heavy);
+            for (int i = 0; i < Pool.Count; i++) _spawner.EnsureRegistered(Pool[i], peak);
         }
 
         /// <summary>
@@ -140,11 +147,16 @@ namespace ZombieWar.Threat
             Vector3 p = _player.position;
             float distance = new Vector2(p.x, p.z).magnitude;
 
-            CurrentTier = ComputeTier(_objectiveProgress, distance, run.Duration,
-                                      metresPerDistanceBand, secondsPerTimeStep, maxTimePressure, maxTier);
+            int tier = ComputeTier(_objectiveProgress, distance, run.Duration,
+                                   metresPerDistanceBand, secondsPerTimeStep, maxTimePressure, maxTier);
+            if (tier != CurrentTier)
+            {
+                bool rising = tier > CurrentTier;
+                CurrentTier = tier;
+                if (Bill.IsReady) Bill.Events.Fire(new ThreatTierChangedEvent(tier, rising));
+            }
 
-            // Observation only until the owner switches this on.
-            if (!driveSpawning || _spawner == null) return;
+            if (_spawner == null) return;
 
             if (Time.time < _nextSpawnAt) return;
             // Jittered interval: a fixed cadence lets arrivals re-synchronise into packs even at
@@ -193,7 +205,7 @@ namespace ZombieWar.Threat
                 ArrivalsThisRun++;
             }
 
-            _spawner.SpawnFocusOverride = null;   // never leak the override into wave spawning
+            _spawner.SpawnFocusOverride = null;   // never leak the override into other spawners
         }
 
         public float SpawnIntervalFor(int tier) =>
@@ -234,5 +246,14 @@ namespace ZombieWar.Threat
             if (tier >= 3) Append(Pool, tier3Heavy);
             return Pool.Count;
         }
+    }
+
+    /// <summary>The run's threat tier moved. <see cref="Rising"/> is false only when the player
+    /// walks back toward the origin and the distance band drops.</summary>
+    public readonly struct ThreatTierChangedEvent : IEvent
+    {
+        public readonly int Tier;
+        public readonly bool Rising;
+        public ThreatTierChangedEvent(int tier, bool rising) { Tier = tier; Rising = rising; }
     }
 }

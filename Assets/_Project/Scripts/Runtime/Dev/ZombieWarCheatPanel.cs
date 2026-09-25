@@ -12,7 +12,6 @@ namespace ZombieWar
     public sealed class ZombieWarCheatPanel : MonoBehaviour
     {
         [SerializeField] private WeaponData[] weapons = Array.Empty<WeaponData>();
-        [SerializeField] private CampaignCatalog campaignCatalog;
         [SerializeField] private ModularCostumeCatalog[] costumeCatalogs = Array.Empty<ModularCostumeCatalog>();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
@@ -60,19 +59,18 @@ namespace ZombieWar
             if (cheat == null) return;
 
             cheat.Register("zw.coin", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 100000), "Add 100,000 Coin");
-            cheat.Register("zw.gold", () => AddWallet(PlayerProfile.CurrencyKind.Gold, 10000), "Add 10,000 Gold");
             cheat.Register("zw.gem", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 1000), "Add 1,000 Gem");
             cheat.Register("zw.unlock.weapons", UnlockWeapons, "Unlock every authored weapon");
             cheat.Register("zw.unlock.costumes", UnlockCostumes, "Unlock every authored costume");
-            cheat.Register("zw.unlock.stages", UnlockStages, "Unlock every campaign stage");
             cheat.Register("zw.heal", HealPlayer, "Restore player HP");
             cheat.Register("zw.god", ToggleGodMode, "Toggle player god mode");
             cheat.Register("zw.xp", AddRunXp, "Add 1,000 run XP");
             cheat.Register("zw.runcoin", AddRunCoin, "Add 1,000 run Coin");
             cheat.Register("zw.killall", KillAllZombies, "Kill every active zombie");
-            cheat.Register("zw.win", WinRun, "Complete the current run");
-            cheat.Register("zw.restart", RestartRun, "Restart current stage");
-            cheat.Register("zw.home", ReturnToMap, "Return to campaign map/menu");
+            cheat.Register("zw.threat", RaiseThreat, "Raise run threat by one tier");
+            cheat.Register("zw.end", EndRun, "End the current run (walk away)");
+            cheat.Register("zw.restart", RestartRun, "Restart the run");
+            cheat.Register("zw.home", ReturnToMap, "Return to the menu");
             _commandsRegistered = true;
         }
 
@@ -153,11 +151,9 @@ namespace ZombieWar
 
             AddSection(content, "PROFILE / DATA");
             AddAction(content, "+100K COIN", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 100000));
-            AddAction(content, "+10K GOLD", () => AddWallet(PlayerProfile.CurrencyKind.Gold, 10000));
             AddAction(content, "+1K GEM", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 1000));
             AddAction(content, "UNLOCK ALL WEAPONS", UnlockWeapons);
             AddAction(content, "UNLOCK ALL COSTUMES", UnlockCostumes);
-            AddAction(content, "UNLOCK ALL STAGES", UnlockStages);
             AddAction(content, "RESET PROFILE — PRESS TWICE", ResetProfile, true);
 
             AddSection(content, "CURRENT RUN");
@@ -166,7 +162,8 @@ namespace ZombieWar
             AddAction(content, "+1,000 XP", AddRunXp);
             AddAction(content, "+1,000 RUN COIN", AddRunCoin);
             AddAction(content, "KILL ALL ZOMBIES", KillAllZombies);
-            AddAction(content, "WIN RUN NOW", WinRun);
+            AddAction(content, "THREAT +1 TIER", RaiseThreat);
+            AddAction(content, "END RUN (WALK AWAY)", EndRun);
 
             AddSection(content, "FLOW / DEBUG");
             AddAction(content, "TIME ×0.5", () => SetTimeScale(0.5f));
@@ -234,14 +231,6 @@ namespace ZombieWar
             for (int i = 0; i < costumeCatalogs.Length; i++)
                 count += PlayerProfile.UnlockAllCostumes(costumeCatalogs[i]);
             SetStatus($"Costume entries unlocked: +{count}");
-        }
-
-        private void UnlockStages()
-        {
-            if (campaignCatalog == null) throw new InvalidOperationException("CampaignCatalog is not wired.");
-            for (int i = 0; i < campaignCatalog.Levels.Count; i++)
-                PlayerProfile.MarkLevelCompleted(campaignCatalog.Levels[i].levelId);
-            SetStatus($"Campaign stages unlocked: {campaignCatalog.Count}");
         }
 
         private void ResetProfile()
@@ -318,11 +307,18 @@ namespace ZombieWar
             SetStatus($"Killed {zombies.Length} active zombie(s)");
         }
 
-        private void WinRun()
+        private void RaiseThreat()
         {
             if (RunState.Current == null) throw new InvalidOperationException("No active run.");
-            Bill.Events?.Fire(new AllWavesClearedEvent());
-            SetStatus("Victory event fired");
+            Threat.ThreatDirector.ReportObjectiveCompleted();
+            SetStatus($"Threat tier: {Threat.ThreatDirector.Instance?.CurrentTier ?? 0} (+1 pending)");
+        }
+
+        private void EndRun()
+        {
+            if (RunState.Current == null) throw new InvalidOperationException("No active run.");
+            Bill.Events?.Fire(new RunAbandonRequestedEvent());
+            SetStatus("Run ended");
             SetPanelVisible(false);
         }
 

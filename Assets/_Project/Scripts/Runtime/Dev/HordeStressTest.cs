@@ -14,8 +14,8 @@ namespace ZombieWar
     /// measurement, not an opinion, and the answer decides how far later stages can push.
     ///
     /// Self-installing and console-driven, so it needs no scene object and no UI:
-    ///   zw.horde.watch   - start measuring the run that is already happening (a real Stage 1 pass)
-    ///   zw.horde.stress  - stop the wave director, hold 100 alive for 30s, report, clean up
+    ///   zw.horde.watch   - start measuring the run that is already happening
+    ///   zw.horde.stress  - pause the threat director, hold 100 alive for 30s, report, clean up
     ///   zw.horde.report  - print the current window and stop measuring
     /// Turn god mode on first (zw.god) or the player dies before the window closes.
     /// </summary>
@@ -35,7 +35,6 @@ namespace ZombieWar
         private float _elapsed;
         private float _worstFrameTime;
         private int _peakAlive;
-        private int _peakVisible;
         private long _gcAllocated;
         private ProfilerRecorder _gcRecorder;
         private Coroutine _stress;
@@ -61,7 +60,6 @@ namespace ZombieWar
             _elapsed += Time.unscaledDeltaTime;
             if (Time.unscaledDeltaTime > _worstFrameTime) _worstFrameTime = Time.unscaledDeltaTime;
             if (ZombieManager.AliveCount > _peakAlive) _peakAlive = ZombieManager.AliveCount;
-            if (ZombieManager.VisibleCount > _peakVisible) _peakVisible = ZombieManager.VisibleCount;
             if (_gcRecorder.Valid) _gcAllocated += _gcRecorder.LastValue;
         }
 
@@ -85,7 +83,6 @@ namespace ZombieWar
             _elapsed = 0f;
             _worstFrameTime = 0f;
             _peakAlive = 0;
-            _peakVisible = 0;
             _gcAllocated = 0;
             _windowStart = Time.unscaledTime;
             _gcRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
@@ -107,19 +104,19 @@ namespace ZombieWar
 
         private IEnumerator StressRoutine()
         {
-            var director = FindFirstObjectByType<WaveDirector>();
-            var spawner = director != null ? director.GetComponent<ZombieSpawner>() : null;
-            var data = FirstZombie(director);
+            var director = Threat.ThreatDirector.Instance;
+            var spawner = FindFirstObjectByType<ZombieSpawner>();
+            var data = director != null ? director.PickFor(0) : null;
 
             if (spawner == null || data == null)
             {
-                Debug.LogError("[HordeStress] No WaveDirector/ZombieSpawner/ZombieData in the loaded " +
-                               "scene - start a stage first.");
+                Debug.LogError("[HordeStress] No ThreatDirector/ZombieSpawner/ZombieData in the loaded " +
+                               "scene - start a run first.");
                 yield break;
             }
 
             // The director must not fight the stress loop over the alive count.
-            director.StopRun();
+            director.enabled = false;
             Bill.Pool?.WarmUp(ZombieSpawner.KeyFor(data), StressTargetAlive);
             spawner.EnsureRegistered(data, StressTargetAlive);
 
@@ -134,7 +131,7 @@ namespace ZombieWar
                 if (want > 0)
                 {
                     spawner.BeginBatch();
-                    for (int i = 0; i < want; i++) spawner.Spawn(data, ZombieSpawner.SpawnBand.Normal);
+                    for (int i = 0; i < want; i++) spawner.Spawn(data);
                 }
                 yield return wait;
             }
@@ -144,20 +141,8 @@ namespace ZombieWar
             // Return the stress instances directly rather than firing GameOverEvent - the field has
             // to be cleared without dragging the lose screen and the whole run-end flow in with it.
             Bill.Pool?.ReturnAll(ZombieSpawner.KeyFor(data));
+            if (director != null) director.enabled = true;
             _stress = null;
-        }
-
-        private static ZombieData FirstZombie(WaveDirector director)
-        {
-            var waves = director != null ? director.Waves : null;
-            if (waves?.waves == null) return null;
-            foreach (var wave in waves.waves)
-            {
-                if (wave?.entries == null) continue;
-                foreach (var entry in wave.entries)
-                    if (entry.zombie != null && entry.zombie.prefab != null) return entry.zombie;
-            }
-            return null;
         }
 
         private void Report()
@@ -176,7 +161,7 @@ namespace ZombieWar
             var sb = new StringBuilder(320);
             sb.AppendLine($"[HordeStress] '{_label}' over {window:0.0}s ({_frames} frames)");
             sb.AppendLine($"  FPS       avg {avgFps:0.0} | worst {worstFps:0.0} (worst frame {_worstFrameTime * 1000f:0.0} ms)");
-            sb.AppendLine($"  Peak      alive {_peakAlive} | visible {_peakVisible}");
+            sb.AppendLine($"  Peak      alive {_peakAlive}");
             sb.AppendLine($"  GC alloc  {_gcAllocated / 1024f:0.0} KB total | {allocPerSecond / 1024f:0.0} KB/s");
             Debug.Log(sb.ToString());
 

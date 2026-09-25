@@ -22,7 +22,7 @@ namespace ZombieWar.Editor
 
         private static readonly string[] ProductionMaps =
         {
-            "Map_Level1", "Map_Level2", "Map_Level3", "Map_Level4", "Map_Level5",
+            GameFlow.GameplayScene,
         };
 
         /// <summary>

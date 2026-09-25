@@ -46,8 +46,6 @@ namespace ZombieWar.EditorTools.Weapons
             public string weaponId;
             public string weaponName;
             public bool twoHanded;
-            public int slotRequested;
-            public int slotActual;
             public string view;              // "RightGrip" / "LeftGrip" / "Front"
             public bool equipVerified;       // the real equip path put THIS weapon in the hand
             public int instanceId;           // proves each frame used its own instance
@@ -117,13 +115,9 @@ namespace ZombieWar.EditorTools.Weapons
 
                 foreach (var data in roster)
                 {
-                    int slot = data.twoHanded ? 1 : 0;
-
-                    // The M6.1 defect: two-handed weapons equip to slot 1 while the capture followed
-                    // slot 0, so four of six frames were byte-identical. Equip AND select explicitly,
-                    // then verify - never assume.
-                    _weapon.EquipToSlot(slot, data);
-                    _weapon.EquipSlot(slot);
+                    // Equip through the real path, then verify - never assume. The M6.1 defect was a
+                    // capture that followed a different weapon than the one it had just equipped.
+                    _weapon.Equip(data);
 
                     // Let the animator + Animation Rigging graph evaluate: rig constraints run in
                     // LateUpdate, so the grip transforms are only correct at end of frame.
@@ -132,7 +126,7 @@ namespace ZombieWar.EditorTools.Weapons
                     yield return null;
                     yield return new WaitForEndOfFrame();
 
-                    bool equipOk = _weapon.Current == data && _weapon.CurrentSlot == slot;
+                    bool equipOk = _weapon.Current == data;
                     var grips = _weapon.CurrentGrips;
 
                     if (!equipOk || grips == null || grips.RightHandGrip == null)
@@ -140,16 +134,16 @@ namespace ZombieWar.EditorTools.Weapons
                         shots.Add(new Shot
                         {
                             weaponId = data.WeaponId, weaponName = data.name, twoHanded = data.twoHanded,
-                            slotRequested = slot, slotActual = _weapon.CurrentSlot, view = "RightGrip",
+                            view = "RightGrip",
                             equipVerified = equipOk, handInFrame = false,
                             note = grips == null ? "no WeaponGripPoints on the equipped instance"
                                  : grips.RightHandGrip == null ? "rightHandGrip transform not assigned"
-                                 : $"equip mismatch: asked slot {slot}, got slot {_weapon.CurrentSlot}"
+                                 : $"equip mismatch: asked for {data.name}, got {(_weapon.Current != null ? _weapon.Current.name : "nothing")}"
                         });
                         continue;
                     }
 
-                    shots.Add(Shoot(cam, rt, data, grips, grips.RightHandGrip, handBone, "RightGrip", slot, equipOk, 0f,
+                    shots.Add(Shoot(cam, rt, data, grips, grips.RightHandGrip, handBone, "RightGrip", equipOk, 0f,
                                     ArmReach(animator, false)));
 
                     // Second angle. Two-handed weapons get the support hand (that is where fore-end
@@ -162,10 +156,10 @@ namespace ZombieWar.EditorTools.Weapons
                     // byte-identical camera, so it was not a second view at all. The per-image SHA in
                     // the CSV is what caught it, and the roll is what fixes it.
                     if (data.twoHanded && grips.LeftHandGrip != null)
-                        shots.Add(Shoot(cam, rt, data, grips, grips.LeftHandGrip, leftHandBone, "LeftGrip", slot, equipOk, 0f,
+                        shots.Add(Shoot(cam, rt, data, grips, grips.LeftHandGrip, leftHandBone, "LeftGrip", equipOk, 0f,
                                         ArmReach(animator, true)));
                     else
-                        shots.Add(Shoot(cam, rt, data, grips, grips.RightHandGrip, handBone, "Front", slot, equipOk, 68f,
+                        shots.Add(Shoot(cam, rt, data, grips, grips.RightHandGrip, handBone, "Front", equipOk, 68f,
                                         ArmReach(animator, false)));
                 }
 
@@ -218,7 +212,7 @@ namespace ZombieWar.EditorTools.Weapons
             /// Solves the camera FROM THE GRIP, never from character bounds, and captures one frame.
             /// </summary>
             Shot Shoot(Camera cam, RenderTexture rt, ZombieWar.WeaponData data, WeaponGripPoints grips,
-                       Transform gripTarget, Transform handBone, string view, int slot, bool equipOk,
+                       Transform gripTarget, Transform handBone, string view, bool equipOk,
                        float rollAroundBarrelDeg, (Transform shoulder, float reach) arm)
             {
                 Transform playerRoot = _weapon.transform.root;
@@ -318,8 +312,6 @@ namespace ZombieWar.EditorTools.Weapons
                     weaponId = data.WeaponId,
                     weaponName = data.name,
                     twoHanded = data.twoHanded,
-                    slotRequested = slot,
-                    slotActual = _weapon.CurrentSlot,
                     view = safeView,
                     equipVerified = equipOk,
                     instanceId = grips.GetInstanceID(),
@@ -344,12 +336,12 @@ namespace ZombieWar.EditorTools.Weapons
             void WriteReport(List<Shot> shots)
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("weaponId,weaponName,twoHanded,view,slotRequested,slotActual,equipVerified," +
+                sb.AppendLine("weaponId,weaponName,twoHanded,view,equipVerified," +
                               "instanceId,handInFrame,vpX,vpY,vpZ,handToGripCm,armReachCm,shoulderToGripCm," +
                               "outOfReach,muzzleInsideModel,pngSha,pngPath,note");
                 foreach (var s in shots)
-                    sb.AppendLine($"{s.weaponId},{s.weaponName},{s.twoHanded},{s.view},{s.slotRequested}," +
-                                  $"{s.slotActual},{s.equipVerified},{s.instanceId},{s.handInFrame}," +
+                    sb.AppendLine($"{s.weaponId},{s.weaponName},{s.twoHanded},{s.view}," +
+                                  $"{s.equipVerified},{s.instanceId},{s.handInFrame}," +
                                   $"{s.handViewport.x:F3},{s.handViewport.y:F3},{s.handViewport.z:F3}," +
                                   $"{s.handToGripCm:F1},{s.armReachCm:F1},{s.shoulderToGripCm:F1}," +
                                   $"{s.outOfReach},{s.muzzleInsideModel},{s.pngSha},{s.pngPath},\"{s.note}\"");

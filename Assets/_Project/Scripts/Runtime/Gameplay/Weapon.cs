@@ -8,6 +8,9 @@ namespace ZombieWar
 {
     public class Weapon : MonoBehaviour
     {
+        [Tooltip("Fallback roster. The run weapon comes from the loadout (LoadoutState.ApplyTo); " +
+                 "this list only arms the player in scenes and tests that have no loadout, and feeds " +
+                 "the editor pose/grip tools.")]
         [SerializeField] private List<WeaponData> weapons = new();
 
         [Tooltip("GunMount inside WeaponRig - follows the chest via a MultiParentConstraint " +
@@ -28,13 +31,6 @@ namespace ZombieWar
                  "both hands together in the same frame.")]
         [SerializeField] private Transform recoilPivot;
 
-        [Header("Slots (3 o loadout: 0=pistol bat buoc, 1-2=sung dai; bom co nut rieng)")]
-        [Tooltip("Bat = switch cycle qua 3 slot (pistol luon co). Tat = cycle ca kho `weapons` (debug/test).")]
-        [SerializeField] private bool useSlotSystem = false;
-        [SerializeField] private WeaponData pistolSlot;
-        [SerializeField] private WeaponData longSlotA;
-        [SerializeField] private WeaponData longSlotB;
-
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
         [SerializeField] private float gizmoAimLength = 6f;
@@ -44,8 +40,7 @@ namespace ZombieWar
         public event Action<WeaponGripPoints> OnWeaponEquipped;
 
         private int _currentIndex;
-        private int _slotIndex;           // 0=pistol, 1=longA, 2=longB (slot mode)
-        private WeaponData _currentData;  // nguon su that cua Current (ca 2 mode)
+        private WeaponData _currentData;  // the equipped weapon; source of truth for Current
         private GameObject _currentInstance;
         private WeaponGripPoints _currentGripPoints;
         private Vector3 _weaponRestLocalPosition;
@@ -80,18 +75,10 @@ namespace ZombieWar
         private float _recoilPitch, _recoilPitchVel;
         private float _recoilYaw, _recoilYawVel;
 
-        // Null when nothing is equipped and the roster cannot supply a fallback (empty list, or an
-        // index left stale by a shrunk list). Every caller must null-check: an unarmed player is a
+        // The weapon actually in the hand. Null until an equip succeeds - a roster entry that was never
+        // instantiated is not a weapon. Every caller must null-check: an unarmed player is a
         // recoverable state, an exception on the fire path is not.
-        public WeaponData Current
-        {
-            get
-            {
-                if (_currentData != null) return _currentData;
-                if (weapons == null || _currentIndex < 0 || _currentIndex >= weapons.Count) return null;
-                return weapons[_currentIndex];
-            }
-        }
+        public WeaponData Current => _currentData;
 
         // Grips of the currently-equipped weapon instance (null until first Equip). Lets late-enabling
         // listeners (e.g. WeaponIKController) sync their state without waiting for the next equip event.
@@ -187,24 +174,10 @@ namespace ZombieWar
 
         private void Start()
         {
-            if (useSlotSystem)
-            {
-                // Slot 0 bat buoc co pistol: tu-fill khau 1-tay dau tien trong kho neu chua gan.
-                if (pistolSlot == null && weapons != null)
-                    pistolSlot = weapons.Find(w => w != null && !w.twoHanded && w.weaponPrefab != null);
-
-                if (pistolSlot == null)
-                {
-                    Debug.LogError("[Weapon] Slot mode is on but no usable one-handed weapon exists " +
-                                   "(pistolSlot unset and none in `weapons`). Player starts unarmed.", this);
-                    return;
-                }
-                EquipSlot(0);
-                return;
-            }
-
-            // Roster mode. An empty or all-invalid list leaves the player unarmed rather than
-            // throwing out of Start - a thrown Start would also skip everything after it.
+            // The spawner equips the loadout weapon before Start runs. Only a scene or test with no
+            // loadout reaches the roster fallback. An empty or all-invalid list leaves the player
+            // unarmed rather than throwing out of Start - a thrown Start would skip everything after it.
+            if (_currentInstance != null) return;
             if (!EquipFirstUsable())
                 Debug.LogError("[Weapon] `weapons` has no usable entry (empty, or every entry is null " +
                                "or missing its prefab). Player starts unarmed.", this);
@@ -344,92 +317,24 @@ namespace ZombieWar
             return true;
         }
 
-        public void SwitchWeapon()
+        /// <summary>
+        /// Equips the run weapon. Refuses a weapon whose grip/muzzle anchors are not authored yet, or
+        /// one that fails to instantiate, and keeps the previous weapon in both cases.
+        /// </summary>
+        public bool Equip(WeaponData data)
         {
-            if (useSlotSystem)
-            {
-                // Cycle qua cac slot CO sung (pistol luon co => khong bao gio ket).
-                for (int step = 1; step <= 3; step++)
-                {
-                    int next = (_slotIndex + step) % 3;
-                    if (GetSlot(next) != null) { EquipSlot(next); return; }
-                }
-                return;
-            }
-
-            // Roster mode. Guarding the count is not optional: `% 0` throws DivideByZeroException,
-            // and the HUD's switch button is reachable long before anyone notices an empty list.
-            if (weapons == null || weapons.Count == 0) return;
-
-            // Step past entries that fail to equip instead of landing on one and going silent.
-            for (int step = 1; step <= weapons.Count; step++)
-                if (EquipWeapon((_currentIndex + step) % weapons.Count)) return;
-
-            // Every entry refused. Clear the index so `Current` cannot keep reporting a roster entry
-            // that was never instantiated - a half-equipped state that reads as armed while
-            // `_currentInstance` is null. The roster fallback in `Current` is there for the window
-            // BEFORE any equip is attempted (Start has not run yet); once an attempt has been made
-            // and refused, claiming a weapon is simply wrong.
-            _currentIndex = -1;
-            _currentData = null;
-        }
-
-        // ===== Slot API (3 o: 0=pistol bat buoc, 1-2=sung dai; bom co nut/slot rieng) =====
-        public bool UseSlotSystem => useSlotSystem;
-        public int CurrentSlot => _slotIndex;
-        public WeaponData GetSlot(int slot) => slot == 0 ? pistolSlot : slot == 1 ? longSlotA : longSlotB;
-
-        /// Gan sung vao slot. Slot 0 CHI nhan pistol (1 tay) va KHONG nhan null (chi thay, khong thao).
-        /// Slot 1-2 chi nhan sung dai (2 tay), null = thao. Tra ve false neu vi pham rule.
-        public bool EquipToSlot(int slot, WeaponData data)
-        {
-            // M7.1 authoring gate. A weapon onboarded from a vendor pack has no hand-authored grip
-            // or muzzle, so equipping it would put a gun in the hand at an arbitrary transform.
-            // Refuse loudly rather than render something wrong.
-            if (data != null && !data.IsPlayable)
+            if (data == null) return false;
+            if (!data.IsPlayable)
             {
                 Debug.LogError($"[Weapon] Refusing to equip '{data.name}' — authoringStatus is " +
                                $"{data.Authoring}. Grip/muzzle anchors are hand-authored by the owner; " +
                                "this weapon is data-only until that pass is done.");
                 return false;
             }
-
-            if (slot == 0)
-            {
-                if (data == null || data.twoHanded) return false; // pistol bat buoc, khong thao
-                pistolSlot = data;
-            }
-            else if (slot == 1 || slot == 2)
-            {
-                if (data != null && !data.twoHanded) return false; // sung dai only
-                if (slot == 1) longSlotA = data; else longSlotB = data;
-            }
-            else return false;
-
-            // Slot vua doi la slot dang cam: refresh; neu vua thao -> fallback pistol.
-            if (useSlotSystem && _slotIndex == slot)
-                EquipSlot(GetSlot(slot) != null ? slot : 0);
-            return true;
+            return EquipData(data);
         }
 
-        /// Thao sung dai (slot 1-2). Pistol (slot 0) khong thao duoc.
-        public bool UnequipSlot(int slot) => slot != 0 && EquipToSlot(slot, null);
-
-        public void EquipSlot(int slot)
-        {
-            var data = GetSlot(slot);
-            if (data == null) { slot = 0; data = pistolSlot; } // slot trong -> fallback pistol
-            if (data == null) return;
-
-            if (!EquipData(data)) return;   // bad asset: keep the previous weapon and the old index
-            _slotIndex = slot;
-        }
-
-        // M4 removed the per-slot ammo/reload ledger entirely. It existed so that cycling weapons
-        // could not be used as a free instant reload; with no magazine there is nothing to bank,
-        // nothing to resume, and nothing a switch could exploit.
-
-        /// Jump directly to a weapon by index (HUD roster / pose tuning). Play-mode only.
+        /// Jump directly to a roster weapon by index (editor pose tuning). Play-mode only.
         public void EquipIndex(int index)
         {
             if (!Application.isPlaying || weapons == null || index < 0 || index >= weapons.Count) return;
@@ -622,7 +527,7 @@ namespace ZombieWar
         private void OnDisable() => StopFireAudio();
 
         // Screen shake is what actually reads as "recoil" in 3rd-person; the gun-mount spring is
-        // largely cancelled by the hand IK chasing the grips. Mirrors Bomb's camera lookup, cached.
+        // largely cancelled by the hand IK chasing the grips. Camera lookup is cached.
         private void ShakeCamera(float amount)
         {
             if (amount <= 0f) return;

@@ -26,7 +26,8 @@ namespace ZombieWar
     /// player. Blanket auto-collect on wave clear stays removed: loot is walked to by default, and the
     /// magnet is the reward that makes a big sweep feel earned rather than automatic.
     /// </summary>
-    public enum PickupEffect { Currency, Health, Bomb, Magnet }
+    // Values are serialized in pickup prefabs: never renumber (2 was the retired bomb pickup).
+    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3 }
 
     public class Pickup : MonoBehaviour
     {
@@ -60,7 +61,8 @@ namespace ZombieWar
         public void Init(PlayerProfile.CurrencyKind kind, int amount, string poolKey, Vector3 position)
         {
             _kind = kind;
-            _amount = Mathf.Max(1, amount);
+            // Only currency carries a value. A heal or a magnet reports 0 rather than a phantom coin.
+            _amount = effect == PickupEffect.Currency ? Mathf.Max(1, amount) : 0;
             _poolKey = poolKey;
             _collected = false;
             _flying = false;
@@ -127,10 +129,6 @@ namespace ZombieWar
                     PickupManager.BeginMagnetSweep();
                     break;
 
-                case PickupEffect.Bomb:
-                    Bill.Events?.Fire(new BombPickedUpEvent());
-                    break;
-
                 default:
                     RunState.Current?.AddCurrency(_kind, _amount);
                     break;
@@ -141,13 +139,7 @@ namespace ZombieWar
             if (!string.IsNullOrEmpty(_poolKey) && Bill.Pool != null) Bill.Pool.Return(gameObject);
             else gameObject.SetActive(false);
         }
-
-        /// <summary>Banked without the fly-in. Used when a wave ends and leftovers are swept up.</summary>
-        public void CollectImmediate() => Collect();
     }
-
-    /// <summary>The player picked up a spare bomb. BombThrower listens and adds a charge.</summary>
-    public readonly struct BombPickedUpEvent : IEvent { }
 
     public readonly struct PickupCollectedEvent : IEvent
     {

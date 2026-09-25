@@ -4,33 +4,36 @@ using UnityEngine;
 
 namespace ZombieWar
 {
-    public enum RunOutcome { InProgress, Victory, Defeat }
+    /// <summary>How an endless run ended. There is no victory: the world always wins eventually,
+    /// and the only other exit is the player walking away (GDD §20).</summary>
+    public enum RunOutcome { InProgress, Died, Abandoned }
 
     /// <summary>What a run actually produced. Taken as a snapshot the moment the run ends, so the
     /// result screen and the payout can never disagree with each other or drift as the scene unloads.</summary>
     public readonly struct RunSummary
     {
         public readonly RunOutcome Outcome;
-        public readonly int Kills, WaveReached, Level, Xp;
-        public readonly long Coin, Gold, Gem;
+        public readonly int Kills, Level, Xp, PeakThreatTier;
+        public readonly long Coin, Gem;
         public readonly float Duration;
 
-        public RunSummary(RunOutcome outcome, int kills, int waveReached, int level, int xp,
-                          long coin, long gold, long gem, float duration)
+        public RunSummary(RunOutcome outcome, int kills, int level, int xp, int peakThreatTier,
+                          long coin, long gem, float duration)
         {
-            Outcome = outcome; Kills = kills; WaveReached = waveReached; Level = level; Xp = xp;
-            Coin = coin; Gold = gold; Gem = gem; Duration = duration;
+            Outcome = outcome; Kills = kills; Level = level; Xp = xp; PeakThreatTier = peakThreatTier;
+            Coin = coin; Gem = gem; Duration = duration;
         }
     }
 
     /// <summary>
-    /// The single in-memory authority for everything a run earns: kills, wave, currency, XP/level,
-    /// temporary perks, elapsed time and the terminal result.
+    /// The single in-memory authority for everything a run earns: kills, threat reached, currency,
+    /// XP/level, temporary perks, elapsed time and the terminal result.
     ///
     /// Design rules this type exists to enforce:
-    ///   * Currency earned in a run is banked HERE, never written straight into <see cref="PlayerProfile"/>.
+    ///   * Coin earned in a run is banked HERE, never written straight into <see cref="PlayerProfile"/>.
     ///     The profile is touched exactly once, at <see cref="Payout"/>, so a run that is abandoned
-    ///     mid-way cannot half-pay the player.
+    ///     mid-way cannot half-pay the player. Gem is the deliberate exception: GDD §11 secures it the
+    ///     moment it is picked up, so it goes to the profile immediately and is only counted here.
     ///   * <see cref="Payout"/> is idempotent - calling it twice pays once. Scene unload, a replay tap
     ///     and a result screen all racing to finish the run cannot double-credit.
     ///   * Perks are temporary: they live and die with the run and are applied as multipliers on top
@@ -45,29 +48,26 @@ namespace ZombieWar
         public static event Action Changed;
 
         /// <summary>Raised when XP crosses one or more level thresholds, with the number of levels
-        /// gained in that grant. This is the level-up UI's trigger - without a listener the level-up
-        /// is silent, which the M5 audit flagged as scaffolding (S6).</summary>
+        /// gained in that grant. This is the level-up UI's trigger.</summary>
         public static event Action<int> LevelsGained;
 
         private readonly List<RunPerk> _perks = new List<RunPerk>();
         private bool _paidOut;
 
         public int Kills { get; private set; }
-        public int WaveReached { get; private set; }
         public int Level { get; private set; } = 1;
+        public int PeakThreatTier { get; private set; }
 
-        /// M7.2 — the deterministic seed the level-up offer builder draws from. Set once per run so
-        /// the same run reproduces the same offers; additive, and nothing existing reads it.
-        public int Seed { get; private set; } = 20260815;
+        /// <summary>Seed the level-up offer builder draws from. Fresh per run so two runs never deal
+        /// the same cards; tests pin it with <see cref="SetSeed"/> to reproduce an offer.</summary>
+        public int Seed { get; private set; }
 
         public void SetSeed(int seed) => Seed = seed;
         public int Xp { get; private set; }
         public long Coin { get; private set; }
-        public long Gold { get; private set; }
         public long Gem { get; private set; }
         public float Duration { get; private set; }
         public RunOutcome Outcome { get; private set; } = RunOutcome.InProgress;
-        public string LevelId { get; private set; }
 
         public IReadOnlyList<RunPerk> Perks => _perks;
         public bool IsOver => Outcome != RunOutcome.InProgress;
@@ -76,9 +76,9 @@ namespace ZombieWar
         /// an authored table - it is tuned by one number and is trivial to reason about in tests.</summary>
         public int XpForNextLevel => 10 + (Level - 1) * 8;
 
-        public static RunState Begin(string levelId)
+        public static RunState Begin()
         {
-            // M7.2c — clear every run-scoped static BEFORE the new run exists.
+            // Clear every run-scoped static BEFORE the new run exists.
             //
             // Reset happens at run START, not run end: a quit, a crash or an unexpected exit can skip
             // an end-of-run hook, but nothing can start a run without coming through here. This is
@@ -86,13 +86,14 @@ namespace ZombieWar
             // OnEnable handlers; that is how the skill build and the pickup registry both leaked.
             RunScope.ResetAll();
 
-            Current = new RunState { LevelId = levelId };
+            Current = new RunState { Seed = Environment.TickCount };
             Changed?.Invoke();
             return Current;
         }
 
-        /// <summary>Drops the active run without paying out. Used by "Home" - abandoning a run
-        /// must never bank its currency.</summary>
+        /// <summary>Drops the active run without paying out. Only a safety net for leaving the scene
+        /// without a closure; the normal walk-away path closes the run as
+        /// <see cref="RunOutcome.Abandoned"/> first so the player sees what they forfeited.</summary>
         public static void Abandon()
         {
             Current = null;
@@ -105,9 +106,12 @@ namespace ZombieWar
             Duration += deltaTime;
         }
 
-        public void SetWave(int waveNumber)
+        /// <summary>Records the threat tier the run has reached. Only moves forward - the result
+        /// screen reports the peak, not wherever pressure happened to sit at the moment of death.</summary>
+        public void ReportThreatTier(int tier)
         {
-            if (waveNumber > WaveReached) WaveReached = waveNumber;
+            if (IsOver || tier <= PeakThreatTier) return;
+            PeakThreatTier = tier;
             Changed?.Invoke();
         }
 
@@ -129,9 +133,8 @@ namespace ZombieWar
         }
 
         /// <summary>
-        /// M7.3 — spends banked run Coin. This is the first IN-RUN sink Coin has ever had: before
-        /// Supply Cache, Coin was earned all run and only mattered at settlement. Returns false when
-        /// the player cannot afford it, so callers never go negative.
+        /// Spends banked run Coin at an in-run sink (Supply Cache). Returns false when the player
+        /// cannot afford it, so callers never go negative.
         /// </summary>
         public bool SpendCoin(long amount)
         {
@@ -141,12 +144,17 @@ namespace ZombieWar
             return true;
         }
 
+        /// <summary>Credits a pickup. Coin waits for settlement; Gem is secured into the profile on the
+        /// spot, so neither a death nor a walk-away can take it back.</summary>
         public void AddCurrency(PlayerProfile.CurrencyKind kind, long amount)
         {
             if (IsOver || amount <= 0) return;
-            if (kind == PlayerProfile.CurrencyKind.Coin) Coin += ScaleCoin(amount);
-            else if (kind == PlayerProfile.CurrencyKind.Gold) Gold += amount;
-            else Gem += amount;
+            if (kind == PlayerProfile.CurrencyKind.Gem)
+            {
+                Gem += amount;
+                PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, amount);
+            }
+            else Coin += ScaleCoin(amount);
             Changed?.Invoke();
         }
 
@@ -194,8 +202,8 @@ namespace ZombieWar
             return m;
         }
 
-        /// <summary>Ends the run and freezes a snapshot. The first call wins: a Victory that lands in
-        /// the same frame as a Defeat cannot overwrite it.</summary>
+        /// <summary>Ends the run and freezes a snapshot. The first call wins: an abandon that lands in
+        /// the same frame as a death cannot overwrite it.</summary>
         public RunSummary Finish(RunOutcome outcome)
         {
             if (!IsOver && outcome != RunOutcome.InProgress) Outcome = outcome;
@@ -204,33 +212,24 @@ namespace ZombieWar
         }
 
         public RunSummary Snapshot() =>
-            new RunSummary(Outcome, Kills, WaveReached, Level, Xp, Coin, Gold, Gem, Duration);
+            new RunSummary(Outcome, Kills, Level, Xp, PeakThreatTier, Coin, Gem, Duration);
 
-        /// <summary>What the payout actually credited, frozen by the first <see cref="Payout"/> call.
-        /// On a defeat this differs from the earned totals - the result screen must show these, not
-        /// the raw run numbers, or it lies about what the player kept.</summary>
+        /// <summary>Coin the payout actually credited, frozen by the first <see cref="Payout"/> call.
+        /// It differs from the earned total on every ending - the result screen must show this, not
+        /// the raw run number, or it lies about what the player kept.</summary>
         public long BankedCoin { get; private set; }
-        public long BankedGold { get; private set; }
-        public long BankedGem { get; private set; }
 
-        /// <summary>Banks this run's currency into the persistent profile. Idempotent - the second and
+        /// <summary>Banks this run's Coin into the persistent profile. Idempotent - the second and
         /// later calls are no-ops and return false, which is what makes replay/home/result-screen
-        /// races safe. The outcome-dependent fractions are decided by <see cref="RunClosure"/>, not
-        /// here - this method only applies them.</summary>
-        /// <param name="coinFraction">Portion of earned Coin to keep (GDD §11: defeat keeps 25%).</param>
-        /// <param name="includeRare">False drops Gold and Gem entirely (defeat loses rare reward).</param>
-        public bool Payout(float coinFraction = 1f, bool includeRare = true)
+        /// races safe. The outcome-dependent fraction is decided by <see cref="RunClosure"/>, not
+        /// here - this method only applies it.</summary>
+        public bool Payout(float coinFraction)
         {
             if (_paidOut) return false;
             _paidOut = true;
 
             BankedCoin = (long)(Coin * Mathf.Clamp01(coinFraction));
-            BankedGold = includeRare ? Gold : 0;
-            BankedGem = includeRare ? Gem : 0;
-
             if (BankedCoin > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, BankedCoin);
-            if (BankedGold > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gold, BankedGold);
-            if (BankedGem > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, BankedGem);
             return true;
         }
 

@@ -2,16 +2,17 @@ using System.Collections;
 using BillGameCore;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace ZombieWar
 {
     /// <summary>
-    /// Overlay in-run (spec §4.7–§4.12): Pause / Revive / Level-up / Game Over / Settings / FTUE.
-    /// Widgets do HudInstaller dựng sẵn trong Map_Level1; class này chỉ wire + lifecycle.
-    /// Là NƠI DUY NHẤT đụng Time.timeScale phía UI — không rải mutation ra chỗ khác.
-    /// Backend chưa có: revive/perk/ad là presentation-only (test hook ShowRevive/ShowLevelUp);
-    /// KHÔNG tự bật theo PlayerDiedEvent để không chặn death→GameOver flow thật.
+    /// In-run overlays: Pause / Revive / Level-up / Result / Settings / FTUE.
+    /// The widgets are authored in the HUD prefab; this class only wires and sequences them, and is
+    /// the ONE place on the UI side that touches Time.timeScale.
+    /// Revive has no ad backend yet, so it is presentation-only (test hook ShowRevive) and never
+    /// opens on PlayerDiedEvent, which would block the real death -> result flow.
     /// </summary>
     public class RunOverlays : MonoBehaviour
     {
@@ -44,14 +45,14 @@ namespace ZombieWar
         [SerializeField] private GameObject levelUpRoot;
         [SerializeField] private Button[] perkButtons;
 
-        [Header("Game Over (§4.10)")]
-        [SerializeField] private GameObject gameOverRoot;
+        [Header("Result")]
+        [FormerlySerializedAs("gameOverRoot")]
+        [SerializeField] private GameObject resultRoot;
         [SerializeField] private Button replayButton;
         [SerializeField] private Button homeButton;
 
-        [Header("Victory")]
+        [Header("Retired (hidden until removed from the prefab)")]
         [SerializeField] private GameObject victoryRoot;
-        [SerializeField] private Button victoryHomeButton;
 
         [Header("FTUE (§4.12)")]
         [SerializeField] private GameObject ftueRoot;
@@ -65,7 +66,7 @@ namespace ZombieWar
             Wire(resumeButton, ResumeWithCountdown);
             Wire(exitButton, () => Show(confirmRoot, true));
             Wire(confirmNoButton, () => Show(confirmRoot, false));
-            Wire(confirmYesButton, ExitRun);
+            Wire(confirmYesButton, EndRun);
             Wire(settingsButton, OpenSettings);
             Wire(settingsCloseButton, () => Show(settingsRoot, false));
             Wire(reviveAdButton, () =>
@@ -76,7 +77,6 @@ namespace ZombieWar
             Wire(reviveSkipButton, CloseRevive);
             Wire(replayButton, () => { Time.timeScale = 1f; GameFlow.RestartGameplay(); });
             Wire(homeButton, () => { Time.timeScale = 1f; GameFlow.ReturnToMenu(); });
-            Wire(victoryHomeButton, () => { Time.timeScale = 1f; GameFlow.ReturnToMenu(); });
             Wire(ftueSkipButton, CompleteFtue);
             if (perkButtons != null)
                 for (int i = 0; i < perkButtons.Length; i++)
@@ -117,11 +117,9 @@ namespace ZombieWar
 
         private void OnEnable()
         {
-            // Terminal presentation subscribes ONLY to RunFinishedEvent (M5.1.2 CP3). It is fired
-            // exactly once by RunDirector after RunClosure's first-wins close, so the screen can
-            // never disagree with the frozen ledger. Raw GameOverEvent/AllWavesClearedEvent used to
-            // drive the roots directly - a late death after a locked Victory repainted the screen
-            // as Defeat while the payout stayed Victory.
+            // Terminal presentation subscribes ONLY to RunFinishedEvent. It is fired exactly once by
+            // RunDirector after RunClosure's first-wins close, so the screen can never disagree with
+            // the frozen ledger.
             Bill.Events?.Subscribe<RunFinishedEvent>(OnRunFinished);
             RunState.LevelsGained += OnLevelsGained;
         }
@@ -133,30 +131,23 @@ namespace ZombieWar
         }
 
         // ------------------------------------------------------------ result binding
-        // The terminal screens were installed with placeholder numbers; every value shown to the
-        // player MUST come from the closed run's RunClosure.Result. Subscription order between this
-        // component and RunDirector is not guaranteed, so binding happens from whichever side runs
-        // last: the finished event (overlay may already be up) or the overlay show (result may
-        // already be cached).
-        private RunClosure.Result _result;
-        private bool _hasResult;
+        // Every value shown on the result screen comes from the closed run's RunClosure.Result, never
+        // from the prefab's placeholder numbers or a live RunState that may already be cleared.
         private bool _terminalShown;
 
         private void OnRunFinished(RunFinishedEvent e)
         {
-            // A replayed event must not re-run the terminal transition (RunDirector fires once;
-            // this guard makes the UI robust even if something replays it).
+            // A replayed event must not re-run the terminal transition.
             if (_terminalShown) return;
             _terminalShown = true;
 
-            _result = e.Result;
-            _hasResult = true;
-            ShowTerminal(e.Result.Summary.Outcome);
+            ShowResult(e.Result);
         }
 
-        // The single terminal transition: every other overlay yields, coroutines stop, timeScale
-        // returns to 1, and the root is chosen from the FROZEN summary - never from a raw event.
-        private void ShowTerminal(RunOutcome outcome)
+        // The single terminal transition: every other overlay yields, coroutines stop and the world
+        // freezes behind the result. On a walk-away the player is still alive, and nothing may keep
+        // hitting them while they read what they forfeited.
+        private void ShowResult(RunClosure.Result result)
         {
             Restart(null);
             StopFtueWatch();
@@ -167,66 +158,47 @@ namespace ZombieWar
             Show(levelUpRoot, false);
             Show(ftueRoot, false);
             if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
-            Time.timeScale = 1f;
 
-            if (outcome == RunOutcome.Victory)
-            {
-                Show(gameOverRoot, false);
-                Show(victoryRoot, true);
-                BindVictory();
-            }
-            else
-            {
-                Show(victoryRoot, false);
-                Show(gameOverRoot, true);
-                BindGameOver();
-            }
+            Show(resultRoot, true);
+            BindResult(result);
+            Time.timeScale = 0f;
         }
 
-        private void BindGameOver()
+        private void BindResult(RunClosure.Result result)
         {
-            if (!_hasResult || gameOverRoot == null) return;
-            var s = _result.Summary;
-            long keptCoin = _result.BankedCoin;
-            long firstClear = _result.FirstClearCoin;
-            long gems = _result.BankedGem + _result.FirstClearGem;
+            if (resultRoot == null) return;
+            var s = result.Summary;
+            bool died = s.Outcome == RunOutcome.Died;
+            string clock = HudController.FormatClock(Mathf.FloorToInt(s.Duration));
 
-            SetText("RecordPill/L", $"Reached  Wave {s.WaveReached}");
-            SetText("PayoutCard/Row0L", "Collected in run");
+            SetText("Banner", died ? "RUN OVER" : "RUN ENDED");
+            SetText("RecordPill/L", result.NewSurvivalRecord ? $"NEW BEST  {clock}" : $"Survived  {clock}");
+            SetText("PayoutCard/Row0L", "Coins collected");
             SetText("PayoutCard/Row0V", $"+{s.Coin:N0}");
-            SetText("PayoutCard/Row1L", s.Outcome == RunOutcome.Defeat
-                ? $"Kept ({RunClosure.DefeatCoinFraction:P0})" : "Kept");
-            SetText("PayoutCard/Row1V", $"+{keptCoin:N0}");
-            SetText("PayoutCard/Row2L", "First-clear bonus");
-            SetText("PayoutCard/Row2V", $"+{firstClear:N0}");
-            SetText("PayoutCard/TotalV", $"{keptCoin + firstClear:N0}");
-            SetText("PayoutCard/KcRow", $"Gems kept  +{gems}");
-            SetShown("PayoutCard/KcRow", gems > 0);
+            SetText("PayoutCard/Row1L", died
+                ? $"Kept ({RunClosure.DiedCoinFraction:P0})"
+                : "Kept (walked away: 0%)");
+            SetText("PayoutCard/Row1V", $"+{result.BankedCoin:N0}");
+            SetText("PayoutCard/Row2L", $"Kills  ·  peak threat {s.PeakThreatTier}");
+            SetText("PayoutCard/Row2V", $"{s.Kills:N0}");
+            SetText("PayoutCard/TotalV", $"{result.BankedCoin:N0}");
+            SetText("PayoutCard/KcRow", $"Gems secured  +{s.Gem}");
+            SetShown("PayoutCard/KcRow", s.Gem > 0);
 
-            // No live pass-XP value exists yet; an invented number is worse than nothing.
+            // No live pass-XP value exists for a run; an invented number is worse than nothing.
             SetShown("PassXpBar", false);
             SetShown("PassXpLabel", false);
         }
 
-        private void BindVictory()
-        {
-            if (!_hasResult || victoryRoot == null) return;
-            var s = _result.Summary;
-            long total = _result.BankedCoin + _result.FirstClearCoin;
-            var sub = victoryRoot.transform.Find("Subtitle")?.GetComponent<TMP_Text>();
-            if (sub != null)
-                sub.text = $"Banked +{total:N0} coin  ·  {s.Kills} kills  ·  wave {s.WaveReached}";
-        }
-
         private void SetText(string path, string value)
         {
-            var t = gameOverRoot.transform.Find(path)?.GetComponent<TMP_Text>();
+            var t = resultRoot.transform.Find(path)?.GetComponent<TMP_Text>();
             if (t != null) t.text = value;
         }
 
         private void SetShown(string path, bool shown)
         {
-            var t = gameOverRoot.transform.Find(path);
+            var t = resultRoot.transform.Find(path);
             if (t != null) t.gameObject.SetActive(shown);
         }
 
@@ -244,9 +216,7 @@ namespace ZombieWar
             Time.timeScale = 1f;   // scene unload giữa lúc pause không được để game đứng hình
         }
 
-        private bool TerminalOverlayActive =>
-            (gameOverRoot != null && gameOverRoot.activeSelf) ||
-            (victoryRoot != null && victoryRoot.activeSelf);
+        private bool TerminalOverlayActive => resultRoot != null && resultRoot.activeSelf;
 
         // ------------------------------------------------------------ pause
         public void ShowPause()
@@ -278,12 +248,19 @@ namespace ZombieWar
             TryShowLevelUp();   // level-ups earned before/during the pause were held back
         }
 
-        private void ExitRun()
+        // "End run" from the pause menu. The run closes as a walk-away and the result screen shows
+        // what was forfeited; Home on that screen is what actually leaves the world.
+        private void EndRun()
         {
-            Time.timeScale = 1f;
             Show(confirmRoot, false);
             Show(pauseRoot, false);
-            GameFlow.ReturnToMenu();
+            if (RunState.Current == null || RunState.Current.IsOver)
+            {
+                Time.timeScale = 1f;
+                GameFlow.ReturnToMenu();
+                return;
+            }
+            Bill.Events?.Fire(new RunAbandonRequestedEvent());
         }
 
         private void OpenSettings() => Show(settingsRoot, true);
@@ -372,6 +349,7 @@ namespace ZombieWar
                     BindOfferText($"Perk{i}/Name", nextRank > 1 ? $"{def.displayName}  {nextRank}" : def.displayName);
                     BindOfferText($"Perk{i}/Desc", DescribeCard(def, nextRank));
                 }
+                ShowOfferButtons(_skillOffer.Count);
             }
             else
             {
@@ -401,6 +379,15 @@ namespace ZombieWar
             var auto = ZombieWar.Skills.SkillOfferBuilder.AutoPick(_skillOffer, skills);
             int slot = auto == null ? 0 : _skillOffer.IndexOf(auto);
             PickPerk(Mathf.Max(0, slot));
+        }
+
+        // A near-exhausted pool can offer fewer than three cards. The spare buttons would otherwise
+        // keep the prefab's placeholder text and burn the level-up on a card that does nothing.
+        private void ShowOfferButtons(int count)
+        {
+            if (perkButtons == null) return;
+            for (int i = 0; i < perkButtons.Length; i++)
+                if (perkButtons[i] != null) perkButtons[i].gameObject.SetActive(i < count);
         }
 
         private void BindOfferText(string path, string value)
@@ -439,6 +426,7 @@ namespace ZombieWar
                 if (slot >= 0 && slot < _skillOffer.Count)
                 {
                     skills.Take(_skillOffer[slot].id);
+                    MissionTracker.ReportCardChosen();
 
                     // Max Health is the one card that must act at pick time; the Health component
                     // owns the number, exactly as the legacy MaxHealth perk did.
@@ -479,6 +467,7 @@ namespace ZombieWar
         private void CompleteFtue()
         {
             PlayerPrefs.SetInt("ftue_done", 1);
+            PlayerPrefs.Save();   // WebGL and a killed app both lose unsaved prefs
             Show(ftueRoot, false);
             StopFtueWatch();
         }
@@ -514,7 +503,7 @@ namespace ZombieWar
             Show(settingsRoot, false);
             Show(reviveRoot, false);
             Show(levelUpRoot, false);
-            Show(gameOverRoot, false);
+            Show(resultRoot, false);
             Show(victoryRoot, false);
             Show(ftueRoot, false);
             if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);

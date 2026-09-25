@@ -147,7 +147,7 @@ namespace ZombieWar.EditorTools
         }
 
         /// <summary>
-        /// Equips a pending weapon on the live player for authoring ONLY. `Weapon.EquipToSlot`
+        /// Equips a pending weapon on the live player for authoring ONLY. `Weapon.Equip`
         /// deliberately refuses non-playable weapons, so this drives the authoring path directly and
         /// says so — it is a bypass with a stated reason, not a hole in the gate.
         /// </summary>
@@ -167,14 +167,12 @@ namespace ZombieWar.EditorTools
             prop.enumValueIndex = (int)WeaponData.AuthoringStatus.Ready;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            int slot = data.twoHanded ? 1 : 0;
-            bool ok = weapon.EquipToSlot(slot, data);
-            if (ok) weapon.EquipSlot(slot);
+            bool ok = weapon.Equip(data);
 
             prop.enumValueIndex = previous;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            Debug.Log($"[AuthoringQueue] {(ok ? "Equipped" : "Failed to equip")} '{data.name}' in slot {slot} " +
+            Debug.Log($"[AuthoringQueue] {(ok ? "Equipped" : "Failed to equip")} '{data.name}' " +
                       "for authoring. Status on disk is unchanged.");
         }
 

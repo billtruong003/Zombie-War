@@ -4,63 +4,17 @@ using UnityEngine.SceneManagement;
 namespace ZombieWar
 {
     /// Central navigation for the app's scene/state flow. Bootstrap is the persistent base scene
-    /// (services live on the DontDestroyOnLoad [BillGameCore] root). Menu and the gameplay map are
-    /// loaded ADDITIVELY on top of it, so swapping menu <-> map never tears down services.
+    /// (services live on the DontDestroyOnLoad [BillGameCore] root). Menu and the gameplay world are
+    /// loaded ADDITIVELY on top of it, so swapping menu <-> world never tears down services.
     ///
-    /// The gameplay scene is no longer a constant: the campaign selector picks a stage and every
-    /// load/restart/unload works against THAT scene. <see cref="ActiveGameplayScene"/> is the single
-    /// record of which map is currently loaded, which is what stops a restart from reloading Stage 1
-    /// while Stage 3 is still in memory (two maps loaded, orphan Player).
+    /// There is exactly one gameplay scene: the endless procedural world. Nothing selects a stage.
     public static class GameFlow
     {
         public const string MenuScene = "Menu";
-        public const string DefaultGameplayScene = "Map_Level1";
+        public const string GameplayScene = "Map_Level1";
 
-        /// <summary>Campaign id that belongs to <see cref="DefaultGameplayScene"/>. A direct
-        /// Play-from-editor start is Stage 1, not an anonymous run - without this the run banked no
-        /// stage completion and no first-clear reward.</summary>
-        public const string DefaultLevelId = "level.1";
-
-        /// <summary>The campaign level the player selected. Null means "not chosen" and the flow
-        /// falls back to the default scene, so a direct Play-from-editor still works.</summary>
-        public static CampaignLevel SelectedLevel { get; private set; }
-
-        /// <summary>Which gameplay scene is actually loaded right now. Empty when none is.</summary>
-        public static string ActiveGameplayScene { get; private set; } = "";
-
-        public static string PendingGameplayScene =>
-            SelectedLevel != null && !string.IsNullOrEmpty(SelectedLevel.sceneName)
-                ? SelectedLevel.sceneName
-                : DefaultGameplayScene;
-
-        /// <summary>The campaign id for the run that <see cref="StartGameplay"/> would begin now.</summary>
-        public static string PendingLevelId => LevelIdForScene(PendingGameplayScene);
-
-        /// <summary>
-        /// Resolves which campaign stage a gameplay scene represents.
-        ///
-        /// Derived from the SCENE rather than straight from <see cref="SelectedLevel"/> on purpose.
-        /// Restart reloads <see cref="ActiveGameplayScene"/>, which is not always the selected level -
-        /// reading the selection there could bank a clear against a stage the player is not on. Tying
-        /// both the scene and the id to the same argument makes that disagreement unrepresentable.
-        ///
-        /// Returns "" for a scene with no campaign entry (a test map). That is a valid run: it simply
-        /// earns no stage completion, and RunDirector still reports it as finished.
-        /// </summary>
-        public static string LevelIdForScene(string scene)
-        {
-            if (SelectedLevel != null && SelectedLevel.sceneName == scene &&
-                !string.IsNullOrEmpty(SelectedLevel.levelId))
-                return SelectedLevel.levelId;
-
-            return scene == DefaultGameplayScene ? DefaultLevelId : "";
-        }
-
-        public static void SelectLevel(CampaignLevel level)
-        {
-            SelectedLevel = level;
-            if (level != null) PlayerProfile.LastSelectedLevelId = level.levelId;
-        }
+        /// <summary>True while the gameplay scene is loaded.</summary>
+        public static bool InGameplay { get; private set; }
 
         /// Called once from BootstrapEntry after Bill services are ready.
         public static void EnterMenu()
@@ -70,73 +24,58 @@ namespace ZombieWar
                 Bill.Scene.LoadAdditive(MenuScene);
         }
 
-        /// Campaign "CHƠI" -> unload menu, additive-load the selected map, make it the active scene
-        /// (so runtime Instantiate/lighting/navmesh resolve against it), then enter GameplayState.
+        /// Hub PLAY -> unload menu, additive-load the world, make it the active scene (so runtime
+        /// Instantiate/lighting resolve against it), then enter GameplayState.
         public static void StartGameplay()
         {
-            string scene = PendingGameplayScene;
             Bill.State.GoTo<LoadingState>();
 
             if (Bill.Scene.IsAdditiveLoaded(MenuScene))
                 Bill.Scene.Unload(MenuScene);
 
-            // Switching stages without going through Home: drop the old map first so two campaign
-            // scenes can never be live at once.
-            if (!string.IsNullOrEmpty(ActiveGameplayScene) && ActiveGameplayScene != scene
-                && Bill.Scene.IsAdditiveLoaded(ActiveGameplayScene))
+            if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
             {
-                string stale = ActiveGameplayScene;
-                ActiveGameplayScene = "";
-                Bill.Scene.Unload(stale, () => LoadGameplay(scene));
+                ActivateAndPlay();
                 return;
             }
 
-            if (Bill.Scene.IsAdditiveLoaded(scene))
-            {
-                ActivateAndPlay(scene);
-                return;
-            }
-
-            LoadGameplay(scene);
+            LoadGameplay();
         }
 
-        /// Game over "CHƠI LẠI" -> tear the ACTIVE map down and load it fresh (services untouched).
-        /// Always reloads the stage that was being played, never the default.
+        /// Result "PLAY AGAIN" -> tear the world down and load it fresh (services untouched).
         public static void RestartGameplay()
         {
-            string scene = !string.IsNullOrEmpty(ActiveGameplayScene) ? ActiveGameplayScene : PendingGameplayScene;
-
-            if (!Bill.Scene.IsAdditiveLoaded(scene)) { StartGameplay(); return; }
+            if (!Bill.Scene.IsAdditiveLoaded(GameplayScene)) { StartGameplay(); return; }
 
             Bill.State.GoTo<LoadingState>();
-            ActiveGameplayScene = "";
-            Bill.Scene.Unload(scene, () => LoadGameplay(scene));
+            InGameplay = false;
+            Bill.Scene.Unload(GameplayScene, LoadGameplay);
         }
 
-        /// Gameplay -> back to menu. Unloads whichever campaign scene is loaded, and abandons the
-        /// run so its unbanked currency is discarded rather than paid out.
+        /// Gameplay -> back to menu. A run that was not closed (the scene is left some other way than
+        /// the result screen) is dropped unpaid, which is exactly what walking away banks anyway.
         public static void ReturnToMenu()
         {
             RunState.Abandon();
 
-            if (!string.IsNullOrEmpty(ActiveGameplayScene) && Bill.Scene.IsAdditiveLoaded(ActiveGameplayScene))
-                Bill.Scene.Unload(ActiveGameplayScene);
-            ActiveGameplayScene = "";
+            if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
+                Bill.Scene.Unload(GameplayScene);
+            InGameplay = false;
 
             EnterMenu();
         }
 
-        private static void LoadGameplay(string scene) =>
-            Bill.Scene.LoadAdditive(scene, () => ActivateAndPlay(scene));
+        private static void LoadGameplay() =>
+            Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay);
 
-        private static void ActivateAndPlay(string scene)
+        private static void ActivateAndPlay()
         {
-            Scene sc = SceneManager.GetSceneByName(scene);
+            Scene sc = SceneManager.GetSceneByName(GameplayScene);
             if (sc.IsValid() && sc.isLoaded)
                 SceneManager.SetActiveScene(sc);
 
-            ActiveGameplayScene = scene;
-            RunState.Begin(LevelIdForScene(scene));
+            InGameplay = true;
+            RunState.Begin();
             Bill.State.GoTo<GameplayState>();
         }
     }

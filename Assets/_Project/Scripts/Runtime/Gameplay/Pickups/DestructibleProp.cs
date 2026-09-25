@@ -33,7 +33,6 @@ namespace ZombieWar
         [Range(0f, 1f)] [SerializeField] private float coinChance = 0.6f;
         [Range(0f, 1f)] [SerializeField] private float gemChance = 0.12f;
         [Range(0f, 1f)] [SerializeField] private float healthChance = 0.18f;
-        [Range(0f, 1f)] [SerializeField] private float bombChance = 0.10f;
         [SerializeField] private int coinPerDrop = 3;
 
         [Header("Explosive barrel")]
@@ -47,7 +46,6 @@ namespace ZombieWar
         [SerializeField] private string coinPoolKey = "pickup_coin";
         [SerializeField] private string gemPoolKey = "pickup_gem";
         [SerializeField] private string healthPoolKey = "pickup_health";
-        [SerializeField] private string bombPoolKey = "pickup_bomb";
 
         private float _health;
         private bool _destroyed;
@@ -103,11 +101,9 @@ namespace ZombieWar
                 float roll = Random.value;
                 if (roll < gemChance)
                     SpawnPickup(gemPoolKey, PlayerProfile.CurrencyKind.Gem, 1);
-                else if (roll < gemChance + bombChance)
-                    SpawnPickup(bombPoolKey, PlayerProfile.CurrencyKind.Coin, 0);
-                else if (roll < gemChance + bombChance + healthChance)
+                else if (roll < gemChance + healthChance)
                     SpawnPickup(healthPoolKey, PlayerProfile.CurrencyKind.Coin, 0);
-                else if (roll < gemChance + bombChance + healthChance + coinChance)
+                else if (roll < gemChance + healthChance + coinChance)
                     SpawnPickup(coinPoolKey, PlayerProfile.CurrencyKind.Coin, coinPerDrop);
             }
         }
@@ -121,7 +117,7 @@ namespace ZombieWar
 
             var go = Bill.Pool.Spawn(key, pos, Quaternion.identity);
             var pickup = go != null ? go.GetComponent<Pickup>() : null;
-            pickup?.Init(kind, Mathf.Max(1, amount), key, pos);
+            pickup?.Init(kind, amount, key, pos);
         }
 
         private void Explode()

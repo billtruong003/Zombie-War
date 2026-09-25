@@ -60,7 +60,6 @@ GameObject:
   - component: {fileID: 8648127576209646649}
   - component: {fileID: 8430472364589452915}
   - component: {fileID: 1991349391699801347}
-  - component: {fileID: 8598557128601071783}
   - component: {fileID: 3569728924041252436}
   - component: {fileID: 7772684060613672855}
   - component: {fileID: 5027399815479909194}
@@ -225,34 +224,9 @@ MonoBehaviour:
   recoilNoiseTexture: {fileID: 2800000, guid: 57dcf758e23be234c818d8d56c4df55d, type: 3}
   cameraShakeOnFire: 0.25
   recoilPivot: {fileID: 2283036385951151092}
-  useSlotSystem: 1
-  pistolSlot: {fileID: 0}
-  longSlotA: {fileID: 0}
-  longSlotB: {fileID: 0}
   drawGizmos: 1
   gizmoAimLength: 6
   fireAlignmentConeDegrees: 5
---- !u!114 &8598557128601071783
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1205706992330529556}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae02010291b6b4f4fab25d1eb33cc807, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.BombThrower
-  bombPrefab: {fileID: 6907578888685939689, guid: 4dfa7ae59177ae9409a493de2804a030, type: 3}
-  throwOrigin: {fileID: 2406317523820506406}
-  throwHorizontalSpeed: 9
-  throwUpSpeed: 4.5
-  cooldown: 3
-  maxBombs: 3
-  animator: {fileID: 3569728924041252436}
-  throwAnimTrigger: Throw
-  releaseDelay: 0.3
 --- !u!95 &3569728924041252436
 Animator:
   serializedVersion: 7
@@ -435,7 +409,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bec57361f624a4b4c904f96d5ca19342, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Threat.ThreatDirector
-  driveSpawning: 1
   tier0Basic:
   - {fileID: 11400000, guid: 85c30d759b8a43c45b700899eb3e97f1, type: 2}
   - {fileID: 11400000, guid: 93e44aa764759234982e00f8e1080a54, type: 2}

@@ -5,7 +5,7 @@ using BillGameCore;
 namespace ZombieWar
 {
     // Turns a ZombieData into a live, pooled zombie placed on a clear spot on the gameplay plane. Owns the
-    // pool-key convention (mirrors BombThrower: "zombie_" + prefab instance id) and the placement
+    // pool-key convention ("zombie_" + prefab instance id) and the placement
     // policy. The spawned prefab already carries its own ZombieData, so it self-configures
     // (Health.Configure + register) on OnEnable - the spawner only decides WHERE, never WHAT stats.
     //
@@ -13,12 +13,12 @@ namespace ZombieWar
     // player and it must never blink into existence on screen, so candidates are drawn from a ring
     // BAND around the player, split into sectors so one batch fans out instead of stacking, and
     // rejected outright if they land inside the camera rect. Two bands exist: the normal band sits
-    // well outside the view, and a tighter recovery band hugs it for when the screen has emptied and
-    // the next group needs to be in frame in a second, not five.
+    // well outside the view, and a tighter inner band is the fallback for a large enemy (a beacon
+    // boss) that cannot find room in the normal one.
     public class ZombieSpawner : MonoBehaviour
     {
-        /// <summary>Which distance band a spawn is drawn from. Recovery sits closer to the camera so
-        /// enemies reach the screen fast; it is only used while the director is recovering pressure.</summary>
+        /// <summary>Which distance band a spawn is drawn from. Recovery sits just outside the camera
+        /// and is only a placement fallback; ordinary pressure always uses Normal.</summary>
         public enum SpawnBand
         {
             Normal,
@@ -29,7 +29,7 @@ namespace ZombieWar
         [SerializeField] private float minSpawnRadius = 12f;
         [SerializeField] private float maxSpawnRadius = 22f;
 
-        [Header("Inner recovery band (just outside the camera)")]
+        [Header("Inner fallback band (just outside the camera)")]
         [SerializeField] private float recoveryMinSpawnRadius = 8f;
         [SerializeField] private float recoveryMaxSpawnRadius = 13f;
 
@@ -58,10 +58,10 @@ namespace ZombieWar
         [SerializeField] private Transform[] spawnPoints;
 
         [Header("Pool warmup")]
-        [Tooltip("Floor for every type. WaveDirector raises this per type to the wave set's peak " +
-                 "simultaneous demand.")]
+        [Tooltip("Floor for every type. The threat director raises this per type to the crowd it " +
+                 "can reach at the top tier.")]
         [SerializeField] private int warmCountPerType = 8;
-        [Tooltip("Ceiling on warmed instances per type, so a badly authored wave cannot blow out " +
+        [Tooltip("Ceiling on warmed instances per type, so a badly tuned roster cannot blow out " +
                  "load time and memory.")]
         [SerializeField] private int maxWarmPerType = 96;
 

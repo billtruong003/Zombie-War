@@ -35,7 +35,7 @@ namespace ZombieWar.Tests
         [Test]
         public void SkillBuildDoesNotSurviveIntoTheNextRun()
         {
-            RunState.Begin("test_level");
+            RunState.Begin();
             SkillRuntime.Active = new SkillRuntime { EquippedFamily = WeaponClass.AssaultRifle };
             SkillRuntime.Active.Take(SkillCatalogDefs.StatDamage);
             SkillRuntime.Active.Take(SkillCatalogDefs.StatDamage);
@@ -44,7 +44,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(2, SkillRuntime.Active.RankOf(SkillCatalogDefs.StatDamage), "sanity: run one built something");
 
             RunState.Abandon();
-            RunState.Begin("test_level");   // the new run
+            RunState.Begin();   // the new run
 
             Assert.IsNotNull(SkillRuntime.Active, "a run still needs a runtime");
             Assert.AreEqual(0, SkillRuntime.Active.RankOf(SkillCatalogDefs.StatDamage),
@@ -58,13 +58,13 @@ namespace ZombieWar.Tests
         [Test]
         public void EnemyStatusesDoNotSurviveIntoTheNextRun()
         {
-            RunState.Begin("test_level");
+            RunState.Begin();
             StatusCarrier.Apply(1234, StatusKind.Exposed, 1f, 999f, 0f);
             StatusCarrier.Accumulate(1234, StatusKind.HitCount, 7f, 999f, 0f);
             Assert.IsTrue(StatusCarrier.Has(1234, StatusKind.Exposed, 1f), "sanity: run one marked an enemy");
 
             RunState.Abandon();
-            RunState.Begin("test_level");
+            RunState.Begin();
 
             Assert.AreEqual(0f, StatusCarrier.Get(1234, StatusKind.Exposed, 1f),
                 "an Exposed enemy from the last run must not brand a fresh one");
@@ -74,7 +74,7 @@ namespace ZombieWar.Tests
         [Test]
         public void AutonomousProcBudgetDoesNotSurviveIntoTheNextRun()
         {
-            RunState.Begin("test_level");
+            RunState.Begin();
             var power = new AutonomousPower("p", AutonomousPower.TriggerKind.Interval, 0.01f);
             // Spend the whole global 2-procs/second budget inside run one.
             power.TryProc(0f);
@@ -82,7 +82,7 @@ namespace ZombieWar.Tests
             Assert.IsFalse(power.TryProc(0.2f), "sanity: run one exhausted the shared budget");
 
             RunState.Abandon();
-            RunState.Begin("test_level");
+            RunState.Begin();
 
             var fresh = new AutonomousPower("p2", AutonomousPower.TriggerKind.Interval, 0.01f);
             Assert.IsTrue(fresh.TryProc(0.3f),
@@ -97,7 +97,7 @@ namespace ZombieWar.Tests
         [Test]
         public void PickupRegistryDoesNotSurviveIntoTheNextRun()
         {
-            RunState.Begin("test_level");
+            RunState.Begin();
 
             var go = new GameObject("coin");
             var pickup = go.AddComponent<Pickup>();
@@ -105,7 +105,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(1, PickupManager.LiveCount, "sanity: run one dropped a coin");
 
             RunState.Abandon();
-            RunState.Begin("test_level");
+            RunState.Begin();
 
             Assert.AreEqual(0, PickupManager.LiveCount,
                 "coins from the previous run must not still be registered in the new one");

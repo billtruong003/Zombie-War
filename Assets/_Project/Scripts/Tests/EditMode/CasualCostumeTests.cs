@@ -147,7 +147,7 @@ namespace ZombieWar.Tests
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 500);
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, 30);
             PlayerProfile.AddOwnedWeapon("weapon.rifle.ar");
-            PlayerProfile.SetWeaponSlot(0, "weapon.pistol.p1");
+            PlayerProfile.SetEquippedWeapon("weapon.pistol.p1");
             PlayerProfile.SetPityInMemory("costume", 7);
             PlayerProfile.SetPart("Beard", "deadbeefcafe0000deadbeefcafe0000"); // Fantasy guid leftover
             PlayerProfile.SetPart("Mouth", "0000deadbeefcafe0000deadbeefcafe");
@@ -164,7 +164,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(500, PlayerProfile.Coin);
             Assert.AreEqual(30, PlayerProfile.Gem);
             Assert.IsTrue(PlayerProfile.IsWeaponOwned("weapon.rifle.ar"));
-            Assert.AreEqual("weapon.pistol.p1", PlayerProfile.GetWeaponSlot(0));
+            Assert.AreEqual("weapon.pistol.p1", PlayerProfile.EquippedWeaponId);
             Assert.AreEqual(7, PlayerProfile.GetPity("costume"));
         }
 

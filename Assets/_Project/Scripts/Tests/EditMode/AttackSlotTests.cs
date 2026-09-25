@@ -27,7 +27,7 @@ namespace ZombieWar.Tests
         [Test]
         public void SlotCounterIsRunScoped_ALeakWouldThrottleTheNextRun()
         {
-            RunState.Begin("test");
+            RunState.Begin();
             typeof(ZombieManager).GetProperty("AttackSlotsInUse",
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                 ?.GetValue(null);
@@ -37,7 +37,7 @@ namespace ZombieWar.Tests
             Assert.AreEqual(0, ZombieManager.AttackSlotsInUse);
 
             RunState.Abandon();
-            RunState.Begin("test");
+            RunState.Begin();
             Assert.AreEqual(0, ZombieManager.AttackSlotsInUse,
                 "a leaked slot would silently throttle every attack in the next run");
         }
@@ -149,7 +149,7 @@ namespace ZombieWar.Tests
         [Test]
         public void ArrivalCounterIsRunScoped()
         {
-            RunState.Begin("test");
+            RunState.Begin();
             Threat.ThreatDirector.ResetArrivals();
             Assert.AreEqual(0, Threat.ThreatDirector.ArrivalsThisRun);
 

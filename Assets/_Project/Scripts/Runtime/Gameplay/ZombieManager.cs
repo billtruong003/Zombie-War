@@ -7,51 +7,19 @@ namespace ZombieWar
     // Central authority for the 3-tier distance gating (see GAMEPLAY_DESIGN.md mục 4) - zombies
     // never decide their own tier or run their own cheap-movement Update(); this single component
     // re-evaluates everyone on a throttled interval instead of N zombies checking distance every frame.
-    //
-    // It also owns the PRESSURE SNAPSHOT the WaveDirector spawns against. That lives here rather
-    // than in the director because this is already the one place that walks every zombie on a
-    // throttle - counting who is on camera costs one extra branch in a loop we were running anyway,
-    // instead of a second full sweep (and a second camera lookup) somewhere else.
     public class ZombieManager : MonoBehaviour
     {
         [SerializeField] private float fullTierRadius = 20f;
         [SerializeField] private float cheapTierRadius = 60f;
         [SerializeField] private float tierReevaluateInterval = 0.25f;
 
-        [Header("Pressure snapshot (read by WaveDirector)")]
-        [Tooltip("How often visible/reserve counts are recounted. Faster than tiering because the " +
-                 "spawn loop reacts to it.")]
-        [SerializeField] private float pressureInterval = 0.15f;
-        [Tooltip("Viewport padding, in screen fractions, added around the camera rect when deciding " +
-                 "'on screen'. Catches enemies half-way into frame.")]
-        [SerializeField] private float visibleViewportMargin = 0.08f;
-        [Tooltip("An on-camera enemy further than this from the player is scenery, not pressure - " +
-                 "it does not count toward the visible floor.")]
-        [SerializeField] private float visiblePressureRadius = 26f;
-        [Tooltip("Off-camera enemies that would reach the pressure radius within this many seconds " +
-                 "at their own move speed count as reserve.")]
-        [SerializeField] private float reserveLeadSeconds = 3f;
-
         private static readonly List<ZombieBase> _zombies = new();
         private float _reevaluateTimer;
-        private float _pressureTimer;
-        private Camera _camera;
 
         // Single source of truth for "how many zombies are alive right now". A zombie leaves this
-        // list the moment it is returned to the pool (OnDisable -> Unregister), so the wave director
-        // can poll this to know when a wave is cleared - no separate bookkeeping needed.
+        // list the moment it is returned to the pool (OnDisable -> Unregister), so the threat director
+        // can hold its crowd ceiling against it - no separate bookkeeping needed.
         public static int AliveCount => _zombies.Count;
-
-        /// <summary>Alive enemies currently on camera AND close enough to be immediate pressure.</summary>
-        public static int VisibleCount { get; private set; }
-
-        /// <summary>Alive enemies off camera that are roughly 1-3 seconds from entering it.</summary>
-        public static int ReserveCount { get; private set; }
-
-        /// <summary>False until a snapshot has been taken against a live camera + player. The wave
-        /// director must not treat "no data" as "screen is empty", or it would spawn on recovery
-        /// settings for the whole run.</summary>
-        public static bool HasPressure { get; private set; }
 
         public static void Register(ZombieBase zombie)
         {
@@ -73,7 +41,6 @@ namespace ZombieWar
 
         private void OnDisable()
         {
-            InvalidatePressure();
             var bus = Bill.Events;
             if (bus == null) return;
             bus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -105,21 +72,10 @@ namespace ZombieWar
             _attackSlotCap = Mathf.Max(1, maxSimultaneousAttackers);
 
             var player = PlayerMovement.Instance;
-            if (player == null)
-            {
-                InvalidatePressure();
-                return;
-            }
+            if (player == null) return;
 
             Vector3 playerPosition = player.transform.position;
             TickCheapMovement(playerPosition);
-
-            _pressureTimer -= Time.deltaTime;
-            if (_pressureTimer <= 0f)
-            {
-                _pressureTimer = pressureInterval;
-                RecomputePressure(playerPosition);
-            }
 
             _reevaluateTimer -= Time.deltaTime;
             if (_reevaluateTimer > 0f) return;
@@ -132,8 +88,8 @@ namespace ZombieWar
         // ── M7.4a: the leash ────────────────────────────────────────────────────────────────
         //
         // The open-world failure the owner hit: run in one direction and the horde becomes a tail
-        // strung out behind you. Nothing recycled them, so they stayed alive forever — holding the
-        // wave gate open, never returning to the pool, and burning frame time chasing someone they
+        // strung out behind you. Nothing recycled them, so they stayed alive forever — filling the
+        // crowd ceiling, never returning to the pool, and burning frame time chasing someone they
         // could never reach.
         //
         // Enemies left far behind are returned to the pool. The threat director then re-spawns
@@ -271,70 +227,6 @@ namespace ZombieWar
 
                 zombie.RecoverIfStranded();
             }
-        }
-
-        // One pass, no allocation, no LINQ, no FindObjectOfType - the camera is cached and only
-        // re-resolved when the previous one is gone (scene reload, camera rebuilt).
-        private void RecomputePressure(Vector3 playerPosition)
-        {
-            var cam = ResolveCamera();
-            if (cam == null)
-            {
-                InvalidatePressure();
-                return;
-            }
-
-            int visible = 0;
-            int reserve = 0;
-
-            for (int i = 0; i < _zombies.Count; i++)
-            {
-                var zombie = _zombies[i];
-                if (zombie == null) continue;
-
-                Vector3 position = zombie.transform.position;
-                float distance = Vector3.Distance(position, playerPosition);
-
-                if (distance <= visiblePressureRadius && IsOnCamera(cam, position))
-                {
-                    visible++;
-                    continue;
-                }
-
-                // Reserve = "about to become visible". Measured in seconds at the enemy's own speed
-                // rather than a flat radius, so a runner counts as reserve from further out than a
-                // walker does - which is exactly when it stops being reserve and starts being alive
-                // on screen.
-                float speed = zombie.Data != null ? Mathf.Max(0.1f, zombie.Data.moveSpeed) : 3f;
-                if ((distance - visiblePressureRadius) / speed <= reserveLeadSeconds) reserve++;
-            }
-
-            VisibleCount = visible;
-            ReserveCount = reserve;
-            HasPressure = true;
-        }
-
-        private bool IsOnCamera(Camera cam, Vector3 world)
-        {
-            Vector3 viewport = cam.WorldToViewportPoint(world);
-            if (viewport.z <= 0f) return false;
-            float margin = visibleViewportMargin;
-            return viewport.x >= -margin && viewport.x <= 1f + margin &&
-                   viewport.y >= -margin && viewport.y <= 1f + margin;
-        }
-
-        private Camera ResolveCamera()
-        {
-            if (_camera != null && _camera.isActiveAndEnabled) return _camera;
-            _camera = Camera.main;
-            return _camera;
-        }
-
-        private static void InvalidatePressure()
-        {
-            HasPressure = false;
-            VisibleCount = 0;
-            ReserveCount = 0;
         }
     }
 }

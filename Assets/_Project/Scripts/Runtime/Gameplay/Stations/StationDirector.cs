@@ -275,6 +275,25 @@ namespace ZombieWar.Stations
             StationRegistry.SetStatus(anchorId, StationRegistry.Status.Completed, Time.time);
             StationRegistry.ReleaseEncounter(anchorId);
             PickupManager.Instance?.DropReward(at);   // no free chest: it pays on death only
+            ReportCompleted(StationKind.BossBeacon);
         }
+
+        /// <summary>
+        /// The single place a finished station is announced. Relays and beacons are objectives, so
+        /// they raise threat - progress costs safety (GDD §15). A Supply Cache is a purchase, not an
+        /// objective, and does not.
+        /// </summary>
+        public static void ReportCompleted(StationKind kind)
+        {
+            if (kind != StationKind.SupplyCache) Threat.ThreatDirector.ReportObjectiveCompleted();
+            if (Bill.IsReady) Bill.Events.Fire(new StationCompletedEvent(kind));
+        }
+    }
+
+    /// <summary>A station paid out: a relay held, a cache bought, or a beacon boss killed.</summary>
+    public readonly struct StationCompletedEvent : IEvent
+    {
+        public readonly StationKind Kind;
+        public StationCompletedEvent(StationKind kind) { Kind = kind; }
     }
 }

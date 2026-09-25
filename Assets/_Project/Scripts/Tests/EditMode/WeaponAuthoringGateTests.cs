@@ -69,8 +69,7 @@ namespace ZombieWar.Tests
                        ?? AllWeapons().FirstOrDefault(w => !w.IsPlayable);
             Assert.IsNotNull(pending, "expected at least one pending weapon");
 
-            int slot = pending.twoHanded ? 1 : 0;
-            var result = LoadoutState.TryEquip(slot, pending);
+            var result = LoadoutState.TryEquip(pending);
 
             Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, result,
                 "a weapon awaiting owner grip authoring must be refused by the loadout");
@@ -86,9 +85,9 @@ namespace ZombieWar.Tests
             var weapon = go.AddComponent<Weapon>();
 
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("Refusing to equip"));
-            bool equipped = weapon.EquipToSlot(0, pending);
+            bool equipped = weapon.Equip(pending);
 
-            Assert.IsFalse(equipped, "Weapon.EquipToSlot must refuse a pending weapon");
+            Assert.IsFalse(equipped, "Weapon.Equip must refuse a pending weapon");
             Object.DestroyImmediate(go);
         }
 
