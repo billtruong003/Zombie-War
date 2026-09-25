@@ -632,32 +632,8 @@ namespace ZombieWar
             hit.collider.GetComponentInParent<ZombieBase>()?.ApplyPhysicalPush(data.knockback);
         }
 
-        // PiercingLine — RaycastAll dọc 1 đường: damage TẤT CẢ zombie, dừng khi gặp tường (vật
-        // không có IDamageable). pierceCount = -1 xuyên vô hạn (railgun). Docs/Reference/Design/WEAPON_DESIGN.md §3,§7.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        /// <summary>Development-only ballistics probe, invoked in the SAME frame as the shot with the
-        /// exact values the ray used. Exists so miss-rate can be measured from inside the fire path
-        /// instead of reconstructed a frame later. Nothing in the game subscribes to it.</summary>
-        public static System.Action<WeaponData, Vector3, Vector3, Vector3, int, bool> ShotProbe;
-
-        /// <summary>One record per ACTUAL physics ray, emitted with the exact origin/direction handed
-        /// to Physics.Raycast - post-spread, per pellet. M5.1.1's evidence reported the pre-spread
-        /// base vector as "the ray", which cannot describe a 1.5°–14° spread weapon; this exists so
-        /// that mistake cannot be repeated (M5.1.2 CP2).</summary>
-        public struct ShotRay
-        {
-            public WeaponData Data;
-            public int ShotId, RayIndex, RayCount;
-            public Vector3 Origin, MuzzlePosition, MuzzleForward, AimDirection, TargetDirection, RayDirection, HitPoint;
-            public bool TargetWasValid, HitSelectedTarget, Blocked;
-            public Transform SelectedTarget, HitTransform;
-            public int PierceHits;
-        }
-        public static System.Action<ShotRay> RayProbe;
-
-        private static int _probeShotId;
-
-        // The plan produced by the skill runtime for the shot currently being resolved.
+        // The plan produced by the skill runtime for the shot currently being resolved. Gameplay, not a
+        // probe: it must compile in every build, not only editor/development ones.
         private ZombieWar.Skills.SkillRuntime.ShotPlan _shotPlan;
         private static readonly int[] ConeBuffer = new int[ZombieWar.Skills.TargetQuery.MaxConsidered];
 
@@ -686,6 +662,32 @@ namespace ZombieWar
                 enemy.ApplyPhysicalPush(1.5f);               // the "shockwave" part
             }
         }
+
+        // PiercingLine — RaycastAll dọc 1 đường: damage TẤT CẢ zombie, dừng khi gặp tường (vật
+        // không có IDamageable). pierceCount = -1 xuyên vô hạn (railgun). Docs/Reference/Design/WEAPON_DESIGN.md §3,§7.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Development-only ballistics probe, invoked in the SAME frame as the shot with the
+        /// exact values the ray used. Exists so miss-rate can be measured from inside the fire path
+        /// instead of reconstructed a frame later. Nothing in the game subscribes to it.</summary>
+        public static System.Action<WeaponData, Vector3, Vector3, Vector3, int, bool> ShotProbe;
+
+        /// <summary>One record per ACTUAL physics ray, emitted with the exact origin/direction handed
+        /// to Physics.Raycast - post-spread, per pellet. M5.1.1's evidence reported the pre-spread
+        /// base vector as "the ray", which cannot describe a 1.5°–14° spread weapon; this exists so
+        /// that mistake cannot be repeated (M5.1.2 CP2).</summary>
+        public struct ShotRay
+        {
+            public WeaponData Data;
+            public int ShotId, RayIndex, RayCount;
+            public Vector3 Origin, MuzzlePosition, MuzzleForward, AimDirection, TargetDirection, RayDirection, HitPoint;
+            public bool TargetWasValid, HitSelectedTarget, Blocked;
+            public Transform SelectedTarget, HitTransform;
+            public int PierceHits;
+        }
+        public static System.Action<ShotRay> RayProbe;
+
+        private static int _probeShotId;
+
         private int _probeRayIndex, _probeRayCount;
         private Vector3 _probeMuzzlePos, _probeMuzzleFwd, _probeAim, _probeTargetDir;
         private bool _probeTargetValid;
