@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace ZombieWar.Stations
@@ -13,8 +14,10 @@ namespace ZombieWar.Stations
     /// progress rather than zeroing it, so a player forced out by a horde is not punished twice.
     /// Reward: a 1-of-3 card offer. Completed once; never repeats.
     ///
-    /// <b>Supply Cache</b> — pay Coin, or hold briefly for free. This is what finally gives Coin an
-    /// in-run use. Repeatable on a cooldown, so a route can be re-run.
+    /// <b>Supply Cache</b> — stand in the ring to confirm, pay Coin, get a 1-of-3 card offer. The price
+    /// shows above the cache and rises with every purchase this run, so it is a real choice: power now
+    /// versus Coin that a death would bank at only 25 %. Too poor to pay, the ring turns red.
+    /// Repeatable on a cooldown, so a route can be re-run.
     ///
     /// <b>Boss Beacon</b> — opt in by entering. Spawns one existing VAT boss that chases. Claims the
     /// single "major encounter" slot, so two bosses can never run at once. No free chest: the reward
@@ -25,8 +28,12 @@ namespace ZombieWar.Stations
     {
         [Header("Timings and prices (TUNING)")]
         [SerializeField] private float relayHoldSeconds = 12f;
-        [SerializeField] private float cacheHoldSeconds = 3f;
-        [SerializeField] private int cachePriceCoin = 40;
+        [Tooltip("Seconds standing in the cache ring before it charges - a confirmation, so walking " +
+                 "through a cache never spends Coin by accident.")]
+        [SerializeField] private float cacheConfirmSeconds = 1.5f;
+        [SerializeField] private int cachePriceCoin = 60;
+        [Tooltip("Price increase per cache bought this run.")]
+        [SerializeField] private int cachePriceStep = 40;
         [SerializeField] private float cacheCooldownSeconds = 90f;
         [Tooltip("Progress lost per second while the player is outside the ring. Lower than the gain " +
                  "rate on purpose: stepping out to survive must not erase the attempt.")]
@@ -42,7 +49,11 @@ namespace ZombieWar.Stations
         bool _bossAttempted;
         float _bossRetryAt;
 
+        TextMeshPro _priceLabel;
+
         public bool Finished => _finished;
+
+        public int CachePrice => cachePriceCoin + cachePriceStep * StationDirector.CachePurchasesThisRun;
         public float Progress01 => Signal != null ? Signal.Progress01 : 0f;
 
         public void Bind(StationAnchors.Anchor anchor, WorldSignal signal)
@@ -54,6 +65,7 @@ namespace ZombieWar.Stations
 
             float radius = anchor.kind == StationKind.BossBeacon ? 4.5f : 3.5f;
             signal.Configure(anchor.kind, radius);
+            if (anchor.kind == StationKind.SupplyCache) EnsurePriceLabel();
 
             // Rebuild in the state the LEDGER remembers, not as a fresh station.
             var status = StationRegistry.StatusOf(anchor.id, Time.time);
@@ -108,17 +120,65 @@ namespace ZombieWar.Stations
 
         void TickCache(float dt, bool inside)
         {
-            if (!inside) { Signal.SetState(SignalState.Idle); return; }
-
-            // Paying is instant; holding is the free-but-slower path. Coin finally has an in-run sink.
+            int price = CachePrice;
             var run = RunState.Current;
-            if (run != null && run.Coin >= cachePriceCoin)
+            bool affordable = run != null && run.Coin >= price;
+            UpdatePriceLabel(price, affordable);
+
+            if (!inside)
             {
-                run.SpendCoin(cachePriceCoin);
-                Complete();
+                _progressSeconds = 0f;
+                Signal.SetProgress(0f);
+                Signal.SetState(SignalState.Idle);
                 return;
             }
-            TickHold(dt, true, cacheHoldSeconds, false);
+
+            if (!affordable)
+            {
+                // Legible refusal: red ring, no progress. Never a silent "nothing happens".
+                _progressSeconds = 0f;
+                Signal.SetProgress(0f);
+                Signal.SetState(SignalState.Failed);
+                return;
+            }
+
+            _progressSeconds += dt;
+            Signal.SetState(SignalState.Active);
+            Signal.SetProgress(_progressSeconds / cacheConfirmSeconds);
+            if (_progressSeconds < cacheConfirmSeconds) return;
+
+            run.SpendCoin(price);
+            StationDirector.CachePurchasesThisRun++;
+            Complete();
+        }
+
+        void EnsurePriceLabel()
+        {
+            if (_priceLabel != null) return;
+            var go = new GameObject("Price");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 3.2f, 0f);
+            go.transform.localRotation = Quaternion.Euler(55f, 0f, 0f);   // faces the top-down camera
+            _priceLabel = go.AddComponent<TextMeshPro>();
+            _priceLabel.alignment = TextAlignmentOptions.Center;
+            _priceLabel.fontSize = 8f;
+            _priceLabel.fontStyle = FontStyles.Bold;
+            _priceLabel.outlineWidth = 0.25f;
+            _priceLabel.outlineColor = Color.black;
+        }
+
+        int _shownPrice = -1;
+        bool _shownAffordable;
+
+        void UpdatePriceLabel(int price, bool affordable)
+        {
+            if (_priceLabel == null) return;
+            if (!_priceLabel.gameObject.activeSelf) _priceLabel.gameObject.SetActive(true);
+            if (price == _shownPrice && affordable == _shownAffordable) return;
+            _shownPrice = price;
+            _shownAffordable = affordable;
+            _priceLabel.text = $"{price} COIN";
+            _priceLabel.color = affordable ? new Color(1f, 0.82f, 0.25f) : new Color(0.95f, 0.3f, 0.3f);
         }
 
         void TickBeacon(bool inside)
@@ -193,7 +253,8 @@ namespace ZombieWar.Stations
                     // Repeatable: a route can be re-run, but not farmed on the spot.
                     StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Cooldown,
                                               Time.time, cacheCooldownSeconds);
-                    StationDirector.Instance?.GrantSupplies(transform.position);
+                    if (_priceLabel != null) _priceLabel.gameObject.SetActive(false);
+                    StationDirector.Instance?.GrantCardOffer();
                     break;
             }
 

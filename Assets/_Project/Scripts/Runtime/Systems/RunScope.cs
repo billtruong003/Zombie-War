@@ -60,6 +60,10 @@ namespace ZombieWar
             ZombieManager.ResetAttackSlots();      // a leaked slot would silently throttle the next run
             Threat.ThreatDirector.ResetArrivals();
 
+            // ── stations ──────────────────────────────────────────────────────────────────
+            // A static, so it must reset even in a run where no station director exists.
+            Stations.StationDirector.CachePurchasesThisRun = 0;
+
             // ── pickups ───────────────────────────────────────────────────────────────────
             // Coins and gems register into a static list. Without this the list accumulated entries
             // from every previous run, including destroyed ones.

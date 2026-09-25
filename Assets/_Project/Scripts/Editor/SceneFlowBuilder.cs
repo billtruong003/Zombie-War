@@ -187,10 +187,9 @@ namespace ZombieWar.Editor
 
             var costumeAssets = new[]
             {
+                // Casual only: the Fantasy catalog is rollback data and must not ship in builds.
                 AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
-                    "Assets/_Project/Data/Character/CasualCostumeCatalog.asset"),
-                AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(
-                    "Assets/_Project/Data/Character/ModularCostumeCatalog.asset")
+                    "Assets/_Project/Data/Character/CasualCostumeCatalog.asset")
             };
             var costumeProp = so.FindProperty("costumeCatalogs");
             costumeProp.arraySize = costumeAssets.Length;

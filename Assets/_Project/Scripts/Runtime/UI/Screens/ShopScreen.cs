@@ -15,7 +15,10 @@ namespace ZombieWar.UI
     /// - Tap 1 = chọn card (xem state, chưa mua). Tap lần 2 vào card ĐANG chọn = mua qua
     ///   PlayerProfile.TryPurchaseWeapon (atomic). Mua xong KHÔNG tự equip — equip ở Loadout.
     /// - Thiếu tiền/lỗi: shake + giá màu danger. Refresh theo WalletChanged/LoadoutChanged.
-    /// - Tab GACHA/COSTUME/UPGRADES chưa có backend: mọi button trong panel bị disable (honest).
+    ///
+    /// M6 economy (W6, owner-locked): gacha, weapon shards/star upgrades and Gold are in code without
+    /// design authority. Their tabs are hidden at runtime (the prefab is owner-authored) and every
+    /// entry point is redirected, so the shipped Shop is WEAPONS + COSTUME only.
     /// </summary>
     public sealed class ShopScreen : UIScreen
     {
@@ -60,6 +63,13 @@ namespace ZombieWar.UI
         [SerializeField] private Button upgradeNextButton;
         [SerializeField] private TMP_Text upgradePageLabel;
 
+        public const int WeaponsTab = 0, GachaTab = 1, CostumeTab = 2, UpgradesTab = 3;
+
+        /// <summary>Tabs the MVP ships. Index matches tabButtons/tabPanels.</summary>
+        private static readonly bool[] Shipped = { true, false, true, false };
+
+        private static bool IsShipped(int tab) => tab >= 0 && tab < Shipped.Length && Shipped[tab];
+
         private int _active;
         private int _pendingTab;
         private WeaponItemCardView _selectedCard;
@@ -81,6 +91,7 @@ namespace ZombieWar.UI
                 for (int i = 0; i < tabButtons.Length; i++)
                 {
                     int idx = i;
+                    if (tabButtons[i] != null) tabButtons[i].gameObject.SetActive(IsShipped(i));
                     Wire(tabButtons[i], () => SelectTab(idx));
                 }
             if (weaponCards != null)
@@ -207,12 +218,14 @@ namespace ZombieWar.UI
         /// Pass "Quay Gacha" dùng để mở thẳng Gacha; Hub mở mặc định Weapons (pending reset sau mỗi Show).</summary>
         public void OpenTab(int index)
         {
+            if (!IsShipped(index)) index = WeaponsTab;
             _pendingTab = Mathf.Clamp(index, 0, tabPanels != null ? tabPanels.Length - 1 : 0);
             if (IsShown) SelectTab(_pendingTab);
         }
 
         private void SelectTab(int idx)
         {
+            if (!IsShipped(idx)) idx = WeaponsTab;
             _active = idx;
             if (tabPanels != null)
                 for (int i = 0; i < tabPanels.Length; i++)

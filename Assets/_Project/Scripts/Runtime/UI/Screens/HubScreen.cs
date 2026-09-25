@@ -40,14 +40,14 @@ namespace ZombieWar.UI
             base.Awake();
             Wire(playButton, Play);
             Wire(loadoutButton, () => Open(loadoutScreen, "LOADOUT"));
-            Wire(shopButton, () => OpenShop(0));
+            Wire(shopButton, () => OpenShop(ShopScreen.WeaponsTab));
             Wire(costumeButton, () => Open(costumeScreen, "COSTUME"));
             Wire(passButton, () => Open(passScreen, "BATTLE PASS"));
             Wire(settingsButton, () => Open(settingsScreen, "SETTINGS"));
-            // "+" mở boundary thương mại đang tồn tại (Shop). IAP/earn flow riêng chưa có —
-            // documented gap: Coin+ → Shop Weapons, Gem+ → Shop Gacha.
-            Wire(coinPlusButton, () => OpenShop(0));
-            Wire(gemPlusButton, () => OpenShop(1));
+            // "+" opens where that currency is spent: Coin buys weapons, Gem buys outfits.
+            // There is no IAP yet, so nothing sells the currency itself.
+            Wire(coinPlusButton, () => OpenShop(ShopScreen.WeaponsTab));
+            Wire(gemPlusButton, () => OpenShop(ShopScreen.CostumeTab));
             Wire(missionButton, () => Open(passScreen, "BATTLE PASS"));
         }
 

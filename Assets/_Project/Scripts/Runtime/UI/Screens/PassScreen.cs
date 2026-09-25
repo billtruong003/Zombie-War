@@ -27,8 +27,7 @@ namespace ZombieWar.UI
 
         [Header("Nav")]
         [SerializeField] private Button backButton;
-        [SerializeField] private Button gachaLinkButton;
-        [SerializeField] private ShopScreen shopScreen;
+        [SerializeField] private Button gachaLinkButton;   // retired: hidden at runtime
 
         [Header("Season")]
         [SerializeField] private TMP_Text seasonLevelLabel;
@@ -43,12 +42,10 @@ namespace ZombieWar.UI
         {
             base.Awake();
             Wire(backButton, () => UIManager.Instance.Pop());
-            Wire(gachaLinkButton, () =>
-            {
-                if (shopScreen == null) return;
-                shopScreen.OpenTab(1);   // link Gacha phải mở đúng tab Gacha, không phải Weapons
-                UIManager.Instance.Push(shopScreen);
-            });
+            // Gacha has no design authority in the M6 economy, so its shortcut is hidden rather than
+            // pointing at a tab that no longer ships. The prefab keeps the button until the owner
+            // removes it.
+            if (gachaLinkButton != null) gachaLinkButton.gameObject.SetActive(false);
             if (questRows != null)
                 for (int i = 0; i < questRows.Length; i++)
                 {

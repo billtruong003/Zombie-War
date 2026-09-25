@@ -263,5 +263,21 @@ namespace ZombieWar.Tests
             Assert.IsTrue(run.SpendCoin(40));
             Assert.AreEqual(10, run.Coin, "the first in-run Coin sink must actually deduct");
         }
+
+        [Test]
+        public void SupplyCachePriceRisesPerPurchase_AndResetsWithTheRun()
+        {
+            var go = new GameObject("cache");
+            var station = go.AddComponent<Station>();
+            RunState.Begin();
+            int first = station.CachePrice;
+
+            StationDirector.CachePurchasesThisRun = 2;
+            Assert.Greater(station.CachePrice, first, "each purchase makes the next card offer dearer");
+
+            RunState.Begin();
+            Assert.AreEqual(first, station.CachePrice, "a new run starts at the base price");
+            Object.DestroyImmediate(go);
+        }
     }
 }

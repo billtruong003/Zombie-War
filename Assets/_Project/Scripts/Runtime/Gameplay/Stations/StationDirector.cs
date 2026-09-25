@@ -41,9 +41,18 @@ namespace ZombieWar.Stations
         static readonly StationAnchors.Anchor[] AnchorBuffer = new StationAnchors.Anchor[32];
 
         Transform _player;
+        StationCompass _compass;
         int _worldSeed = 20260816;
 
         public int LiveStationCount => _live.Count;
+
+        /// <summary>Supply Caches bought this run; each one raises the next price. Run-scoped.</summary>
+        public static int CachePurchasesThisRun { get; set; }
+
+        [Header("Rewards (TUNING)")]
+        [Tooltip("A beacon boss is the biggest opt-in risk, so it pays the most.")]
+        [SerializeField] private int bossRewardCoin = 150;
+        [SerializeField] private int bossRewardGem = 3;
 
         void OnEnable() => Bill.Events?.Subscribe<ZombieKilledEvent>(OnAnyZombieKilled);
         void OnDisable() => Bill.Events?.Unsubscribe<ZombieKilledEvent>(OnAnyZombieKilled);
@@ -79,6 +88,9 @@ namespace ZombieWar.Stations
 
         void Start()
         {
+            _compass = gameObject.AddComponent<StationCompass>();
+            _compass.SetMaterial(signalLineMaterial);
+
             var pm = PlayerMovement.Instance;
             if (pm != null) _player = pm.transform;
             var cfg = FindFirstObjectByType<ZombieWar.WorldStreaming.WorldStreamingConfig>();
@@ -108,8 +120,11 @@ namespace ZombieWar.Stations
                 Spawn(a);
             }
 
-            // 2. tick the live ones, and release those the player has left behind
+            // 2. tick the live ones, release those the player has left behind, and find the nearest
+            //    one still worth walking to for the compass
             _scratch.Clear();
+            Station nearest = null;
+            float nearestSqr = float.MaxValue;
             foreach (var kv in _live)
             {
                 var st = kv.Value;
@@ -119,8 +134,11 @@ namespace ZombieWar.Stations
                 if (sqr > releaseDistance * releaseDistance) { _scratch.Add(kv.Key); continue; }
 
                 st.Tick(dt, p);
+                if (!st.Finished && sqr < nearestSqr) { nearest = st; nearestSqr = sqr; }
             }
             for (int i = 0; i < _scratch.Count; i++) Release(_scratch[i]);
+
+            _compass?.Point(p, nearest);
         }
 
         void Spawn(StationAnchors.Anchor a)
@@ -178,14 +196,6 @@ namespace ZombieWar.Stations
         {
             var overlays = FindFirstObjectByType<RunOverlays>();
             if (overlays != null) overlays.ShowLevelUp();
-        }
-
-        /// <summary>Supply Cache's reward: pickups on the floor, which the player must now walk to.</summary>
-        public void GrantSupplies(Vector3 at)
-        {
-            var pm = PickupManager.Instance;
-            if (pm == null) return;
-            pm.DropReward(at);
         }
 
         // ───────────────────────────────────────────────────────── boss beacon
@@ -274,7 +284,7 @@ namespace ZombieWar.Stations
             StationRegistry.SetBossAlive(anchorId, false);
             StationRegistry.SetStatus(anchorId, StationRegistry.Status.Completed, Time.time);
             StationRegistry.ReleaseEncounter(anchorId);
-            PickupManager.Instance?.DropReward(at);   // no free chest: it pays on death only
+            PickupManager.Instance?.DropReward(at, bossRewardCoin, bossRewardGem);   // pays on death only
             ReportCompleted(StationKind.BossBeacon);
         }
 
