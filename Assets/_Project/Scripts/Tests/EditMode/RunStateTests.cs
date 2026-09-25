@@ -86,21 +86,6 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void Multiplier_IsOneWithoutPerks_AndStacks()
-        {
-            var run = RunState.Begin();
-            Assert.AreEqual(1f, run.Multiplier(RunPerkKind.Damage), 0.0001f);
-
-            run.AddPerk(new RunPerk("a", "", "", RunPerkKind.Damage, 1.5f));
-            run.AddPerk(new RunPerk("b", "", "", RunPerkKind.Damage, 2f));
-            run.AddPerk(new RunPerk("c", "", "", RunPerkKind.FireRate, 3f));
-
-            Assert.AreEqual(3f, run.Multiplier(RunPerkKind.Damage), 0.0001f);
-            Assert.AreEqual(3f, run.Multiplier(RunPerkKind.FireRate), 0.0001f);
-            Assert.AreEqual(1f, run.Multiplier(RunPerkKind.MoveSpeed), 0.0001f);
-        }
-
-        [Test]
         public void Finish_FirstOutcomeWins()
         {
             var run = RunState.Begin();
@@ -178,13 +163,5 @@ namespace ZombieWar.Tests
                 "leaving a run mid-way must never bank its currency");
         }
 
-        [Test]
-        public void PerkPool_DrawsDistinctPerks()
-        {
-            var drawn = RunPerkPool.Draw(3);
-
-            Assert.AreEqual(3, drawn.Count);
-            CollectionAssert.AllItemsAreUnique(drawn);
-        }
     }
 }

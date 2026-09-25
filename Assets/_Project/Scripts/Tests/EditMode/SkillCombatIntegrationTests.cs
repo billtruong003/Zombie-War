@@ -45,19 +45,6 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void LegacyPerkPathSurvivesWhenNoRuntimeIsActive()
-        {
-            SkillRuntime.Active = null;
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Weapon.cs");
-
-            // The legacy 7-perk multiplier must still be computed unconditionally, so a run without
-            // a SkillRuntime behaves exactly as it did before M7.2b.
-            StringAssert.Contains("RunPerkKind.Damage", src, "the legacy perk path must remain");
-            Assert.IsNull(SkillRuntime.Active);
-        }
-
-        [Test]
         public void TakingDamageUpMeasurablyIncreasesOutputDamage()
         {
             var run = new SkillRuntime { EquippedFamily = WeaponClass.AssaultRifle };

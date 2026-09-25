@@ -298,7 +298,7 @@ namespace ZombieWar
             Vector3 desired;
             if (IsStopped || !_hasDestination) desired = ComputeSeparationOnly(dt);
             else desired = ComputeDesiredDirection(dt);
-            Vector3 targetVelocity = desired * speed;
+            Vector3 targetVelocity = desired * (speed * SlowFactor());
 
             float rate = targetVelocity.sqrMagnitude > _velocity.sqrMagnitude ? acceleration : deceleration;
             _velocity = Vector3.MoveTowards(_velocity, targetVelocity, rate * dt);
@@ -435,6 +435,18 @@ namespace ZombieWar
         }
 
         /// <summary>Đặt lại các tham số điều khiển từ dữ liệu enemy khi (tái) sinh.</summary>
+        /// <summary>
+        /// Speed multiplier from a Concussion slow on this enemy (1 = unslowed). The status lives in
+        /// the run's StatusCarrier keyed by this transform - the same id the weapon writes on hit.
+        /// </summary>
+        public float SlowFactor()
+        {
+            if (ZombieWar.Skills.StatusCarrier.TrackedCount == 0) return 1f;
+            float slow = ZombieWar.Skills.StatusCarrier.Get(
+                transform.GetInstanceID(), ZombieWar.Skills.StatusKind.Slow, Time.time);
+            return 1f - Mathf.Clamp(slow, 0f, 0.8f);
+        }
+
         public void ConfigureFromData(float moveSpeed)
         {
             speed = Mathf.Max(0f, moveSpeed);

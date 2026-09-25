@@ -27,6 +27,7 @@ namespace ZombieWar
 
         private Rigidbody _rb;
         private ITargetable _aimTarget;
+        private ITargetable _lastReportedTarget;   // so a new lock is announced exactly once
         private float _dwellTimer;
         private float _recomputeTimer;
         private Vector3 _desiredAim = Vector3.forward;
@@ -75,8 +76,8 @@ namespace ZombieWar
             if (input.sqrMagnitude > 1f) input.Normalize();
 
             Vector3 move = new Vector3(input.x, 0f, input.y);
-            float perkSpeed = RunState.Current?.Multiplier(RunPerkKind.MoveSpeed) ?? 1f;
-            _rb.MovePosition(_rb.position + move * (moveSpeed * perkSpeed) * Time.fixedDeltaTime);
+            float cardSpeed = ZombieWar.Skills.SkillRuntime.Active?.MoveSpeedMultiplier ?? 1f;
+            _rb.MovePosition(_rb.position + move * (moveSpeed * cardSpeed) * Time.fixedDeltaTime);
 
             // Aim first: the body faces the AIM axis, NOT the move axis. This twin-stick decoupling is
             // what lets the player strafe/backpedal while keeping the gun on the target - the legs
@@ -154,6 +155,11 @@ namespace ZombieWar
                 // Target died / left range between recomputes - drop it now so we never aim at a corpse.
                 _aimTarget = null;
             }
+
+            if (_aimTarget != null && !ReferenceEquals(_aimTarget, _lastReportedTarget))
+                ZombieWar.Skills.SkillRuntime.Active?.OnTargetChanged(
+                    _aimTarget.Transform.GetInstanceID(), Time.time);
+            _lastReportedTarget = _aimTarget;
 
             HasTarget = _aimTarget != null;
             if (_aimTarget != null)

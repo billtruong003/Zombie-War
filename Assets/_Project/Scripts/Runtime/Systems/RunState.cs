@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieWar
@@ -27,7 +26,7 @@ namespace ZombieWar
 
     /// <summary>
     /// The single in-memory authority for everything a run earns: kills, threat reached, currency,
-    /// XP/level, temporary perks, elapsed time and the terminal result.
+    /// XP/level, elapsed time and the terminal result. The run's card build lives in SkillRuntime.
     ///
     /// Design rules this type exists to enforce:
     ///   * Coin earned in a run is banked HERE, never written straight into <see cref="PlayerProfile"/>.
@@ -36,8 +35,6 @@ namespace ZombieWar
     ///     moment it is picked up, so it goes to the profile immediately and is only counted here.
     ///   * <see cref="Payout"/> is idempotent - calling it twice pays once. Scene unload, a replay tap
     ///     and a result screen all racing to finish the run cannot double-credit.
-    ///   * Perks are temporary: they live and die with the run and are applied as multipliers on top
-    ///     of the permanent weapon-star scaling in <see cref="WeaponUpgradeMath"/>, never merged into it.
     /// </summary>
     public class RunState
     {
@@ -51,7 +48,6 @@ namespace ZombieWar
         /// gained in that grant. This is the level-up UI's trigger.</summary>
         public static event Action<int> LevelsGained;
 
-        private readonly List<RunPerk> _perks = new List<RunPerk>();
         private bool _paidOut;
 
         public int Kills { get; private set; }
@@ -69,7 +65,6 @@ namespace ZombieWar
         public float Duration { get; private set; }
         public RunOutcome Outcome { get; private set; } = RunOutcome.InProgress;
 
-        public IReadOnlyList<RunPerk> Perks => _perks;
         public bool IsOver => Outcome != RunOutcome.InProgress;
 
         /// <summary>XP needed to reach the next level. Deliberately a simple growing curve rather than
@@ -158,13 +153,13 @@ namespace ZombieWar
             Changed?.Invoke();
         }
 
-        // The CoinGain perk is consumed here - the single place Coin enters the ledger - so kill
-        // banking and physical pickups scale identically and nothing can double-apply it.
-        private long ScaleCoin(long amount) =>
-            (long)Math.Round(amount * Multiplier(RunPerkKind.CoinGain));
+        // Coin Gain Up is consumed here - the single place Coin enters the ledger - so kill banking
+        // and physical pickups scale identically and nothing can double-apply it.
+        private static long ScaleCoin(long amount) =>
+            (long)Math.Round(amount * (Skills.SkillRuntime.Active?.CoinMultiplier ?? 1f));
 
         /// <summary>Adds XP and levels up as many times as the XP covers. Returns how many levels were
-        /// gained, so the caller can queue that many perk choices.</summary>
+        /// gained, so the caller can queue that many card choices.</summary>
         public int AddXp(int amount)
         {
             if (IsOver || amount <= 0) return 0;
@@ -183,23 +178,6 @@ namespace ZombieWar
                 LevelsGained?.Invoke(gained);
             }
             return gained;
-        }
-
-        public void AddPerk(RunPerk perk)
-        {
-            if (IsOver || perk == null) return;
-            _perks.Add(perk);
-            Changed?.Invoke();
-        }
-
-        /// <summary>Product of every stacked perk of this kind. 1 means "no perk of this kind",
-        /// so callers can multiply unconditionally.</summary>
-        public float Multiplier(RunPerkKind kind)
-        {
-            float m = 1f;
-            for (int i = 0; i < _perks.Count; i++)
-                if (_perks[i].kind == kind) m *= _perks[i].multiplier;
-            return m;
         }
 
         /// <summary>Ends the run and freezes a snapshot. The first call wins: an abandon that lands in
@@ -234,34 +212,5 @@ namespace ZombieWar
         }
 
         public bool HasPaidOut => _paidOut;
-    }
-
-    public enum RunPerkKind
-    {
-        Damage,
-        FireRate,
-        MoveSpeed,
-        MaxHealth,
-        CoinGain
-    }
-
-    /// <summary>One temporary run-scoped upgrade. Authored as plain data so the level-up UI can show
-    /// three of them without knowing anything about weapons.</summary>
-    [Serializable]
-    public class RunPerk
-    {
-        public string id;
-        public string title;
-        public string description;
-        public RunPerkKind kind;
-        public float multiplier = 1.1f;
-
-        public RunPerk() { }
-
-        public RunPerk(string id, string title, string description, RunPerkKind kind, float multiplier)
-        {
-            this.id = id; this.title = title; this.description = description;
-            this.kind = kind; this.multiplier = multiplier;
-        }
     }
 }

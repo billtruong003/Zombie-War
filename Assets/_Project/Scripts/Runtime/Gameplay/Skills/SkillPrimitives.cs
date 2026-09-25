@@ -378,42 +378,6 @@ namespace ZombieWar.Skills
         public void Reset() => Value = 0f;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────── P6
-    /// <summary>
-    /// <b>P6 — damage-path interception hook.</b> The single point where a card may read the target
-    /// and modify outgoing damage. Cards register a delegate; the weapon calls
-    /// <see cref="Modify"/> once per hit.
-    ///
-    /// Serves: Quickstep Round, Execution Round, Kinetic Shield.
-    ///
-    /// The list is pre-sized and iterated by index so a hit costs no allocation and no enumerator.
-    /// </summary>
-    public static class DamageInterceptor
-    {
-        public struct Context
-        {
-            public int targetId;
-            public float distance;
-            public float targetHealthFraction;
-            public float now;
-        }
-
-        public delegate float Modifier(float damage, in Context ctx);
-
-        static readonly List<Modifier> Modifiers = new(16);
-
-        public static int Count => Modifiers.Count;
-        public static void Register(Modifier m) { if (m != null && !Modifiers.Contains(m)) Modifiers.Add(m); }
-        public static void Unregister(Modifier m) => Modifiers.Remove(m);
-        public static void Clear() => Modifiers.Clear();
-
-        public static float Modify(float damage, in Context ctx)
-        {
-            for (int i = 0; i < Modifiers.Count; i++) damage = Modifiers[i](damage, in ctx);
-            return damage;
-        }
-    }
-
     // ─────────────────────────────────────────────────────────────────────────── P7
     /// <summary>
     /// <b>P7 — distance-scaled damage curve.</b> Extends the existing
@@ -474,59 +438,5 @@ namespace ZombieWar.Skills
 
         public static readonly SoftCap FireRate = new(2.2f, 2.5f);
         public static readonly SoftCap MoveSpeed = new(1.6f, 1.9f);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────── P9
-    /// <summary>
-    /// <b>P9 — power VFX / HUD kit.</b> The shared presentation layer for P2 and P3 cards: pooled
-    /// one-shot effects and cooldown readouts. Pooling is mandatory — the run budget is zero
-    /// allocations per frame and zero runtime material instances.
-    /// Serves: Static Build-up, Shockwave Belt, Chain Lightning, Ordnance Core.
-    /// </summary>
-    public class PowerFxKit
-    {
-        readonly Dictionary<string, Queue<GameObject>> _pools = new(8);
-        readonly Dictionary<string, GameObject> _prefabs = new(8);
-        readonly Transform _root;
-        readonly int _maxPerKey;
-
-        /// <summary>≤2 concurrent explosions is a stated guardrail; the pool enforces it per key.</summary>
-        public PowerFxKit(Transform root, int maxPerKey = 2)
-        {
-            _root = root;
-            _maxPerKey = Mathf.Max(1, maxPerKey);
-        }
-
-        public void Register(string key, GameObject prefab)
-        {
-            if (string.IsNullOrEmpty(key) || prefab == null) return;
-            _prefabs[key] = prefab;
-            if (!_pools.ContainsKey(key)) _pools[key] = new Queue<GameObject>(_maxPerKey);
-        }
-
-        public int LiveCount { get; private set; }
-
-        /// <summary>Spawns from the pool. Returns null when the per-key ceiling is already reached.</summary>
-        public GameObject Play(string key, Vector3 position, Quaternion rotation)
-        {
-            if (!_prefabs.TryGetValue(key, out var prefab) || prefab == null) return null;
-            var pool = _pools[key];
-
-            GameObject go;
-            if (pool.Count > 0) { go = pool.Dequeue(); go.transform.SetPositionAndRotation(position, rotation); go.SetActive(true); }
-            else if (LiveCount < _maxPerKey) { go = UnityEngine.Object.Instantiate(prefab, position, rotation, _root); }
-            else return null;
-
-            LiveCount++;
-            return go;
-        }
-
-        public void Recycle(string key, GameObject go)
-        {
-            if (go == null || !_pools.TryGetValue(key, out var pool)) return;
-            go.SetActive(false);
-            pool.Enqueue(go);
-            LiveCount = Mathf.Max(0, LiveCount - 1);
-        }
     }
 }

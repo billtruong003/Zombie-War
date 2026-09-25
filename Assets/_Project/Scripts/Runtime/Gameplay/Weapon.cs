@@ -90,21 +90,26 @@ namespace ZombieWar
         public int CurrentIndex => _currentIndex;
 
         /// <summary>Shots per second the equipped weapon currently sustains, after permanent star
-        /// upgrades AND temporary run perks.</summary>
+        /// upgrades AND the run's level-up cards.</summary>
         public float CurrentFireRate
         {
             get
             {
                 var data = Current;
-                return data == null ? 0f : PerkedFireRate(data);
+                return data == null ? 0f : EffectiveFireRate(data);
             }
         }
 
-        // Run perks are consumed at the two spots weapon numbers leave the data layer: rate here,
-        // damage in ApplyHit. RunState is null in menu scenes, so both fall back to 1x.
-        private static float PerkedFireRate(WeaponData data) =>
-            WeaponUpgradeMath.EffectiveFireRate(data, PlayerProfile.GetWeaponLevel(data.WeaponId))
-            * (RunState.Current?.Multiplier(RunPerkKind.FireRate) ?? 1f);
+        // Permanent star level of the equipped weapon. It only changes in the menu, so it is read once
+        // per equip instead of scanning the profile on every shot and every pellet hit.
+        private int _starLevel = 1;
+
+        // Card stats are consumed at the two spots weapon numbers leave the data layer: rate here,
+        // damage in ApplyHit (through SkillRuntime.ModifyHitDamage). Outside a run there is no
+        // SkillRuntime and both fall back to 1x.
+        private float EffectiveFireRate(WeaponData data) =>
+            WeaponUpgradeMath.EffectiveFireRate(data, _starLevel)
+            * (ZombieWar.Skills.SkillRuntime.Active?.FireRateMultiplier ?? 1f);
 
 #if UNITY_EDITOR
         // Editor-only hooks for the Grip Tuner inspector (WeaponEditor). The equipped gun model is a
@@ -262,7 +267,7 @@ namespace ZombieWar
         {
             if (data == null) return float.PositiveInfinity;
 
-            float rate = PerkedFireRate(data);
+            float rate = EffectiveFireRate(data);
             // A zero or negative authored rate is a data defect. Failing safe means never firing,
             // rather than dividing by zero and spraying every frame.
             return rate > 0f ? 1f / rate : float.PositiveInfinity;
@@ -574,14 +579,10 @@ namespace ZombieWar
             {
                 float distance = Vector3.Distance(origin, hit.point);
                 float dist01 = data.range > 0f ? distance / data.range : 0f;
-                int weaponLevel = PlayerProfile.GetWeaponLevel(data.WeaponId);
-                float perkMult = RunState.Current?.Multiplier(RunPerkKind.Damage) ?? 1f;
-                float damage = WeaponUpgradeMath.EffectiveDamage(data, weaponLevel) * perkMult
+                float damage = WeaponUpgradeMath.EffectiveDamage(data, _starLevel)
                                * dmgMult * data.RangeFalloff(dist01);
 
-                // M7.2b — every damage-shaping card resolves here. Additive: with no SkillRuntime the
-                // legacy perk path above is exactly what it always was, which is what keeps the old
-                // 7-perk system working when the new one is not active.
+                // Every damage-shaping card, Damage Up included, resolves here.
                 var skills = ZombieWar.Skills.SkillRuntime.Active;
                 if (skills != null)
                 {
@@ -829,6 +830,12 @@ namespace ZombieWar
 
             if (_currentInstance != null) Destroy(_currentInstance);
             _currentData = data;
+            _starLevel = PlayerProfile.GetWeaponLevel(data.WeaponId);
+
+            // Signature cards are gated by the family in hand, so the build learns it at equip time -
+            // not only when a level-up happens to open.
+            var skills = ZombieWar.Skills.SkillRuntime.Active;
+            if (skills != null) skills.EquippedFamily = data.weaponClass;
 
             // Doi sung KHONG duoc don mot loat dan: xoa sach thoi gian ban con no lai.
             _fireAccumulator = 0f;

@@ -98,10 +98,18 @@ namespace ZombieWar.Skills
 
         public static IReadOnlyList<SkillDef> All => _all;
 
+        // ById runs several times per pellet hit, so it is a dictionary, not a scan of 23 strings.
+        static Dictionary<string, SkillDef> _byId;
+
         public static SkillDef ById(string id)
         {
-            for (int i = 0; i < _all.Count; i++) if (_all[i].id == id) return _all[i];
-            return null;
+            if (id == null) return null;
+            if (_byId == null)
+            {
+                _byId = new Dictionary<string, SkillDef>(_all.Count);
+                for (int i = 0; i < _all.Count; i++) _byId[_all[i].id] = _all[i];
+            }
+            return _byId.TryGetValue(id, out var def) ? def : null;
         }
     }
 }

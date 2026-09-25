@@ -293,16 +293,11 @@ namespace ZombieWar
         }
 
         // ------------------------------------------------------------ level-up
-        // Real flow: RunState.LevelsGained -> queue -> pause + 1-of-3 offer -> AddPerk -> resume.
+        // RunState.LevelsGained -> queue -> pause + 1-of-3 card offer -> SkillRuntime.Take -> resume.
         // Level-ups earned while paused or while another overlay is up stay queued and present as
-        // soon as the screen is free again, so no earned choice is ever dropped.
+        // soon as the screen is free again, so no earned choice is ever dropped. Binding reuses the
+        // prefab's Perk{i}/Name and Perk{i}/Desc paths, so no UI prefab edit is needed.
         private int _pendingLevelUps;
-        private System.Collections.Generic.List<RunPerk> _offer;
-
-        // M7.2 — the 23-card offer. It replaces the 7-perk draw as the source of the 1-of-3, but the
-        // legacy `_offer` path is kept as a fallback so a run with no SkillRuntime still works
-        // exactly as before. Binding reuses the SAME prefab paths (Perk{i}/Name, Perk{i}/Desc), which
-        // is what lets this land without any UI prefab edit.
         private System.Collections.Generic.List<ZombieWar.Skills.SkillDef> _skillOffer;
         private float _levelUpShownAtRealtime;
         private const float LevelUpTimeoutSeconds = 30f;
@@ -320,46 +315,27 @@ namespace ZombieWar
             if (pauseRoot != null && pauseRoot.activeSelf) return;
             if (reviveRoot != null && reviveRoot.activeSelf) return;
             var run = RunState.Current;
-            if (run == null || run.IsOver) { _pendingLevelUps = 0; return; }
-
             var skills = ZombieWar.Skills.SkillRuntime.Active;
-            _skillOffer = null;
-            _offer = null;
+            if (run == null || run.IsOver || skills == null) { _pendingLevelUps = 0; return; }
 
-            if (skills != null)
+            _skillOffer = ZombieWar.Skills.SkillOfferBuilder.Build(
+                skills, skills.EquippedFamily, run.Seed, run.Level);
+
+            if (_skillOffer.Count == 0)
             {
-                var weapon = PlayerMovement.Instance != null
-                    ? PlayerMovement.Instance.GetComponentInChildren<Weapon>() : null;
-                if (weapon != null && weapon.Current != null) skills.EquippedFamily = weapon.Current.weaponClass;
-
-                _skillOffer = ZombieWar.Skills.SkillOfferBuilder.Build(
-                    skills, skills.EquippedFamily, run.Seed, run.Level);
-
-                if (_skillOffer.Count == 0)
-                {
-                    // Pool exhausted: there is no choice to make, so do not steal a pause for it.
-                    _pendingLevelUps = Mathf.Max(0, _pendingLevelUps - 1);
-                    return;
-                }
-
-                for (int i = 0; i < _skillOffer.Count; i++)
-                {
-                    var def = _skillOffer[i];
-                    int nextRank = skills.RankOf(def.id) + 1;
-                    BindOfferText($"Perk{i}/Name", nextRank > 1 ? $"{def.displayName}  {nextRank}" : def.displayName);
-                    BindOfferText($"Perk{i}/Desc", DescribeCard(def, nextRank));
-                }
-                ShowOfferButtons(_skillOffer.Count);
+                // Pool exhausted: there is no choice to make, so do not steal a pause for it.
+                _pendingLevelUps = Mathf.Max(0, _pendingLevelUps - 1);
+                return;
             }
-            else
+
+            for (int i = 0; i < _skillOffer.Count; i++)
             {
-                _offer = RunPerkPool.Draw(perkButtons != null ? perkButtons.Length : 3);
-                for (int i = 0; i < _offer.Count; i++)
-                {
-                    BindOfferText($"Perk{i}/Name", _offer[i].title);
-                    BindOfferText($"Perk{i}/Desc", _offer[i].description);
-                }
+                var def = _skillOffer[i];
+                int nextRank = skills.RankOf(def.id) + 1;
+                BindOfferText($"Perk{i}/Name", nextRank > 1 ? $"{def.displayName}  {nextRank}" : def.displayName);
+                BindOfferText($"Perk{i}/Desc", DescribeCard(def, nextRank));
             }
+            ShowOfferButtons(_skillOffer.Count);
 
             _levelUpShownAtRealtime = Time.realtimeSinceStartup;
             Time.timeScale = 0f;
@@ -421,40 +397,18 @@ namespace ZombieWar
         private void PickPerk(int slot)
         {
             var skills = ZombieWar.Skills.SkillRuntime.Active;
-            if (skills != null && _skillOffer != null)
+            if (skills != null && _skillOffer != null && slot >= 0 && slot < _skillOffer.Count)
             {
-                if (slot >= 0 && slot < _skillOffer.Count)
-                {
-                    skills.Take(_skillOffer[slot].id);
-                    MissionTracker.ReportCardChosen();
+                skills.Take(_skillOffer[slot].id);
+                MissionTracker.ReportCardChosen();
 
-                    // Max Health is the one card that must act at pick time; the Health component
-                    // owns the number, exactly as the legacy MaxHealth perk did.
-                    float bonus = skills.ConsumeMaxHealthBonus();
-                    if (bonus > 0f) PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(1f + bonus);
-                }
-
-                _skillOffer = null;
-                _pendingLevelUps = Mathf.Max(0, _pendingLevelUps - 1);
-                Show(levelUpRoot, false);
-                Time.timeScale = 1f;
-                TryShowLevelUp();
-                return;
+                // Max Health is the one card that must act at pick time; the Health component owns
+                // the number.
+                float bonus = skills.ConsumeMaxHealthBonus();
+                if (bonus > 0f) PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(1f + bonus);
             }
 
-            var run = RunState.Current;
-            if (_offer != null && slot < _offer.Count && run != null && !run.IsOver)
-            {
-                var perk = _offer[slot];
-                run.AddPerk(perk);
-
-                // MaxHealth is the one perk that must act at pick time: the multiplier has no
-                // continuous consumer, the player's Health component owns the number.
-                if (perk.kind == RunPerkKind.MaxHealth)
-                    PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(perk.multiplier);
-            }
-
-            _offer = null;
+            _skillOffer = null;
             _pendingLevelUps = Mathf.Max(0, _pendingLevelUps - 1);
             Show(levelUpRoot, false);
             Time.timeScale = 1f;

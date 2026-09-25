@@ -240,8 +240,11 @@ namespace ZombieWar.Skills
             if (Has(SkillCatalogDefs.ArBreach) && EquippedFamily == WeaponClass.AssaultRifle)
                 StatusCarrier.Apply(targetId, StatusKind.Exposed, 1f, 3f, now);
 
-            if (Has(SkillCatalogDefs.SmgStatic) && EquippedFamily == WeaponClass.SMG)
-                _staticCharge.AddCharge(1f, 6f - RankOf(SkillCatalogDefs.SmgStatic));
+            // Static Build-up: every Nth SMG hit discharges a chain. The charge result IS the trigger;
+            // it used to be discarded, so the card never fired once.
+            if (Has(SkillCatalogDefs.SmgStatic) && EquippedFamily == WeaponClass.SMG &&
+                _staticCharge.AddCharge(1f, 6f - RankOf(SkillCatalogDefs.SmgStatic)))
+                _staticFired = true;
         }
 
         public void OnKill()
@@ -249,6 +252,7 @@ namespace ZombieWar.Skills
             _soulBurst.NotifyKill();
         }
 
+        /// <summary>The auto-aim locked a new enemy. Hunter's Mark empowers the first hit on it.</summary>
         public void OnTargetChanged(int newTargetId, float now)
         {
             if (Has(SkillCatalogDefs.MarksmanHunters) && EquippedFamily == WeaponClass.Marksman)
@@ -300,7 +304,7 @@ namespace ZombieWar.Skills
 
             // SMG Static Build-up is charge-driven rather than timer-driven, but it shares the chain
             // selection primitive with Chain Lightning.
-            if (Has(SkillCatalogDefs.SmgStatic) && EquippedFamily == WeaponClass.SMG && _staticCharge.Value <= 0f && _staticFired)
+            if (Has(SkillCatalogDefs.SmgStatic) && EquippedFamily == WeaponClass.SMG && _staticFired)
             {
                 _staticFired = false;
                 ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.SmgStatic,
@@ -310,9 +314,6 @@ namespace ZombieWar.Skills
         }
 
         bool _staticFired;
-
-        /// <summary>Called by the SMG hit path when Static Build-up reaches its charge.</summary>
-        public void NotifyStaticDischarge() => _staticFired = true;
 
         public float ReadinessOf(string skillId) => skillId switch
         {

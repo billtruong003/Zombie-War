@@ -17,7 +17,6 @@ namespace ZombieWar.Tests
         public void SetUp()
         {
             StatusCarrier.ClearAll();
-            DamageInterceptor.Clear();
             AutonomousPower.ResetGlobalBudget();
         }
 
@@ -152,37 +151,6 @@ namespace ZombieWar.Tests
             Assert.AreEqual(1f, r.Value, 1e-3, "overflow carries to the next charge rather than being lost");
         }
 
-        // ───────────────────────────────────────────────────────────── P6
-        [Test]
-        public void P6_ModifiersComposeInOrderAndUnregisterCleanly()
-        {
-            DamageInterceptor.Modifier doubler = (float d, in DamageInterceptor.Context c) => d * 2f;
-            DamageInterceptor.Modifier plusTen = (float d, in DamageInterceptor.Context c) => d + 10f;
-
-            DamageInterceptor.Register(doubler);
-            DamageInterceptor.Register(plusTen);
-
-            var ctx = new DamageInterceptor.Context { targetId = 1, distance = 5f, targetHealthFraction = 1f };
-            Assert.AreEqual(30f, DamageInterceptor.Modify(10f, in ctx), 1e-4);
-
-            DamageInterceptor.Unregister(doubler);
-            Assert.AreEqual(20f, DamageInterceptor.Modify(10f, in ctx), 1e-4);
-        }
-
-        [Test]
-        public void P6_ExecutionRoundStyleThresholdReadsTargetHealth()
-        {
-            DamageInterceptor.Modifier execute = (float d, in DamageInterceptor.Context c) =>
-                c.targetHealthFraction <= 0.2f ? d * 3f : d;
-            DamageInterceptor.Register(execute);
-
-            var healthy = new DamageInterceptor.Context { targetHealthFraction = 0.9f };
-            var wounded = new DamageInterceptor.Context { targetHealthFraction = 0.15f };
-
-            Assert.AreEqual(10f, DamageInterceptor.Modify(10f, in healthy), 1e-4);
-            Assert.AreEqual(30f, DamageInterceptor.Modify(10f, in wounded), 1e-4);
-        }
-
         // ───────────────────────────────────────────────────────────── P7
         [Test]
         public void P7_PointBlankAndLongshotCurveInOppositeDirections()
@@ -224,42 +192,6 @@ namespace ZombieWar.Tests
                 Assert.GreaterOrEqual(v, prev, "more raw multiplier must never yield less effective");
                 prev = v;
             }
-        }
-
-        // ───────────────────────────────────────────────────────────── P9
-        [Test]
-        public void P9_FxPoolRefusesToExceedItsConcurrencyCeiling()
-        {
-            var root = new GameObject("fx-root").transform;
-            var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var kit = new PowerFxKit(root, maxPerKey: 2);   // <=2 concurrent explosions
-            kit.Register("boom", prefab);
-
-            Assert.IsNotNull(kit.Play("boom", Vector3.zero, Quaternion.identity));
-            Assert.IsNotNull(kit.Play("boom", Vector3.zero, Quaternion.identity));
-            Assert.IsNull(kit.Play("boom", Vector3.zero, Quaternion.identity),
-                "the third concurrent effect must be refused, not spawned");
-
-            Object.DestroyImmediate(prefab);
-            Object.DestroyImmediate(root.gameObject);
-        }
-
-        [Test]
-        public void P9_RecycledEffectsAreReusedRatherThanReinstantiated()
-        {
-            var root = new GameObject("fx-root2").transform;
-            var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var kit = new PowerFxKit(root, maxPerKey: 1);
-            kit.Register("arc", prefab);
-
-            var first = kit.Play("arc", Vector3.zero, Quaternion.identity);
-            kit.Recycle("arc", first);
-            var second = kit.Play("arc", Vector3.one, Quaternion.identity);
-
-            Assert.AreSame(first, second, "pooling must reuse the instance — zero runtime allocations");
-
-            Object.DestroyImmediate(prefab);
-            Object.DestroyImmediate(root.gameObject);
         }
     }
 }

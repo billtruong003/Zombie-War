@@ -48,10 +48,19 @@ namespace ZombieWar.Skills
 
         static readonly int[] ChainBuffer = new int[TargetQuery.MaxChain];
 
+        /// <summary>
+        /// How long after a shot the weapon still counts as "firing" for the ramp cards.
+        ///
+        /// Shots land on a few frames per second, not every frame. Reading "fired this frame" meant a
+        /// 10 shots/s gun was idle on five frames out of six, so Bullet Hose and Heavy Pressure rose
+        /// for one frame and decayed for five and never ramped. Sustained fire is a window, not a frame.
+        /// </summary>
+        public const float FiringGraceSeconds = 0.35f;
+
         Transform _tr;
         Health _health;
         Vector3 _lastPosition;
-        bool _wasFiring;
+        float _lastShotTime = float.NegativeInfinity;
         int _explosionsThisFrame;
 
         /// <summary>Diagnostics for the play-test and for the guardrail tests.</summary>
@@ -100,8 +109,8 @@ namespace ZombieWar.Skills
 
             float healthFraction = _health != null && _health.Max > 0f ? _health.Current / _health.Max : 1f;
 
-            run.Tick(dt, pos, moving, _wasFiring, healthFraction);
-            _wasFiring = false;   // set again by NotifyFiring each frame the weapon shoots
+            bool firing = Time.time - _lastShotTime <= FiringGraceSeconds;
+            run.Tick(dt, pos, moving, firing, healthFraction);
 
             _explosionsThisFrame = 0;
             var procs = run.PollPowers(Time.time, healthFraction);
@@ -109,7 +118,7 @@ namespace ZombieWar.Skills
         }
 
         /// <summary>Called by the weapon when it actually fires, so ramp cards see real trigger fire.</summary>
-        public void NotifyFiring() => _wasFiring = true;
+        public void NotifyFiring() => _lastShotTime = Time.time;
 
         // ─────────────────────────────────────────────────────────── power application
 
