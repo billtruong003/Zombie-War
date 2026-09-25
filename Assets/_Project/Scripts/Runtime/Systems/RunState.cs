@@ -67,9 +67,12 @@ namespace ZombieWar
 
         public bool IsOver => Outcome != RunOutcome.InProgress;
 
-        /// <summary>XP needed to reach the next level. Deliberately a simple growing curve rather than
-        /// an authored table - it is tuned by one number and is trivial to reason about in tests.</summary>
-        public int XpForNextLevel => 10 + (Level - 1) * 8;
+        /// <summary>XP needed to reach the next level (M6 §16.2): the first card lands around 30-45 s,
+        /// then the gaps widen so an endless run is not a constant stream of pauses.</summary>
+        public int XpForNextLevel => XpForLevel(Level);
+
+        public static int XpForLevel(int level) =>
+            25 + Mathf.RoundToInt(Mathf.Pow(Mathf.Max(0, level - 1), 1.35f) * 12f);
 
         public static RunState Begin()
         {

@@ -70,7 +70,7 @@ namespace ZombieWar
                 if (!string.IsNullOrEmpty(slamVfxKey))
                     Bill.Pool?.Spawn(slamVfxKey, transform.position, Quaternion.identity);
 
-                DealAreaDamage(transform.position, specialRadius, Data.damage * specialDamageMultiplier);
+                DealAreaDamage(transform.position, specialRadius, Damage * specialDamageMultiplier);
             }
 
             Motor.IsStopped = false;

@@ -105,7 +105,7 @@ namespace ZombieWar
                         // Charge runs under SuppressBaseFsm, so the base attack cue never fires for
                         // it. Gated by _hitThisCharge, so it speaks once per charge, not per frame.
                         PlayAttackAudio(SfxPriority.High);
-                        DealAreaDamage(transform.position, chargeWidth, Data.damage * chargeDamageMultiplier);
+                        DealAreaDamage(transform.position, chargeWidth, Damage * chargeDamageMultiplier);
                     }
                 }
                 yield return null;

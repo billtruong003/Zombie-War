@@ -125,7 +125,7 @@ namespace ZombieWar
             PlayAttackAudio(SfxPriority.High);
             yield return new WaitForSeconds(Mathf.Max(0f, emergeTelegraph));
 
-            DealAreaDamage(transform.position, emergeRadius, Data.damage * emergeDamageMultiplier);
+            DealAreaDamage(transform.position, emergeRadius, Damage * emergeDamageMultiplier);
 
             // ---- back to normal -----------------------------------------------------------
             _phase = Phase.Surface;

@@ -5,18 +5,17 @@ using ZombieWar.Threat;
 namespace ZombieWar.Tests
 {
     /// <summary>
-    /// M7.3d — the threat model that replaces designed waves.
-    ///
-    /// The formula is pure and static precisely so it can be asserted without a scene: the tier a
-    /// player is experiencing must always be explainable from four visible inputs.
+    /// The endless threat model. The formula is pure and static precisely so it can be asserted
+    /// without a scene: the tier a player is experiencing must always be explainable from three
+    /// visible inputs.
     /// </summary>
     public class ThreatDirectorTests
     {
-        const float Band = 90f, Step = 75f;
-        const int TimeCap = 1, Cap = 3;
+        const float Band = 90f, Step = 90f;
+        const int Cap = 30;
 
         static int Tier(int objectives, float distance, float seconds) =>
-            ThreatDirector.ComputeTier(objectives, distance, seconds, Band, Step, TimeCap, Cap);
+            ThreatDirector.ComputeTier(objectives, distance, seconds, Band, Step, Cap);
 
         [SetUp] public void SetUp() => ThreatDirector.ResetRunState();
         [TearDown] public void TearDown() { ThreatDirector.ResetRunState(); RunState.Abandon(); }
@@ -44,13 +43,37 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void TimePressureIsCapped_ALosingPlayerIsNotDoomedByTheClock()
+        public void TimePressureNeverStops_StandingStillCannotLastForever()
         {
-            // The cap is the point: survive forever and the clock alone must never push you to tier 3.
             Assert.AreEqual(0, Tier(0, 0f, 10f));
-            Assert.AreEqual(1, Tier(0, 0f, 80f));
-            Assert.AreEqual(1, Tier(0, 0f, 6000f),
-                "time pressure must stop climbing — finishing is encouraged, not made impossible");
+            Assert.AreEqual(1, Tier(0, 0f, 95f));
+            Assert.AreEqual(6, Tier(0, 0f, 600f),
+                "an endless run must end by attrition: the clock keeps raising pressure");
+        }
+
+        [Test]
+        public void StatsOnlyScaleOnceTheRosterIsExhausted()
+        {
+            // Composition before stats: tiers 0-3 add enemy kinds, only later tiers add health.
+            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(0, 3, 0.08f), 1e-5f);
+            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(3, 3, 0.08f), 1e-5f);
+            Assert.AreEqual(1.08f, ThreatDirector.StatMultiplierFor(4, 3, 0.08f), 1e-5f);
+            Assert.AreEqual(1.56f, ThreatDirector.StatMultiplierFor(10, 3, 0.08f), 1e-5f);
+        }
+
+        [Test]
+        public void TheOpeningEasesIn_ThenReachesTheFullCrowd()
+        {
+            Assert.AreEqual(4, ThreatDirector.OpeningAliveTarget(18, 0f, 60f, 0.2f),
+                "the first seconds are a small crowd, not a wall");
+            Assert.LessOrEqual(ThreatDirector.OpeningAliveTarget(18, 20f, 60f, 0.2f), 6,
+                "a third of the way in, the crowd is still small (ease-in)");
+            Assert.AreEqual(18, ThreatDirector.OpeningAliveTarget(18, 60f, 60f, 0.2f));
+            Assert.AreEqual(18, ThreatDirector.OpeningAliveTarget(18, 300f, 60f, 0.2f));
+
+            Assert.AreEqual(2.5f, ThreatDirector.OpeningIntervalScale(0f, 60f, 2.5f), 1e-5f,
+                "arrivals start well below full cadence");
+            Assert.AreEqual(1f, ThreatDirector.OpeningIntervalScale(60f, 60f, 2.5f), 1e-5f);
         }
 
         [Test]
@@ -99,12 +122,8 @@ namespace ZombieWar.Tests
 
             Assert.Less(d.SpawnIntervalFor(3), d.SpawnIntervalFor(0), "higher tier spawns faster");
             Assert.Greater(d.AliveTargetFor(3), d.AliveTargetFor(0), "higher tier allows a bigger crowd");
-
-            // There is deliberately no health multiplier anywhere in this component.
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Threat/ThreatDirector.cs");
-            Assert.IsFalse(src.Contains("maxHealth") || src.Contains("healthMultiplier"),
-                "composition before stats — the threat model must not inflate HP");
+            Assert.GreaterOrEqual(d.SpawnIntervalFor(99), 0.2f, "the cadence has a floor");
+            Assert.LessOrEqual(d.AliveTargetFor(99), 60, "the crowd has a ceiling for the frame budget");
 
             Object.DestroyImmediate(go);
         }

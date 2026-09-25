@@ -91,7 +91,7 @@ namespace ZombieWar
             }
 
             if (CurrentState != State.Dead)
-                DealAreaDamage(transform.position, pounceRadius, Data.damage * pounceDamageMultiplier);
+                DealAreaDamage(transform.position, pounceRadius, Damage * pounceDamageMultiplier);
 
             // ---- recover: the punish window ------------------------------------------------
             _phase = Phase.Recover;

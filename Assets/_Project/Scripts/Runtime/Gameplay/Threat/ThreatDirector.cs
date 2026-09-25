@@ -7,11 +7,14 @@ namespace ZombieWar.Threat
     /// <summary>
     /// The endless-world pressure model and the only thing that spawns enemies.
     ///
-    /// <code>ThreatTier = objectiveProgress + distanceBand + boundedTimePressure</code>
+    /// <code>ThreatTier = objectiveProgress + distanceBand + timePressure</code>
     ///
-    /// The rule that shapes every number below: <b>composition changes before stats.</b> Pressure is
-    /// expressed by WHO shows up, not by multiplying health. A tier introduces at most one new
-    /// tactical question.
+    /// The rule that shapes every number below: <b>composition changes before stats.</b> Tiers 0-3
+    /// each add one kind of enemy and tighten the cadence. Only once the roster is exhausted does a
+    /// tier start scaling enemy health and damage, so a long run still ends by attrition.
+    ///
+    /// Time pressure is NOT capped (owner decision, 2026-09-25): an endless run with a capped clock
+    /// lets a player who never moves survive forever at tier 1. The clock always keeps climbing.
     /// </summary>
     [DisallowMultipleComponent]
     public class ThreatDirector : MonoBehaviour
@@ -29,26 +32,46 @@ namespace ZombieWar.Threat
         [SerializeField] private ZombieData[] tier3Heavy;
 
         [Header("Cadence (TUNING)")]
-        [Tooltip("M7.4b: was 2.2 s with a burst of 3 (1.36 arrivals/s in packs). Now ~1.25 arrivals/s " +
-                 "delivered ONE at a time — same average pressure, continuous instead of clumped.")]
-        [SerializeField] private float baseSpawnInterval = 0.8f;   // TUNING (was 2.2)
-        [Tooltip("Interval multiplier per tier — tighter cadence, never bigger health bars.")]
+        [Tooltip("Seconds between arrivals at tier 0, delivered one at a time so pressure is " +
+                 "continuous instead of clumped.")]
+        [SerializeField] private float baseSpawnInterval = 0.8f;
+        [Tooltip("Interval multiplier per tier.")]
         [SerializeField] private float intervalTightenPerTier = 0.82f;
+        [Tooltip("Floor on the arrival interval, however high the tier climbs.")]
+        [SerializeField] private float minSpawnInterval = 0.2f;
         [SerializeField] private int baseAlive = 18;
         [SerializeField] private int alivePerTier = 8;
+        [Tooltip("Crowd ceiling at any tier. Keeps a mobile frame budget bounded at high threat.")]
+        [SerializeField] private int maxAlive = 60;
+
+        [Header("Opening (TUNING)")]
+        [Tooltip("Seconds the run eases in. Measured: with a 30 s ramp at full cadence an idle player " +
+                 "holding the starter pistol (~48 DPS, ~1 kill/s) was at 12 HP by second 14, because " +
+                 "arrivals (1.25/s) outpaced kills and the crowd piled up.")]
+        [SerializeField] private float openingSeconds = 60f;
+        [Tooltip("Crowd ceiling at second 0, as a fraction of the tier's ceiling. Grows to 1.")]
+        [SerializeField, Range(0.05f, 1f)] private float openingAliveFraction = 0.2f;
+        [Tooltip("Arrival interval multiplier at second 0. Shrinks to 1 across the opening, so the " +
+                 "starter weapon out-kills arrivals while the player learns to move.")]
+        [SerializeField] private float openingIntervalScale = 2.5f;
 
         [Header("Threat inputs (TUNING)")]
         [Tooltip("Metres from origin per distance band. Travelling outward raises pressure.")]
         [SerializeField] private float metresPerDistanceBand = 90f;
-        [Tooltip("Seconds of survival per time-pressure step.")]
-        [SerializeField] private float secondsPerTimeStep = 75f;
-        [Tooltip("CAP on time pressure. A losing player is encouraged to finish, never made " +
-                 "mathematically doomed by the clock alone.")]
-        [SerializeField] private int maxTimePressure = 1;
-        [SerializeField] private int maxTier = 3;
+        [Tooltip("Seconds of survival per time-pressure step. Uncapped.")]
+        [SerializeField] private float secondsPerTimeStep = 90f;
+        [Tooltip("Sanity ceiling on the tier, far above anything a run reaches.")]
+        [SerializeField] private int maxTier = 30;
 
-        // ── run-scoped state. Registered with RunScope on the day this was written. ──────────
+        [Header("Late-run stats (TUNING)")]
+        [Tooltip("Tiers that change WHO spawns (tier0..tier3 rosters). Beyond this, tiers scale stats.")]
+        [SerializeField] private int compositionTiers = 3;
+        [Tooltip("Enemy health and damage growth per tier beyond the composition tiers.")]
+        [SerializeField] private float statGrowthPerTier = 0.08f;
+
+        // ── run-scoped state. Reset by RunScope. ───────────────────────────────────────────
         static int _objectiveProgress;
+        static float _enemyStatMultiplier = 1f;
 
         float _nextSpawnAt;
         int _spawnsUntilSectorReset;
@@ -68,6 +91,7 @@ namespace ZombieWar.Threat
         [SerializeField, Range(0f, 0.9f)] private float intervalJitter = 0.45f;   // TUNING
 
         Vector3 _lastPlayerPos;
+        Vector3 _playerVelocity;
         ZombieSpawner _spawner;
         Transform _player;
 
@@ -80,7 +104,18 @@ namespace ZombieWar.Threat
         /// <summary>Stations completed this run. Each one raises pressure — progress costs safety.</summary>
         public static int ObjectiveProgress => _objectiveProgress;
         public static void ReportObjectiveCompleted() => _objectiveProgress++;
-        public static void ResetRunState() => _objectiveProgress = 0;
+        public static void ResetRunState()
+        {
+            _objectiveProgress = 0;
+            _enemyStatMultiplier = 1f;
+        }
+
+        /// <summary>Health and damage multiplier for enemies spawned now. 1 until the roster is
+        /// exhausted; read once per spawn so an enemy keeps the stats it arrived with.</summary>
+        public static float EnemyStatMultiplier => _enemyStatMultiplier;
+
+        public static float StatMultiplierFor(int tier, int compositionTiers, float growthPerTier) =>
+            1f + Mathf.Max(0, tier - compositionTiers) * Mathf.Max(0f, growthPerTier);
 
         void Awake()
         {
@@ -107,7 +142,7 @@ namespace ZombieWar.Threat
         // so the first spawn of a late-tier enemy never falls back to Instantiate mid-fight.
         void WarmPools()
         {
-            int peak = AliveTargetFor(maxTier);
+            int peak = maxAlive;
             Pool.Clear();
             Append(Pool, tier0Basic);
             Append(Pool, tier1Specialist);
@@ -118,18 +153,34 @@ namespace ZombieWar.Threat
 
         /// <summary>
         /// The threat formula. Pure and static so it can be tested without a scene, and so the tier a
-        /// player is experiencing is always explainable from four visible inputs.
+        /// player is experiencing is always explainable from three visible inputs.
         /// </summary>
         public static int ComputeTier(int objectiveProgress, float distanceFromOrigin, float runSeconds,
-                                      float metresPerBand, float secondsPerStep, int timeCap, int cap)
+                                      float metresPerBand, float secondsPerStep, int cap)
         {
             int distanceBand = Mathf.FloorToInt(Mathf.Max(0f, distanceFromOrigin) / Mathf.Max(1f, metresPerBand));
-            int timePressure = Mathf.Min(timeCap,
-                Mathf.FloorToInt(Mathf.Max(0f, runSeconds) / Mathf.Max(1f, secondsPerStep)));
+            int timePressure = Mathf.FloorToInt(Mathf.Max(0f, runSeconds) / Mathf.Max(1f, secondsPerStep));
 
-            // base 0 + objectives + distance + capped time
             int tier = objectiveProgress + distanceBand + timePressure;
             return Mathf.Clamp(tier, 0, cap);
+        }
+
+        /// <summary>Arrival interval multiplier during the opening: slow at second 0, normal by the end.</summary>
+        public static float OpeningIntervalScale(float runSeconds, float openingSeconds, float startScale)
+        {
+            if (openingSeconds <= 0f || runSeconds >= openingSeconds) return 1f;
+            return Mathf.Lerp(Mathf.Max(1f, startScale), 1f, Mathf.Clamp01(runSeconds / openingSeconds));
+        }
+
+        /// <summary>Crowd ceiling during the opening: a fraction of the tier's ceiling that grows to
+        /// the full value, so the first seconds teach movement instead of ending the run.</summary>
+        public static int OpeningAliveTarget(int fullTarget, float runSeconds, float openingSeconds, float startFraction)
+        {
+            if (openingSeconds <= 0f || runSeconds >= openingSeconds) return fullTarget;
+            // Ease-in, not linear: the crowd stays small while the player is still learning to move
+            // and only fills in over the back half of the opening.
+            float t = Mathf.Clamp01(runSeconds / openingSeconds);
+            return Mathf.Max(1, Mathf.CeilToInt(fullTarget * Mathf.Lerp(startFraction, 1f, t * t)));
         }
 
         void Update()
@@ -147,8 +198,15 @@ namespace ZombieWar.Threat
             Vector3 p = _player.position;
             float distance = new Vector2(p.x, p.z).magnitude;
 
+            // Sampled every frame: the lead below needs the player's CURRENT velocity. It used to be
+            // sampled only on spawn ticks and divided by one frame's delta, so it always read as a
+            // flat-out sprint and clamped to the maximum lead.
+            _playerVelocity = (p - _lastPlayerPos) / Mathf.Max(Time.deltaTime, 1e-4f);
+            _lastPlayerPos = p;
+
             int tier = ComputeTier(_objectiveProgress, distance, run.Duration,
-                                   metresPerDistanceBand, secondsPerTimeStep, maxTimePressure, maxTier);
+                                   metresPerDistanceBand, secondsPerTimeStep, maxTier);
+            _enemyStatMultiplier = StatMultiplierFor(tier, compositionTiers, statGrowthPerTier);
             if (tier != CurrentTier)
             {
                 bool rising = tier > CurrentTier;
@@ -161,12 +219,15 @@ namespace ZombieWar.Threat
             if (Time.time < _nextSpawnAt) return;
             // Jittered interval: a fixed cadence lets arrivals re-synchronise into packs even at
             // burst 1, because they all travel at the same speed from the same band.
-            float interval = SpawnIntervalFor(CurrentTier);
+            float interval = SpawnIntervalFor(CurrentTier)
+                             * OpeningIntervalScale(run.Duration, openingSeconds, openingIntervalScale);
             _nextSpawnAt = Time.time + interval * (1f + Random.Range(-intervalJitter, intervalJitter));
 
             var data = PickFor(CurrentTier);
             if (data == null) return;
 
+            int target = OpeningAliveTarget(AliveTargetFor(CurrentTier), run.Duration,
+                                             openingSeconds, openingAliveFraction);
             _spawner.EnsureRegistered(data, AliveTargetFor(CurrentTier));
 
             // BeginBatch resets the spawner's sector cursor. Calling it per spawn would restart the
@@ -180,15 +241,12 @@ namespace ZombieWar.Threat
             }
 
             // Crowd ceiling: pressure is cadence and composition, never an unbounded pile.
-            int target = AliveTargetFor(CurrentTier);
             if (ZombieManager.AliveCount >= target) return;
 
             // Lead the player. A stationary player gets a normal ring; a running player gets pressure
             // placed along their path so the world keeps meeting them.
-            Vector3 velocity = (p - _lastPlayerPos) / Mathf.Max(Time.deltaTime, 1e-4f);
-            _lastPlayerPos = p;
-            Vector3 lead = velocity.sqrMagnitude > 1f
-                ? p + Vector3.ClampMagnitude(velocity, 8f) * leadSeconds
+            Vector3 lead = _playerVelocity.sqrMagnitude > 1f
+                ? p + Vector3.ClampMagnitude(_playerVelocity, 8f) * leadSeconds
                 : p;
             _spawner.SpawnFocusOverride = lead;
 
@@ -209,9 +267,9 @@ namespace ZombieWar.Threat
         }
 
         public float SpawnIntervalFor(int tier) =>
-            baseSpawnInterval * Mathf.Pow(intervalTightenPerTier, Mathf.Max(0, tier));
+            Mathf.Max(minSpawnInterval, baseSpawnInterval * Mathf.Pow(intervalTightenPerTier, Mathf.Max(0, tier)));
 
-        public int AliveTargetFor(int tier) => baseAlive + alivePerTier * Mathf.Max(0, tier);
+        public int AliveTargetFor(int tier) => Mathf.Min(maxAlive, baseAlive + alivePerTier * Mathf.Max(0, tier));
 
         static readonly List<ZombieData> Pool = new(8);
 

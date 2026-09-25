@@ -61,6 +61,11 @@ namespace ZombieWar
         private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
 
         private PlanarEnemyMotor _motor;
+        private float _statScale = 1f;
+
+        /// <summary>This enemy's hit damage: authored damage times the threat scale it spawned with.
+        /// Every attack - contact, pounce, slam, charge, spit - must read this, not data.damage.</summary>
+        protected float Damage => data.damage * _statScale;
         private Health _health;
         private VAT_Animator _vatAnimator;
         private MaterialPropertyBlock _dissolvePropertyBlock;
@@ -207,8 +212,11 @@ namespace ZombieWar
             _health.OnDeath += HandleDeath;
 
             // Data is the source of truth for a type's stats - push them into the shared components
-            // on (re)spawn so pooled instances don't keep the previous occupant's tuning.
-            _health.Configure(data.maxHealth);
+            // on (re)spawn so pooled instances don't keep the previous occupant's tuning. Late-run
+            // threat scales health and damage; it is read ONCE here, so an enemy keeps the stats it
+            // arrived with instead of growing mid-fight.
+            _statScale = Threat.ThreatDirector.EnemyStatMultiplier;
+            _health.Configure(data.maxHealth * _statScale);
             _motor.ConfigureFromData(data.moveSpeed);
             _motor.ResetMotion();
             _state = State.Idle;
@@ -566,7 +574,7 @@ namespace ZombieWar
         // Shared helper for melee-style subtypes.
         protected void DealContactDamage(Transform target)
         {
-            target.GetComponentInParent<IDamageable>()?.TakeDamage(data.damage);
+            target.GetComponentInParent<IDamageable>()?.TakeDamage(Damage);
         }
 
         private void HandleDamaged(float amount)

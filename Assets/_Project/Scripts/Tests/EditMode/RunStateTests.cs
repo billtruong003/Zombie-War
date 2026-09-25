@@ -76,6 +76,19 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void XpCurve_WidensSoLevelUpsSpreadOut()
+        {
+            Assert.AreEqual(25, RunState.XpForLevel(1), "the first card needs ~25 early kills (30-45 s)");
+            int previousGap = 0;
+            for (int level = 1; level < 15; level++)
+            {
+                int gap = RunState.XpForLevel(level);
+                Assert.Greater(gap, previousGap, $"level {level} must cost more than the one before");
+                previousGap = gap;
+            }
+        }
+
+        [Test]
         public void AddXp_HandlesMultipleLevelsInOneGrant()
         {
             var run = RunState.Begin();
