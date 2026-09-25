@@ -1,5 +1,9 @@
 # Zombie War — trạng thái thật của project
 
+> **2026-09-25 — M7 Slice A.** Phần "M7 Slice A — DELIVERED" trong `MVP_SHIP_PLAN.md` là trạng thái
+> hiện hành và THẮNG mọi mô tả cũ bên dưới về campaign/stage, wave, Victory, 3 slot súng, bom,
+> perk pool 7 thẻ, gacha/nâng sao trong Shop. Các mục đó đã bị xoá khỏi code.
+
 > **2026-08-08 CONSOLIDATION DELTA:** Header/baseline chi tiết bên dưới là snapshot 2026-07-31 tại
 > `68fbc090`; working tree hiện tại mới hơn và là authority khi mâu thuẫn. Các correction đã verify:
 > run identity/terminal closure, bomb-pickup charge và weapon null/empty guards đã có source/tests;

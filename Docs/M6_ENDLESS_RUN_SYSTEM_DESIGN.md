@@ -1444,7 +1444,7 @@ not modified.**
 | 3-weapon in-run switching | ✗ | — | — | — | **CUT** | Contradicts one-weapon |
 | Escort · Moving Shrine · Black Hole · Clone Gunner · Storm Crown | ✗ | VERY HIGH | HIGH | — | **ICEBOX** | New subsystems |
 
-## 24. Implementation ladder — **M7 NOT STARTED / NOT AUTHORIZED**
+## 24. Implementation ladder — **M7 Slice A DELIVERED 2026-09-25** (see `MVP_SHIP_PLAN.md`)
 
 > **M6 is locked; M7 is a separate authorization and has NOT been given.** This ladder exists so the
 > owner can see the shape and cost of what M7 approval would trigger. **Do not begin any step.**

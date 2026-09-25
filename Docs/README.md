@@ -1,6 +1,6 @@
 # Zombie War Docs
 
-**Phase:** SHIP · **Active checkpoint:** **M6 LOCKED** (W1–W7 answered 2026-08-15; three CHANGE answers designed as Deltas A/B/C) · M7 not started, not authorized · **Updated:** 2026-08-15
+**Phase:** SHIP · **Active checkpoint:** **M7 Slice A delivered** (2026-09-25) on top of the locked M6 design · next: device playtest · **Updated:** 2026-09-25
 
 Top-level chứa authority cốt lõi và hai artifact được editor tool sinh tự động. Design chi tiết và
 execution plan nằm dưới `Reference/Design/` và `Plans/`, nhưng được index tại đây.

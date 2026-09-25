@@ -1,6 +1,6 @@
 # Zombie War — MVP Ship Plan
 
-**Phase:** SHIP · M0-M5+ complete · **M6 LOCKED** · **M7.0 Weapon Factory foundation DELIVERED** (2026-08-15) · M7.1 not started  
+**Phase:** SHIP · M0-M5+ complete · **M6 LOCKED** · M7.0 delivered (2026-08-15) · **M7 Slice A DELIVERED** (2026-09-25) — see the section below  
 **Updated:** 2026-08-15  
 **Design authority:** [M6_ENDLESS_RUN_SYSTEM_DESIGN.md](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)  
 **Vision authority:** [GAME_DESIGN.md](GAME_DESIGN.md)  
@@ -15,6 +15,32 @@
 >
 > The archived part still uses expedition, extraction, objective and bomb/weapon-switch vocabulary.
 > **All of that is superseded.** The current input model is movement + card choice + one context action.
+
+---
+
+## M7 Slice A — DELIVERED (2026-09-25, branch `m7/slice-a`)
+
+Owner-approved execution of the smallest coherent slice (M7.1 + M7.2 + M7.3 core), plus the removal of
+everything M6 retired. Evidence: `Review/M7_SliceA/` (screenshots, `pacing_measurements.md`).
+
+| Area | Now true in code |
+|---|---|
+| Run end | Death banks 25 % Coin, walking away 0 %; both show the result screen. No Victory. Gem secured on pickup. Best survival time is the record. |
+| World | One scene (`Map_Level1`). Campaign, stage selector, WaveDirector/WaveData, Map_Level2-5 and Map_GenTest deleted. ThreatDirector is the only spawner. |
+| Weapon | One weapon per run (profile schema v2 migrates the three slots). Weapon switching and the bomb are deleted. |
+| Cards | SkillRuntime is the single run-stat owner; the legacy perk pool is deleted. All 23 cards change what the game reads (behaviour test per repaired card). Fresh seed per run. |
+| Pacing | Threat time pressure uncapped (1 tier / 90 s); +8 % enemy stats per tier past tier 3; 60 s eased opening; XP `25 + (L-1)^1.35 x 12`. Measured: starter pistol idle gets its first card at 32 s. |
+| Stations | Supply Cache sells a card offer for a rising, visible Coin price; relays/beacons raise threat; a ground chevron points at the nearest unfinished station. |
+| Meta | Shop ships Weapons + Costume. Gacha, upgrades, Gold hidden (code kept). Pass missions rewritten for endless play. |
+| Editor | Pressing Play in any scene boots through Bootstrap. |
+
+Not in this slice (Icebox until playtest evidence): Blueprint, Relic/Archive, Boss Chest, Greed
+Terminal, Medical Station, Route Scanner, outfit H2, weapon tier re-authoring, new streaming features.
+
+Owner checklist (prefabs agents may not edit): remove `WeaponBtn`, `BombBtn`, `VictoryPanel` from
+`UI_Hud`; the stage selector (`CampaignSelectorView`/`CampaignDotView` components) from
+`UI_HubScreen`; `BombRow` and the retired slots from `UI_LoadoutScreen`; the Gacha link from
+`UI_PassScreen`. Runtime code hides all of them until then.
 
 ---
 

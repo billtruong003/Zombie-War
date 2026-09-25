@@ -2,7 +2,7 @@
 
 **Authority:** Canonical game vision, player fantasy, world and content direction  
 **Phase:** CONCEIVE — vision locked; **M6 system design is LOCKED** (W1–W7 answered 2026-08-15)  
-**Updated:** 2026-08-15  
+**Updated:** 2026-09-25 (owner decisions in §1; M7 Slice A delivered — see `MVP_SHIP_PLAN.md`)  
 **System companion:** [`M6_ENDLESS_RUN_SYSTEM_DESIGN.md`](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)  
 **Technical companion:** [`WORLD_STREAMING_TECHNICAL_DESIGN.md`](WORLD_STREAMING_TECHNICAL_DESIGN.md)
 
@@ -85,6 +85,20 @@
 - The five authored map scenes do not define progression. One gameplay scene plus data-driven world,
   encounter and reward profiles.
 
+### Owner decisions — 2026-09-25 (OWNER-LOCKED)
+
+- **Walking away banks 0 % of Coin.** There is no Evac/banking station; a run ends by death (25 %)
+  or by walking away (0 %). The fantasy is "until the world beats me", not "leave when it suits me".
+- **Time pressure is uncapped.** One threat tier per 90 s, forever. Tiers 0-3 change composition;
+  later tiers scale enemy health and damage (+8 % per tier). Standing still is ground down.
+- **Theme: cute creatures, infected.** The baked Cute-series roster stays; no new enemy art. The
+  store name is decided at listing time.
+- **Meta follows M6.** Gacha, weapon shards/stars and Gold stay in code but are hidden; weapons are
+  bought with Coin until Blueprint exists.
+- **Retired input is removed, not hidden in design:** no bomb, no weapon switching, no stages, no
+  Victory. Runtime code hides the owner-authored prefab widgets until the owner deletes them.
+- **Supply Cache sells a 1-of-3 card offer for Coin** (price shown in the world, rising per purchase).
+
 ### Assumptions to validate
 
 - First meaningful level-up choice at **30–45 seconds**, then widening intervals.
@@ -103,8 +117,8 @@
 ## 2. Game vision
 
 The player is a mobile survivor pushing through an infected frontier. Each run asks the player to leave
-safety, chase the signals worth chasing, survive escalating enemy compositions, and decide how long to
-keep pushing before the world wins.
+safety, chase the signals worth chasing, and survive escalating enemy compositions for as long as they
+can before the world wins.
 
 The procedural world provides continuity, route variation and replayable combinations. It does not
 replace authored goals, combat encounters, reward pacing or progression decisions.
@@ -143,7 +157,8 @@ instant-on-pickup (`Emergency Detonation`).
 
 World space is continuous and deterministic, and a run has a clear beginning, continuous escalation and
 a result the player either accepts or is handed. “Endless” never means “aimless”: pressure rises, the
-map keeps offering destinations, and the player decides when the risk stops being worth it.
+map keeps offering destinations, and pressure never stops climbing - the run ends when the world wins
+(or when the player walks away and forfeits the run's Coin).
 
 ### Anti-pillars
 
@@ -193,7 +208,7 @@ There is no scripted finish. Runs end by attrition or by choice.
 
 ### 6.1 Action loop — 1–5 seconds
 
-`read telegraph → move/space → current weapon acts → switch or bomb → exploit result`
+`read telegraph → move/space → the weapon acts → a card or power pays off → exploit result`
 
 Success is visible through enemy reaction, control space, damage response and a short payoff window.
 The player should not need to inspect a status-icon stack to understand the result.
@@ -214,7 +229,7 @@ and objective-driven.
 
 ### 6.4 Meta loop — several sessions
 
-`earn currencies/unlocks → expand tactical arsenal → select higher contract tier → meet new composition
+`earn currencies/unlocks → expand tactical arsenal → survive into higher threat tiers → meet new composition
 and POI rules → master boss → unlock the next set of possibilities`
 
 Meta power eases progression but may not substitute for weapon identity or readable combat decisions.
@@ -260,13 +275,13 @@ they should not be asked to “clear Chunk (3, -2).” Crossing a chunk boundary
 
 The combat grammar remains:
 
-`READ → SET UP → SWAP → CASH OUT → RESET`
+`READ → SET UP → CASH OUT → RESET`
 
 - Walkers and runners create movement pressure.
 - Pouncers, chargers and burrowers create telegraph/recovery windows.
 - Ranged and heavy units create target-priority and loadout questions.
 - Bosses combine learned questions; they do not merely multiply HP.
-- Bombs provide a limited emergency reset or deliberate crowd-shaping action.
+- Crowd resets are autonomous cards (Ordnance Core, Emergency Detonation), never a button.
 
 The world supports combat by controlling sightlines, color/value contrast, encounter anchors and spawn
 composition. MVP scenery does **not** create dense collision mazes. Ordinary trees and vegetation have
@@ -279,15 +294,15 @@ readability are proven.
 ## 10. Session progression and run build
 
 Kills grant run XP through the existing run-state direction. XP milestones create bounded choices;
-the first meaningful choice should arrive around **90–150 seconds**, then at increasing intervals to
+the first meaningful choice should arrive around **30–45 seconds**, then at increasing intervals to
 avoid constant interruption.
 
 Run choices should prioritize behavior:
 
 - improve a weapon family's setup or cash-out;
-- modify bomb timing/space creation;
+- add an autonomous power that creates space;
 - improve movement linked to a risky play pattern;
-- create a build-defining interaction between equipped weapons.
+- create a build-defining interaction with the one weapon carried.
 
 Pure `+damage` choices may support a technique but should not be the whole run build. The current perk
 backend is incomplete, so these timings and choice rules are design targets, not implementation claims.
@@ -527,7 +542,7 @@ See `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` §1c.
 
 ### Session
 
-- finish the contract;
+- beat the personal best survival time;
 - decide whether the boss reward is worth risking the current bank;
 - test whether the chosen loadout/build solves the route better.
 
@@ -535,7 +550,7 @@ See `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` §1c.
 
 - unlock weapon families and interactions;
 - master enemy and boss questions;
-- reach higher contract tiers;
+- reach higher threat tiers;
 - expand the possible POI/biome/encounter set;
 - collect cosmetics without turning appearance into combat power.
 
@@ -574,7 +589,8 @@ The detailed ownership and persistence model is defined in the technical compani
 ## 22. MVP scope
 
 > **M6 draft:** `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` section 23 (proposed scope board) and section 24
-> (proposed ladder). **Neither is approved; M7 is not authorized.**
+> (proposed ladder). M7 Slice A (M7.1-M7.3 core) was authorized and delivered on 2026-09-25; the
+> rest of the ladder still needs playtest evidence.
 
 ### P0 - must prove the direction
 

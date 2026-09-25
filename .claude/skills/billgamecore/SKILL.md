@@ -80,15 +80,15 @@ public class ZombieData : ScriptableObject
 
 ## Project-specific recipes
 
-- **Zombie pooling — DONE, don't rebuild it.** `ZombieSpawner.cs` registers a pool per `ZombieData` (`EnsureRegistered`) and spawns through `Bill.Pool`; `ZombieBase` returns itself on death with a pool-safe reset. `WaveDirector` pre-warms every pool of every wave before the run starts. The old `ZombieAI.cs`/`WaveSpawner.cs` names in earlier docs no longer exist — current files are `Gameplay/Zombies/ZombieBase.cs` (+ 6 subclasses), `Gameplay/Waves/ZombieSpawner.cs`, `Gameplay/Waves/WaveDirector.cs`.
+- **Zombie pooling — DONE, don't rebuild it.** `ZombieSpawner.cs` registers a pool per `ZombieData` (`EnsureRegistered`) and spawns through `Bill.Pool`; `ZombieBase` returns itself on death with a pool-safe reset. `Threat/ThreatDirector` (the only spawner since M7 Slice A) pre-warms every roster pool at run start. Waves, WaveData and WaveDirector are deleted — current files are `Gameplay/Zombies/ZombieBase.cs` (+ 6 subclasses), `Gameplay/Waves/ZombieSpawner.cs` (placement), `Gameplay/Threat/ThreatDirector.cs` (pressure).
 - **Other pools already in place:** `FxPool` (impact/muzzle), `TracerPool` (`MeshTracer`), `DamageNumberSpawner`, `PickupManager` (`Resources/Pools/pickup_*`).
 - **Weapon recoil / camera shake — intentionally NOT tweens.** `Weapon.cs` runs a `SmoothDamp` spring on `RecoilPivot` re-impulsed per shot; `CameraFollow.Shake` samples an assigned noise texture (`NoiseTextureSampler.cs`). Both need continuous re-impulse, which a fire-and-forget tween can't express. Leave them alone.
 - **SFX:** the library **exists** — `Assets/Resources/Audio/ZombieWarRuntimeAudioLibrary.asset` is filled at runtime by `AddressableAudioRuntime` from `AddressableAudioCatalog` (330 dotted cue keys / 970 clips). Route everything through `Bill.Audio.Play(key)`; never `AudioSource.PlayOneShot` in gameplay code. Only 3 cues are wired today — wiring the rest is the current top priority (`Docs/REMAINING_FEATURES.md` P0).
-- **Bootstrap is done:** `Assets/Resources/BillBootstrapConfig.asset` exists and `Bootstrap.unity` is the entry scene (`BootstrapEntry` → `GameFlow.EnterMenu`). Always Play from `Bootstrap.unity`; playing `Menu`/`Map_*` directly gives `SERVICE NOT FOUND` spam, which is expected, not a bug.
+- **Bootstrap is done:** `Assets/Resources/BillBootstrapConfig.asset` exists and `Bootstrap.unity` is the entry scene (`BootstrapEntry` → `GameFlow.EnterMenu`). Pressing Play in ANY scene boots through Bootstrap (`Editor/PlayFromBootstrap.cs`, toggle under Tools/ZombieWar), so the old `SERVICE NOT FOUND` spam from playing `Menu`/`Map_Level1` directly is gone.
 
 ## Gotchas
 
-- A `[Bill] SERVICE NOT FOUND` error → bootstrap didn't run: you Played a scene other than `Bootstrap.unity`, or accessed a service before `GameReadyEvent`.
+- A `[Bill] SERVICE NOT FOUND` error → bootstrap didn't run: the Play-From-Bootstrap toggle is off, or code accessed a service before `GameReadyEvent`.
 - Tween/Timer "not animating" → same root cause (no `CoroutineRunner` tick).
 - Don't add DOTween (rule #1). Don't strip an asmdef to "fix" a missing-type error (rule #3) — add one to the orphaned folder instead.
 - `Bill.Cheat/Debug/Analytics` are gated `UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS`. ⚠️ `ZW_CHEATS` is currently ENABLED for Android/iOS/Standalone (`ProjectSettings.asset:833-835`), so release builds currently ship the cheat panel — toggle it off via the `CheatBuildToggle` menu before any store build.
@@ -98,7 +98,7 @@ public class ZombieData : ScriptableObject
 
 Read `Docs/CURRENT_STATE.md` before assuming a system is missing. Short version of what is
 already wired: combat core, auto-aim, pooling, VAT enemies, spawn safety, save/economy/gacha.
-What is built but NOT connected: audio (970 clips, only 3 cues playing), campaign level select,
-level-up perks (picking one has no effect), run result screen, haptics, bomb pickup.
+M7 Slice A (2026-09-25) removed campaign/stages, waves, Victory, the bomb and weapon switching, and
+made every level-up card affect gameplay. Current truth: `Docs/MVP_SHIP_PLAN.md` "M7 Slice A".
 Full evidence with `file:line` is in that doc; the prioritized fix order is in
 `Docs/REMAINING_FEATURES.md`.
