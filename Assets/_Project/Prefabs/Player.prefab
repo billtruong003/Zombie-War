@@ -343,12 +343,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillCombatDriver
   chainArcFx: {fileID: 19884342, guid: 5e8a137808d7d374487f34e236c723db, type: 3}
-  explosionFx: {fileID: 19849376, guid: d16221e794fe16e4e8994a7f8c770561, type: 3}
+  explosionFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
   ordnanceMarkerFx: {fileID: 198756107662936000, guid: 6bea1543e5b3fca40a6c415bb1ecabe3, type: 3}
-  soulBurstFx: {fileID: 198071127191036932, guid: cb8a83b63e008134da9393db9af8915f, type: 3}
+  soulBurstFx: {fileID: 19899408, guid: be4058b04abc8fe4ca81c721c18ecb4f, type: 3}
   emergencyFx: {fileID: 198807330505795946, guid: d9e3deb54a0d566438734cb2731448ea, type: 3}
   shieldBreakFx: {fileID: 198825297873863668, guid: 6e3db7afa59301e48bc3999ec41f1410, type: 3}
-  explosionNativeRadius: 1.5
+  explosionNativeRadius: 2
   soulBurstNativeRadius: 1.6
   emergencyNativeRadius: 1.5
   ordnanceMarkerNativeRadius: 1.2
@@ -373,14 +373,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af85b2565e671f64899e44ed61892826, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillFxDirector
-  arcMaterial: {fileID: 2100000, guid: 9c3e0b2ba36f4c64b9f57ce35ce5cee5, type: 2}
-  arcColor: {r: 0.55, g: 0.85, b: 1, a: 1}
-  arcWidth: 0.2
-  arcLifetime: 0.3
-  arcJitter: 0.22
-  arcSegments: 6
-  arcPoolSize: 36
-  markMaterial: {fileID: 2100000, guid: 21276158bb9dbe04db8e522737244be4, type: 2}
+  arcMaterial: {fileID: 2100000, guid: cb1e641bdf9e6a5438aac379f3febca9, type: 2}
+  ringMaterial: {fileID: 2100000, guid: 75db7821e0853ea4da2061355eb06b75, type: 2}
+  arcColor: {r: 0.3, g: 0.7, b: 1, a: 1}
+  arcWidth: 0.34
+  arcLifetime: 0.28
+  arcJitter: 0.28
+  arcSegments: 8
+  arcRejagSeconds: 0.05
+  arcPoolSize: 64
+  markSprite: {fileID: 21300000, guid: 7731c239708e55445af4c5b1009bcb38, type: 3}
+  markMaterial: {fileID: 2100000, guid: e7facdde8e1d4cd4580b4c560a4bd184, type: 2}
   markPoolSize: 24
 --- !u!114 &8694213064035318181
 MonoBehaviour:
@@ -480,6 +483,8 @@ MonoBehaviour:
   orbitHitInterval: 0.4
   bladeScale: 0.9
   orbitTrailColor: {r: 0.75, g: 0.95, b: 1, a: 0.9}
+  droneModel: {fileID: 3624805380874681294, guid: 5d91a3bf2093fb84caf150c13fffefaa, type: 3}
+  droneModelScale: 1.9
   droneBodyFx: {fileID: 19882774, guid: f6322404d6e3b914aa01ac044fb9415e, type: 3}
   droneTracer: {fileID: 6267678621344663077, guid: 9c417fa30c2397b49a4426d7767a4a84, type: 3}
   droneMuzzleFx: {fileID: 198497614769362178, guid: 71052c1e9d47774439ae2a30c4489596, type: 3}
@@ -487,7 +492,7 @@ MonoBehaviour:
   droneBaseDamage: 7
   droneRange: 11
   droneBodyScale: 0.6
-  frostNovaFx: {fileID: 19809116, guid: c4687addc3c65b24aab69e2c9efa22c5, type: 3}
+  frostNovaFx: {fileID: 6757106154474216507, guid: cc2ba20b198127a4cbdda5c176eaf245, type: 3}
   frostNovaNativeRadius: 4
   frostBaseDamage: 16
   frostTint: {r: 0.45, g: 0.8, b: 1, a: 0.6}
@@ -501,18 +506,25 @@ MonoBehaviour:
   boomerangBaseDamage: 14
   boomerangRange: 9
   boomerangOutSeconds: 0.5
-  boomerangScale: 1.25
+  boomerangScale: 1.6
   boomerangTint: {r: 1, g: 0.72, b: 0.3, a: 1}
   boomerangTrailColor: {r: 1, g: 0.7, b: 0.25, a: 0.9}
   strikeMarkerFx: {fileID: 198579860418196166, guid: c211cd63eef717741a0578bda14552a9, type: 3}
   strikeMarkerNativeRadius: 1.2
-  strikeMissileFx: {fileID: 19803244, guid: 4b21d8abf8d26b449b109c8edb5cc78a, type: 3}
+  strikeMissileFx: {fileID: 198505395039527838, guid: 32563c1c7ddb94746889e29751f49ec9, type: 3}
   strikeBlastFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
   strikeBlastNativeRadius: 2
   strikeDecalFx: {fileID: 198129106043806410, guid: 628d050c815a3a3448ce1dcdf0578f21, type: 3}
   airstrikeBaseDamage: 45
   airstrikeDelay: 0.75
-  missileFallSeconds: 0.3
+  missileFallSeconds: 0.55
+  soulWispFx: {fileID: 19833602, guid: 9cf1127ebf4098946b3c2dbba00c0917, type: 3}
+  freezeBurstFx: {fileID: 198820429938409348, guid: d24d32ae7abae424080a26044bf04ea0, type: 3}
+  pathMaterial: {fileID: 2100000, guid: 75db7821e0853ea4da2061355eb06b75, type: 2}
+  discMaterial: {fileID: 2100000, guid: c8caf20a245844c46a984b394b36b25b, type: 2}
+  shieldMaterial: {fileID: 2100000, guid: d01318361ec40dc48bdfdbc1f9397a1e, type: 2}
+  bombFallHeight: 14
+  bombDrift: 5
   thunderStrikeFx: {fileID: 19828376, guid: 16f393fea92971c4f9d155ff0adab5a5, type: 3}
   reaperFx: {fileID: 19879788, guid: 625165fb93553b14f8ed057807ed752a, type: 3}
   shieldAuraFx: {fileID: 19874298, guid: 831c85159903ac84399ac3c3e1d5c5ad, type: 3}

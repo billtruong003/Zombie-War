@@ -126,7 +126,7 @@ namespace ZombieWar.Skills
         public bool FrostFreezes => IsEvolved(SkillCatalogDefs.AutoFrostNova);
 
         public float FireTrailDps => Value(SkillCatalogDefs.AutoFireTrail);
-        public const float FireTrailSpacing = 1.1f;
+        public const float FireTrailSpacing = 0.7f;   // M8: closer drops read as one strip of fire
 
         public int BoomerangCount => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoBoomerang));
         public int AirstrikeBlasts => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoAirstrike));
@@ -338,10 +338,79 @@ namespace ZombieWar.Skills
             if (_quickstepArmed && EquippedFamily == WeaponClass.Sidearm)
             {
                 _quickstepArmed = false;
+                _shotWasQuickstep = true;          // M8: this shot's tracer shows it
                 damage *= 2.5f;
             }
 
             return damage * DamageMultiplier;
+        }
+
+        // ══════════════════════════════════════════════════════════ M8 SIGNATURE LOOK
+        //
+        // The weapon signatures were numbers only: nothing on screen said Bullet Hose was ramping or
+        // that a Quickstep shot had just fired. The weapon asks here how THIS shot's tracer and muzzle
+        // flash should look, so every signature shows on the bullet itself.
+
+        bool _shotWasQuickstep;
+        static readonly Color TracerAmber = new(1f, 0.86f, 0.5f, 1f);
+
+        public float RunGunRamp => Has(SkillCatalogDefs.SidearmRunGun) && EquippedFamily == WeaponClass.Sidearm ? _runGunMoving.Value : 0f;
+        public float BulletHoseRamp => Has(SkillCatalogDefs.SmgBulletHose) && EquippedFamily == WeaponClass.SMG ? _bulletHose.Value : 0f;
+        public float HeavyPressureRamp => Has(SkillCatalogDefs.LmgHeavyPressure) && EquippedFamily == WeaponClass.LMG ? _heavyPressure.Value : 0f;
+        public bool FocusFireActive => Has(SkillCatalogDefs.ArFocusFire) && EquippedFamily == WeaponClass.AssaultRifle;
+
+        /// <summary>Muzzle flash size for the next shot: heat ramps grow it, an armed Quickstep doubles up.</summary>
+        public float MuzzleFlashScale
+        {
+            get
+            {
+                float s = 1f + 0.6f * Mathf.Max(BulletHoseRamp, HeavyPressureRamp);
+                if (_quickstepArmed && EquippedFamily == WeaponClass.Sidearm) s = Mathf.Max(s, 1.6f);
+                return s;
+            }
+        }
+
+        /// <summary>
+        /// How this shot's tracer should look, or false for the gun's own tracer. Called once per
+        /// tracer, after the hit resolved (a Quickstep shot is known by then).
+        /// </summary>
+        public bool TryTracerLook(ShotPlan plan, float distance, out Color tint, out float thickness)
+        {
+            tint = TracerAmber; thickness = 1f;
+            bool styled = true;
+            if (_shotWasQuickstep)
+            {
+                tint = new Color(1f, 0.82f, 0.25f, 1f); thickness = 2.1f;                     // Quickstep: gold slug
+            }
+            else if (plan.bonusPierce > 0)
+            {
+                tint = new Color(1f, 0.42f, 0.15f, 1f); thickness = 1.7f;                     // Breach: armour-piercing
+            }
+            else if (Has(SkillCatalogDefs.MarksmanLongshot) && EquippedFamily == WeaponClass.Marksman && distance > 10f)
+            {
+                tint = new Color(1f, 0.96f, 0.7f, 1f); thickness = 1.3f + Mathf.Min(0.9f, (distance - 10f) / 20f);   // Longshot
+            }
+            else if (Has(SkillCatalogDefs.ShotgunPointBlank) && EquippedFamily == WeaponClass.Shotgun && distance < 5f)
+            {
+                tint = new Color(1f, 0.6f, 0.2f, 1f); thickness = 1.5f;                       // Point Blank
+            }
+            else if (BulletHoseRamp > 0.15f)
+            {
+                float r = BulletHoseRamp;                                                     // Bullet Hose: white-hot
+                tint = Color.Lerp(TracerAmber, new Color(1f, 1f, 0.95f, 1f), r); thickness = 1f + 0.5f * r;
+            }
+            else if (HeavyPressureRamp > 0.15f)
+            {
+                float r = HeavyPressureRamp;                                                  // Heavy Pressure: red-hot
+                tint = Color.Lerp(TracerAmber, new Color(1f, 0.32f, 0.1f, 1f), r); thickness = 1f + 0.6f * r;
+            }
+            else if (RunGunRamp > 0.3f)
+            {
+                tint = Color.Lerp(TracerAmber, new Color(0.65f, 0.95f, 1f, 1f), RunGunRamp); thickness = 1.1f;   // Run & Gun
+            }
+            else styled = false;
+            _shotWasQuickstep = false;
+            return styled;
         }
 
         /// <summary>OnHit side effects that are statuses rather than damage (P1).</summary>
@@ -365,6 +434,9 @@ namespace ZombieWar.Skills
             _soulBurst.NotifyKill();
         }
 
+        /// <summary>M8: Hunter's Mark is in play (card held, marksman rifle in hand) — drives its lock-on mark.</summary>
+        public bool HuntersMarkActive => Has(SkillCatalogDefs.MarksmanHunters) && EquippedFamily == WeaponClass.Marksman;
+
         /// <summary>The auto-aim locked a new enemy. Hunter's Mark empowers the first hit on it.</summary>
         public void OnTargetChanged(int newTargetId, float now)
         {
@@ -374,6 +446,16 @@ namespace ZombieWar.Skills
 
         /// <summary>True while Kinetic Shield holds a charge — drives the visible bubble.</summary>
         public bool KineticCharged => _kineticCharged;
+
+        /// <summary>M8: true when Execution Round's bonus applies to a target at this health (for its mark).</summary>
+        public bool IsExecutionTarget(float targetHealthFraction) =>
+            Has(SkillCatalogDefs.UniExecution) &&
+            targetHealthFraction <= 0.20f + 0.05f * (RankOf(SkillCatalogDefs.UniExecution) - 1);
+
+        /// <summary>M8: 0..1 progress toward the next Kinetic Shield charge (1 while charged), for the ground ring.</summary>
+        public float KineticChargeFraction => !Has(SkillCatalogDefs.UniKinetic) ? 0f
+            : _kineticCharged ? 1f
+            : Mathf.Clamp01(_kineticDistance.Distance / Mathf.Max(0.01f, Value(SkillCatalogDefs.UniKinetic)));
 
         /// <summary>OnDamageTaken. Kinetic Shield blocks one hit per charge (P4).</summary>
         public bool TryAbsorbDamage()
@@ -472,7 +554,7 @@ namespace ZombieWar.Skills
             _quickstepDistance.Reset(); _kineticDistance.Reset(); _trailDistance.Reset();
             _trailDropsPending = 0;
             _bulletHose.Reset(); _heavyPressure.Reset(); _staticCharge.Reset(); _runGunMoving.Reset();
-            _quickstepArmed = _kineticCharged = _staticFired = false;
+            _quickstepArmed = _kineticCharged = _staticFired = _shotWasQuickstep = false;
             _shotsSinceBreach = _shotsSinceShockwave = 0;
             PendingMaxHealthBonus = 0f;
             AutonomousPower.ResetGlobalBudget();

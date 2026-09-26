@@ -596,6 +596,8 @@ namespace ZombieWar
                         ? targetHealth.Current / targetHealth.Max
                         : 1f;
 
+                    // Hunter's Mark is consumed by this hit, so read it before the damage does.
+                    bool empowered = ZombieWar.Skills.StatusCarrier.Has(targetId, ZombieWar.Skills.StatusKind.Marked, Time.time);
                     damage = skills.ModifyHitDamage(damage, targetId, distance, healthFraction, Time.time);
                     skills.ApplyHitStatuses(targetId, Time.time);
 
@@ -606,12 +608,23 @@ namespace ZombieWar
                     {
                         var t = targetHealth.transform;
                         float now = Time.time;
-                        if (ZombieWar.Skills.StatusCarrier.Has(targetId, ZombieWar.Skills.StatusKind.Exposed, now))
+                        if (empowered)
+                            fx.MarkEnemy(t, new Color(1f, 0.85f, 0.2f, 1f), 0.5f);      // Hunter's Mark paid out: gold
+                        else if (skills.IsExecutionTarget(healthFraction))
+                            fx.MarkEnemy(t, new Color(1f, 0.15f, 0.15f, 1f), 0.5f);     // Execution: red lock-on
+                        else if (ZombieWar.Skills.StatusCarrier.Has(targetId, ZombieWar.Skills.StatusKind.Exposed, now))
                             fx.MarkEnemy(t, new Color(1f, 0.45f, 0.15f, 0.9f), 0.6f);   // Breach: orange
                         else if (ZombieWar.Skills.StatusCarrier.Has(targetId, ZombieWar.Skills.StatusKind.Slow, now))
                             fx.MarkEnemy(t, new Color(0.4f, 0.8f, 1f, 0.9f), 0.6f);     // Concussion: ice blue
                         else if (ZombieWar.Skills.StatusCarrier.Has(targetId, ZombieWar.Skills.StatusKind.Marked, now))
                             fx.MarkEnemy(t, new Color(1f, 0.9f, 0.2f, 0.9f), 0.6f);     // Hunter's Mark: gold
+                        else if (skills.FocusFireActive)
+                        {
+                            // Focus Fire: the lock-on grows with every stacked hit on the same enemy.
+                            float stacks = ZombieWar.Skills.StatusCarrier.Get(targetId, ZombieWar.Skills.StatusKind.HitCount, now);
+                            if (stacks >= 2f)
+                                fx.MarkEnemy(t, new Color(1f, 0.55f, 0.2f, 0.95f), 0.45f, 2f, 0.22f + 0.035f * Mathf.Min(stacks, 8f));
+                        }
                     }
                 }
 
@@ -647,6 +660,9 @@ namespace ZombieWar
             if (skills == null) return;
 
             Vector3 origin = transform.position;
+            // M8: the wave is drawn whether or not it hits, across exactly the cone it checks.
+            ZombieWar.Skills.SkillFxDirector.Instance?.ConeWave(origin, aimDirection, _shotPlan.shockwaveAngle, 12f,
+                                                               new Color(1f, 0.78f, 0.35f, 0.9f));
             int found = ZombieWar.Skills.TargetQuery.Gather(origin, 12f, hitMask);
             if (found == 0) return;
 
@@ -879,14 +895,21 @@ namespace ZombieWar
         private static void SpawnMuzzleFlash(WeaponData data, Vector3 position, Vector3 direction)
         {
             if (data.muzzleFlashPrefab == null) return;
-            FxPool.Play(data.muzzleFlashPrefab, position, Quaternion.LookRotation(direction));
+            // M8: heat ramps and an armed Quickstep grow the flash.
+            float scale = ZombieWar.Skills.SkillRuntime.Active?.MuzzleFlashScale ?? 1f;
+            FxPool.Play(data.muzzleFlashPrefab, position, Quaternion.LookRotation(direction), scale);
         }
 
         // Pooled one-shot mesh tracer (MeshTracer handles the stretch + fade animation itself).
-        private static void SpawnTracer(WeaponData data, Vector3 from, Vector3 to)
+        private void SpawnTracer(WeaponData data, Vector3 from, Vector3 to)
         {
             if (data.tracerPrefab == null) return;
-            TracerPool.Play(data.tracerPrefab, from, to);
+            // M8: the weapon signatures show on the bullet (Quickstep, Breach, Longshot, heat ramps).
+            var skills = ZombieWar.Skills.SkillRuntime.Active;
+            if (skills != null && skills.TryTracerLook(_shotPlan, Vector3.Distance(from, to), out var tint, out var thick))
+                TracerPool.Play(data.tracerPrefab, from, to, tint, thick);
+            else
+                TracerPool.Play(data.tracerPrefab, from, to);
         }
 
         // A single stretched particle standing in for a bullet-trail smoke effect - cheaper than a

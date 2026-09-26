@@ -83,7 +83,14 @@ namespace ZombieWar
         }
 
         /// <summary>Fire the tracer between two world-space points (start = muzzle, end = hit).</summary>
-        public void Play(Vector3 start, Vector3 end)
+        public void Play(Vector3 start, Vector3 end) => Play(start, end, color, 1f);
+
+        /// <summary>
+        /// M8: the same tracer in another colour and thickness (the drone's rank colour). The tint is
+        /// applied through this play's property block only, so pooled tracers shared with the
+        /// player's gun keep their own colour.
+        /// </summary>
+        public void Play(Vector3 start, Vector3 end, Color tint, float thicknessScale)
         {
             Init();
 
@@ -95,12 +102,12 @@ namespace ZombieWar
             if (randomRoll) look *= Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
             transform.SetPositionAndRotation(start, look);
 
-            _thick = thickness * Random.Range(thicknessJitter.x, thicknessJitter.y);
+            _thick = thickness * thicknessScale * Random.Range(thicknessJitter.x, thicknessJitter.y);
             _lenScale = length / Mathf.Max(0.0001f, baseMeshLength);
             stretchRoot.localScale = ScaleFor(_lenScale, _thick); // full length instantly
 
             _renderer.GetPropertyBlock(_mpb);
-            _mpb.SetColor(_colorId, color);
+            _mpb.SetColor(_colorId, tint);
             _mpb.SetFloat(_dissolveId, 0f);
             _mpb.SetVector(_seedId, new Vector4(
                 Random.Range(seedRange.x, seedRange.y),

@@ -15,7 +15,10 @@ namespace ZombieWar
     {
         private const float FallbackLifetime = 1f;
 
-        public static MeshTracer Play(GameObject prefab, Vector3 start, Vector3 end)
+        public static MeshTracer Play(GameObject prefab, Vector3 start, Vector3 end) => Play(prefab, start, end, null, 1f);
+
+        /// <summary>M8: a tinted, thinner or thicker tracer (the drone's rank colour).</summary>
+        public static MeshTracer Play(GameObject prefab, Vector3 start, Vector3 end, Color? tint, float thicknessScale)
         {
             if (prefab == null) return null;
 
@@ -24,7 +27,7 @@ namespace ZombieWar
             {
                 var loose = Object.Instantiate(prefab, start, Quaternion.identity);
                 var lt = loose.GetComponent<MeshTracer>();
-                if (lt != null) lt.Play(start, end);
+                if (lt != null) Fire(lt, start, end, tint, thicknessScale);
                 Object.Destroy(loose, FallbackLifetime);
                 return lt;
             }
@@ -42,8 +45,14 @@ namespace ZombieWar
                 return null;
             }
 
-            tracer.Play(start, end);
+            Fire(tracer, start, end, tint, thicknessScale);
             return tracer;
+        }
+
+        static void Fire(MeshTracer t, Vector3 start, Vector3 end, Color? tint, float thicknessScale)
+        {
+            if (tint.HasValue) t.Play(start, end, tint.Value, thicknessScale);
+            else t.Play(start, end);
         }
     }
 }

@@ -44,6 +44,10 @@ namespace ZombieWar.Skills
         [SerializeField] private Color orbitTrailColor = new(0.75f, 0.95f, 1f, 0.9f);
 
         [Header("Drone Buddy")]
+        [Tooltip("M8 drone model. Children by name: 'Muzzle' (gun tip), 'Rotor*' (spun), and every renderer " +
+                 "under 'Glow' takes the rank colour. Empty = the old particle placeholder.")]
+        [SerializeField] private GameObject droneModel;
+        [SerializeField] private float droneModelScale = 1f;
         [SerializeField] private ParticleSystem droneBodyFx;
         [SerializeField] private GameObject droneTracer;
         [SerializeField] private ParticleSystem droneMuzzleFx;
@@ -84,7 +88,25 @@ namespace ZombieWar.Skills
         [SerializeField] private ParticleSystem strikeDecalFx;
         [SerializeField] private float airstrikeBaseDamage = 45f;
         [SerializeField] private float airstrikeDelay = 0.75f;
-        [SerializeField] private float missileFallSeconds = 0.3f;
+        [Tooltip("M8: 0.3 s from 12 m read as a streak; a bomb the eye can follow needs ~0.55 s.")]
+        [SerializeField] private float missileFallSeconds = 0.55f;
+
+        [Header("M8 skill pass: souls, frost, orbit path")]
+        [Tooltip("A soul flying from a kill to the player (Soul Burst's counter made visible).")]
+        [SerializeField] private ParticleSystem soulWispFx;
+        [Tooltip("Ice bursting on each enemy Absolute Zero freezes.")]
+        [SerializeField] private ParticleSystem freezeBurstFx;
+        [Tooltip("Alpha-blended SkillLine material for the faint Orbit Blades path.")]
+        [SerializeField] private Material pathMaterial;
+
+        [Header("M8 skill pass: ground visuals")]
+        [Tooltip("ZombieWar/FX/SkillDisc: bomb shadows, frost patches, the Kinetic charge ring.")]
+        [SerializeField] private Material discMaterial;
+        [Tooltip("ZombieWar/FX/SkillShield: the Kinetic Shield shell (clear inside, glowing rim, back faces culled).")]
+        [SerializeField] private Material shieldMaterial;
+        [Tooltip("Bombs fall from this height, at an angle along the run's flight line.")]
+        [SerializeField] private float bombFallHeight = 14f;
+        [SerializeField] private float bombDrift = 5f;
 
         [Header("Evolutions / shield")]
         [SerializeField] private ParticleSystem thunderStrikeFx;
@@ -131,7 +153,11 @@ namespace ZombieWar.Skills
             TickFireTrail(run, p, dt);
             TickBoomerangs(run, p, dt);
             TickBlasts(run);
-            TickShield(run, p);
+            TickShield(run, p, dt);
+            TickDelayed();
+            TickDiscs();
+            TickWisps(p);
+            TickRunGun(run, p);
             _shakeBudget = Mathf.Max(0f, _shakeBudget - dt * 1.5f);
         }
 
@@ -186,6 +212,132 @@ namespace ZombieWar.Skills
         }
 
         static Vector3 Chest(ZombieBase e) => e.transform.position + Vector3.up * 0.9f;
+
+        /// <summary>
+        /// The rotation the effect was authored with. Many Epic Toon FX prefabs are built lying flat
+        /// (root at -90° X); playing them with Quaternion.identity stood them upright, so ground rings
+        /// became half-domes cut by the floor (Frost Nova) and decals stood on their edge.
+        /// </summary>
+        public static Quaternion Flat(ParticleSystem prefab) =>
+            prefab != null ? prefab.transform.localRotation : Quaternion.identity;
+
+        /// <summary>The falling bomb shared by Airstrike, Ordnance and Carpet Bomb.</summary>
+        public ParticleSystem BombFx => strikeMissileFx;
+
+        // ── delayed effects (a chain's spark lands when its bolt arrives)
+        struct DelayedFx { public ParticleSystem fx; public Vector3 pos; public float scale, at; public bool sky; }
+        readonly List<DelayedFx> _delayed = new(32);
+
+        /// <summary>Plays an effect after <paramref name="delay"/> seconds, in its authored orientation.</summary>
+        public void PlayDelayed(ParticleSystem fx, Vector3 pos, float scale, float delay)
+        {
+            if (fx == null) return;
+            if (delay <= 0f) { FxPool.Play(fx, pos, Flat(fx), scale); return; }
+            if (_delayed.Count < 32) _delayed.Add(new DelayedFx { fx = fx, pos = pos, scale = scale, at = Time.time + delay });
+        }
+
+        void TickDelayed()
+        {
+            float now = Time.time;
+            for (int i = _delayed.Count - 1; i >= 0; i--)
+            {
+                var d = _delayed[i];
+                if (now < d.at) continue;
+                _delayed.RemoveAt(i);
+                if (d.sky) DoSkyStrike(d.pos);
+                else FxPool.Play(d.fx, d.pos, Flat(d.fx), d.scale);
+            }
+        }
+
+        // ── ground discs (pooled flat quads, one shared material, colour through a property block)
+        class Disc
+        {
+            public Transform tr;
+            public MeshRenderer mr;
+            public float bornAt, duration, fromRadius, toRadius;
+            public Color color;
+            public bool live, fadeIn;
+            public float ring;      // 0 = filled disc, >0 = a band of that width (share of the radius)
+        }
+        readonly List<Disc> _discs = new(48);
+        MaterialPropertyBlock _mpb;
+        static Mesh _groundQuad;
+        static readonly int ColorId = Shader.PropertyToID("_Color");
+        static readonly int RingId = Shader.PropertyToID("_Ring");
+        static readonly int FillId = Shader.PropertyToID("_Fill");
+
+        static Mesh GroundQuad()
+        {
+            if (_groundQuad != null) return _groundQuad;
+            _groundQuad = new Mesh { name = "SkillGroundQuad" };
+            _groundQuad.vertices = new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) };
+            _groundQuad.uv = new[] { new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f) };
+            _groundQuad.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            _groundQuad.RecalculateBounds();
+            return _groundQuad;
+        }
+
+        MeshRenderer MakeGroundRenderer(string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(_root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = GroundQuad();
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = discMaterial;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            go.SetActive(false);
+            return mr;
+        }
+
+        /// <summary>A flat soft disc on the ground that grows from one radius to another and fades
+        /// (or fades in, for a bomb shadow that darkens as the bomb gets close).</summary>
+        public void ShowDisc(Vector3 at, float fromRadius, float toRadius, Color color, float duration, bool fadeIn, float ring = 0f)
+        {
+            if (discMaterial == null || _root == null) return;
+            Disc d = null;
+            for (int i = 0; i < _discs.Count; i++) if (!_discs[i].live) { d = _discs[i]; break; }
+            if (d == null)
+            {
+                if (_discs.Count >= 48) return;               // full: drop the visual, never allocate mid-fight
+                var mr = MakeGroundRenderer("disc");
+                d = new Disc { tr = mr.transform, mr = mr };
+                _discs.Add(d);
+            }
+            at.y = 0.04f;
+            d.tr.position = at;
+            d.bornAt = Time.time; d.duration = Mathf.Max(0.05f, duration);
+            d.fromRadius = fromRadius; d.toRadius = toRadius; d.color = color; d.fadeIn = fadeIn; d.ring = ring;
+            d.live = true;
+            d.tr.gameObject.SetActive(true);
+            DrawDisc(d, 0f);
+        }
+
+        void DrawDisc(Disc d, float t)
+        {
+            float r = Mathf.Lerp(d.fromRadius, d.toRadius, d.fadeIn ? t * t : 1f - (1f - t) * (1f - t));
+            d.tr.localScale = new Vector3(r * 2f, 1f, r * 2f);
+            var c = d.color; c.a *= d.fadeIn ? t : 1f - t;
+            _mpb ??= new MaterialPropertyBlock();
+            _mpb.Clear();
+            _mpb.SetColor(ColorId, c);
+            _mpb.SetFloat(RingId, d.ring);
+            _mpb.SetFloat(FillId, 1f);
+            d.mr.SetPropertyBlock(_mpb);
+        }
+
+        void TickDiscs()
+        {
+            float now = Time.time;
+            for (int i = 0; i < _discs.Count; i++)
+            {
+                var d = _discs[i];
+                if (!d.live) continue;
+                float t = (now - d.bornAt) / d.duration;
+                if (t >= 1f) { d.live = false; d.tr.gameObject.SetActive(false); continue; }
+                DrawDisc(d, t);
+            }
+        }
 
         // ═══════════════════════════════════════════════════════════════ Orbit Blades
 
@@ -265,10 +417,70 @@ namespace ZombieWar.Skills
             return holder;
         }
 
+        LineRenderer _orbitPath;
+        bool _orbitGold;
+        static readonly Color OrbitPathColor = new(0.7f, 0.92f, 1f, 0.22f);
+        static readonly Color BuzzsawPathColor = new(1f, 0.8f, 0.3f, 0.3f);
+        static readonly Color BuzzsawTint = new(1f, 0.82f, 0.4f, 1f);
+
+        /// M8: a faint ring on the blades' path, so the orbit reads as one weapon, not loose shards.
+        void DrawOrbitPath(Vector3 p, float radius, bool on, bool gold)
+        {
+            if (pathMaterial == null) return;
+            if (_orbitPath == null)
+            {
+                var go = new GameObject("orbitPath");
+                go.transform.SetParent(_root, false);
+                _orbitPath = go.AddComponent<LineRenderer>();
+                _orbitPath.useWorldSpace = true;
+                _orbitPath.loop = true;
+                _orbitPath.positionCount = 40;
+                _orbitPath.alignment = LineAlignment.View;
+                _orbitPath.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _orbitPath.receiveShadows = false;
+                _orbitPath.sharedMaterial = pathMaterial;
+            }
+            if (_orbitPath.gameObject.activeSelf != on) _orbitPath.gameObject.SetActive(on);
+            if (!on) return;
+            for (int i = 0; i < 40; i++)
+            {
+                float a = i * Mathf.PI * 2f / 40;
+                _orbitPath.SetPosition(i, p + new Vector3(Mathf.Cos(a) * radius, 0.8f, Mathf.Sin(a) * radius));
+            }
+            var c = gold ? BuzzsawPathColor : OrbitPathColor;
+            _orbitPath.startColor = _orbitPath.endColor = c;
+            _orbitPath.widthMultiplier = gold ? 0.5f : 0.35f;
+        }
+
+        void TintBlades(bool gold)
+        {
+            _orbitGold = gold;
+            _mpb ??= new MaterialPropertyBlock();
+            for (int i = 0; i < MaxBlades; i++)
+            {
+                if (_blades[i] == null) continue;
+                foreach (var r in _blades[i].GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    _mpb.Clear();
+                    if (gold) _mpb.SetColor(BaseColorId, BuzzsawTint);
+                    r.SetPropertyBlock(_mpb);
+                }
+                var tr = _bladeTrails[i];
+                if (tr == null) continue;
+                var c = gold ? new Color(1f, 0.8f, 0.3f, 0.95f) : orbitTrailColor;
+                tr.startColor = c;
+                tr.endColor = new Color(c.r, c.g, c.b, 0f);
+                tr.time = gold ? 0.22f : 0.16f;
+            }
+        }
+
         void TickOrbit(SkillRuntime run, Vector3 p, float dt)
         {
             int count = Mathf.Min(MaxBlades, run.OrbitBladeCount);
             float radius = run.OrbitRadius;
+            bool evolved = run.IsEvolved(SkillCatalogDefs.AutoOrbit);
+            if (count > 0 && evolved != _orbitGold) TintBlades(evolved);
+            DrawOrbitPath(p, radius, count > 0, evolved);
             _orbitAngle = (_orbitAngle + run.OrbitDegreesPerSecond * dt) % 360f;
 
             for (int i = 0; i < MaxBlades; i++)
@@ -317,7 +529,7 @@ namespace ZombieWar.Skills
                 _orbitNextHit[id] = now + orbitHitInterval;
 
                 Hit(enemy, damage, 0.35f);
-                FxPool.Play(bladeHitFx, Chest(enemy), Quaternion.identity, 0.6f);
+                FxPool.Play(bladeHitFx, Chest(enemy), Flat(bladeHitFx), 0.6f);
                 Sfx("sfx.skill.blade.hit", ep, 0.45f, 0.07f);
             }
 
@@ -416,7 +628,151 @@ namespace ZombieWar.Skills
         readonly Vector3[] _droneVel = new Vector3[MaxDrones];
         readonly float[] _droneNextShot = new float[MaxDrones];
 
+        // M8 drone rig (model path)
+        readonly Transform[] _rigs = new Transform[MaxDrones];
+        readonly Transform[] _rigMuzzle = new Transform[MaxDrones];
+        readonly List<Transform>[] _rigRotors = new List<Transform>[MaxDrones];
+        readonly Renderer[][] _rigGlow = new Renderer[MaxDrones][];
+        readonly TrailRenderer[] _rigTrail = new TrailRenderer[MaxDrones];
+        readonly int[] _burstLeft = new int[MaxDrones];
+        int _rigColourKey = -1;
+        const int BurstShots = 3;
+        const float BurstGap = 0.08f;
+
+        /// M8 emissive colour by upgrade: cyan → green → gold, and a hot magenta for the Squadron.
+        static Color DroneColour(SkillRuntime run)
+        {
+            // Kept at or just over 1: brighter values bloom and tone-map to white and lose the hue.
+            if (run.IsEvolved(SkillCatalogDefs.AutoDrone)) return new Color(1.15f, 0.2f, 1.0f, 1f);
+            switch (run.RankOf(SkillCatalogDefs.AutoDrone))
+            {
+                case 1: return new Color(0.15f, 0.8f, 1.1f, 1f);
+                case 2: return new Color(0.3f, 1.1f, 0.3f, 1f);
+                default: return new Color(1.15f, 0.7f, 0.1f, 1f);
+            }
+        }
+
+        Transform BuildRig(int i)
+        {
+            var go = Instantiate(droneModel, _root);
+            go.name = "drone" + i;
+            go.transform.localScale = Vector3.one * droneModelScale;
+            foreach (var col in go.GetComponentsInChildren<Collider>(true)) Destroy(col);
+            _rigMuzzle[i] = FindChild(go.transform, "Muzzle") ?? go.transform;
+            _rigRotors[i] = new List<Transform>(4);
+            foreach (var t in go.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith("Rotor")) _rigRotors[i].Add(t);
+            var glow = FindChild(go.transform, "Glow");
+            _rigGlow[i] = glow != null ? glow.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+            }
+            var trail = go.AddComponent<TrailRenderer>();
+            trail.time = 0.25f;
+            trail.minVertexDistance = 0.06f;
+            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.18f), new Keyframe(1f, 0f));
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (trailMaterial != null) trail.sharedMaterial = trailMaterial;
+            trail.emitting = false;
+            _rigTrail[i] = trail;
+            _rigColourKey = -1;
+            return go.transform;
+        }
+
+        static Transform FindChild(Transform root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true)) if (t.name == name) return t;
+            return null;
+        }
+
         void TickDrones(SkillRuntime run, Vector3 p, float dt)
+        {
+            if (droneModel == null) { TickDroneParticles(run, p, dt); return; }
+
+            int count = Mathf.Min(MaxDrones, run.DroneCount);
+            // Same damage per second as before, delivered in bursts of three: bursts read as a gunner.
+            float burstInterval = BurstShots / Mathf.Max(0.1f, run.DroneShotsPerSecond);
+            float t = Time.time;
+            bool squad = run.IsEvolved(SkillCatalogDefs.AutoDrone);
+            Color colour = DroneColour(run);
+            int key = squad ? 9 : run.RankOf(SkillCatalogDefs.AutoDrone);
+
+            for (int i = 0; i < MaxDrones; i++)
+            {
+                bool on = i < count;
+                if (on && _rigs[i] == null)
+                {
+                    _rigs[i] = BuildRig(i);
+                    _rigs[i].position = p + Vector3.up * 2.2f;
+                    _droneNextShot[i] = t + burstInterval * (i + 1) / (count + 1);
+                }
+                var rig = _rigs[i];
+                if (rig == null) continue;
+                if (rig.gameObject.activeSelf != on) rig.gameObject.SetActive(on);
+                if (!on) continue;
+
+                // Flight: a lazy figure-eight around the player, each drone on its own phase, so the
+                // squad weaves instead of sitting still at the shoulder.
+                float ph = t * 0.9f + i * 2.1f;
+                Vector3 off = new Vector3(Mathf.Sin(ph) * 1.9f, 2.2f + Mathf.Sin(t * 3f + i) * 0.12f,
+                                          Mathf.Sin(ph * 2f) * 0.9f + 0.4f);
+                Vector3 before = rig.position;
+                rig.position = Vector3.SmoothDamp(rig.position, p + off, ref _droneVel[i], 0.3f);
+                Vector3 vel = (rig.position - before) / Mathf.Max(0.0001f, dt);
+
+                // Aim: turn to the nearest enemy in range, else along the flight; bank into the turn.
+                Vector3 look = vel; look.y = 0f;
+                int found = TargetQuery.GatherEnemies(rig.position, droneRange, enemyMask);
+                int best = TargetQuery.Nearest(found, rig.position);
+                ZombieBase target = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
+                if (target != null) { look = target.transform.position - rig.position; look.y = 0f; }
+                if (look.sqrMagnitude > 0.001f)
+                {
+                    var yaw = Quaternion.LookRotation(look.normalized);
+                    Vector3 local = Quaternion.Inverse(yaw) * vel;
+                    var bank = Quaternion.Euler(Mathf.Clamp(local.z * 6f, -18f, 18f), 0f, Mathf.Clamp(-local.x * 8f, -28f, 28f));
+                    rig.rotation = Quaternion.Slerp(rig.rotation, yaw * bank, 1f - Mathf.Exp(-10f * dt));
+                }
+                foreach (var r in _rigRotors[i]) r.Rotate(0f, 2200f * dt, 0f, Space.Self);
+
+                if (_rigTrail[i] != null)
+                {
+                    _rigTrail[i].emitting = squad;
+                    _rigTrail[i].startColor = new Color(colour.r, colour.g, colour.b, 0.8f);
+                    _rigTrail[i].endColor = new Color(colour.r, colour.g, colour.b, 0f);
+                }
+
+                if (t < _droneNextShot[i] || target == null || target.IsDead) continue;
+                if (_burstLeft[i] <= 0) _burstLeft[i] = BurstShots;
+                _burstLeft[i]--;
+                _droneNextShot[i] = t + (_burstLeft[i] > 0 ? BurstGap : burstInterval - (BurstShots - 1) * BurstGap);
+                DroneShoot(run, _rigMuzzle[i].position, target, colour);
+            }
+
+            if (key != _rigColourKey)
+            {
+                _rigColourKey = key;
+                _mpb ??= new MaterialPropertyBlock();
+                for (int i = 0; i < MaxDrones; i++)
+                {
+                    if (_rigGlow[i] == null) continue;
+                    foreach (var r in _rigGlow[i])
+                    {
+                        _mpb.Clear();
+                        _mpb.SetColor(BaseColorId, colour);
+                        _mpb.SetColor(EmissionId, colour);
+                        r.SetPropertyBlock(_mpb);
+                    }
+                }
+            }
+        }
+
+        static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
+
+        /// The old placeholder: a particle sphere per drone (used when no model is assigned).
+        void TickDroneParticles(SkillRuntime run, Vector3 p, float dt)
         {
             int count = Mathf.Min(MaxDrones, run.DroneCount);
             float interval = 1f / Mathf.Max(0.1f, run.DroneShotsPerSecond);
@@ -437,7 +793,6 @@ namespace ZombieWar.Skills
                 if (d.gameObject.activeSelf != on) d.gameObject.SetActive(on);
                 if (!on) continue;
 
-                // Hover beside the player's shoulder, the squad fanned out, with a gentle bob.
                 float fan = count == 1 ? -50f : -80f + i * 80f;
                 float a = (fan + t * 25f) * Mathf.Deg2Rad;
                 Vector3 target = p + new Vector3(Mathf.Cos(a) * 1.3f, 2.1f + Mathf.Sin(t * 3f + i) * 0.12f, Mathf.Sin(a) * 1.3f);
@@ -445,23 +800,21 @@ namespace ZombieWar.Skills
 
                 if (t < _droneNextShot[i]) continue;
                 _droneNextShot[i] = t + interval;
-                DroneShoot(run, d.transform.position);
+                int found = TargetQuery.GatherEnemies(d.transform.position, droneRange, enemyMask);
+                int best = TargetQuery.Nearest(found, d.transform.position);
+                var enemy = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
+                if (enemy != null && !enemy.IsDead) DroneShoot(run, d.transform.position, enemy, DroneColour(run));
             }
         }
 
-        void DroneShoot(SkillRuntime run, Vector3 from)
+        void DroneShoot(SkillRuntime run, Vector3 from, ZombieBase enemy, Color colour)
         {
-            int found = TargetQuery.GatherEnemies(from, droneRange, enemyMask);
-            int best = TargetQuery.Nearest(found, from);
-            if (best < 0) return;
-            var enemy = TargetQuery.CandidateEnemy(best);
-            if (enemy == null || enemy.IsDead) return;
-
             Vector3 to = Chest(enemy);
-            if (droneTracer != null) TracerPool.Play(droneTracer, from, to);
-            FxPool.Play(droneMuzzleFx, from, Quaternion.LookRotation(to - from), 0.5f);
-            FxPool.Play(droneHitFx, to, Quaternion.identity, 0.5f);
-            Sfx("sfx.skill.drone", from, 0.35f, 0.06f);
+            // The player's own gun pipeline (muzzle, tracer, impact), tinted with the drone's rank colour.
+            if (droneTracer != null) TracerPool.Play(droneTracer, from, to, new Color(colour.r, colour.g, colour.b, 1f), 0.45f);
+            FxPool.Play(droneMuzzleFx, from, Quaternion.LookRotation(to - from), 0.35f);
+            FxPool.Play(droneHitFx, to, Flat(droneHitFx), 0.45f);
+            Sfx("sfx.skill.drone", from, 0.3f, 0.05f);
 
             Hit(enemy, run.PowerDamage(droneBaseDamage, SkillCatalogDefs.AutoDrone), 0.15f);
 
@@ -475,12 +828,16 @@ namespace ZombieWar.Skills
         /// <summary>Called by the driver when Frost Nova procs.</summary>
         public void FrostNova(SkillRuntime run, Vector3 centre, float radius)
         {
-            FxPool.Play(frostNovaFx, centre + Vector3.up * 0.1f, Quaternion.identity,
+            FxPool.Play(frostNovaFx, centre + Vector3.up * 0.1f, Flat(frostNovaFx),
                         radius / Mathf.Max(0.1f, frostNovaNativeRadius));
+            // A band of frost racing out to the edge of the chilled area and melting (a filled disc
+            // this size read as fog over the whole screen).
+            ShowDisc(centre, radius * 0.3f, radius, new Color(0.7f, 0.93f, 1f, run.FrostFreezes ? 0.55f : 0.45f),
+                     run.FrostFreezes ? 1.1f : 0.8f, false, 0.14f);
             Sfx("sfx.skill.frost", centre, 0.9f, 0.2f);
             Shake(run.FrostFreezes ? 0.25f : 0.12f);
             // The ring IS the hitbox: it expands to exactly the radius that was checked.
-            SkillFxDirector.Instance?.Pulse(centre, radius, new Color(0.55f, 0.9f, 1f, 1f), 0.4f, 0.45f);
+            SkillFxDirector.Instance?.Pulse(centre, radius, new Color(0.55f, 0.9f, 1f, 0.9f), 0.4f, 0.28f);
 
             float damage = run.PowerDamage(frostBaseDamage, SkillCatalogDefs.AutoFrostNova);
             float now = Time.time;
@@ -494,6 +851,8 @@ namespace ZombieWar.Skills
                 {
                     StatusCarrier.Apply(id, StatusKind.Frozen, 1f, 1.5f, now);
                     SkillFxDirector.Instance?.TintEnemy(enemy, frozenTint, 1.5f);
+                    // Absolute Zero: ice bursts on each enemy it locks (capped, a crowd is a lot of ice).
+                    if (i < 12) PlayDelayed(freezeBurstFx, Chest(enemy), 0.28f, 0.05f + 0.02f * i);
                 }
                 else
                 {
@@ -507,7 +866,7 @@ namespace ZombieWar.Skills
         // ═══════════════════════════════════════════════════════════════ Fire Trail
 
         struct FirePatch { public Vector3 pos; public float until; }
-        readonly List<FirePatch> _patches = new(16);
+        readonly List<FirePatch> _patches = new(24);
         float _fireTickAt;
         const float FireTick = 0.25f;
 
@@ -515,11 +874,14 @@ namespace ZombieWar.Skills
         {
             int drops = run.ConsumeFireTrailDrops();
             float now = Time.time;
-            for (int i = 0; i < drops && _patches.Count < 16; i++)
+            for (int i = 0; i < drops && _patches.Count < 24; i++)
             {
                 _patches.Add(new FirePatch { pos = p, until = now + firePatchSeconds });
-                FxPool.PlayFor(firePatchFx, p + Vector3.up * 0.05f, Quaternion.identity,
-                               firePatchRadius / Mathf.Max(0.1f, firePatchNativeRadius), firePatchSeconds);
+                FxPool.PlayFor(firePatchFx, p + Vector3.up * 0.05f, Flat(firePatchFx),
+                               0.75f * firePatchRadius / Mathf.Max(0.1f, firePatchNativeRadius), firePatchSeconds);
+                // M8: a glowing burn under the flames. Patches overlap, so the trail reads as one
+                // continuous strip of fire instead of separate candles.
+                ShowDisc(p, firePatchRadius * 1.05f, firePatchRadius * 0.8f, new Color(1f, 0.42f, 0.08f, 0.5f), firePatchSeconds, false);
                 Sfx("sfx.skill.fire", p, 0.25f, 0.9f);
             }
 
@@ -669,6 +1031,7 @@ namespace ZombieWar.Skills
             public string sfx;
             public ParticleSystem missileInstance;
             public bool missileLaunched;
+            public Vector3 dropFrom;
         }
 
         readonly List<Blast> _blasts = new(16);
@@ -681,20 +1044,27 @@ namespace ZombieWar.Skills
                                   ParticleSystem fx, float fxNativeRadius, string sfx,
                                   float shake, float push = 1.2f,
                                   ParticleSystem marker = null, float markerNativeRadius = 1f,
-                                  ParticleSystem missile = null, ParticleSystem decal = null)
+                                  ParticleSystem missile = null, ParticleSystem decal = null, Vector3? flightDir = null)
         {
             if (_blasts.Count >= 16) return;
             pos.y = 0f;
-            if (marker != null && delay > 0f)
+            if (delay > 0f)
             {
-                FxPool.PlayFor(marker, pos + Vector3.up * 0.05f, Quaternion.identity,
-                               radius / Mathf.Max(0.1f, markerNativeRadius), delay);
-                SkillFxDirector.Instance?.Converge(pos, radius, new Color(1f, 0.25f, 0.15f, 1f), delay);
+                // M8 telegraph: one thin ring closing in, plus the shadow of what is coming, darkening
+                // and tightening as it gets close. The old marker (a magic circle and a thick red ring
+                // per target, at full radius) covered the screen with five blasts.
+                SkillFxDirector.Instance?.Converge(pos, radius, new Color(1f, 0.35f, 0.2f, 1f), delay, 0.08f);
+                if (missile != null) ShowDisc(pos, radius * 0.9f, radius * 0.35f, new Color(0.05f, 0.03f, 0.02f, 0.5f), delay, true);
             }
+            Vector3 dir = flightDir ?? Vector3.forward;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.01f) dir = Vector3.forward;
             _blasts.Add(new Blast
             {
                 pos = pos, radius = radius, damage = damage, landAt = Time.time + delay, push = push,
                 shake = shake, fx = fx, fxNativeRadius = fxNativeRadius, sfx = sfx, missile = missile, decal = decal,
+                // Falls in at an angle along the flight line, so it reads as dropped from a pass overhead.
+                dropFrom = pos - dir.normalized * bombDrift + Vector3.up * bombFallHeight,
             });
         }
 
@@ -711,6 +1081,11 @@ namespace ZombieWar.Skills
             for (int i = 0; i < found; i++)
                 if (OnScreen(TargetQuery.CandidatePoint(i))) _scratchIds.Add(i);
 
+            // One pass overhead: every bomb comes from the same direction and they land in order
+            // along that line — a bombing run, not five random pops.
+            float heading = Random.Range(0f, 360f);
+            Vector3 flight = Quaternion.Euler(0f, heading, 0f) * Vector3.forward;
+            _runTargets.Clear();
             for (int b = 0; b < blasts; b++)
             {
                 Vector3 target;
@@ -731,11 +1106,16 @@ namespace ZombieWar.Skills
                         if (OnScreen(target)) break;
                     }
                 }
-                ScheduleBlast(target, radius, damage, airstrikeDelay + b * 0.12f,
-                              strikeBlastFx, strikeBlastNativeRadius, "sfx.skill.airstrike.blast", 0.22f, 1.4f,
-                              strikeMarkerFx, strikeMarkerNativeRadius, strikeMissileFx, strikeDecalFx);
+                _runTargets.Add(target);
             }
+            _runTargets.Sort((x, y) => Vector3.Dot(x, flight).CompareTo(Vector3.Dot(y, flight)));
+            for (int b = 0; b < _runTargets.Count; b++)
+                ScheduleBlast(_runTargets[b], radius, damage, airstrikeDelay + b * 0.14f,
+                              strikeBlastFx, strikeBlastNativeRadius, "sfx.skill.airstrike.blast", 0.22f, 1.4f,
+                              null, 1f, strikeMissileFx, strikeDecalFx, flight);
         }
+
+        readonly List<Vector3> _runTargets = new(8);
 
         void TickBlasts(SkillRuntime run)
         {
@@ -748,26 +1128,29 @@ namespace ZombieWar.Skills
                 if (b.missile != null && !b.missileLaunched && now >= b.landAt - missileFallSeconds)
                 {
                     b.missileLaunched = true;
-                    b.missileInstance = FxPool.PlayFor(b.missile, b.pos + Vector3.up * 12f,
-                                                       Quaternion.LookRotation(Vector3.down), 1f, missileFallSeconds);
+                    b.missileInstance = FxPool.PlayFor(b.missile, b.dropFrom,
+                                                       Quaternion.LookRotation(b.pos - b.dropFrom), 1f, missileFallSeconds);
+                    Sfx("sfx.skill.airstrike.mark", b.dropFrom, 0.35f, 0.25f);
                     _blasts[i] = b;
                 }
                 if (b.missileInstance != null)
                 {
+                    // Accelerating fall into the shadow.
                     float k = Mathf.Clamp01(1f - (b.landAt - now) / missileFallSeconds);
-                    b.missileInstance.transform.position = b.pos + Vector3.up * (12f * (1f - k * k));
+                    b.missileInstance.transform.position = Vector3.Lerp(b.dropFrom, b.pos + Vector3.up * 0.3f, k * k);
                 }
                 if (now < b.landAt) continue;
 
                 _blasts.RemoveAt(i);
                 if (b.missileInstance != null) b.missileInstance.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                FxPool.Play(b.fx, b.pos + Vector3.up * 0.1f, Quaternion.identity,
-                            b.radius / Mathf.Max(0.1f, b.fxNativeRadius));
-                if (b.decal != null) FxPool.Play(b.decal, b.pos + Vector3.up * 0.03f, Quaternion.identity,
+                // Capped: the pack's smoke grows past the blast radius, and big blasts buried the crowd.
+                FxPool.Play(b.fx, b.pos + Vector3.up * 0.1f, Flat(b.fx),
+                            Mathf.Min(b.radius / Mathf.Max(0.1f, b.fxNativeRadius), 1.3f));
+                if (b.decal != null) FxPool.Play(b.decal, b.pos + Vector3.up * 0.03f, Flat(b.decal),
                                                  b.radius / 1.5f);
                 Sfx(b.sfx, b.pos, 0.85f, 0.05f);
                 Shake(b.shake);
-                SkillFxDirector.Instance?.Pulse(b.pos, b.radius, new Color(1f, 0.62f, 0.2f, 1f), 0.3f, 0.3f);
+                SkillFxDirector.Instance?.Pulse(b.pos, b.radius, new Color(1f, 0.62f, 0.2f, 0.85f), 0.3f, 0.18f);
 
                 int found = TargetQuery.GatherEnemies(b.pos, b.radius, enemyMask);
                 for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), b.damage, b.push);
@@ -778,43 +1161,186 @@ namespace ZombieWar.Skills
 
         ParticleSystem _shieldAura;
         bool _shieldShown;
+        Transform _shell;
+        MeshRenderer _shellRenderer;
+        MeshRenderer _chargeRing;
+        float _shellFade, _shellFlash;
+        static readonly int FadeId = Shader.PropertyToID("_Fade");
+        static readonly int FlashId = Shader.PropertyToID("_Flash");
 
-        void TickShield(SkillRuntime run, Vector3 p)
+        /// <summary>
+        /// M8 (owner: "transparent inside, rendered on the outside"): a shell around the player that is
+        /// clear in the middle and glows at its rim, drawn with back faces culled so nothing is drawn
+        /// over the player. Sits fully above the ground (no half-dome cut by the floor). While it
+        /// recharges, a thin ring at the feet fills with the distance walked.
+        /// </summary>
+        void TickShield(SkillRuntime run, Vector3 p, float dt)
         {
-            bool charged = run.KineticCharged;
-            if (charged && _shieldAura == null && shieldAuraFx != null)
+            bool has = run.Has(SkillCatalogDefs.UniKinetic);
+            bool charged = has && run.KineticCharged;
+
+            if (shieldMaterial == null)
             {
-                _shieldAura = Instantiate(shieldAuraFx, _tr);
-                _shieldAura.transform.localPosition = Vector3.up * 0.9f;
-                _shieldAura.transform.localScale = Vector3.one * 0.7f;
+                // Fallback: the old particle aura.
+                if (charged && _shieldAura == null && shieldAuraFx != null)
+                {
+                    _shieldAura = Instantiate(shieldAuraFx, _tr);
+                    _shieldAura.transform.localPosition = Vector3.up * 0.9f;
+                    _shieldAura.transform.localScale = Vector3.one * 0.7f;
+                }
+                if (_shieldAura == null || charged == _shieldShown) return;
+                _shieldShown = charged;
+                _shieldAura.gameObject.SetActive(charged);
+                if (charged) Sfx("sfx.skill.shield.ready", p, 0.5f, 0.5f);
+                return;
             }
-            if (_shieldAura == null || charged == _shieldShown) return;
-            _shieldShown = charged;
-            _shieldAura.gameObject.SetActive(charged);
-            if (charged) Sfx("sfx.skill.shield.ready", p, 0.5f, 0.5f);
+
+            if (has && _shell == null)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = "KineticShell";
+                Destroy(go.GetComponent<Collider>());
+                _shell = go.transform;
+                _shell.SetParent(_tr, false);
+                _shell.localPosition = Vector3.up * 1.05f;
+                _shell.localScale = Vector3.one * 2.1f;   // radius 1.05 around y 1.05: rests on the ground
+                _shellRenderer = go.GetComponent<MeshRenderer>();
+                _shellRenderer.sharedMaterial = shieldMaterial;
+                _shellRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _shellRenderer.receiveShadows = false;
+            }
+            if (has && _chargeRing == null && discMaterial != null)
+            {
+                _chargeRing = MakeGroundRenderer("KineticChargeRing");
+                _chargeRing.transform.SetParent(_tr, false);
+                _chargeRing.transform.localPosition = Vector3.up * 0.04f;
+                _chargeRing.transform.localScale = new Vector3(2.3f, 1f, 2.3f);
+            }
+
+            if (charged != _shieldShown)
+            {
+                _shieldShown = charged;
+                if (charged) { _shellFlash = 0.6f; Sfx("sfx.skill.shield.ready", p, 0.5f, 0.5f); }
+            }
+            _shellFade = Mathf.MoveTowards(_shellFade, charged ? 1f : 0f, dt * 4f);
+            _shellFlash = Mathf.MoveTowards(_shellFlash, 0f, dt * 2.5f);
+
+            if (_shell != null)
+            {
+                bool visible = has && _shellFade > 0.001f;
+                if (_shell.gameObject.activeSelf != visible) _shell.gameObject.SetActive(visible);
+                if (visible)
+                {
+                    _mpb ??= new MaterialPropertyBlock();
+                    _mpb.Clear();
+                    _mpb.SetFloat(FadeId, _shellFade);
+                    _mpb.SetFloat(FlashId, _shellFlash);
+                    _shellRenderer.SetPropertyBlock(_mpb);
+                }
+            }
+            if (_chargeRing != null)
+            {
+                float fill = run.KineticChargeFraction;
+                bool ring = has && !charged && fill > 0.01f;
+                if (_chargeRing.gameObject.activeSelf != ring) _chargeRing.gameObject.SetActive(ring);
+                if (ring)
+                {
+                    _mpb ??= new MaterialPropertyBlock();
+                    _mpb.Clear();
+                    _mpb.SetColor(ColorId, new Color(0.7f, 0.55f, 1f, 0.75f));
+                    _mpb.SetFloat(RingId, 0.07f);
+                    _mpb.SetFloat(FillId, fill);
+                    _chargeRing.SetPropertyBlock(_mpb);
+                }
+            }
+        }
+
+        /// <summary>The shield ate a hit: the shell lights up as it breaks (the shard burst is the driver's).</summary>
+        public void OnShieldBlocked()
+        {
+            _shellFlash = 1f;
+            _shellFade = Mathf.Max(_shellFade, 0.8f);
         }
 
         // ═══════════════════════════════════════════════════════════════ evolution moments
 
-        /// <summary>Thunderstorm: a sky strike on the first chain target.</summary>
-        public void SkyStrike(Vector3 at)
+        /// <summary>Thunderstorm: a bolt from the sky on a chain target, landing when its arc arrives.</summary>
+        public void SkyStrike(Vector3 at, float delay = 0f)
         {
-            FxPool.Play(thunderStrikeFx, at, Quaternion.identity, 1.6f);
-            SkillFxDirector.Instance?.Pulse(at, 2.2f, new Color(0.55f, 0.45f, 1f, 1f), 0.3f, 0.35f);
+            if (delay <= 0f) { DoSkyStrike(at); return; }
+            if (_delayed.Count < 32) _delayed.Add(new DelayedFx { pos = at, at = Time.time + delay, sky = true });
+        }
+
+        void DoSkyStrike(Vector3 at)
+        {
+            FxPool.Play(thunderStrikeFx, at, Flat(thunderStrikeFx), 1.3f);
+            SkillFxDirector.Instance?.Pulse(at, 1.6f, new Color(0.62f, 0.45f, 1f, 0.9f), 0.28f, 0.2f);
             Sfx("sfx.skill.thunderstorm", at, 0.8f, 0.3f);
-            Shake(0.12f);
+            Shake(0.08f);
         }
 
         /// <summary>Reaper: a small soul burst where an enemy fell.</summary>
         public void ReaperBurst(SkillRuntime run, Vector3 at, float damage)
         {
-            ScheduleBlast(at, 2.4f, damage, 0f, reaperFx, 1.5f, "sfx.skill.reaper", 0f, 0.8f);
+            // M8: a scythe sweep where the enemy fell — a violet crescent and a soul burst — instead of
+            // a generic blast with an orange ring.
+            at.y = 0f;
+            FxPool.Play(reaperFx, at + Vector3.up * 0.3f, Flat(reaperFx), 0.8f);
+            SkillFxDirector.Instance?.ConeWave(at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward,
+                                               230f, 2.4f, new Color(0.62f, 0.3f, 1f, 0.9f), 0.3f);
+            SoulWisp(at);
+            Sfx("sfx.skill.reaper", at, 0.8f, 0f);
+            int found = TargetQuery.GatherEnemies(at, 2.4f, enemyMask);
+            for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), damage, 0.8f);
+        }
+
+        // ── Run & Gun: cyan footprints of speed while the ramp is up
+        Vector3 _runGunLast;
+        float _runGunNext;
+
+        void TickRunGun(SkillRuntime run, Vector3 p)
+        {
+            float ramp = run.RunGunRamp;
+            bool moving = (p - _runGunLast).sqrMagnitude > 0.0004f;
+            _runGunLast = p;
+            if (ramp < 0.3f || !moving || Time.time < _runGunNext) return;
+            _runGunNext = Time.time + 0.12f;
+            ShowDisc(p, 0.5f, 0.25f, new Color(0.55f, 0.92f, 1f, 0.3f + 0.25f * ramp), 0.35f, false, 0.25f);
+        }
+
+        // ── soul wisps: a kill's soul flies to the player (Soul Burst / Reaper)
+        struct Wisp { public ParticleSystem ps; public Vector3 from; public float bornAt; }
+        readonly List<Wisp> _wisps = new(12);
+        const float WispSeconds = 0.45f;
+
+        public void SoulWisp(Vector3 from)
+        {
+            if (soulWispFx == null || _wisps.Count >= 12) return;
+            from.y = 0.9f;
+            var ps = FxPool.PlayFor(soulWispFx, from, Quaternion.identity, 0.45f, WispSeconds);
+            if (ps != null) _wisps.Add(new Wisp { ps = ps, from = from, bornAt = Time.time });
+        }
+
+        void TickWisps(Vector3 p)
+        {
+            float now = Time.time;
+            Vector3 chest = p + Vector3.up * 1.1f;
+            for (int i = _wisps.Count - 1; i >= 0; i--)
+            {
+                var w = _wisps[i];
+                float k = (now - w.bornAt) / WispSeconds;
+                if (w.ps == null || k >= 1f) { _wisps.RemoveAt(i); continue; }
+                // Rises, then dives into the player.
+                Vector3 pos = Vector3.Lerp(w.from, chest, k * k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 1.2f);
+                w.ps.transform.rotation = Quaternion.LookRotation((pos - w.ps.transform.position).sqrMagnitude > 1e-6f ? pos - w.ps.transform.position : Vector3.up);
+                w.ps.transform.position = pos;
+            }
         }
 
         /// <summary>The moment an evolution is taken: a flash on the player.</summary>
         public void PlayEvolve()
         {
-            FxPool.Play(evolveFx, _tr.position + Vector3.up * 0.5f, Quaternion.identity, 1f);
+            FxPool.Play(evolveFx, _tr.position + Vector3.up * 0.5f, Flat(evolveFx), 1f);
             Sfx("sfx.skill.evolve", _tr.position, 1f, 0.5f);
             Shake(0.2f);
         }
@@ -829,6 +1355,9 @@ namespace ZombieWar.Skills
         public void ResetForRun()
         {
             _blasts.Clear();
+            _delayed.Clear();
+            _wisps.Clear();
+            for (int i = 0; i < _discs.Count; i++) { _discs[i].live = false; _discs[i].tr.gameObject.SetActive(false); }
             _patches.Clear();
             _orbitNextHit.Clear();
             for (int k = 0; k < MaxBoomerangs; k++)

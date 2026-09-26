@@ -157,8 +157,13 @@ namespace ZombieWar
             }
 
             if (_aimTarget != null && !ReferenceEquals(_aimTarget, _lastReportedTarget))
-                ZombieWar.Skills.SkillRuntime.Active?.OnTargetChanged(
-                    _aimTarget.Transform.GetInstanceID(), Time.time);
+            {
+                var skills = ZombieWar.Skills.SkillRuntime.Active;
+                skills?.OnTargetChanged(_aimTarget.Transform.GetInstanceID(), Time.time);
+                // M8: Hunter's Mark shows its lock-on the moment the new target is marked.
+                if (skills != null && skills.HuntersMarkActive)
+                    ZombieWar.Skills.SkillFxDirector.Instance?.MarkEnemy(_aimTarget.Transform, new Color(1f, 0.85f, 0.2f, 1f), 0.8f);
+            }
             _lastReportedTarget = _aimTarget;
 
             HasTarget = _aimTarget != null;

@@ -557,7 +557,8 @@ namespace ZombieWar.Tests
 
             var p = Vector3.zero;
             for (int i = 0; i < 10; i++) { p += Vector3.forward * 0.5f; _run.Tick(0.1f, p, true, false, 1f); }
-            Assert.AreEqual(4, _run.ConsumeFireTrailDrops(), "5 m walked at 1.1 m spacing = 4 patches");
+            int expected = Mathf.FloorToInt(5f / SkillRuntime.FireTrailSpacing);
+            Assert.AreEqual(expected, _run.ConsumeFireTrailDrops(), $"5 m walked at {SkillRuntime.FireTrailSpacing} m spacing = {expected} patches");
         }
 
         [Test]

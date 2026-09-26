@@ -60,6 +60,14 @@ namespace ZombieWar.Skills
 
         static readonly int[] ChainBuffer = new int[TargetQuery.MaxChain];
 
+        // M8 chain look: cyan lightning, violet for the Thunderstorm evolution; hops travel.
+        static readonly Color ChainColor = new(0.3f, 0.7f, 1f, 1f);
+        static readonly Color StormColor = new(0.62f, 0.45f, 1f, 1f);
+        static readonly Color StaticColor = new(0.75f, 0.95f, 1f, 1f);
+        const float ChainHopSeconds = 0.035f;
+        const float ChainSparkScale = 0.3f;   // the spark blooms: small, or it hides the bolt
+        const float SelfBurstScaleCap = 1.4f;
+
         /// <summary>
         /// How long after a shot the weapon still counts as "firing" for the ramp cards.
         ///
@@ -108,7 +116,7 @@ namespace ZombieWar.Skills
             Bill.Events?.Unsubscribe<ZombieKilledEvent>(OnZombieKilled);
         }
 
-        float _reaperBudgetAt;
+        float _reaperBudgetAt, _wispBudgetAt;
 
         void OnZombieKilled(ZombieKilledEvent e)
         {
@@ -116,6 +124,12 @@ namespace ZombieWar.Skills
             var run = SkillRuntime.Active;
             if (run == null) return;
             run.OnKill();
+            // M8: Soul Burst's kill counter made visible — each kill's soul flies into the player.
+            if (run.Has(SkillCatalogDefs.AutoSoulBurst) && Time.time >= _wispBudgetAt)
+            {
+                _wispBudgetAt = Time.time + 0.12f;   // a crowd dying at once must not become a swarm
+                _arsenal?.SoulWisp(e.Position);
+            }
 
             // Reaper: a kill can release a soul burst where the enemy fell. Budgeted to 4/s so a
             // chain of kills cannot cascade into a screen-wide wipe in one frame.
@@ -197,24 +211,26 @@ namespace ZombieWar.Skills
                     float damage = run.PowerDamage(blastDamage, SkillCatalogDefs.AutoOrdnance);
                     _arsenal?.RequestSfx("sfx.skill.target", centre, 0.5f, 0.2f);
 
+                    // M8: the shell is a bomb falling into a shadow (the same drop as Airstrike). The old
+                    // marker (a flash explosion scaled to the radius) lit the screen gold before anything hit.
+                    var bomb = _arsenal != null ? _arsenal.BombFx : null;
+                    Vector3 toCrowd = centre - origin; toCrowd.y = 0f;
                     if (run.IsEvolved(SkillCatalogDefs.AutoOrdnance))
                     {
-                        // Carpet Bomb: three shells in a line across the crowd, landing in sequence.
-                        Vector3 toCrowd = centre - origin; toCrowd.y = 0f;
+                        // Carpet Bomb: five shells walking across the crowd along one line, in sequence.
                         Vector3 across = toCrowd.sqrMagnitude > 0.01f
                             ? Vector3.Cross(Vector3.up, toCrowd.normalized) : Vector3.right;
-                        for (int k = -1; k <= 1; k++)
-                            _arsenal?.ScheduleBlast(centre + across * (k * proc.radius * 1.2f), proc.radius, damage,
-                                ordnanceDelay + (k + 1) * 0.12f, explosionFx, explosionNativeRadius,
-                                "sfx.skill.blast", 0.2f, 1.3f, ordnanceMarkerFx, ordnanceMarkerNativeRadius);
+                        for (int k = -2; k <= 2; k++)
+                            _arsenal?.ScheduleBlast(centre + across * (k * proc.radius * 0.9f), proc.radius, damage,
+                                ordnanceDelay + 0.25f + (k + 2) * 0.12f, explosionFx, explosionNativeRadius,
+                                "sfx.skill.blast", 0.16f, 1.3f, null, 1f, bomb, null, across);
                     }
                     else
                     {
-                        // Marker first, shell after: the player sees WHICH group was chosen, then
+                        // Shadow first, shell after: the player sees WHICH group was chosen, then
                         // watches it get hit.
-                        _arsenal?.ScheduleBlast(centre, proc.radius, damage, ordnanceDelay, explosionFx,
-                            explosionNativeRadius, "sfx.skill.blast", 0.18f, 1.2f,
-                            ordnanceMarkerFx, ordnanceMarkerNativeRadius);
+                        _arsenal?.ScheduleBlast(centre, proc.radius, damage, ordnanceDelay + 0.25f, explosionFx,
+                            explosionNativeRadius, "sfx.skill.blast", 0.18f, 1.2f, null, 1f, bomb, null, toCrowd);
                     }
                     break;
                 }
@@ -258,14 +274,20 @@ namespace ZombieWar.Skills
 
                 // The BOLT is what makes this read as a chain. Without a line drawn between
                 // successive targets it is just a flash on each enemy, which is not chain lightning.
-                // Two lines: a saturated glow and a white core, so it reads on white skeletons too.
+                // M8: one call draws glow + white core + forks, and each hop starts a beat after the
+                // last, so the eye follows the lightning jumping from enemy to enemy.
                 Vector3 a0 = from + Vector3.up * 1.0f, a1 = point + Vector3.up * 1.0f;
-                fx?.DrawArc(a0, a1, storm ? new Color(0.45f, 0.35f, 1f, 1f) : new Color(0.2f, 0.55f, 1f, 1f), storm ? 1.8f : 1.3f);
-                fx?.DrawArc(a0, a1, Color.white, storm ? 0.6f : 0.45f);
-                if (storm && i == 0) _arsenal?.SkyStrike(point);
+                float hopDelay = i * ChainHopSeconds;
+                // Static Build-up is a small spark jump off the gun, not the full Chain Lightning bolt.
+                bool staticJump = skillId == SkillCatalogDefs.SmgStatic;
+                fx?.DrawArc(a0, a1, storm ? StormColor : staticJump ? StaticColor : ChainColor,
+                            storm ? 1.25f : staticJump ? 0.65f : 1f, hopDelay, storm ? 2 : staticJump ? 0 : 1);
+                // Thunderstorm: a bolt from the sky on every other enemy the storm jumps through.
+                if (storm && i % 2 == 0) _arsenal?.SkyStrike(point, hopDelay);
 
                 DamageAt(col, point, damage, 0.3f);
-                PlayFx(chainArcFx, point);          // electric hit at the endpoint
+                // Spark at chest height where the bolt lands (it was at the feet, below the bolt).
+                _arsenal?.PlayDelayed(chainArcFx, a1, ChainSparkScale, hopDelay);
                 from = point;                        // next hop starts where this one landed
             }
         }
@@ -286,14 +308,16 @@ namespace ZombieWar.Skills
                 if ((p - centre).sqrMagnitude > r2) continue;
                 DamageAt(TargetQuery.Candidate(i), p, damage, push);
             }
-            // Sized to the blast: the ring the player sees IS the area that was hit.
+            // Sized to the blast, but capped: a self-centred burst scaled to a 4 m radius covered the
+            // whole screen and the player (Emergency). The ring below still shows the true area.
             if (visual != null)
-                FxPool.Play(visual, centre + Vector3.up * 0.1f, Quaternion.identity, radius / Mathf.Max(0.1f, nativeRadius));
+                FxPool.Play(visual, centre + Vector3.up * 0.1f, SkillArsenal.Flat(visual),
+                            Mathf.Min(radius / Mathf.Max(0.1f, nativeRadius), SelfBurstScaleCap));
             _arsenal?.RequestSfx(sfx, centre, 0.85f, 0.1f);
             _arsenal?.RequestShake(shake);
             SkillFxDirector.Instance?.Pulse(centre, radius,
-                powerId == SkillCatalogDefs.AutoEmergency ? new Color(1f, 0.35f, 0.55f, 1f) : new Color(0.45f, 1f, 0.55f, 1f),
-                0.35f, powerId == SkillCatalogDefs.AutoEmergency ? 0.5f : 0.35f);
+                powerId == SkillCatalogDefs.AutoEmergency ? new Color(1f, 0.3f, 0.2f, 0.95f) : new Color(0.45f, 1f, 0.55f, 0.9f),
+                powerId == SkillCatalogDefs.AutoEmergency ? 0.28f : 0.35f, powerId == SkillCatalogDefs.AutoEmergency ? 0.3f : 0.22f);
         }
 
         /// <summary>
@@ -320,13 +344,14 @@ namespace ZombieWar.Skills
         {
             // FxPool is the project's existing pooled effect path: no Instantiate here, and no
             // runtime material instance.
-            if (prefab != null) FxPool.Play(prefab, at, Quaternion.identity);
+            if (prefab != null) FxPool.Play(prefab, at, SkillArsenal.Flat(prefab));
         }
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>
         public void PlayShieldBreak()
         {
-            if (shieldBreakFx != null) FxPool.Play(shieldBreakFx, _tr.position + Vector3.up * 0.9f, Quaternion.identity, 1.3f);
+            if (shieldBreakFx != null) FxPool.Play(shieldBreakFx, _tr.position + Vector3.up * 0.9f, SkillArsenal.Flat(shieldBreakFx), 1.3f);
+            _arsenal?.OnShieldBlocked();
             _arsenal?.RequestSfx("sfx.skill.shield.break", _tr.position, 0.8f, 0.1f);
             _arsenal?.RequestShake(0.12f);
         }
