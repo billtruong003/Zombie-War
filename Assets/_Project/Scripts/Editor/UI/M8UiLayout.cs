@@ -456,7 +456,6 @@ namespace ZombieWar.EditorTools
 
                 var screen = root.GetComponent<ZombieWar.UI.LoadoutScreen>();
                 var so = new SerializedObject(screen);
-                SetArray(so, "slotViews", new ZombieWar.UI.LoadoutSlotView[0]);
                 so.FindProperty("signatureCaption").objectReferenceValue = cap;
                 SetArray(so, "signatureLabels", labels);
                 so.FindProperty("heroBackdrop").objectReferenceValue = info.Find("HeroBackdrop")?.GetComponent<Image>();

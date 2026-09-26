@@ -13,6 +13,8 @@ namespace ZombieWar.UI
         public WeaponData data;
         public Button button;
         public Image icon;
+        [Tooltip("M8: solid rarity tile behind the icon.")]
+        public Image tile;
         public TMP_Text nameLabel;
         public Image border;
         public Image glow;
@@ -38,6 +40,21 @@ namespace ZombieWar.UI
                 glow.color = c;
             }
             SetOwned(owned, weapon != null ? Mathf.Max(weapon.price, weapon.unlockCost) : 0);
+        }
+
+        /// M8 icons: the gun's real look once owned, a pale silhouette before; always on its rarity tile.
+        public void BindIcon(UIPrototypeCatalog catalog, bool owned)
+        {
+            if (data == null) return;
+            if (icon != null && catalog != null)
+            {
+                var sprite = catalog.GetWeaponIcon(data, owned);
+                if (sprite != null) { icon.sprite = sprite; icon.color = Color.white; icon.preserveAspect = true; }
+            }
+            if (tile != null) tile.color = data.TileColor;
+            // The prefab bakes a border colour; the tier can change after baking, so it is set here too.
+            if (border != null) border.color = data.TierColor;
+            if (glow != null) { var c = data.TierColor; c.a = glow.color.a; glow.color = c; }
         }
 
         public void SetOwned(bool owned, int price)

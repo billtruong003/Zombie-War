@@ -44,6 +44,26 @@ namespace ZombieWar.UI
         };
         public static Color RarityColor(int r) => Rarity[Mathf.Clamp(r, 0, 4)];
 
+        // ---- M8 mockup palette (owner-approved 2026-09-26; M8UiPolish applies it) ----
+        public static readonly Color M8Ground   = Hex("#262A36");   // screen ground
+        public static readonly Color M8Card     = Hex("#2F3544");   // cards, panels, secondary buttons
+        public static readonly Color M8Deep     = Hex("#1F2330");   // wells: bar tracks, empty slots
+        public static readonly Color M8Edge     = Hex("#3A4152");   // hairlines
+        public static readonly Color M8Ink      = Hex("#F4F1EA");
+        public static readonly Color M8InkDim   = Hex("#9AA1B0");
+        public static readonly Color M8Scrim    = Hex("#0C0E14D6");  // behind modals
+        public static readonly Color M8Yellow   = Hex("#FFC93C");
+        public static readonly Color M8YellowLip= Hex("#E0A21C");
+        public static readonly Color M8OnYellow = Hex("#2A1D00");
+        public static readonly Color M8Green    = Hex("#5BD68A");
+        public static readonly Color M8GreenLip = Hex("#34A865");
+        public static readonly Color M8OnGreen  = Hex("#10331D");
+        public static readonly Color M8Blue     = Hex("#4FA3FF");
+        public static readonly Color M8BlueLip  = Hex("#2F78C9");
+        public static readonly Color M8Red      = Hex("#E5484D");
+        public static readonly Color M8RedLip   = Hex("#9E2A2E");
+        public static readonly Color M8CardLip  = Hex("#1F2330");
+
         // ---- Currency accents ----
         public static readonly Color Coin = Gold;   // vàng UI
         public static readonly Color Gem  = Cyan;

@@ -187,6 +187,10 @@ namespace ZombieWar
         /// light icon reads on its rarity tile without turning into a flat colour blob.</summary>
         public Color IconTint => Color.Lerp(TierColor, Color.white, 0.55f);
 
+        /// <summary>M8 icon tile: the rarity colour, a quarter of the way to the UI ground so white
+        /// text and the dark icon outline both read on it.</summary>
+        public Color TileColor => Color.Lerp(TierColor, new Color(0.118f, 0.125f, 0.172f), 0.25f);
+
         /// <summary>Màu tier cho shop/HUD (Docs/Reference/Design/WEAPON_DESIGN.md §5).</summary>
         public Color TierColor => tier switch
         {

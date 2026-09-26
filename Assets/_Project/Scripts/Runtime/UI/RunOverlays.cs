@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using ZombieWar.UI;
 
 namespace ZombieWar
 {
@@ -64,7 +65,7 @@ namespace ZombieWar
         {
             HideAll();
             Wire(resumeButton, ResumeWithCountdown);
-            Wire(exitButton, () => Show(confirmRoot, true));
+            Wire(exitButton, () => { Show(confirmRoot, true); UIFx.ModalIn(confirmRoot != null ? confirmRoot.transform : null); });
             Wire(confirmNoButton, () => Show(confirmRoot, false));
             Wire(confirmYesButton, EndRun);
             Wire(settingsButton, OpenSettings);
@@ -161,6 +162,8 @@ namespace ZombieWar
 
             Show(resultRoot, true);
             BindResult(result);
+            UIFx.PopIn(resultRoot.transform.Find("Time"), 0f, 0.7f, 0.35f);
+            UIFx.PopIn(resultRoot.transform.Find("ReplayBtn"), 0.45f, 0.8f, 0.3f);
             Time.timeScale = 0f;
         }
 
@@ -172,10 +175,12 @@ namespace ZombieWar
             string clock = HudController.FormatClock(Mathf.FloorToInt(s.Duration));
 
             SetText("Banner", died ? "THE HORDE GOT YOU" : "YOU WALKED AWAY");
-            SetText("Time/Label", clock);
+            // M8: the result counts up instead of appearing, so the run's numbers land one by one.
+            var timeLabel = resultRoot.transform.Find("Time/Label")?.GetComponent<TMP_Text>();
+            UIFx.CountUp(timeLabel, Mathf.FloorToInt(s.Duration), 0.7f, v => HudController.FormatClock((int)v));
             int best = Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds);
             SetText("RecordPill/L", result.NewSurvivalRecord ? "NEW BEST!" : $"Best  {HudController.FormatClock(best)}");
-            SetText("Stats/Stat0/Value/Label", $"{s.Kills:N0}");
+            UIFx.CountUp(resultRoot.transform.Find("Stats/Stat0/Value/Label")?.GetComponent<TMP_Text>(), s.Kills, 0.6f, v => $"{v:N0}", 0.25f);
             SetText("Stats/Stat1/Value/Label", $"{s.Level}");
             SetText("Stats/Stat2/Value/Label", $"{s.PeakThreatTier}");
             SetText("PayoutCard/Row0L", "Coins collected");
@@ -183,11 +188,15 @@ namespace ZombieWar
             SetText("PayoutCard/Row1L", died
                 ? $"You keep {RunClosure.DiedCoinFraction:P0} on death"
                 : "Walked away: coins lost");
-            SetText("PayoutCard/Row1V", $"+{result.BankedCoin:N0}");
+            // Walking away keeps nothing: show what was lost, not the (zero) amount kept.
+            long lostCoin = s.Coin - result.BankedCoin;
+            SetText("PayoutCard/Row1V", died ? $"+{result.BankedCoin:N0}" : lostCoin > 0 ? $"-{lostCoin:N0}" : "0");
+            var lost = resultRoot.transform.Find("PayoutCard/Row1V")?.GetComponent<TMP_Text>();
+            if (lost != null) lost.color = died || s.Coin == 0 ? UITheme.M8Yellow : UITheme.M8Red;
             SetText("PayoutCard/Row2L", "Gems (always kept)");
             SetText("PayoutCard/Row2V", $"+{s.Gem}");
             SetText("PayoutCard/TotalL", "Banked");
-            SetText("PayoutCard/TotalV", $"{result.BankedCoin:N0}");
+            UIFx.CountUp(resultRoot.transform.Find("PayoutCard/TotalV")?.GetComponent<TMP_Text>(), result.BankedCoin, 0.8f, v => $"{v:N0}", 0.5f);
             SetShown("PayoutCard/KcRow", false);
             BindResultBuild();
 
@@ -255,6 +264,7 @@ namespace ZombieWar
             if (TerminalOverlayActive) return;
             Time.timeScale = 0f;
             Show(pauseRoot, true);
+            UIFx.ModalIn(pauseRoot != null ? pauseRoot.transform : null);
         }
 
         private void ResumeWithCountdown()
@@ -271,6 +281,7 @@ namespace ZombieWar
                 for (int i = 3; i >= 1; i--)
                 {
                     resumeCountText.text = i.ToString();
+                    UIFx.PopIn(resumeCountText.transform, 0f, 1.4f, 0.25f);
                     yield return new WaitForSecondsRealtime(0.6f);
                 }
                 resumeCountText.gameObject.SetActive(false);
@@ -294,7 +305,11 @@ namespace ZombieWar
             Bill.Events?.Fire(new RunAbandonRequestedEvent());
         }
 
-        private void OpenSettings() => Show(settingsRoot, true);
+        private void OpenSettings()
+        {
+            Show(settingsRoot, true);
+            UIFx.ModalIn(settingsRoot != null ? settingsRoot.transform : null);
+        }
 
         // ------------------------------------------------------------ revive (test hook)
         public void ShowRevive()
@@ -302,6 +317,7 @@ namespace ZombieWar
             if (TerminalOverlayActive) return;
             Time.timeScale = 0f;
             Show(reviveRoot, true);
+            UIFx.ModalIn(reviveRoot != null ? reviveRoot.transform : null);
             Restart(CoReviveCountdown());
         }
 
@@ -380,6 +396,12 @@ namespace ZombieWar
             _levelUpShownAtRealtime = Time.realtimeSinceStartup;
             Time.timeScale = 0f;
             Show(levelUpRoot, true);
+            // M8: the world dims, the title pops, the cards deal in one after another.
+            UIFeedback.LevelUp();
+            var lu = levelUpRoot.transform;
+            UIFx.FadeIn(lu.Find("Dim")?.GetComponent<Graphic>(), 0.2f);
+            UIFx.PopIn(lu.Find("Title"), 0f, 0.6f, 0.35f);
+            for (int i = 0; i < _skillOffer.Count; i++) UIFx.PopIn(lu.Find($"Perk{i}"), 0.08f + 0.07f * i, 0.8f, 0.3f);
         }
 
         /// The <=30 s unscaled pause. On expiry it auto-picks a VALID card — never a broken or
@@ -439,8 +461,8 @@ namespace ZombieWar
             TryShowLevelUp();
         }
 
-        static readonly Color CardBg = new(0.106f, 0.129f, 0.188f);
-        static readonly Color EvolutionBg = new(0.23f, 0.2f, 0.12f);
+        static readonly Color CardBg = UITheme.M8Card;                       // M8 mockup card
+        static readonly Color EvolutionBg = new(0.227f, 0.2f, 0.122f);        // mockup #3A331F
 
         // Border in the layer colour, icon tile tinted from it, gold background for an evolution,
         // and rank pips: the card reads (what kind, how far along) before the text does.
@@ -531,6 +553,12 @@ namespace ZombieWar
             {
                 var taken = _skillOffer[slot];
                 skills.Take(taken.id);
+                UIFeedback.Confirm();
+                // M8: a stat card has no power of its own to watch; a pulse in its layer colour marks the pick.
+                if (taken.layer == ZombieWar.Skills.SkillLayer.Stat && PlayerMovement.Instance != null)
+                    ZombieWar.Skills.SkillFxDirector.Instance?.Pulse(PlayerMovement.Instance.transform.position, 1.8f,
+                        ZombieWar.Skills.SkillDescriptions.LayerColor(taken), 0.45f, 0.25f);
+                UIFeedback.Haptic(UIFeedback.Buzz.Tick);
                 MissionTracker.ReportCardChosen();
                 if (taken.IsEvolution) ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
 

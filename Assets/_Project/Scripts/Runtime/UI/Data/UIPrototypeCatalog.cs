@@ -19,6 +19,8 @@ namespace ZombieWar.UI
         {
             public WeaponData data;
             public Sprite icon;
+            [Tooltip("M8: flat silhouette in a pale rarity tint, shown while the gun is not owned.")]
+            public Sprite lockedIcon;
             public bool owned;
             public bool featured;
         }
@@ -59,6 +61,16 @@ namespace ZombieWar.UI
                     if (weapons[i].data == data && weapons[i].icon != null)
                         return weapons[i].icon;
             return weaponFallbackIcon;
+        }
+
+        /// M8: owned guns show their real materials, guns not owned yet show the locked silhouette.
+        public Sprite GetWeaponIcon(WeaponData data, bool owned)
+        {
+            if (!owned && data != null)
+                for (int i = 0; i < weapons.Count; i++)
+                    if (weapons[i].data == data && weapons[i].lockedIcon != null)
+                        return weapons[i].lockedIcon;
+            return GetWeaponIcon(data);
         }
 
         public bool IsWeaponOwned(WeaponData data)

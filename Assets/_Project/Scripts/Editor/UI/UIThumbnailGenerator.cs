@@ -310,7 +310,7 @@ namespace ZombieWar.Editor.UI
         /// A solid toon outline <paramref name="stroke"/> px wide around the opaque pixels, drawn
         /// under the icon. Circular dilation on the alpha, with a one-pixel soft edge.
         /// </summary>
-        static void OutlinePng(string path, int stroke, Color32 color)
+        internal static void OutlinePng(string path, int stroke, Color32 color)
         {
             var src = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             src.LoadImage(File.ReadAllBytes(path));
@@ -377,7 +377,7 @@ namespace ZombieWar.Editor.UI
             return go;
         }
 
-        static Sprite ImportIcon(string path, int maxSize)
+        internal static Sprite ImportIcon(string path, int maxSize)
         {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             var imp = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -521,7 +521,7 @@ namespace ZombieWar.Editor.UI
             entry.icon = icon;
         }
 
-        static string StableName(string prefix, Object asset)
+        internal static string StableName(string prefix, Object asset)
         {
             string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(asset));
             return $"{prefix}_{ShortGuid(guid)}_{Sanitize(asset.name)}";

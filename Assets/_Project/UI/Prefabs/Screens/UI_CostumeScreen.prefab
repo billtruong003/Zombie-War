@@ -329,6 +329,8 @@ GameObject:
   - component: {fileID: 4162044025421760429}
   - component: {fileID: 7105014817431340736}
   - component: {fileID: 3596411023787789626}
+  - component: {fileID: 8444104334381427666}
+  - component: {fileID: 6553182191916654053}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -449,6 +451,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8444104334381427666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80540779534450447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &6553182191916654053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 80540779534450447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &133775990348024900
 GameObject:
   m_ObjectHideFlags: 0
@@ -460,6 +490,7 @@ GameObject:
   - component: {fileID: 1246732872647523408}
   - component: {fileID: 7517046056747794797}
   - component: {fileID: 4595311859963817950}
+  - component: {fileID: 1070761045367729276}
   m_Layer: 0
   m_Name: HeaderGem
   m_TagString: Untagged
@@ -526,6 +557,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1070761045367729276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 133775990348024900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &144537311156857545
 GameObject:
   m_ObjectHideFlags: 0
@@ -750,8 +794,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -781,7 +825,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -831,6 +875,7 @@ GameObject:
   - component: {fileID: 462621001803120095}
   - component: {fileID: 7351837289235148754}
   - component: {fileID: 5557366237930096031}
+  - component: {fileID: 61199730167593410}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -895,6 +940,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &61199730167593410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 256561939557052843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &286076613171542113
 GameObject:
   m_ObjectHideFlags: 0
@@ -906,6 +964,7 @@ GameObject:
   - component: {fileID: 4750923536919568802}
   - component: {fileID: 5535487158839576629}
   - component: {fileID: 1574816434317017884}
+  - component: {fileID: 6170659384556711542}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -970,7 +1029,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6170659384556711542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 286076613171542113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &363958825520713383
 GameObject:
   m_ObjectHideFlags: 0
@@ -1038,8 +1110,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1069,7 +1141,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1175,8 +1247,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1206,7 +1278,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1258,6 +1330,8 @@ GameObject:
   - component: {fileID: 6500817101220205694}
   - component: {fileID: 2859644923347435386}
   - component: {fileID: 8744649166976821095}
+  - component: {fileID: 8695247315823052938}
+  - component: {fileID: 5331128311203979484}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -1378,6 +1452,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8695247315823052938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415020737009004341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5331128311203979484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415020737009004341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &455738308076010730
 GameObject:
   m_ObjectHideFlags: 0
@@ -1391,6 +1493,8 @@ GameObject:
   - component: {fileID: 8524465901505871550}
   - component: {fileID: 6942712228045868442}
   - component: {fileID: 6005146760762380275}
+  - component: {fileID: 3741912923348281351}
+  - component: {fileID: 213481293773809482}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -1511,6 +1615,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3741912923348281351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455738308076010730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &213481293773809482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455738308076010730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &535565033700116879
 GameObject:
   m_ObjectHideFlags: 0
@@ -1522,6 +1654,7 @@ GameObject:
   - component: {fileID: 4231439403066398068}
   - component: {fileID: 4534284513260616030}
   - component: {fileID: 5260913725557235657}
+  - component: {fileID: 4958412506971271207}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -1586,6 +1719,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4958412506971271207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 535565033700116879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &593010283291191515
 GameObject:
   m_ObjectHideFlags: 0
@@ -1599,6 +1745,7 @@ GameObject:
   - component: {fileID: 7312964373614972960}
   - component: {fileID: 8313533372128472026}
   - component: {fileID: 1269779578022564495}
+  - component: {fileID: 2753016803752593224}
   m_Layer: 0
   m_Name: BackBtn
   m_TagString: Untagged
@@ -1720,6 +1867,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &2753016803752593224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593010283291191515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 2
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &606041215788463503
 GameObject:
   m_ObjectHideFlags: 0
@@ -1734,6 +1896,8 @@ GameObject:
   - component: {fileID: 7998215279617771682}
   - component: {fileID: 1674914500195851068}
   - component: {fileID: 5129263946524941821}
+  - component: {fileID: 6669517618659132471}
+  - component: {fileID: 3435229769140085606}
   m_Layer: 0
   m_Name: Chip0
   m_TagString: Untagged
@@ -1799,7 +1963,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &7998215279617771682
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1871,6 +2035,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &6669517618659132471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606041215788463503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &3435229769140085606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606041215788463503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &621276855560827257
 GameObject:
   m_ObjectHideFlags: 0
@@ -1957,6 +2149,7 @@ GameObject:
   - component: {fileID: 8719186858326476875}
   - component: {fileID: 1681549444573374514}
   - component: {fileID: 8917351791431900310}
+  - component: {fileID: 6108377415294202089}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -2020,7 +2213,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &6108377415294202089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632882324310051573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &636053905499893286
 GameObject:
   m_ObjectHideFlags: 0
@@ -2110,6 +2316,8 @@ GameObject:
   - component: {fileID: 1778565569850483817}
   - component: {fileID: 4981710207425062967}
   - component: {fileID: 7798722274303051047}
+  - component: {fileID: 3379483189762720393}
+  - component: {fileID: 5907175012640306669}
   m_Layer: 0
   m_Name: Chip6
   m_TagString: Untagged
@@ -2175,7 +2383,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &1778565569850483817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2247,6 +2455,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3379483189762720393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638168633597820143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &5907175012640306669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638168633597820143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &649887258263510539
 GameObject:
   m_ObjectHideFlags: 0
@@ -2314,8 +2550,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2345,7 +2581,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2649,8 +2885,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2680,7 +2916,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2807,6 +3043,8 @@ GameObject:
   - component: {fileID: 2338142556302523507}
   - component: {fileID: 9100158765285201974}
   - component: {fileID: 1926939333713967901}
+  - component: {fileID: 3988380365472095241}
+  - component: {fileID: 902441563910685006}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -2927,6 +3165,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3988380365472095241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 908317714148765497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &902441563910685006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 908317714148765497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &911317510196813200
 GameObject:
   m_ObjectHideFlags: 0
@@ -3016,6 +3282,8 @@ GameObject:
   - component: {fileID: 6703529420886571022}
   - component: {fileID: 1106895329078197998}
   - component: {fileID: 980156774953663569}
+  - component: {fileID: 8681689133393918712}
+  - component: {fileID: 7762438040471630958}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -3136,6 +3404,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8681689133393918712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922259789999691919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &7762438040471630958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922259789999691919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &928316339222307746
 GameObject:
   m_ObjectHideFlags: 0
@@ -3147,6 +3443,7 @@ GameObject:
   - component: {fileID: 3765242138669245276}
   - component: {fileID: 3755607202300651912}
   - component: {fileID: 822843224411106623}
+  - component: {fileID: 7951262459472085484}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -3211,7 +3508,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7951262459472085484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 928316339222307746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &931046223506833446
 GameObject:
   m_ObjectHideFlags: 0
@@ -3298,6 +3608,7 @@ GameObject:
   - component: {fileID: 7522135097438666562}
   - component: {fileID: 6060909432813390097}
   - component: {fileID: 2975840447964023578}
+  - component: {fileID: 840860218508405801}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -3362,7 +3673,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &840860218508405801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 988338965490577430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &1090734318822666868
 GameObject:
   m_ObjectHideFlags: 0
@@ -3374,6 +3698,7 @@ GameObject:
   - component: {fileID: 2332723412178337747}
   - component: {fileID: 1269027437481242350}
   - component: {fileID: 5634944338533841143}
+  - component: {fileID: 2964852181074349674}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -3438,7 +3763,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2964852181074349674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090734318822666868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &1191033304954893600
 GameObject:
   m_ObjectHideFlags: 0
@@ -3452,6 +3790,8 @@ GameObject:
   - component: {fileID: 139831107583623264}
   - component: {fileID: 5966082137715127663}
   - component: {fileID: 3502122468163804903}
+  - component: {fileID: 4503534677005847281}
+  - component: {fileID: 8578433034369733293}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -3572,6 +3912,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4503534677005847281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191033304954893600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &8578433034369733293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191033304954893600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &1221067403521439949
 GameObject:
   m_ObjectHideFlags: 0
@@ -3789,8 +4157,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3820,7 +4188,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -4002,8 +4370,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4033,7 +4401,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -4144,6 +4512,7 @@ GameObject:
   - component: {fileID: 5533185985809473811}
   - component: {fileID: 7556579664995232629}
   - component: {fileID: 4191193599939063152}
+  - component: {fileID: 8475213963602887292}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -4207,7 +4576,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &8475213963602887292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427206733625251403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &1462208913932637033
 GameObject:
   m_ObjectHideFlags: 0
@@ -4372,6 +4754,8 @@ GameObject:
   - component: {fileID: 3256942919581784808}
   - component: {fileID: 5754327143842769234}
   - component: {fileID: 1164981006576867799}
+  - component: {fileID: 8135109627884366267}
+  - component: {fileID: 5767959649168138117}
   m_Layer: 0
   m_Name: Chip4
   m_TagString: Untagged
@@ -4437,7 +4821,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &3256942919581784808
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4509,6 +4893,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8135109627884366267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555446667024552142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &5767959649168138117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555446667024552142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &1555743417103350367
 GameObject:
   m_ObjectHideFlags: 0
@@ -4522,6 +4934,8 @@ GameObject:
   - component: {fileID: 7860621891330299767}
   - component: {fileID: 757087305584792069}
   - component: {fileID: 5648035662175893759}
+  - component: {fileID: 2074169122644261227}
+  - component: {fileID: 7837557078863482487}
   m_Layer: 0
   m_Name: Tab0
   m_TagString: Untagged
@@ -4586,7 +5000,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &757087305584792069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4643,6 +5057,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &2074169122644261227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555743417103350367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &7837557078863482487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555743417103350367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &1659707293462983503
 GameObject:
   m_ObjectHideFlags: 0
@@ -4715,6 +5157,7 @@ GameObject:
   - component: {fileID: 7984914917346365424}
   - component: {fileID: 6521245626430839270}
   - component: {fileID: 5632479500012132921}
+  - component: {fileID: 8223922771294842597}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -4778,7 +5221,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &8223922771294842597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1702074167461010466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &1722875945001445517
 GameObject:
   m_ObjectHideFlags: 0
@@ -4793,6 +5249,8 @@ GameObject:
   - component: {fileID: 4397150145233548995}
   - component: {fileID: 4087779595392158123}
   - component: {fileID: 5145406763551061575}
+  - component: {fileID: 4784548835215174968}
+  - component: {fileID: 3270232994904254857}
   m_Layer: 0
   m_Name: Chip8
   m_TagString: Untagged
@@ -4858,7 +5316,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &4397150145233548995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4930,6 +5388,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4784548835215174968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1722875945001445517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &3270232994904254857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1722875945001445517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &1724613636169543677
 GameObject:
   m_ObjectHideFlags: 0
@@ -5153,6 +5639,7 @@ GameObject:
   - component: {fileID: 6386987763632086054}
   - component: {fileID: 7157054762465044660}
   - component: {fileID: 4846422990094516202}
+  - component: {fileID: 7327788866233831819}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -5217,7 +5704,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7327788866233831819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1783408500134858722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &1819615421716539729
 GameObject:
   m_ObjectHideFlags: 0
@@ -5367,8 +5867,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5398,7 +5898,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -5579,8 +6079,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5610,7 +6110,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -5799,6 +6299,8 @@ GameObject:
   - component: {fileID: 8257594347816701691}
   - component: {fileID: 1696099787628814659}
   - component: {fileID: 8495448669739546972}
+  - component: {fileID: 8708189262693856915}
+  - component: {fileID: 3151197917589317281}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -5919,6 +6421,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8708189262693856915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075673686407963920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &3151197917589317281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075673686407963920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2085603684595233550
 GameObject:
   m_ObjectHideFlags: 0
@@ -6062,8 +6592,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6093,7 +6623,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -6143,6 +6673,7 @@ GameObject:
   - component: {fileID: 335483452480842404}
   - component: {fileID: 6913210280939006517}
   - component: {fileID: 6335864595396338260}
+  - component: {fileID: 4192051593853920492}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -6207,6 +6738,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4192051593853920492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2174554167622129900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &2177701116473119848
 GameObject:
   m_ObjectHideFlags: 0
@@ -6373,6 +6917,8 @@ GameObject:
   - component: {fileID: 6256529821999882244}
   - component: {fileID: 9145412701815806253}
   - component: {fileID: 229555295935409471}
+  - component: {fileID: 8668886244069698983}
+  - component: {fileID: 4238516707376664911}
   m_Layer: 0
   m_Name: Chip10
   m_TagString: Untagged
@@ -6438,7 +6984,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &6256529821999882244
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6510,6 +7056,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8668886244069698983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2216471586350351378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &4238516707376664911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2216471586350351378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2238099303718614479
 GameObject:
   m_ObjectHideFlags: 0
@@ -6523,6 +7097,8 @@ GameObject:
   - component: {fileID: 7061214526236267416}
   - component: {fileID: 1103382965577190936}
   - component: {fileID: 60757383673061845}
+  - component: {fileID: 4279394084997131192}
+  - component: {fileID: 5445343527964957747}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -6643,6 +7219,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4279394084997131192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2238099303718614479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5445343527964957747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2238099303718614479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2281871085871399824
 GameObject:
   m_ObjectHideFlags: 0
@@ -6791,6 +7395,7 @@ GameObject:
   - component: {fileID: 9194837589852967877}
   - component: {fileID: 4546243478032981834}
   - component: {fileID: 1776444902426893712}
+  - component: {fileID: 8662358808566896689}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -6855,6 +7460,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8662358808566896689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312932602620851702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &2404600221141761567
 GameObject:
   m_ObjectHideFlags: 0
@@ -6922,8 +7540,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6953,7 +7571,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -7486,6 +8104,7 @@ GameObject:
   - component: {fileID: 6705440806835067695}
   - component: {fileID: 1692439514456695191}
   - component: {fileID: 6212202277910236548}
+  - component: {fileID: 4891316426201673397}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -7550,6 +8169,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4891316426201673397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2591725621094388172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &2629295349607074227
 GameObject:
   m_ObjectHideFlags: 0
@@ -7563,6 +8195,8 @@ GameObject:
   - component: {fileID: 28690536389556455}
   - component: {fileID: 4835365765816345506}
   - component: {fileID: 2392736697999006872}
+  - component: {fileID: 2996331728668907695}
+  - component: {fileID: 4573063358515729387}
   m_Layer: 0
   m_Name: Cancel
   m_TagString: Untagged
@@ -7684,6 +8318,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &2996331728668907695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2629295349607074227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &4573063358515729387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2629295349607074227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 2
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2742395105916598480
 GameObject:
   m_ObjectHideFlags: 0
@@ -7697,6 +8359,8 @@ GameObject:
   - component: {fileID: 1610893041079242685}
   - component: {fileID: 5236063084287879332}
   - component: {fileID: 7532516702860458302}
+  - component: {fileID: 222667737536597782}
+  - component: {fileID: 6030760806128310822}
   m_Layer: 0
   m_Name: PageNext
   m_TagString: Untagged
@@ -7761,7 +8425,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 1.5833334
 --- !u!114 &5236063084287879332
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7818,6 +8482,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &222667737536597782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2742395105916598480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.5833334
+--- !u!114 &6030760806128310822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2742395105916598480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2757553631373730094
 GameObject:
   m_ObjectHideFlags: 0
@@ -7890,6 +8582,7 @@ GameObject:
   - component: {fileID: 8770863625438715778}
   - component: {fileID: 2803478114812067453}
   - component: {fileID: 5447264526554272647}
+  - component: {fileID: 2464153960111009898}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -7954,7 +8647,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2464153960111009898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2763503235663262615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &2782912105959715282
 GameObject:
   m_ObjectHideFlags: 0
@@ -8181,6 +8887,8 @@ GameObject:
   - component: {fileID: 8535234949413698704}
   - component: {fileID: 3425785930494531406}
   - component: {fileID: 226024015540521579}
+  - component: {fileID: 1977345201226495232}
+  - component: {fileID: 6642766215193315745}
   m_Layer: 0
   m_Name: Chip9
   m_TagString: Untagged
@@ -8246,7 +8954,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &8535234949413698704
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8318,6 +9026,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &1977345201226495232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2839797215810562696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &6642766215193315745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2839797215810562696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &2856866923997868672
 GameObject:
   m_ObjectHideFlags: 0
@@ -8329,6 +9065,7 @@ GameObject:
   - component: {fileID: 7136396838803838873}
   - component: {fileID: 5997161859260644026}
   - component: {fileID: 7421520851586546173}
+  - component: {fileID: 8174505255800591926}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -8393,6 +9130,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8174505255800591926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2856866923997868672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &2878201712882604012
 GameObject:
   m_ObjectHideFlags: 0
@@ -8953,6 +9703,8 @@ GameObject:
   - component: {fileID: 148116270073625922}
   - component: {fileID: 4236555596808668300}
   - component: {fileID: 3220258256322362196}
+  - component: {fileID: 7569375220445181485}
+  - component: {fileID: 3143492681547134249}
   m_Layer: 0
   m_Name: Tab3
   m_TagString: Untagged
@@ -9017,7 +9769,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &4236555596808668300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9074,6 +9826,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &7569375220445181485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953225183722459761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &3143492681547134249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953225183722459761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &3005512469756758144
 GameObject:
   m_ObjectHideFlags: 0
@@ -9085,6 +9865,7 @@ GameObject:
   - component: {fileID: 6137096404089735322}
   - component: {fileID: 7702285774094491150}
   - component: {fileID: 7787758231990154649}
+  - component: {fileID: 2933750836886608183}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -9149,7 +9930,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2933750836886608183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3005512469756758144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3028268070043883780
 GameObject:
   m_ObjectHideFlags: 0
@@ -9292,8 +10086,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -9323,7 +10117,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -9429,8 +10223,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -9460,7 +10254,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -9764,6 +10558,7 @@ GameObject:
   - component: {fileID: 271585741202750043}
   - component: {fileID: 3363138847856381527}
   - component: {fileID: 91335921773870680}
+  - component: {fileID: 7034556914352550297}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -9828,7 +10623,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7034556914352550297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3332035213310939670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3337821878026666464
 GameObject:
   m_ObjectHideFlags: 0
@@ -9979,6 +10787,8 @@ GameObject:
   - component: {fileID: 5832445506425943173}
   - component: {fileID: 6354456442478719179}
   - component: {fileID: 5375410766441082134}
+  - component: {fileID: 525448668377216677}
+  - component: {fileID: 853825953622955219}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -10099,6 +10909,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &525448668377216677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3347148829395997305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &853825953622955219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3347148829395997305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &3412521387455156163
 GameObject:
   m_ObjectHideFlags: 0
@@ -10260,6 +11098,7 @@ GameObject:
   - component: {fileID: 915766197559042763}
   - component: {fileID: 4945021598647388208}
   - component: {fileID: 1564283497874312330}
+  - component: {fileID: 500734709902613080}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -10324,6 +11163,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &500734709902613080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3461105894614928302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3476329743062187005
 GameObject:
   m_ObjectHideFlags: 0
@@ -10428,8 +11280,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -10459,7 +11311,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -10570,6 +11422,7 @@ GameObject:
   - component: {fileID: 6510762502019081260}
   - component: {fileID: 8976343158484965562}
   - component: {fileID: 3663297496610423128}
+  - component: {fileID: 4338898740198671335}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -10634,6 +11487,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4338898740198671335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3578409757681911684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3587985699457263224
 GameObject:
   m_ObjectHideFlags: 0
@@ -10645,6 +11511,7 @@ GameObject:
   - component: {fileID: 3990393068369464945}
   - component: {fileID: 7195193153283504936}
   - component: {fileID: 2689206301375962239}
+  - component: {fileID: 3803862050885985995}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -10708,7 +11575,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &3803862050885985995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3587985699457263224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &3607103884180769868
 GameObject:
   m_ObjectHideFlags: 0
@@ -10857,6 +11737,7 @@ GameObject:
   - component: {fileID: 1475372356926038192}
   - component: {fileID: 3319785735697541388}
   - component: {fileID: 8796362563809414839}
+  - component: {fileID: 2925312035442167287}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -10921,6 +11802,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2925312035442167287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3664878871453379827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3730103619252136563
 GameObject:
   m_ObjectHideFlags: 0
@@ -11130,6 +12024,7 @@ GameObject:
   - component: {fileID: 3632951317096298293}
   - component: {fileID: 93536034994597200}
   - component: {fileID: 6858123263279681610}
+  - component: {fileID: 2659606383292569322}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -11194,7 +12089,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2659606383292569322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3798230093323352310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &3889052485598422407
 GameObject:
   m_ObjectHideFlags: 0
@@ -11358,6 +12266,8 @@ GameObject:
   - component: {fileID: 6589941188977730172}
   - component: {fileID: 1891779755046486071}
   - component: {fileID: 9131255884828530992}
+  - component: {fileID: 1250996364334467288}
+  - component: {fileID: 6631213839194534293}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -11478,6 +12388,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &1250996364334467288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3922395809129011273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &6631213839194534293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3922395809129011273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4011212027638162280
 GameObject:
   m_ObjectHideFlags: 0
@@ -11553,6 +12491,8 @@ GameObject:
   - component: {fileID: 1927008430843003143}
   - component: {fileID: 7264267192006686347}
   - component: {fileID: 3004156491987349369}
+  - component: {fileID: 1522501997521863982}
+  - component: {fileID: 5343402480635729178}
   m_Layer: 0
   m_Name: Chip5
   m_TagString: Untagged
@@ -11618,7 +12558,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &1927008430843003143
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11690,6 +12630,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &1522501997521863982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4054673765566328084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &5343402480635729178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4054673765566328084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4059730944021809123
 GameObject:
   m_ObjectHideFlags: 0
@@ -11927,6 +12895,7 @@ GameObject:
   - component: {fileID: 8564972823983829443}
   - component: {fileID: 1835726931940735117}
   - component: {fileID: 3717675767073212913}
+  - component: {fileID: 770156489415767547}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -11991,7 +12960,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &770156489415767547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4101568862851299278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4107694980340473078
 GameObject:
   m_ObjectHideFlags: 0
@@ -12203,6 +13185,8 @@ GameObject:
   - component: {fileID: 6760201792539502696}
   - component: {fileID: 7071965600477241322}
   - component: {fileID: 752629325884128291}
+  - component: {fileID: 438829305331377828}
+  - component: {fileID: 7734291439072892971}
   m_Layer: 0
   m_Name: Chip1
   m_TagString: Untagged
@@ -12268,7 +13252,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &6760201792539502696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12340,6 +13324,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &438829305331377828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4156448698003308456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &7734291439072892971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4156448698003308456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4180671095255207070
 GameObject:
   m_ObjectHideFlags: 0
@@ -12351,6 +13363,7 @@ GameObject:
   - component: {fileID: 8798482389767890427}
   - component: {fileID: 7201226474112032588}
   - component: {fileID: 4129091496870808313}
+  - component: {fileID: 5429229002459209361}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -12415,7 +13428,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5429229002459209361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4180671095255207070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4228900898420195346
 GameObject:
   m_ObjectHideFlags: 0
@@ -12427,6 +13453,7 @@ GameObject:
   - component: {fileID: 7166253936916338447}
   - component: {fileID: 160165171470774042}
   - component: {fileID: 632096586478242439}
+  - component: {fileID: 5328755269231334437}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -12491,6 +13518,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5328755269231334437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4228900898420195346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4249271888933619572
 GameObject:
   m_ObjectHideFlags: 0
@@ -12504,6 +13544,8 @@ GameObject:
   - component: {fileID: 2708745684669461129}
   - component: {fileID: 5025314357968837272}
   - component: {fileID: 1819487237420493723}
+  - component: {fileID: 1537159680936866391}
+  - component: {fileID: 8389214219211597842}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -12624,6 +13666,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &1537159680936866391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4249271888933619572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &8389214219211597842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4249271888933619572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4276205851336882790
 GameObject:
   m_ObjectHideFlags: 0
@@ -12670,6 +13740,7 @@ GameObject:
   - component: {fileID: 5399158018048425816}
   - component: {fileID: 4849840647370342681}
   - component: {fileID: 3189807154736452315}
+  - component: {fileID: 5476336515158060393}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -12734,7 +13805,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5476336515158060393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4291930443012048378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4300127835017013530
 GameObject:
   m_ObjectHideFlags: 0
@@ -12822,6 +13906,7 @@ GameObject:
   - component: {fileID: 8981377273955476929}
   - component: {fileID: 1896923543879020454}
   - component: {fileID: 8113618913143451990}
+  - component: {fileID: 3193127449434481365}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -12886,7 +13971,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3193127449434481365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4320879646004652492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4424713553546548501
 GameObject:
   m_ObjectHideFlags: 0
@@ -12900,6 +13998,8 @@ GameObject:
   - component: {fileID: 6564511847865063344}
   - component: {fileID: 10674535480016311}
   - component: {fileID: 7116879009486068415}
+  - component: {fileID: 7460432085027586340}
+  - component: {fileID: 1836687150729153225}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -13020,6 +14120,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &7460432085027586340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4424713553546548501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1836687150729153225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4424713553546548501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4437953143104998768
 GameObject:
   m_ObjectHideFlags: 0
@@ -13365,6 +14493,7 @@ GameObject:
   - component: {fileID: 8937346125754956598}
   - component: {fileID: 6261676164923937466}
   - component: {fileID: 1634987670252348084}
+  - component: {fileID: 2499023819590804917}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -13429,6 +14558,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2499023819590804917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4520923103719887921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4566728441201923088
 GameObject:
   m_ObjectHideFlags: 0
@@ -13517,6 +14659,8 @@ GameObject:
   - component: {fileID: 7501494822294432195}
   - component: {fileID: 9088068749104520010}
   - component: {fileID: 1919342532637103492}
+  - component: {fileID: 712582164697043668}
+  - component: {fileID: 2289624128312156049}
   m_Layer: 0
   m_Name: PagePrev
   m_TagString: Untagged
@@ -13581,7 +14725,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 1.5833334
 --- !u!114 &9088068749104520010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13638,6 +14782,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &712582164697043668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4644517393354527325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.5833334
+--- !u!114 &2289624128312156049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4644517393354527325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4655853524455732699
 GameObject:
   m_ObjectHideFlags: 0
@@ -13724,6 +14896,7 @@ GameObject:
   - component: {fileID: 1849633788927970680}
   - component: {fileID: 7243836396330095510}
   - component: {fileID: 7991457554195409831}
+  - component: {fileID: 7359859864862660683}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -13788,7 +14961,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7359859864862660683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4708379437694460189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &4726084046519502878
 GameObject:
   m_ObjectHideFlags: 0
@@ -13802,6 +14988,8 @@ GameObject:
   - component: {fileID: 7093901348029487000}
   - component: {fileID: 3300915947114476883}
   - component: {fileID: 7775324430309212204}
+  - component: {fileID: 3743630672106354074}
+  - component: {fileID: 1928362562821432918}
   m_Layer: 0
   m_Name: RandomBtn
   m_TagString: Untagged
@@ -13923,6 +15111,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3743630672106354074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4726084046519502878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1928362562821432918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4726084046519502878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 8236845984893087185}
+  sink: 10
 --- !u!1 &4761051152100254415
 GameObject:
   m_ObjectHideFlags: 0
@@ -13936,6 +15152,8 @@ GameObject:
   - component: {fileID: 2036612586503187755}
   - component: {fileID: 6101903102208670172}
   - component: {fileID: 5602893001210884121}
+  - component: {fileID: 8949520718964427394}
+  - component: {fileID: 1168034530199109271}
   m_Layer: 0
   m_Name: Confirm
   m_TagString: Untagged
@@ -14057,6 +15275,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8949520718964427394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4761051152100254415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1168034530199109271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4761051152100254415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 1
+  face: {fileID: 7346081956391026817}
+  sink: 10
 --- !u!1 &4762360632745445613
 GameObject:
   m_ObjectHideFlags: 0
@@ -14070,6 +15316,8 @@ GameObject:
   - component: {fileID: 3553124269291090790}
   - component: {fileID: 4639974019641076967}
   - component: {fileID: 5721054806732975744}
+  - component: {fileID: 3307134052239904490}
+  - component: {fileID: 2011036651035340094}
   m_Layer: 0
   m_Name: ResetOutfitBtn
   m_TagString: Untagged
@@ -14134,7 +15382,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.5
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &4639974019641076967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14191,6 +15439,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3307134052239904490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4762360632745445613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &2011036651035340094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4762360632745445613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4805301279714484146
 GameObject:
   m_ObjectHideFlags: 0
@@ -14205,6 +15481,8 @@ GameObject:
   - component: {fileID: 5774416424098980280}
   - component: {fileID: 3095822451946130192}
   - component: {fileID: 7178684301447203195}
+  - component: {fileID: 3271410809116172195}
+  - component: {fileID: 2922234141860581238}
   m_Layer: 0
   m_Name: Chip7
   m_TagString: Untagged
@@ -14270,7 +15548,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &5774416424098980280
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14342,6 +15620,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &3271410809116172195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4805301279714484146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &2922234141860581238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4805301279714484146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &4849328122116257441
 GameObject:
   m_ObjectHideFlags: 0
@@ -14635,8 +15941,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -14666,7 +15972,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -15078,6 +16384,7 @@ GameObject:
   - component: {fileID: 3215595018357102929}
   - component: {fileID: 1147179300032663781}
   - component: {fileID: 8978419942160328141}
+  - component: {fileID: 8227955033865200262}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -15141,7 +16448,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &8227955033865200262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5198198147191770170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &5281883729760146088
 GameObject:
   m_ObjectHideFlags: 0
@@ -15209,8 +16529,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -15240,7 +16560,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -15366,6 +16686,7 @@ GameObject:
   - component: {fileID: 6925015821267890017}
   - component: {fileID: 6657729026474840664}
   - component: {fileID: 3832801160731816825}
+  - component: {fileID: 5615862938503307552}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -15429,7 +16750,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &5615862938503307552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5403637719799717861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &5453755134653381443
 GameObject:
   m_ObjectHideFlags: 0
@@ -15518,6 +16852,8 @@ GameObject:
   - component: {fileID: 185539209733035647}
   - component: {fileID: 8825218199353127623}
   - component: {fileID: 3827007452695192788}
+  - component: {fileID: 2574013772023955082}
+  - component: {fileID: 6166184647926492214}
   m_Layer: 0
   m_Name: Tab1
   m_TagString: Untagged
@@ -15582,7 +16918,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &8825218199353127623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15639,6 +16975,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &2574013772023955082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5537773140996677407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &6166184647926492214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5537773140996677407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &5539525392357553605
 GameObject:
   m_ObjectHideFlags: 0
@@ -15650,6 +17014,7 @@ GameObject:
   - component: {fileID: 5212562067872894193}
   - component: {fileID: 1717217813903479778}
   - component: {fileID: 1943057587098271231}
+  - component: {fileID: 8418374739167849390}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -15714,6 +17079,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8418374739167849390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5539525392357553605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &5549154706474263899
 GameObject:
   m_ObjectHideFlags: 0
@@ -15800,6 +17178,7 @@ GameObject:
   - component: {fileID: 4940755406746104449}
   - component: {fileID: 7314766541754388993}
   - component: {fileID: 6072268638861434132}
+  - component: {fileID: 1879963106914178097}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -15864,6 +17243,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1879963106914178097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5582961741346167552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &5644684906899893823
 GameObject:
   m_ObjectHideFlags: 0
@@ -15951,6 +17343,7 @@ GameObject:
   - component: {fileID: 3973501187149011143}
   - component: {fileID: 2759388560350668489}
   - component: {fileID: 756152935229034174}
+  - component: {fileID: 3491381169315583126}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -16015,6 +17408,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3491381169315583126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5657577223522680042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &5719603808605901760
 GameObject:
   m_ObjectHideFlags: 0
@@ -16102,6 +17508,7 @@ GameObject:
   - component: {fileID: 848482152020631173}
   - component: {fileID: 3789882043069049148}
   - component: {fileID: 5579383533549947421}
+  - component: {fileID: 2830695265633304797}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -16166,6 +17573,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2830695265633304797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5736964504359360756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &5774855251729709310
 GameObject:
   m_ObjectHideFlags: 0
@@ -16545,6 +17965,7 @@ GameObject:
   - component: {fileID: 6958073171298706735}
   - component: {fileID: 1706976084858680540}
   - component: {fileID: 7688509069998314535}
+  - component: {fileID: 864390099729076727}
   m_Layer: 0
   m_Name: PartTabs
   m_TagString: Untagged
@@ -16613,6 +18034,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &864390099729076727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5911742298067589238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &5913608937906153149
 GameObject:
   m_ObjectHideFlags: 0
@@ -16627,6 +18061,8 @@ GameObject:
   - component: {fileID: 906966377771251039}
   - component: {fileID: 1241241337152437464}
   - component: {fileID: 5003199480218627969}
+  - component: {fileID: 158161104510203738}
+  - component: {fileID: 5455478170936262816}
   m_Layer: 0
   m_Name: Chip3
   m_TagString: Untagged
@@ -16692,7 +18128,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &906966377771251039
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16764,6 +18200,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &158161104510203738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913608937906153149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &5455478170936262816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913608937906153149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &5931718320570202698
 GameObject:
   m_ObjectHideFlags: 0
@@ -16775,6 +18239,7 @@ GameObject:
   - component: {fileID: 1286233401142577145}
   - component: {fileID: 8270283001305388970}
   - component: {fileID: 4122305946292281594}
+  - component: {fileID: 4941537427467490771}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -16839,6 +18304,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4941537427467490771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5931718320570202698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6057832417045853241
 GameObject:
   m_ObjectHideFlags: 0
@@ -17118,8 +18596,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -17149,7 +18627,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -17199,6 +18677,7 @@ GameObject:
   - component: {fileID: 3139040085911751186}
   - component: {fileID: 6135157671542857358}
   - component: {fileID: 4506690300010499306}
+  - component: {fileID: 1644322360501085363}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -17263,7 +18742,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1644322360501085363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6189363093404065433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6199315233607295180
 GameObject:
   m_ObjectHideFlags: 0
@@ -17564,6 +19056,8 @@ GameObject:
   - component: {fileID: 1609173344078347546}
   - component: {fileID: 1575052354449937659}
   - component: {fileID: 5238069583787753833}
+  - component: {fileID: 9115642169098311849}
+  - component: {fileID: 5911060433687715483}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -17684,6 +19178,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &9115642169098311849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6291175761600170867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5911060433687715483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6291175761600170867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &6370183033040475435
 GameObject:
   m_ObjectHideFlags: 0
@@ -17770,6 +19292,7 @@ GameObject:
   - component: {fileID: 979591592163928857}
   - component: {fileID: 4816567961325901970}
   - component: {fileID: 8044954440763637438}
+  - component: {fileID: 6773455067744327746}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -17834,7 +19357,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6773455067744327746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6385594543258988108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6396048025814506942
 GameObject:
   m_ObjectHideFlags: 0
@@ -17846,6 +19382,7 @@ GameObject:
   - component: {fileID: 5242715907513836070}
   - component: {fileID: 9167564517456914415}
   - component: {fileID: 1156290481696972772}
+  - component: {fileID: 6186547845620158796}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -17909,7 +19446,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &6186547845620158796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6396048025814506942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &6467338598690862225
 GameObject:
   m_ObjectHideFlags: 0
@@ -17921,6 +19471,7 @@ GameObject:
   - component: {fileID: 4025133713323629865}
   - component: {fileID: 1861849768857088407}
   - component: {fileID: 5186506335211557387}
+  - component: {fileID: 996368060581955727}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -17984,7 +19535,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &996368060581955727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6467338598690862225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &6493060012176638867
 GameObject:
   m_ObjectHideFlags: 0
@@ -18212,6 +19776,8 @@ GameObject:
   - component: {fileID: 5318248522742990311}
   - component: {fileID: 2860648733748302747}
   - component: {fileID: 5850725140276012522}
+  - component: {fileID: 5034023650371421199}
+  - component: {fileID: 4301540000642518484}
   m_Layer: 0
   m_Name: Chip2
   m_TagString: Untagged
@@ -18277,7 +19843,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.0714285
 --- !u!114 &5318248522742990311
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18349,6 +19915,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &5034023650371421199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6606702693259336357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.0714285
+--- !u!114 &4301540000642518484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6606702693259336357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &6656534962410632166
 GameObject:
   m_ObjectHideFlags: 0
@@ -18360,6 +19954,7 @@ GameObject:
   - component: {fileID: 2345418899119043172}
   - component: {fileID: 3592446124094193769}
   - component: {fileID: 1821060838372674865}
+  - component: {fileID: 8519076562604864647}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -18423,7 +20018,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &8519076562604864647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6656534962410632166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &6665926177369187725
 GameObject:
   m_ObjectHideFlags: 0
@@ -18435,6 +20043,7 @@ GameObject:
   - component: {fileID: 882169362241813291}
   - component: {fileID: 2408300267011777784}
   - component: {fileID: 4302952683479392852}
+  - component: {fileID: 4641615661632005661}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -18499,6 +20108,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4641615661632005661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6665926177369187725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6690445749124373993
 GameObject:
   m_ObjectHideFlags: 0
@@ -18663,6 +20285,8 @@ GameObject:
   - component: {fileID: 729460055235123227}
   - component: {fileID: 8933835281921941163}
   - component: {fileID: 767440270515642131}
+  - component: {fileID: 8549161387684584106}
+  - component: {fileID: 5222542800323945681}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -18783,6 +20407,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8549161387684584106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6707000166934063195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5222542800323945681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6707000166934063195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &6797910703984659149
 GameObject:
   m_ObjectHideFlags: 0
@@ -18832,6 +20484,7 @@ GameObject:
   - component: {fileID: 3524921703434054901}
   - component: {fileID: 3843271213600549370}
   - component: {fileID: 1074780596330594734}
+  - component: {fileID: 1446929293166793473}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -18896,7 +20549,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1446929293166793473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6817366531635727627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6864387883450719066
 GameObject:
   m_ObjectHideFlags: 0
@@ -18908,6 +20574,7 @@ GameObject:
   - component: {fileID: 5614697355855241707}
   - component: {fileID: 1131869003608225787}
   - component: {fileID: 3666443153711899089}
+  - component: {fileID: 8831401656737422591}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -18972,7 +20639,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8831401656737422591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6864387883450719066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &6915791382624512281
 GameObject:
   m_ObjectHideFlags: 0
@@ -19040,8 +20720,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -19071,7 +20751,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -19177,8 +20857,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -19208,7 +20888,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -19394,6 +21074,7 @@ GameObject:
   - component: {fileID: 7161069441314841913}
   - component: {fileID: 5754422910702815512}
   - component: {fileID: 5589455132947111794}
+  - component: {fileID: 4737993408538680101}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -19458,7 +21139,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4737993408538680101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7173447661844397432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &7207735730506515538
 GameObject:
   m_ObjectHideFlags: 0
@@ -19470,6 +21164,7 @@ GameObject:
   - component: {fileID: 2507643023283065841}
   - component: {fileID: 8554190986306044977}
   - component: {fileID: 186662307044289113}
+  - component: {fileID: 1252611442745357258}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -19534,6 +21229,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1252611442745357258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7207735730506515538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &7216318585596085170
 GameObject:
   m_ObjectHideFlags: 0
@@ -19799,8 +21507,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u2014"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2b3021157dc754275997b405382cb44b, type: 2}
+  m_sharedMaterial: {fileID: 8527393934874279224, guid: 2b3021157dc754275997b405382cb44b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -19830,7 +21538,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -19882,6 +21590,8 @@ GameObject:
   - component: {fileID: 8307858117771052119}
   - component: {fileID: 8279487174238411980}
   - component: {fileID: 5658276021438676459}
+  - component: {fileID: 4485515562388835414}
+  - component: {fileID: 4392987831614858453}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -20002,6 +21712,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4485515562388835414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7285918162768991810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &4392987831614858453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7285918162768991810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &7299372748893530269
 GameObject:
   m_ObjectHideFlags: 0
@@ -20149,6 +21887,7 @@ GameObject:
   - component: {fileID: 8236845984893087185}
   - component: {fileID: 5059975763430796457}
   - component: {fileID: 6060404646910465949}
+  - component: {fileID: 5049229032512255846}
   m_Layer: 0
   m_Name: Face
   m_TagString: Untagged
@@ -20213,7 +21952,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 1.14
+--- !u!114 &5049229032512255846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381096447112370379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.14
 --- !u!1 &7410339679685016149
 GameObject:
   m_ObjectHideFlags: 0
@@ -20225,6 +21977,7 @@ GameObject:
   - component: {fileID: 3508037183148219311}
   - component: {fileID: 30041645016162621}
   - component: {fileID: 4874622844040428638}
+  - component: {fileID: 1047269753053277837}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -20289,6 +22042,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1047269753053277837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7410339679685016149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &7443955154623210959
 GameObject:
   m_ObjectHideFlags: 0
@@ -20361,6 +22127,7 @@ GameObject:
   - component: {fileID: 6304171040379691423}
   - component: {fileID: 8456311423343946236}
   - component: {fileID: 1361197834943317986}
+  - component: {fileID: 7146654301596993845}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -20425,7 +22192,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7146654301596993845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7454423763019431542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &7521002852271888533
 GameObject:
   m_ObjectHideFlags: 0
@@ -21129,6 +22909,8 @@ GameObject:
   - component: {fileID: 5096855578833999543}
   - component: {fileID: 2159185245998753003}
   - component: {fileID: 287199366943523691}
+  - component: {fileID: 4692711471725851071}
+  - component: {fileID: 5342889429086084170}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -21249,6 +23031,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4692711471725851071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7773859434025516567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5342889429086084170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7773859434025516567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &7904925070071837656
 GameObject:
   m_ObjectHideFlags: 0
@@ -21262,6 +23072,8 @@ GameObject:
   - component: {fileID: 9133101539517959542}
   - component: {fileID: 6569945182802293158}
   - component: {fileID: 3087283500201403116}
+  - component: {fileID: 4596510054902996589}
+  - component: {fileID: 1673371253585475686}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -21382,6 +23194,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &4596510054902996589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7904925070071837656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1673371253585475686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7904925070071837656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &7907832647135398167
 GameObject:
   m_ObjectHideFlags: 0
@@ -21393,6 +23233,7 @@ GameObject:
   - component: {fileID: 7346081956391026817}
   - component: {fileID: 2460880457785642590}
   - component: {fileID: 14672531656389657}
+  - component: {fileID: 7067685578068755931}
   m_Layer: 0
   m_Name: Face
   m_TagString: Untagged
@@ -21458,6 +23299,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7067685578068755931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7907832647135398167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &7955035150252218519
 GameObject:
   m_ObjectHideFlags: 0
@@ -21471,6 +23325,8 @@ GameObject:
   - component: {fileID: 8951036634733716524}
   - component: {fileID: 619869913975244505}
   - component: {fileID: 3618339122200826092}
+  - component: {fileID: 7524883415623067131}
+  - component: {fileID: 8339070546970393978}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -21591,6 +23447,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &7524883415623067131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7955035150252218519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &8339070546970393978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7955035150252218519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &7966420920391667909
 GameObject:
   m_ObjectHideFlags: 0
@@ -21814,6 +23698,7 @@ GameObject:
   - component: {fileID: 8872326457243594645}
   - component: {fileID: 2972652213919510616}
   - component: {fileID: 3350986247985195838}
+  - component: {fileID: 7964157616051690980}
   m_Layer: 0
   m_Name: ItemsIcon
   m_TagString: Untagged
@@ -21878,7 +23763,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1.6
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7964157616051690980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8025195272620998599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8055916193230782765
 GameObject:
   m_ObjectHideFlags: 0
@@ -21892,6 +23790,8 @@ GameObject:
   - component: {fileID: 1771316980905372634}
   - component: {fileID: 6344394520260783960}
   - component: {fileID: 4241850756776591341}
+  - component: {fileID: 796757948814202633}
+  - component: {fileID: 4569363554235277405}
   m_Layer: 0
   m_Name: Tab2
   m_TagString: Untagged
@@ -21956,7 +23856,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &6344394520260783960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22013,6 +23913,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &796757948814202633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8055916193230782765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &4569363554235277405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8055916193230782765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &8069833946784219531
 GameObject:
   m_ObjectHideFlags: 0
@@ -22313,6 +24241,8 @@ GameObject:
   - component: {fileID: 199567598918007870}
   - component: {fileID: 5902781204401356349}
   - component: {fileID: 131539622498144286}
+  - component: {fileID: 2051264785564902287}
+  - component: {fileID: 1799799729997064722}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -22433,6 +24363,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &2051264785564902287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8246282679157700037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1799799729997064722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8246282679157700037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &8344229810813139369
 GameObject:
   m_ObjectHideFlags: 0
@@ -22581,6 +24539,7 @@ GameObject:
   - component: {fileID: 8169559317347887685}
   - component: {fileID: 2514565563452565193}
   - component: {fileID: 6288097831277057478}
+  - component: {fileID: 3975853092421248069}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -22645,6 +24604,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3975853092421248069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8394006102119970501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8416537604387610164
 GameObject:
   m_ObjectHideFlags: 0
@@ -22734,6 +24706,8 @@ GameObject:
   - component: {fileID: 2534512249636936235}
   - component: {fileID: 8392958953636484583}
   - component: {fileID: 1524483837382996085}
+  - component: {fileID: 5156249284650413987}
+  - component: {fileID: 1072887492678767435}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -22854,6 +24828,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &5156249284650413987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8434339271934296863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &1072887492678767435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8434339271934296863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0
 --- !u!1 &8444274513557701165
 GameObject:
   m_ObjectHideFlags: 0
@@ -22953,6 +24955,7 @@ GameObject:
   - component: {fileID: 8585520163743784883}
   - component: {fileID: 6977251822547079766}
   - component: {fileID: 2236224722439693724}
+  - component: {fileID: 2350068112185620535}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -23017,6 +25020,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2350068112185620535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8451243528918701377}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8594245277085601213
 GameObject:
   m_ObjectHideFlags: 0
@@ -23378,6 +25394,7 @@ GameObject:
   - component: {fileID: 3705547508491891852}
   - component: {fileID: 6139839782318009425}
   - component: {fileID: 2640472746671394229}
+  - component: {fileID: 8572448514382242451}
   m_Layer: 0
   m_Name: HeaderCoin
   m_TagString: Untagged
@@ -23444,6 +25461,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8572448514382242451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8762367961339995060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8799558936254819836
 GameObject:
   m_ObjectHideFlags: 0
@@ -23455,6 +25485,7 @@ GameObject:
   - component: {fileID: 3377259654556629439}
   - component: {fileID: 2345288016611774502}
   - component: {fileID: 3124875089187359555}
+  - component: {fileID: 3575125009882682577}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -23518,7 +25549,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &3575125009882682577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8799558936254819836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &8813403181628009089
 GameObject:
   m_ObjectHideFlags: 0
@@ -23530,6 +25574,7 @@ GameObject:
   - component: {fileID: 5596693347456830439}
   - component: {fileID: 7692699437713826458}
   - component: {fileID: 1363865088331294299}
+  - component: {fileID: 6006112635359037439}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -23594,6 +25639,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &6006112635359037439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8813403181628009089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8816633380002342764
 GameObject:
   m_ObjectHideFlags: 0
@@ -23817,6 +25875,7 @@ GameObject:
   - component: {fileID: 5786279939031002385}
   - component: {fileID: 2495385167078085761}
   - component: {fileID: 3097089730662195992}
+  - component: {fileID: 3019117154127355931}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -23881,6 +25940,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3019117154127355931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8847610074067964569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &8904843022337004106
 GameObject:
   m_ObjectHideFlags: 0
@@ -24029,6 +26101,7 @@ GameObject:
   - component: {fileID: 1828327812480651195}
   - component: {fileID: 291386365218870860}
   - component: {fileID: 1353906730244113034}
+  - component: {fileID: 8764986105166712365}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -24092,7 +26165,20 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 2
+  m_PixelsPerUnitMultiplier: 1.2
+--- !u!114 &8764986105166712365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9062185712570706908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1.2
 --- !u!1 &9088741748707228278
 GameObject:
   m_ObjectHideFlags: 0
@@ -24179,6 +26265,7 @@ GameObject:
   - component: {fileID: 4724733225982559002}
   - component: {fileID: 2915300013586548582}
   - component: {fileID: 6243912059174660338}
+  - component: {fileID: 4200847361235633376}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -24243,6 +26330,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4200847361235633376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9091070024697590251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
 --- !u!1 &9160813158536922479
 GameObject:
   m_ObjectHideFlags: 0
@@ -24256,6 +26356,8 @@ GameObject:
   - component: {fileID: 2284508841988322458}
   - component: {fileID: 3815359365329876989}
   - component: {fileID: 8240966540452279954}
+  - component: {fileID: 8296496475458979499}
+  - component: {fileID: 5763371319374465903}
   m_Layer: 0
   m_Name: Bg
   m_TagString: Untagged
@@ -24376,3 +26478,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65c84fbfd16d2e646b0d199e50af14c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIFxPress
+--- !u!114 &8296496475458979499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9160813158536922479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 095f6ad1cbea91243acc0a909350a4ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UISliceFit
+  baseMultiplier: 1
+--- !u!114 &5763371319374465903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9160813158536922479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db9f91581a6c154eb7de360e54a527c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.UI.UIPressFeel
+  sound: 0
+  face: {fileID: 0}
+  sink: 0

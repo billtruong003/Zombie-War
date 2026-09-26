@@ -32,6 +32,7 @@ namespace ZombieWar.Editor.Audio
             "Assets/ZombieHorrorPackageFree",
             "Assets/ThirdParty/Epic Toon FX/Sound",
             "Assets/Footsteps Pack Expanded",
+            "Assets/_Project/Audio/UI",   // M8: synthesised UI sounds (Tools/gen_ui_sfx.py)
         };
 
         private static readonly string[] GroupNames =
@@ -98,6 +99,8 @@ namespace ZombieWar.Editor.Audio
                 "sfx.skill.shield.break", "sfx.skill.frost", "sfx.skill.fire", "sfx.skill.drone",
                 "sfx.skill.airstrike.mark", "sfx.skill.airstrike.blast", "sfx.skill.evolve",
                 "sfx.skill.blade.hit", "sfx.skill.boomerang.throw",
+                "sfx.ui.tap", "sfx.ui.confirm", "sfx.ui.back", "sfx.ui.error", "sfx.ui.purchase",
+                "sfx.ui.levelup", "sfx.ui.card", "sfx.ui.equip",
             };
             foreach (string key in required)
                 if (!keys.Contains(key)) throw new InvalidDataException($"Required runtime cue is missing: {key}");
@@ -188,6 +191,7 @@ namespace ZombieWar.Editor.Audio
             if (p.Contains("/bgm/") && (n.Contains("victory") || n.Contains("defeat")
                 || n is "startgame" or "wavestart" or "clearwave")) return "stinger";
             if (p.Contains("footsteps pack expanded")) return "player_movement";
+            if (p.Contains("/_project/audio/ui/")) return "ui";
             if (p.Contains("/gunshots/") || n is "gl_fire") return "weapon_fire";
             if (p.Contains("/foley/") && p.Contains("freeweaponsounds")) return "weapon_mechanical";
             if (n.StartsWith("0") && p.Contains("grenadelauncher")) return "weapon_mechanical";
@@ -339,6 +343,13 @@ namespace ZombieWar.Editor.Audio
                 if (n is "etfx_explosion_magic2") Add(plan, "sfx.skill.evolve");
                 if (n.Contains("shoot_laser")) Add(plan, "sfx.weapon.laser.fire");
                 if (n.Contains("shoot_rocket")) Add(plan, "sfx.weapon.grenade.fire");
+                return;
+            }
+
+            // M8: ui_tap.wav -> sfx.ui.tap, etc.
+            if (p.Contains("/_project/audio/ui/") && n.StartsWith("ui_"))
+            {
+                Add(plan, "sfx.ui." + n.Substring(3));
                 return;
             }
 
@@ -535,7 +546,7 @@ namespace ZombieWar.Editor.Audio
 
         private static string GroupFor(AudioAssetPlan plan) => plan.profile switch
         {
-            "music" or "stinger" => "ZW_Audio_Core",
+            "music" or "stinger" or "ui" => "ZW_Audio_Core",
             "weapon_fire" or "weapon_mechanical" => "ZW_Audio_Weapons",
             "creature" => "ZW_Audio_Zombies",
             "player_movement" => "ZW_Audio_Footsteps",
@@ -558,6 +569,7 @@ namespace ZombieWar.Editor.Audio
             "creature" => 0.72f,
             "player_movement" => 0.55f,
             "impact" => 0.78f,
+            "ui" => 0.5f,   // taps sit under the game, never over it
             _ => 0.88f,
         };
 
@@ -597,6 +609,7 @@ namespace ZombieWar.Editor.Audio
             "impact" => 0.035f,
             "weapon_fire" => 0.015f,
             "weapon_mechanical" => 0.025f,
+            "ui" => 0.03f,  // repeated taps do not sound mechanical
             _ => 0f,
         };
 

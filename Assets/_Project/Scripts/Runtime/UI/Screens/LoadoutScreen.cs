@@ -9,8 +9,6 @@ namespace ZombieWar.UI
     /// LOADOUT: pick the ONE weapon the next run is played with (M6 one-weapon contract).
     /// Presentation is authored in the prefab; runtime binds data and handles interaction:
     /// - Ownership comes from PlayerProfile.
-    /// - The first slot view shows the run weapon. The prefab still has the retired second and third
-    ///   slots and the bomb row; they are hidden here until the owner removes them.
     /// - Tapping a card always shows its details, and equips it when it is owned; otherwise the card
     ///   shakes and nothing changes.
     /// - Refreshes on PlayerProfile.LoadoutChanged.
@@ -26,7 +24,6 @@ namespace ZombieWar.UI
         [SerializeField] private UIPrototypeCatalog catalog;
 
         [Header("Authored views")]
-        [SerializeField] private LoadoutSlotView[] slotViews;      // [0] = run weapon; the rest are retired
         [SerializeField] private WeaponItemCardView[] ownedCards;  // 1 card / WeaponData, bake sẵn
         [SerializeField] private Image infoIcon;
         [SerializeField] private TMP_Text infoNameLabel;
@@ -103,7 +100,6 @@ namespace ZombieWar.UI
         {
             if (!IsShown) return;
             RefreshOwnership();
-            RefreshRunWeapon();
         }
 
         private void RefreshOwnership()
@@ -112,31 +108,14 @@ namespace ZombieWar.UI
             foreach (var card in ownedCards)
             {
                 if (card == null || card.data == null) continue;
-                // Icon nằm trong UIPrototypeCatalog (asset), không bake trong prefab — bind 1 lần.
-                if (card.icon != null && card.icon.sprite == null && catalog != null)
-                {
-                    var sprite = catalog.GetWeaponIcon(card.data);
-                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = card.data.IconTint; }
-                }
                 // Ownership thật từ profile — cheatUnlockAll cố tình KHÔNG được hỏi ở đây.
-                // Rarity reads from the tile before the name does (M8 mockup).
-                var bg = card.transform.Find("Bg")?.GetComponent<Image>();
-                if (bg != null) bg.color = Color.Lerp(new Color(0.16f, 0.18f, 0.24f), card.data.TierColor, 0.22f);
                 bool owned = PlayerProfile.IsWeaponOwned(card.data.WeaponId);
+                // Icon + rarity tile come from the catalog; rebound on every refresh because buying a
+                // gun swaps its silhouette for the real look.
+                card.BindIcon(catalog, owned);
                 if (card.lockOverlay != null) card.lockOverlay.SetActive(!owned);
                 if (card.ownedBadge != null) card.ownedBadge.SetActive(false); // grid không dùng badge (đè tên)
             }
-        }
-
-        private void RefreshRunWeapon()
-        {
-            if (slotViews == null || slotViews.Length == 0 || slotViews[0] == null) return;
-            string id = LoadoutState.WeaponId;
-            WeaponData d = LoadoutState.Resolve(id, Arsenal);
-            if (d == null && !string.IsNullOrEmpty(id))
-                WarnOnce(id, $"Run weapon id '{id}' is not in the catalog — shown empty, NOT replaced");
-            slotViews[0].Bind(d, d != null && catalog != null ? catalog.GetWeaponIcon(d) : null);
-            slotViews[0].SetSelected(true);
         }
 
         private void ShowEquippedDetails()
@@ -153,8 +132,15 @@ namespace ZombieWar.UI
             if (card == null || card.data == null) return;
             ShowDetails(card);
 
+            bool wasEquipped = LoadoutState.WeaponId == card.data.WeaponId;
             var result = LoadoutState.TryEquip(card.data);
-            if (result == LoadoutState.EquipResult.Equipped) return; // LoadoutChanged refreshes the slot
+            if (result == LoadoutState.EquipResult.Equipped)
+            {
+                // LoadoutChanged refreshes the details; a new pick gets a sound and a punch.
+                if (!wasEquipped) { UIFeedback.Equip(); UIFx.Punch(card.transform); }
+                return;
+            }
+            UIFeedback.Error();
             UIFx.Shake((RectTransform)card.transform); // locked: details are shown, state is unchanged
         }
 
@@ -168,14 +154,14 @@ namespace ZombieWar.UI
             if (infoIcon != null)
             {
                 infoIcon.sprite = card.icon != null ? card.icon.sprite : null;
-                infoIcon.color = infoIcon.sprite != null ? d.IconTint : UITheme.Surface2;
+                infoIcon.color = infoIcon.sprite != null ? Color.white : UITheme.Surface2;
                 infoIcon.preserveAspect = true;
             }
             if (infoNameLabel != null)
                 infoNameLabel.text =
                     $"{d.weaponName} · <color=#{ColorUtility.ToHtmlStringRGB(d.TierColor)}>{d.tier.ToString().ToUpperInvariant()}</color>";
 
-            if (heroBackdrop != null) heroBackdrop.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), d.TierColor, 0.3f);
+            if (heroBackdrop != null) heroBackdrop.color = d.TileColor;   // M8: solid rarity tile behind the icon
             BindSignatures(d);
 
             // Stat bar: chuẩn hoá TẠM (provisional) — chỉ để so sánh tương đối, chưa phải
@@ -206,8 +192,8 @@ namespace ZombieWar.UI
         private void SetStat(int i, float v01)
         {
             if (statBars == null || i >= statBars.Length || statBars[i] == null) return;
-            var rt = statBars[i].rectTransform;
-            rt.anchorMax = new Vector2(Mathf.Clamp01(v01), 1f);
+            // The bar image sits inside a UIBarClip; the clip carries the value.
+            UIBarClip.Set(statBars[i].rectTransform, v01);
         }
 
         private void BindSignatures(WeaponData d)

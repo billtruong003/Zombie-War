@@ -117,11 +117,11 @@ namespace ZombieWar.UI
                     $"<color=#{ColorUtility.ToHtmlStringRGB(d.TierColor)}>{d.tier.ToString().ToUpperInvariant()}</color> · {FamilyName(d.weaponClass)}";
             if (weaponIcon != null)
             {
-                var sprite = d != null && catalog != null ? catalog.GetWeaponIcon(d) : null;
+                var sprite = d != null && catalog != null ? catalog.GetWeaponIcon(d, true) : null;   // the equipped gun is owned
                 weaponIcon.enabled = sprite != null;
-                if (sprite != null) { weaponIcon.sprite = sprite; weaponIcon.color = d.IconTint; weaponIcon.preserveAspect = true; }
+                if (sprite != null) { weaponIcon.sprite = sprite; weaponIcon.color = Color.white; weaponIcon.preserveAspect = true; }
             }
-            if (weaponTile != null && d != null) weaponTile.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), d.TierColor, 0.3f);
+            if (weaponTile != null && d != null) weaponTile.color = d.TileColor;
 
             float maxDamage = 1f, maxRate = 1f;
             if (all != null)

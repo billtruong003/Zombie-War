@@ -14,6 +14,15 @@ namespace ZombieWar
         {
             if (_entered || !Bill.IsReady) return;
             _entered = true;
+#if UNITY_EDITOR
+            // ZombieWar/Dev/Play Skill Sandbox sets this for one play session.
+            if (UnityEditor.SessionState.GetBool("zw.sandbox", false))
+            {
+                UnityEditor.SessionState.SetBool("zw.sandbox", false);
+                GameFlow.StartSandbox();
+                return;
+            }
+#endif
             GameFlow.EnterMenu();
         }
     }

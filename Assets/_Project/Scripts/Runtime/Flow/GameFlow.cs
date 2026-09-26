@@ -1,5 +1,6 @@
 using BillGameCore;
 using UnityEngine.SceneManagement;
+using ZombieWar.UI;
 
 namespace ZombieWar
 {
@@ -21,13 +22,16 @@ namespace ZombieWar
         {
             Bill.State.GoTo<MenuState>();
             if (!Bill.Scene.IsAdditiveLoaded(MenuScene))
-                Bill.Scene.LoadAdditive(MenuScene);
+                Bill.Scene.LoadAdditive(MenuScene, LoadingScreen.Complete);   // no-op at boot (not loading)
+            else
+                LoadingScreen.Complete();
         }
 
         /// Hub PLAY -> unload menu, additive-load the world, make it the active scene (so runtime
         /// Instantiate/lighting resolve against it), then enter GameplayState.
         public static void StartGameplay()
         {
+            LoadingScreen.Begin();
             Bill.State.GoTo<LoadingState>();
 
             if (Bill.Scene.IsAdditiveLoaded(MenuScene))
@@ -47,6 +51,7 @@ namespace ZombieWar
         {
             if (!Bill.Scene.IsAdditiveLoaded(GameplayScene)) { StartGameplay(); return; }
 
+            LoadingScreen.Begin();
             Bill.State.GoTo<LoadingState>();
             InGameplay = false;
             Bill.Scene.Unload(GameplayScene, LoadGameplay);
@@ -56,6 +61,7 @@ namespace ZombieWar
         /// the result screen) is dropped unpaid, which is exactly what walking away banks anyway.
         public static void ReturnToMenu()
         {
+            LoadingScreen.Begin();
             RunState.Abandon();
 
             if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
@@ -65,18 +71,36 @@ namespace ZombieWar
             EnterMenu();
         }
 
+#if UNITY_EDITOR
+        public const string SandboxScenePath = "Assets/_Project/Scenes/Dev/SkillSandbox.unity";
+
+        /// Editor only (ZombieWar/Dev/Play Skill Sandbox): the skill test bench instead of the menu.
+        /// The sandbox is not in the build, so it is loaded through the editor scene API.
+        public static void StartSandbox()
+        {
+            LoadingScreen.Begin();
+            Bill.State.GoTo<LoadingState>();
+            var op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                SandboxScenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            if (op == null) { UnityEngine.Debug.LogError("[GameFlow] Sandbox scene missing: " + SandboxScenePath); return; }
+            op.completed += _ => ActivateAndPlay(SceneManager.GetSceneByPath(SandboxScenePath));
+        }
+#endif
+
         private static void LoadGameplay() =>
             Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay);
 
-        private static void ActivateAndPlay()
+        private static void ActivateAndPlay() => ActivateAndPlay(SceneManager.GetSceneByName(GameplayScene));
+
+        private static void ActivateAndPlay(Scene sc)
         {
-            Scene sc = SceneManager.GetSceneByName(GameplayScene);
             if (sc.IsValid() && sc.isLoaded)
                 SceneManager.SetActiveScene(sc);
 
             InGameplay = true;
             RunState.Begin();
             Bill.State.GoTo<GameplayState>();
+            LoadingScreen.Complete();
         }
     }
 }

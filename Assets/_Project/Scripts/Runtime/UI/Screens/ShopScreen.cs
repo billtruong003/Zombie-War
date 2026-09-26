@@ -52,6 +52,8 @@ namespace ZombieWar.UI
         [Header("Purchase confirmation (shared by item/set)")]
         [SerializeField] private GameObject purchaseModal;
         [SerializeField] private Image purchaseIcon;
+        [Tooltip("M8: tile behind the item, rarity-coloured for guns.")]
+        [SerializeField] private Image purchaseIconTile;
         [SerializeField] private TMP_Text purchaseTitle;
         [SerializeField] private TMP_Text purchasePrice;
         [SerializeField] private Button purchaseConfirmButton;
@@ -78,6 +80,7 @@ namespace ZombieWar.UI
         private int _upgradePage;
         private string _pendingCostumeId;
         private bool _pendingCostumeIsSet;
+        private WeaponItemCardView _pendingWeapon;   // M8: guns are bought through the same confirm modal
 
         // Reveal overlay dung lazily (code-built, khong bake prefab).
         private GameObject _revealRoot;
@@ -143,7 +146,8 @@ namespace ZombieWar.UI
 
         // ------------------------------------------------ weapons tab (mua thật)
 
-        /// Tap 1 = chọn (xem, không mua). Tap lần 2 vào card đang chọn = mua.
+        /// M8: tapping a gun selects it; a gun not owned yet also opens the confirm modal (the old
+        /// "tap again to buy" had no hint and spent coins on a stray second tap).
         private void OnCardClicked(WeaponItemCardView card)
         {
             if (card == null || card.data == null) return;
@@ -153,10 +157,14 @@ namespace ZombieWar.UI
                 if (_selectedCard != null) _selectedCard.SetSelected(false);
                 _selectedCard = card;
                 card.SetSelected(true);
-                return;
             }
+            if (PlayerProfile.IsWeaponOwned(card.data.WeaponId)) return;
 
-            TryPurchase(card);
+            var d = card.data;
+            _pendingWeapon = card;
+            if (purchaseIconTile != null) purchaseIconTile.color = d.TileColor;
+            ShowPurchaseModal(null, false, d.weaponName,
+                catalog != null ? catalog.GetWeaponIcon(d, true) : null, WalletCurrency.Coin, d.price);
         }
 
         private void TryPurchase(WeaponItemCardView card)
@@ -174,12 +182,15 @@ namespace ZombieWar.UI
             switch (result)
             {
                 case PlayerProfile.PurchaseResult.Purchased:
-                    // WalletChanged/LoadoutChanged đã refresh card + currency cluster;
-                    // badge "ĐÃ CÓ" hiện ra chính là feedback thành công.
+                    // WalletChanged/LoadoutChanged refresh the card (the silhouette becomes the real
+                    // gun) and the currency cluster; the sound and punch make the moment land.
+                    UIFeedback.Purchase();
+                    UIFx.Punch(card.transform);
                     break;
                 case PlayerProfile.PurchaseResult.AlreadyOwned:
                     break; // idempotent, không charge
                 default: // InsufficientFunds / InvalidWeapon / InvalidPrice / SaveFailed
+                    UIFeedback.Error();
                     UIFx.Shake((RectTransform)card.transform);
                     break;
             }
@@ -197,17 +208,9 @@ namespace ZombieWar.UI
                 if (card == null || card.data == null) continue;
                 var d = card.data;
 
-                if (card.icon != null && card.icon.sprite == null && catalog != null)
-                {
-                    var sprite = catalog.GetWeaponIcon(d);
-                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = d.IconTint; }
-                }
-
-                // Rarity reads from the tile (M8 mockup), same tint as the Loadout grid.
-                var bg = card.transform.Find("Bg")?.GetComponent<Image>();
-                if (bg != null) bg.color = Color.Lerp(new Color(0.16f, 0.18f, 0.24f), d.TierColor, 0.22f);
-
                 bool owned = PlayerProfile.IsWeaponOwned(d.WeaponId);
+                // M8: silhouette until bought, real look after, on the rarity tile.
+                card.BindIcon(catalog, owned);
                 card.SetOwned(owned, d.price);
                 if (!owned && card.priceLabel != null)
                     card.priceLabel.color = coin >= d.price ? UITheme.Gold : UITheme.Danger;
@@ -345,6 +348,7 @@ namespace ZombieWar.UI
         private void OpenCostumePurchase(ShopCostumeCardView card)
         {
             if (card == null || string.IsNullOrEmpty(card.offerId) || economy == null) return;
+            _pendingWeapon = null;   // this modal buys a costume, not a gun
             if (card.isSet && economy.TryGetCostumeSet(card.offerId, out var set))
             {
                 if (PlayerProfile.IsCostumeSetOwned(set)) return;
@@ -365,27 +369,57 @@ namespace ZombieWar.UI
         {
             _pendingCostumeId = id;
             _pendingCostumeIsSet = isSet;
+            if (_pendingWeapon == null && purchaseIconTile != null) purchaseIconTile.color = UITheme.M8Deep;
             if (purchaseTitle != null) purchaseTitle.text = $"Buy {displayName}?";
+            if (purchaseIcon != null) purchaseIcon.preserveAspect = true;
             if (purchaseIcon != null) { purchaseIcon.sprite = icon; purchaseIcon.enabled = icon != null; }
-            if (purchasePrice != null) purchasePrice.text = $"{CurTag(currency)} {price:N0}";
-            if (purchaseModal != null) { purchaseModal.SetActive(true); purchaseModal.transform.SetAsLastSibling(); }
+            if (purchasePrice != null)
+            {
+                purchasePrice.text = $"{CurTag(currency)} {price:N0}";
+                // Can't afford it: say so before the tap, not after.
+                bool afford = currency != WalletCurrency.Coin || PlayerProfile.Coin >= price;
+                purchasePrice.color = afford ? UITheme.M8Yellow : UITheme.M8Red;
+            }
+            if (purchaseModal != null)
+            {
+                purchaseModal.SetActive(true);
+                purchaseModal.transform.SetAsLastSibling();
+                UIFx.ModalIn(purchaseModal.transform);
+            }
         }
 
         private void ConfirmCostumePurchase()
         {
+            if (_pendingWeapon != null)
+            {
+                var card = _pendingWeapon;
+                bool before = PlayerProfile.IsWeaponOwned(card.data.WeaponId);
+                TryPurchase(card);
+                if (!before && PlayerProfile.IsWeaponOwned(card.data.WeaponId)) ClosePurchaseModal();
+                else if (purchaseModal != null) UIFx.Shake((RectTransform)purchaseModal.transform);
+                return;
+            }
             if (economy == null || string.IsNullOrEmpty(_pendingCostumeId)) return;
             var result = _pendingCostumeIsSet
                 ? PlayerProfile.TryPurchaseCostumeSet(economy, _pendingCostumeId)
                 : PlayerProfile.TryPurchaseCostume(economy, _pendingCostumeId);
             if (result == PlayerProfile.PurchaseResult.Purchased || result == PlayerProfile.PurchaseResult.AlreadyOwned)
+            {
+                if (result == PlayerProfile.PurchaseResult.Purchased) UIFeedback.Purchase();
                 ClosePurchaseModal();
-            else if (purchaseModal != null) UIFx.Shake((RectTransform)purchaseModal.transform);
+            }
+            else
+            {
+                UIFeedback.Error();
+                if (purchaseModal != null) UIFx.Shake((RectTransform)purchaseModal.transform);
+            }
             RefreshCards();
         }
 
         private void ClosePurchaseModal()
         {
             _pendingCostumeId = null;
+            _pendingWeapon = null;
             if (purchaseModal != null) purchaseModal.SetActive(false);
         }
 
@@ -439,9 +473,9 @@ namespace ZombieWar.UI
             int next = Mathf.Min(3, level + 1);
             if (card.icon != null)
             {
-                card.icon.sprite = catalog != null ? catalog.GetWeaponIcon(weapon) : null;
+                card.icon.sprite = catalog != null ? catalog.GetWeaponIcon(weapon, true) : null;   // upgrades list owned guns only
                 card.icon.enabled = card.icon.sprite != null;
-                card.icon.color = weapon.IconTint;
+                card.icon.color = Color.white;
             }
             if (card.border != null) card.border.color = weapon.TierColor;
             if (card.nameLabel != null) card.nameLabel.text = weapon.weaponName;
@@ -468,8 +502,8 @@ namespace ZombieWar.UI
         {
             if (card == null || card.data == null || economy == null) return;
             var result = PlayerProfile.TryUpgradeWeapon(card.data, economy);
-            if (result != PlayerProfile.WeaponUpgradeResult.Upgraded && result != PlayerProfile.WeaponUpgradeResult.MaxLevel)
-                UIFx.Shake((RectTransform)card.transform);
+            if (result == PlayerProfile.WeaponUpgradeResult.Upgraded) { UIFeedback.Purchase(); UIFx.Punch(card.transform); }
+            else if (result != PlayerProfile.WeaponUpgradeResult.MaxLevel) { UIFeedback.Error(); UIFx.Shake((RectTransform)card.transform); }
             RefreshCards();
         }
 
