@@ -200,7 +200,7 @@ namespace ZombieWar.UI
                 if (card.icon != null && card.icon.sprite == null && catalog != null)
                 {
                     var sprite = catalog.GetWeaponIcon(d);
-                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = Color.white; }
+                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = d.IconTint; }
                 }
 
                 bool owned = PlayerProfile.IsWeaponOwned(d.WeaponId);
@@ -437,6 +437,7 @@ namespace ZombieWar.UI
             {
                 card.icon.sprite = catalog != null ? catalog.GetWeaponIcon(weapon) : null;
                 card.icon.enabled = card.icon.sprite != null;
+                card.icon.color = weapon.IconTint;
             }
             if (card.border != null) card.border.color = weapon.TierColor;
             if (card.nameLabel != null) card.nameLabel.text = weapon.weaponName;

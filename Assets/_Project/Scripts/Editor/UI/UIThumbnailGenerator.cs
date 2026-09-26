@@ -28,6 +28,25 @@ namespace ZombieWar.Editor.UI
         const int WeaponCaptureSize = 2048;
         const int WeaponIconSize = 512;
 
+        /// <summary>
+        /// M8 (owner-approved mockup, 2026-09-26): one toon look for every gun. Most weapon packs
+        /// use near-black gunmetal, so their renders came out as black shapes that only read by
+        /// their white outline, while a few wooden guns rendered in colour — two styles in one
+        /// shop. "Clay" renders every model with one light material plus a rim light, then draws
+        /// a dark toon outline; the UI tints each icon by rarity.
+        /// </summary>
+        [MenuItem("ZombieWar/UI/Authoring/Generate Weapon Icons (Toon Clay)")]
+        public static void GenerateClay()
+        {
+            _clay = true;
+            try { Generate(); }
+            finally { _clay = false; }
+        }
+
+        static bool _clay;
+        static readonly Color32 ClayOutline = new Color32(0x1F, 0x23, 0x30, 0xFF);
+        const int ClayOutlinePx = 14;
+
         [MenuItem("ZombieWar/UI/Authoring/Generate Item Thumbnails")]
         public static void Generate()
         {
@@ -181,13 +200,16 @@ namespace ZombieWar.Editor.UI
 
             // Đặt xa khỏi mọi content scene để frustum chỉ thấy khẩu súng.
             var offset = new Vector3(5000f, 5000f, 5000f);
-            GameObject inst = null, camGO = null, keyGO = null, fillGO = null;
+            GameObject inst = null, camGO = null, keyGO = null, fillGO = null, rimGO = null;
+            var ambient = RenderSettings.ambientLight;
+            var ambientMode = RenderSettings.ambientMode;
             RenderTexture rt = null;
             try
             {
                 inst = Object.Instantiate(wd.weaponPrefab, offset, Quaternion.identity);
                 foreach (var ps in inst.GetComponentsInChildren<ParticleSystem>(true))
                     ps.gameObject.SetActive(false);
+                if (_clay) ApplyClay(inst);
 
                 var renderers = inst.GetComponentsInChildren<Renderer>(true)
                     .Where(r => r.enabled && !(r is ParticleSystemRenderer)).ToArray();
@@ -204,8 +226,9 @@ namespace ZombieWar.Editor.UI
                     return null;
                 }
 
-                keyGO = MakeLight("ThumbKey", new Vector3(35f, 140f, 0f), 1.15f);
-                fillGO = MakeLight("ThumbFill", new Vector3(10f, -30f, 0f), 0.5f);
+                keyGO = MakeLight("ThumbKey", new Vector3(35f, 140f, 0f), _clay ? 1.35f : 1.15f);
+                fillGO = MakeLight("ThumbFill", new Vector3(10f, -30f, 0f), _clay ? 0.7f : 0.5f);
+                if (_clay) rimGO = MakeLight("ThumbRim", new Vector3(15f, 90f, 0f), 0.9f);   // from behind the gun
 
                 camGO = new GameObject("ThumbCam");
                 var cam = camGO.AddComponent<Camera>();
@@ -229,10 +252,16 @@ namespace ZombieWar.Editor.UI
                 float dist = extent * 0.5f / Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
                 cam.transform.position = b.center + Vector3.right * dist;
                 cam.transform.LookAt(b.center);
+                if (_clay)
+                {
+                    RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+                    RenderSettings.ambientLight = new Color(0.42f, 0.44f, 0.5f);
+                }
                 cam.Render();
 
                 string file = $"{WeaponsDir}/{StableName("W", wd)}.png";
                 CasualIconGenerator.WriteDownscaled(rt, file, WeaponIconSize);
+                if (_clay) OutlinePng(file, ClayOutlinePx, ClayOutline);
                 return ImportIcon(file, WeaponIconSize);
             }
             catch (System.Exception ex)
@@ -247,8 +276,95 @@ namespace ZombieWar.Editor.UI
                 if (camGO != null) Object.DestroyImmediate(camGO);
                 if (keyGO != null) Object.DestroyImmediate(keyGO);
                 if (fillGO != null) Object.DestroyImmediate(fillGO);
+                if (rimGO != null) Object.DestroyImmediate(rimGO);
                 if (inst != null) Object.DestroyImmediate(inst);
+                RenderSettings.ambientLight = ambient;
+                RenderSettings.ambientMode = ambientMode;
             }
+        }
+
+        static Material _clayMaterial;
+
+        /// <summary>Swaps every renderer on the temporary instance to one light matte material.
+        /// Instance-only: the weapon prefab and its materials are never touched.</summary>
+        static void ApplyClay(GameObject inst)
+        {
+            if (_clayMaterial == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                _clayMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+                _clayMaterial.SetColor("_BaseColor", new Color(0.93f, 0.93f, 0.95f));
+                _clayMaterial.SetFloat("_Smoothness", 0.18f);
+                _clayMaterial.SetFloat("_Metallic", 0f);
+            }
+            foreach (var r in inst.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r is ParticleSystemRenderer) continue;
+                var mats = new Material[r.sharedMaterials.Length];
+                for (int i = 0; i < mats.Length; i++) mats[i] = _clayMaterial;
+                r.sharedMaterials = mats;
+            }
+        }
+
+        /// <summary>
+        /// A solid toon outline <paramref name="stroke"/> px wide around the opaque pixels, drawn
+        /// under the icon. Circular dilation on the alpha, with a one-pixel soft edge.
+        /// </summary>
+        static void OutlinePng(string path, int stroke, Color32 color)
+        {
+            var src = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            src.LoadImage(File.ReadAllBytes(path));
+            int w = src.width, h = src.height;
+            var px = src.GetPixels32();
+            var alpha = new byte[w * h];
+            for (int i = 0; i < px.Length; i++) alpha[i] = px[i].a;
+
+            // Precomputed disc offsets.
+            var offs = new List<(int dx, int dy, float d)>();
+            for (int dy = -stroke - 1; dy <= stroke + 1; dy++)
+                for (int dx = -stroke - 1; dx <= stroke + 1; dx++)
+                {
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (d <= stroke + 1f) offs.Add((dx, dy, d));
+                }
+
+            var outA = new float[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    byte a = alpha[y * w + x];
+                    if (a < 8) continue;
+                    float af = a / 255f;
+                    foreach (var (dx, dy, d) in offs)
+                    {
+                        int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        float cover = Mathf.Clamp01(stroke + 1f - d) * af;
+                        int k = ny * w + nx;
+                        if (cover > outA[k]) outA[k] = cover;
+                    }
+                }
+
+            var result = new Color32[w * h];
+            for (int i = 0; i < result.Length; i++)
+            {
+                float oa = outA[i];
+                var c = px[i];
+                float ca = c.a / 255f;
+                // icon over outline
+                float a = ca + oa * (1f - ca);
+                if (a <= 0f) { result[i] = new Color32(0, 0, 0, 0); continue; }
+                float r = (c.r * ca + color.r * oa * (1f - ca)) / a;
+                float g = (c.g * ca + color.g * oa * (1f - ca)) / a;
+                float bl = (c.b * ca + color.b * oa * (1f - ca)) / a;
+                result[i] = new Color32((byte)r, (byte)g, (byte)bl, (byte)(a * 255f));
+            }
+            var dst = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            dst.SetPixels32(result);
+            dst.Apply();
+            File.WriteAllBytes(path, dst.EncodeToPNG());
+            Object.DestroyImmediate(src);
+            Object.DestroyImmediate(dst);
         }
 
         static GameObject MakeLight(string name, Vector3 euler, float intensity)

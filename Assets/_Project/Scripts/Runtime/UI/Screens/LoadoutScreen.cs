@@ -116,7 +116,7 @@ namespace ZombieWar.UI
                 if (card.icon != null && card.icon.sprite == null && catalog != null)
                 {
                     var sprite = catalog.GetWeaponIcon(card.data);
-                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = Color.white; }
+                    if (sprite != null) { card.icon.sprite = sprite; card.icon.color = card.data.IconTint; }
                 }
                 // Ownership thật từ profile — cheatUnlockAll cố tình KHÔNG được hỏi ở đây.
                 bool owned = PlayerProfile.IsWeaponOwned(card.data.WeaponId);
@@ -165,7 +165,7 @@ namespace ZombieWar.UI
             if (infoIcon != null)
             {
                 infoIcon.sprite = card.icon != null ? card.icon.sprite : null;
-                infoIcon.color = infoIcon.sprite != null ? Color.white : UITheme.Surface2;
+                infoIcon.color = infoIcon.sprite != null ? d.IconTint : UITheme.Surface2;
                 infoIcon.preserveAspect = true;
             }
             if (infoNameLabel != null)

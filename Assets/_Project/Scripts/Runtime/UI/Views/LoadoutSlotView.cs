@@ -23,7 +23,7 @@ namespace ZombieWar.UI
             if (icon != null)
             {
                 icon.gameObject.SetActive(has);
-                if (has && iconSprite != null) { icon.sprite = iconSprite; icon.color = Color.white; }
+                if (has && iconSprite != null) { icon.sprite = iconSprite; icon.color = weapon.IconTint; }
             }
             if (border != null && has) border.color = weapon.TierColor;
             if (glow != null && has)

@@ -183,6 +183,10 @@ namespace ZombieWar
             return Mathf.Max(0f, damageFalloffCurve.Evaluate(Mathf.Clamp01(distance01)));
         }
 
+        /// <summary>Tint for the toon "clay" icon (M8): the rarity colour lifted toward white, so a
+        /// light icon reads on its rarity tile without turning into a flat colour blob.</summary>
+        public Color IconTint => Color.Lerp(TierColor, Color.white, 0.55f);
+
         /// <summary>Màu tier cho shop/HUD (Docs/Reference/Design/WEAPON_DESIGN.md §5).</summary>
         public Color TierColor => tier switch
         {
