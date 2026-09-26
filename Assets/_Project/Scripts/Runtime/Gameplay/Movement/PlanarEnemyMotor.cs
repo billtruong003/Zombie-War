@@ -298,7 +298,7 @@ namespace ZombieWar
             Vector3 desired;
             if (IsStopped || !_hasDestination) desired = ComputeSeparationOnly(dt);
             else desired = ComputeDesiredDirection(dt);
-            Vector3 targetVelocity = desired * (speed * SlowFactor());
+            Vector3 targetVelocity = desired * (speed * SlowFactor() * ZombieManager.PursuitMultiplier(transform.position));
 
             float rate = targetVelocity.sqrMagnitude > _velocity.sqrMagnitude ? acceleration : deceleration;
             _velocity = Vector3.MoveTowards(_velocity, targetVelocity, rate * dt);

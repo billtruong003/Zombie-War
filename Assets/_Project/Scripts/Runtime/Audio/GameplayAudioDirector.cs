@@ -64,6 +64,7 @@ namespace ZombieWar.Audio
             if (_subscribed) return;
             Bill.Events.Subscribe<StateChangedEvent>(OnStateChanged);
             Bill.Events.Subscribe<Threat.ThreatTierChangedEvent>(OnThreatTierChanged);
+            Bill.Events.Subscribe<Threat.HordeSurgeEvent>(OnHordeSurge);
             Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
             Bill.Events.Subscribe<PlayerDamagedEvent>(OnPlayerDamaged);
             Bill.Events.Subscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -78,6 +79,7 @@ namespace ZombieWar.Audio
             {
                 Bill.Events.Unsubscribe<StateChangedEvent>(OnStateChanged);
                 Bill.Events.Unsubscribe<Threat.ThreatTierChangedEvent>(OnThreatTierChanged);
+                Bill.Events.Unsubscribe<Threat.HordeSurgeEvent>(OnHordeSurge);
                 Bill.Events.Unsubscribe<RunFinishedEvent>(OnRunFinished);
                 Bill.Events.Unsubscribe<PlayerDamagedEvent>(OnPlayerDamaged);
                 Bill.Events.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
@@ -267,6 +269,12 @@ namespace ZombieWar.Audio
         private void OnThreatTierChanged(Threat.ThreatTierChangedEvent e)
         {
             if (e.Rising) StartCoroutine(WaveCue("stinger.wave.start", 0.78f));
+        }
+
+        // A surge gets its own cue, distinct from a tier change, and surviving it is acknowledged.
+        private void OnHordeSurge(Threat.HordeSurgeEvent e)
+        {
+            StartCoroutine(WaveCue(e.Started ? "stinger.long" : "stinger.wave.clear", e.Started ? 0.85f : 0.6f));
         }
 
         /// <summary>Threat cues dip the bed briefly so they cut through without a full result-style duck.</summary>

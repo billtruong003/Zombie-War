@@ -52,13 +52,56 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void StatsOnlyScaleOnceTheRosterIsExhausted()
+        public void StatsOnlyScaleLate_AndGently()
         {
-            // Composition before stats: tiers 0-3 add enemy kinds, only later tiers add health.
-            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(0, 3, 0.08f), 1e-5f);
-            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(3, 3, 0.08f), 1e-5f);
-            Assert.AreEqual(1.08f, ThreatDirector.StatMultiplierFor(4, 3, 0.08f), 1e-5f);
-            Assert.AreEqual(1.56f, ThreatDirector.StatMultiplierFor(10, 3, 0.08f), 1e-5f);
+            // More enemies before stronger enemies: nothing gains health before the start tier.
+            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(0, 6, 0.04f), 1e-5f);
+            Assert.AreEqual(1f, ThreatDirector.StatMultiplierFor(5, 6, 0.04f), 1e-5f);
+            Assert.AreEqual(1.04f, ThreatDirector.StatMultiplierFor(6, 6, 0.04f), 1e-5f);
+            Assert.AreEqual(1.20f, ThreatDirector.StatMultiplierFor(10, 6, 0.04f), 1e-5f);
+        }
+
+        [Test]
+        public void FarEnemiesPursueFaster_NearOnesKeepTheirSpeed()
+        {
+            Assert.AreEqual(1f, ZombieManager.PursuitMultiplierAt(5f, 10f, 25f, 2.2f), 1e-5f, "on screen: authored speed");
+            Assert.AreEqual(1f, ZombieManager.PursuitMultiplierAt(10f, 10f, 25f, 2.2f), 1e-5f);
+            Assert.AreEqual(1.6f, ZombieManager.PursuitMultiplierAt(17.5f, 10f, 25f, 2.2f), 1e-5f);
+            Assert.AreEqual(2.2f, ZombieManager.PursuitMultiplierAt(60f, 10f, 25f, 2.2f), 1e-5f);
+        }
+
+        [Test]
+        public void TheTailIsFarEnemiesBehindAMovingPlayer()
+        {
+            var north = new Vector3(0f, 0f, 5f);   // running north at 5 m/s
+            Assert.IsTrue(ZombieManager.IsInTail(new Vector3(0f, 0f, -20f), north, 16f, 1.5f, -0.3f), "far behind");
+            Assert.IsFalse(ZombieManager.IsInTail(new Vector3(0f, 0f, -10f), north, 16f, 1.5f, -0.3f), "behind but close");
+            Assert.IsFalse(ZombieManager.IsInTail(new Vector3(0f, 0f, 20f), north, 16f, 1.5f, -0.3f), "ahead is never tail");
+            Assert.IsFalse(ZombieManager.IsInTail(new Vector3(20f, 0f, 0f), north, 16f, 1.5f, -0.3f), "beside is not tail");
+            Assert.IsFalse(ZombieManager.IsInTail(new Vector3(0f, 0f, -20f), Vector3.zero, 16f, 1.5f, -0.3f),
+                "a standing player has no tail");
+        }
+
+        [Test]
+        public void AnEmptyCrowdRefillsFaster_AFullOneAtNormalCadence()
+        {
+            Assert.AreEqual(0.2f, ThreatDirector.CatchUpScale(0, 40, 0.2f), 1e-5f);
+            Assert.AreEqual(0.6f, ThreatDirector.CatchUpScale(20, 40, 0.2f), 1e-5f);
+            Assert.AreEqual(1f, ThreatDirector.CatchUpScale(40, 40, 0.2f), 1e-5f);
+            Assert.AreEqual(1f, ThreatDirector.CatchUpScale(90, 40, 0.2f), 1e-5f, "over target never slows below 1");
+        }
+
+        [Test]
+        public void SurgesRunOnAFixedClock_AfterTheOpening()
+        {
+            // opening 25 s, a 10 s surge every 75 s
+            Assert.IsFalse(ThreatDirector.IsSurgeAt(0f, 25f, 75f, 10f), "never during the opening");
+            Assert.IsFalse(ThreatDirector.IsSurgeAt(99f, 25f, 75f, 10f), "not before the first interval");
+            Assert.IsTrue(ThreatDirector.IsSurgeAt(100f, 25f, 75f, 10f), "first surge at opening + 75 s");
+            Assert.IsTrue(ThreatDirector.IsSurgeAt(109.9f, 25f, 75f, 10f));
+            Assert.IsFalse(ThreatDirector.IsSurgeAt(110f, 25f, 75f, 10f), "a surge ends");
+            Assert.IsTrue(ThreatDirector.IsSurgeAt(175f, 25f, 75f, 10f), "and comes back");
+            Assert.IsFalse(ThreatDirector.IsSurgeAt(500f, 25f, 0f, 10f), "0 disables surges");
         }
 
         [Test]
@@ -122,8 +165,11 @@ namespace ZombieWar.Tests
 
             Assert.Less(d.SpawnIntervalFor(3), d.SpawnIntervalFor(0), "higher tier spawns faster");
             Assert.Greater(d.AliveTargetFor(3), d.AliveTargetFor(0), "higher tier allows a bigger crowd");
-            Assert.GreaterOrEqual(d.SpawnIntervalFor(99), 0.2f, "the cadence has a floor");
-            Assert.LessOrEqual(d.AliveTargetFor(99), 60, "the crowd has a ceiling for the frame budget");
+            Assert.GreaterOrEqual(d.SpawnIntervalFor(99), 0.08f, "the cadence has a floor");
+            Assert.LessOrEqual(d.AliveTargetFor(99), 160, "the crowd has a ceiling for the frame budget");
+            Assert.GreaterOrEqual(d.AliveTargetFor(0), 40, "tier 0 is already a crowd, not a trickle");
+            Assert.Greater(d.SurgeAliveTargetFor(0), d.AliveTargetFor(0), "a surge is bigger than the stream");
+            Assert.LessOrEqual(d.SurgeAliveTargetFor(99), 200, "even a surge is bounded");
 
             Object.DestroyImmediate(go);
         }

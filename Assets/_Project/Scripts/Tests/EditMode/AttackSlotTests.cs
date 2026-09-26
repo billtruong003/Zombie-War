@@ -193,14 +193,14 @@ namespace ZombieWar.Tests
             int burst = so.FindProperty("spawnBurst").intValue;
 
             Assert.AreEqual(1, burst, "packs are what clumped the pressure and delivered the melt");
-            Assert.AreEqual(0.8f, interval, 0.001f,
-                "burst 1 at the old 2.2 s interval halves the pressure instead of reshaping it");
 
-            // The point of the milestone: same average arrivals per second, delivered continuously.
-            // Old: burst 3 every 2.2 s = 1.36/s in packs. New: burst 1 every 0.8 s = 1.25/s singly.
+            // M8 (owner, 2026-09-26): the crowd read as thin, so density rises through a faster
+            // single-file stream — never through packs. Tier 0 must deliver well over the old
+            // 1.25 arrivals/s, or the change never reached the game.
             float arrivalsPerSecond = burst / interval;
-            Assert.AreEqual(1.36f, arrivalsPerSecond, 0.2f,
-                "average pressure must be preserved — only its distribution changes");
+            Assert.Greater(arrivalsPerSecond, 2.5f, "the stream must be dense enough to build a crowd");
+            Assert.GreaterOrEqual(so.FindProperty("baseAlive").intValue, 40,
+                "the prefab must carry the denser crowd, not the old 18");
 
             Assert.Greater(so.FindProperty("intervalJitter").floatValue, 0f,
                 "a metronome lets single arrivals re-synchronise into packs on their own");

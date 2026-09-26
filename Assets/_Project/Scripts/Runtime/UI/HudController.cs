@@ -34,6 +34,7 @@ namespace ZombieWar
         // Cached shown values - setting TMP text every frame is the HUD's main source of GC.
         private long _shownRunCoin = long.MinValue;
         private int _shownSeconds = -1, _shownTier = -1, _shownLevel = -1;
+        private bool _shownSurge;
 
         /// <summary>RunOverlays wires its pause screen here. Null -> the button only logs.</summary>
         public System.Action PauseRequested;
@@ -77,15 +78,23 @@ namespace ZombieWar
             if (runPill == null) return;
             var run = RunState.Current;
             int seconds = run != null ? Mathf.FloorToInt(run.Duration) : 0;
-            int tier = Threat.ThreatDirector.Instance != null ? Threat.ThreatDirector.Instance.CurrentTier : 0;
+            var director = Threat.ThreatDirector.Instance;
+            int tier = director != null ? director.CurrentTier : 0;
+            bool surge = director != null && director.Surging;
             int level = run?.Level ?? 1;
-            if (seconds == _shownSeconds && tier == _shownTier && level == _shownLevel) return;
+            if (seconds == _shownSeconds && tier == _shownTier && level == _shownLevel && surge == _shownSurge) return;
 
-            _shownSeconds = seconds; _shownTier = tier; _shownLevel = level;
-            runPill.text = $"{FormatClock(seconds)} · Threat {tier} · Lv {level}";
+            _shownSeconds = seconds; _shownTier = tier; _shownLevel = level; _shownSurge = surge;
+            runPill.text = FormatRunPill(seconds, tier, level, surge);
         }
 
         public static string FormatClock(int seconds) => $"{seconds / 60}:{seconds % 60:00}";
+
+        /// <summary>"3:42 · Threat 2 · Lv 7", or a red HORDE! lead during a surge.</summary>
+        public static string FormatRunPill(int seconds, int tier, int level, bool surge) =>
+            surge
+                ? $"<color=#FF4A3D>HORDE!</color> {FormatClock(seconds)} · Threat {tier} · Lv {level}"
+                : $"{FormatClock(seconds)} · Threat {tier} · Lv {level}";
 
         // Coin pill binds the live ledger: a pickup, a crate or a kill moves the number at once.
         private void OnRunChanged()

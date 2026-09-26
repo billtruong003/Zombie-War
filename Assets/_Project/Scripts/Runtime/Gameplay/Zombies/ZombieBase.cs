@@ -326,7 +326,7 @@ namespace ZombieWar
             if (_state == State.Dead || _tier != ZombieTier.Cheap) return;
 
             Vector3 from = transform.position;
-            float step = data.moveSpeed * _motor.SlowFactor() * Time.deltaTime;
+            float step = data.moveSpeed * _motor.SlowFactor() * ZombieManager.PursuitMultiplier(from) * Time.deltaTime;
 
             Vector3 desired = Vector3.MoveTowards(from, towardPosition, step);
             desired.y = 0f;

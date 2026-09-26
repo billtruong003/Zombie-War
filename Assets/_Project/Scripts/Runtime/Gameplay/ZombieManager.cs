@@ -70,11 +70,17 @@ namespace ZombieWar
         private void Update()
         {
             _attackSlotCap = Mathf.Max(1, maxSimultaneousAttackers);
+            _pursuitNear = pursuitNearDistance;
+            _pursuitFar = Mathf.Max(pursuitNearDistance + 0.1f, pursuitFarDistance);
+            _pursuitMax = Mathf.Max(1f, pursuitMaxMultiplier);
 
             var player = PlayerMovement.Instance;
+            _hasPursuitTarget = player != null;
             if (player == null) return;
 
             Vector3 playerPosition = player.transform.position;
+            _pursuitTarget = playerPosition;
+            SamplePlayerVelocity(playerPosition);
             TickCheapMovement(playerPosition);
 
             _reevaluateTimer -= Time.deltaTime;
@@ -104,6 +110,84 @@ namespace ZombieWar
         [SerializeField] private float visibilityMargin = 6f;
         [Tooltip("Most enemies recycled per pass, so a big tail drains smoothly instead of popping.")]
         [SerializeField] private int maxRecyclesPerPass = 4;
+
+        [Header("Tail recycle (M8) — TUNING")]
+        [Tooltip("Off-screen enemies BEHIND a moving player and farther than this are recycled, so " +
+                 "the director re-spawns them ahead. Measured 2026-09-26: a player circling at base " +
+                 "speed dragged a full 120-enemy crowd behind them for five minutes; because the crowd " +
+                 "was full, nothing new ever spawned in front, and the run stalled with no kills.")]
+        [SerializeField] private float tailRecycleDistance = 16f;
+        [Tooltip("Player speed (m/s) above which the tail rule applies. A standing player has no " +
+                 "'behind'.")]
+        [SerializeField] private float tailMinPlayerSpeed = 1.5f;
+        [Tooltip("How far behind counts: the enemy's bearing must be at least this far from the " +
+                 "movement direction (cosine; -0.3 is about 107 degrees).")]
+        [SerializeField, Range(-1f, 0f)] private float tailBehindCosine = -0.3f;
+
+        Vector3 _lastPlayerPosition;
+        Vector3 _playerVelocity;
+        bool _haveLastPlayerPosition;
+
+        // Smoothed so one hitch frame does not flip "behind"; jumps faster than any run speed are a
+        // floating-origin rebase, not motion, and are ignored.
+        void SamplePlayerVelocity(Vector3 position)
+        {
+            float dt = Time.deltaTime;
+            if (_haveLastPlayerPosition && dt > 0f)
+            {
+                Vector3 v = (position - _lastPlayerPosition) / dt;
+                v.y = 0f;
+                if (v.sqrMagnitude < 30f * 30f)
+                    _playerVelocity = Vector3.Lerp(_playerVelocity, v, 1f - Mathf.Exp(-6f * dt));
+            }
+            _lastPlayerPosition = position;
+            _haveLastPlayerPosition = true;
+        }
+
+        /// <summary>True when an enemy at <paramref name="offset"/> from the player is in the tail:
+        /// far enough, and behind a player who is actually moving.</summary>
+        public static bool IsInTail(Vector3 offset, Vector3 playerVelocity, float minDistance,
+                                    float minSpeed, float behindCosine)
+        {
+            offset.y = 0f; playerVelocity.y = 0f;
+            float dist = offset.magnitude;
+            float speed = playerVelocity.magnitude;
+            if (dist < minDistance || speed < minSpeed) return false;
+            return Vector3.Dot(offset / dist, playerVelocity / speed) <= behindCosine;
+        }
+
+        // ── M8: pursuit ─────────────────────────────────────────────────────────────────────
+        //
+        // Measured 2026-09-26: a player running a wide circle outpaces every enemy (5 m/s against
+        // 2-3 m/s). The crowd became a 100-strong tail that never caught up: the player took no
+        // damage, but also made no kills and stalled at level 4 for five minutes. Enemies far from
+        // the player now close the gap faster, so the tail is pulled back into the fight. Near the
+        // player (where they are on screen and in reach) they move at their authored speed.
+
+        [Header("Pursuit (M8) — TUNING")]
+        [Tooltip("Within this distance an enemy moves at its authored speed.")]
+        [SerializeField] private float pursuitNearDistance = 10f;
+        [Tooltip("At or beyond this distance an enemy moves at the full pursuit multiplier.")]
+        [SerializeField] private float pursuitFarDistance = 25f;
+        [Tooltip("Speed multiplier for far enemies. Lifts the common crowd (2.4 m/s and up) above the " +
+                 "player's base 5 m/s, so a runner cannot leave it behind; slow plants stay slow.")]
+        [SerializeField] private float pursuitMaxMultiplier = 2.2f;
+
+        static float _pursuitNear = 10f, _pursuitFar = 25f, _pursuitMax = 2.2f;
+        static bool _hasPursuitTarget;
+        static Vector3 _pursuitTarget;
+
+        /// <summary>Speed multiplier for an enemy at <paramref name="position"/>: 1 near the player,
+        /// rising to the pursuit maximum far away. 1 when there is no player (tests, menus).</summary>
+        public static float PursuitMultiplier(Vector3 position)
+        {
+            if (!_hasPursuitTarget) return 1f;
+            float dx = position.x - _pursuitTarget.x, dz = position.z - _pursuitTarget.z;
+            return PursuitMultiplierAt(Mathf.Sqrt(dx * dx + dz * dz), _pursuitNear, _pursuitFar, _pursuitMax);
+        }
+
+        public static float PursuitMultiplierAt(float distance, float near, float far, float max) =>
+            Mathf.Lerp(1f, Mathf.Max(1f, max), Mathf.InverseLerp(near, Mathf.Max(near + 0.1f, far), distance));
 
         // ── M7.4b: the attacker cap ──────────────────────────────────────────────────────
         //
@@ -185,7 +269,10 @@ namespace ZombieWar
 
                 Vector3 p = zombie.transform.position;
                 float dx = p.x - playerPosition.x, dz = p.z - playerPosition.z;
-                if (dx * dx + dz * dz < leashSqr) continue;          // still in play
+                bool beyondLeash = dx * dx + dz * dz >= leashSqr;
+                bool inTail = !beyondLeash && IsInTail(p - playerPosition, _playerVelocity,
+                    tailRecycleDistance, tailMinPlayerSpeed, tailBehindCosine);
+                if (!beyondLeash && !inTail) continue;                  // still in play
 
                 // Visibility guard: anything the camera can see stays, whatever the distance.
                 if (haveCam)
