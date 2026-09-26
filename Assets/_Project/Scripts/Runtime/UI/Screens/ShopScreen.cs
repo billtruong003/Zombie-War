@@ -203,6 +203,10 @@ namespace ZombieWar.UI
                     if (sprite != null) { card.icon.sprite = sprite; card.icon.color = d.IconTint; }
                 }
 
+                // Rarity reads from the tile (M8 mockup), same tint as the Loadout grid.
+                var bg = card.transform.Find("Bg")?.GetComponent<Image>();
+                if (bg != null) bg.color = Color.Lerp(new Color(0.16f, 0.18f, 0.24f), d.TierColor, 0.22f);
+
                 bool owned = PlayerProfile.IsWeaponOwned(d.WeaponId);
                 card.SetOwned(owned, d.price);
                 if (!owned && card.priceLabel != null)

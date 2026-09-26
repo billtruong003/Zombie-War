@@ -35,6 +35,17 @@ namespace ZombieWar.UI
         [SerializeField] private UIScreen passScreen;
         [SerializeField] private UIScreen settingsScreen;
 
+        [Header("M8 equipped weapon plate")]
+        [SerializeField] private UIPrototypeCatalog catalog;
+        [SerializeField] private Image weaponIcon;
+        [SerializeField] private Image weaponTile;
+        [SerializeField] private TMP_Text weaponNameLabel;
+        [SerializeField] private TMP_Text weaponMetaLabel;
+        [SerializeField] private RectTransform damageFill;
+        [SerializeField] private RectTransform rateFill;
+        [SerializeField] private Button changeWeaponButton;
+        [SerializeField] private TMP_Text playSubLabel;
+
         protected override void Awake()
         {
             base.Awake();
@@ -49,6 +60,7 @@ namespace ZombieWar.UI
             Wire(coinPlusButton, () => OpenShop(ShopScreen.WeaponsTab));
             Wire(gemPlusButton, () => OpenShop(ShopScreen.CostumeTab));
             Wire(missionButton, () => Open(passScreen, "BATTLE PASS"));
+            Wire(changeWeaponButton, () => Open(loadoutScreen, "LOADOUT"));
         }
 
         // Guards against a double tap loading the map twice: the scene load is async, so a second
@@ -67,6 +79,7 @@ namespace ZombieWar.UI
             _launching = false;   // back on the Hub: PLAY is armed again
             PlayerProfile.MissionsChanged += RefreshMissionUi;
             PlayerProfile.LoadoutChanged += RefreshBadges;
+            PlayerProfile.LoadoutChanged += RefreshWeaponPlate;
             PlayerProfile.CostumeChanged += RefreshBadges;
         }
 
@@ -74,6 +87,7 @@ namespace ZombieWar.UI
         {
             PlayerProfile.MissionsChanged -= RefreshMissionUi;
             PlayerProfile.LoadoutChanged -= RefreshBadges;
+            PlayerProfile.LoadoutChanged -= RefreshWeaponPlate;
             PlayerProfile.CostumeChanged -= RefreshBadges;
         }
 
@@ -88,7 +102,54 @@ namespace ZombieWar.UI
             RefreshRecord();
             RefreshBadges();
             RefreshMissionCard();
+            RefreshWeaponPlate();
         }
+
+        // The run weapon, shown on the Hub so the player sees what PLAY will start with (M8 mockup).
+        // Stat bars compare against the strongest gun in the catalog, so they read as "how good".
+        private void RefreshWeaponPlate()
+        {
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var d = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
+            if (weaponNameLabel != null) weaponNameLabel.text = d != null ? d.weaponName : "No weapon";
+            if (weaponMetaLabel != null)
+                weaponMetaLabel.text = d == null ? "" :
+                    $"<color=#{ColorUtility.ToHtmlStringRGB(d.TierColor)}>{d.tier.ToString().ToUpperInvariant()}</color> · {FamilyName(d.weaponClass)}";
+            if (weaponIcon != null)
+            {
+                var sprite = d != null && catalog != null ? catalog.GetWeaponIcon(d) : null;
+                weaponIcon.enabled = sprite != null;
+                if (sprite != null) { weaponIcon.sprite = sprite; weaponIcon.color = d.IconTint; weaponIcon.preserveAspect = true; }
+            }
+            if (weaponTile != null && d != null) weaponTile.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), d.TierColor, 0.3f);
+
+            float maxDamage = 1f, maxRate = 1f;
+            if (all != null)
+                for (int i = 0; i < all.Count; i++)
+                    if (all[i] != null)
+                    {
+                        maxDamage = Mathf.Max(maxDamage, all[i].damage * Mathf.Max(1, all[i].pelletCount));
+                        maxRate = Mathf.Max(maxRate, all[i].fireRate);
+                    }
+            SetFill(damageFill, d != null ? d.damage * Mathf.Max(1, d.pelletCount) / maxDamage : 0f);
+            SetFill(rateFill, d != null ? d.fireRate / maxRate : 0f);
+        }
+
+        private static void SetFill(RectTransform fill, float v)
+        {
+            if (fill != null) fill.anchorMax = new Vector2(Mathf.Clamp01(Mathf.Max(0.04f, v)), 1f);
+        }
+
+        public static string FamilyName(WeaponClass c) => c switch
+        {
+            WeaponClass.Sidearm => "PISTOL",
+            WeaponClass.SMG => "SMG",
+            WeaponClass.AssaultRifle => "RIFLE",
+            WeaponClass.Shotgun => "SHOTGUN",
+            WeaponClass.Marksman => "SNIPER",
+            WeaponClass.LMG => "LMG",
+            _ => c.ToString().ToUpperInvariant(),
+        };
 
         private void RefreshMissionUi()
         {
@@ -156,6 +217,8 @@ namespace ZombieWar.UI
             if (recordLabel == null) return;
             int best = Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds);
             recordLabel.text = best > 0 ? HudController.FormatClock(best) : "—";
+            if (playSubLabel != null)
+                playSubLabel.text = best > 0 ? $"Beat your best: {HudController.FormatClock(best)}" : "Survive as long as you can";
         }
 
         private void OpenShop(int tab)

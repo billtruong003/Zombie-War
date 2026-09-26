@@ -32,6 +32,12 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text infoNameLabel;
         [SerializeField] private Image[] statBars;                 // DMG / TỐC BẮN / TẦM fills
 
+        [Header("M8: the weapon's own cards")]
+        [Tooltip("The equipped family's two signature cards, so the player sees what this gun unlocks in a run.")]
+        [SerializeField] private TMP_Text signatureCaption;
+        [SerializeField] private TMP_Text[] signatureLabels;
+        [SerializeField] private Image heroBackdrop;
+
         private WeaponItemCardView _selected;
         private List<WeaponData> _arsenal;
         private readonly HashSet<string> _warnedIds = new();
@@ -51,12 +57,6 @@ namespace ZombieWar.UI
                     if (c != null && c.button != null)
                         c.button.onClick.AddListener(() => OnCardClicked(c));
                 }
-            if (slotViews != null)
-                for (int i = 1; i < slotViews.Length; i++)
-                    if (slotViews[i] != null) slotViews[i].gameObject.SetActive(false);
-
-            var bombRow = FindDeep(transform, "BombRow");
-            if (bombRow != null) bombRow.gameObject.SetActive(false);
         }
 
         private void OnEnable() => PlayerProfile.LoadoutChanged += RefreshFromState;
@@ -119,6 +119,9 @@ namespace ZombieWar.UI
                     if (sprite != null) { card.icon.sprite = sprite; card.icon.color = card.data.IconTint; }
                 }
                 // Ownership thật từ profile — cheatUnlockAll cố tình KHÔNG được hỏi ở đây.
+                // Rarity reads from the tile before the name does (M8 mockup).
+                var bg = card.transform.Find("Bg")?.GetComponent<Image>();
+                if (bg != null) bg.color = Color.Lerp(new Color(0.16f, 0.18f, 0.24f), card.data.TierColor, 0.22f);
                 bool owned = PlayerProfile.IsWeaponOwned(card.data.WeaponId);
                 if (card.lockOverlay != null) card.lockOverlay.SetActive(!owned);
                 if (card.ownedBadge != null) card.ownedBadge.SetActive(false); // grid không dùng badge (đè tên)
@@ -172,6 +175,9 @@ namespace ZombieWar.UI
                 infoNameLabel.text =
                     $"{d.weaponName} · <color=#{ColorUtility.ToHtmlStringRGB(d.TierColor)}>{d.tier.ToString().ToUpperInvariant()}</color>";
 
+            if (heroBackdrop != null) heroBackdrop.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), d.TierColor, 0.3f);
+            BindSignatures(d);
+
             // Stat bar: chuẩn hoá TẠM (provisional) — chỉ để so sánh tương đối, chưa phải
             // normalization chính thức (Docs/TASK_BREAKDOWN.md mục A).
             SetStat(0, d.damage / 60f);
@@ -204,16 +210,24 @@ namespace ZombieWar.UI
             rt.anchorMax = new Vector2(Mathf.Clamp01(v01), 1f);
         }
 
-        private static Transform FindDeep(Transform root, string name)
+        private void BindSignatures(WeaponData d)
         {
-            for (int i = 0; i < root.childCount; i++)
+            if (signatureCaption != null)
+                signatureCaption.text = $"{HubScreen.FamilyName(d.weaponClass)} CARDS IN A RUN";
+            if (signatureLabels == null) return;
+            int k = 0;
+            foreach (var def in ZombieWar.Skills.SkillCatalogDefs.All)
             {
-                var child = root.GetChild(i);
-                if (child.name == name) return child;
-                var hit = FindDeep(child, name);
-                if (hit != null) return hit;
+                if (def.layer != ZombieWar.Skills.SkillLayer.Signature || def.family != d.weaponClass) continue;
+                if (k < signatureLabels.Length && signatureLabels[k] != null)
+                {
+                    signatureLabels[k].text = def.displayName;
+                    signatureLabels[k].transform.parent.gameObject.SetActive(true);
+                }
+                k++;
             }
-            return null;
+            for (; k < signatureLabels.Length; k++)
+                if (signatureLabels[k] != null) signatureLabels[k].transform.parent.gameObject.SetActive(false);
         }
 
         private void WarnOnce(string key, string message)
