@@ -7,12 +7,12 @@ using UnityEngine.UI;
 namespace ZombieWar
 {
     /// <summary>
-    /// In-run HUD: HP pill, run pill (time survived · threat tier · level), coin pill, pause.
+    /// In-run HUD (M8 layout, owner-approved mockup): XP bar across the top, HP bar with level and
+    /// kill chips, a big survival clock with the threat chip under it, coin pill, pause, the horde
+    /// banner, and the skill bar (<see cref="SkillBarView"/>).
     ///
     /// Input is movement and the level-up card only (GDD §1): there is no fire, reload, bomb or
-    /// weapon-switch button. The HUD prefab is owner-authored and still carries the retired bomb and
-    /// weapon buttons, so they are hidden here rather than restructured in the prefab.
-    /// Every field is optional - a missing widget never throws.
+    /// weapon-switch button. Every field is optional - a missing widget never throws.
     /// </summary>
     public class HudController : MonoBehaviour
     {
@@ -24,26 +24,33 @@ namespace ZombieWar
         [SerializeField] private TMP_Text coinPill;
         [SerializeField] private Image healthFillImage;         // turns red under 30%
 
+        [Header("M8 run readout")]
+        [SerializeField] private TMP_Text clockLabel;           // "3:42"
+        [SerializeField] private Image threatChip;
+        [SerializeField] private TMP_Text threatLabel;          // "THREAT 2"
+        [SerializeField] private TMP_Text levelLabel;           // "Lv 7"
+        [SerializeField] private TMP_Text killLabel;            // "287"
+        [SerializeField] private RectTransform xpFillRect;      // scaled through anchorMax.x
+        [SerializeField] private GameObject hordeBanner;
+        [SerializeField] private TMP_Text hordeLabel;
+
         [Header("Buttons")]
         [SerializeField] private Button pauseButton;
 
-        [Header("Retired (hidden at runtime until removed from the prefab)")]
-        [SerializeField] private Button bombButton;
-        [SerializeField] private Button weaponButton;
+        [Tooltip("Seconds before a surge that the banner starts warning.")]
+        [SerializeField] private float hordeWarningSeconds = 3f;
 
         // Cached shown values - setting TMP text every frame is the HUD's main source of GC.
         private long _shownRunCoin = long.MinValue;
-        private int _shownSeconds = -1, _shownTier = -1, _shownLevel = -1;
+        private int _shownSeconds = -1, _shownTier = -1, _shownLevel = -1, _shownKills = -1, _shownBanner = -2;
         private bool _shownSurge;
+        private float _shownXp = -1f;
+
+        static readonly Color ThreatCalm = new(1f, 0.61f, 0.24f);
+        static readonly Color ThreatHorde = new(0.84f, 0.23f, 0.23f);
 
         /// <summary>RunOverlays wires its pause screen here. Null -> the button only logs.</summary>
         public System.Action PauseRequested;
-
-        private void Awake()
-        {
-            if (bombButton) bombButton.gameObject.SetActive(false);
-            if (weaponButton) weaponButton.gameObject.SetActive(false);
-        }
 
         private void OnEnable()
         {
@@ -75,17 +82,60 @@ namespace ZombieWar
 
         private void RefreshRunPill()
         {
-            if (runPill == null) return;
             var run = RunState.Current;
-            int seconds = run != null ? Mathf.FloorToInt(run.Duration) : 0;
+            float duration = run != null ? run.Duration : 0f;
+            int seconds = Mathf.FloorToInt(duration);
             var director = Threat.ThreatDirector.Instance;
             int tier = director != null ? director.CurrentTier : 0;
             bool surge = director != null && director.Surging;
             int level = run?.Level ?? 1;
-            if (seconds == _shownSeconds && tier == _shownTier && level == _shownLevel && surge == _shownSurge) return;
+            int kills = run?.Kills ?? 0;
 
+            // XP bar: continuous, cheap (a RectTransform anchor), only touched when it moves.
+            float xp = run != null && run.XpForNextLevel > 0 ? Mathf.Clamp01((float)run.Xp / run.XpForNextLevel) : 0f;
+            if (xpFillRect != null && Mathf.Abs(xp - _shownXp) > 0.002f)
+            {
+                _shownXp = xp;
+                xpFillRect.anchorMax = new Vector2(xp, 1f);
+            }
+
+            if (kills != _shownKills && killLabel != null) { _shownKills = kills; killLabel.text = kills.ToString(); }
+
+            RefreshHordeBanner(director, duration);
+
+            if (seconds == _shownSeconds && tier == _shownTier && level == _shownLevel && surge == _shownSurge) return;
             _shownSeconds = seconds; _shownTier = tier; _shownLevel = level; _shownSurge = surge;
-            runPill.text = FormatRunPill(seconds, tier, level, surge);
+
+            if (runPill != null) runPill.text = FormatRunPill(seconds, tier, level, surge);
+            if (clockLabel != null) clockLabel.text = FormatClock(seconds);
+            if (levelLabel != null) levelLabel.text = $"Lv {level}";
+            if (threatLabel != null) threatLabel.text = surge ? "HORDE" : $"THREAT {tier}";
+            if (threatChip != null) threatChip.color = surge ? ThreatHorde : ThreatCalm;
+        }
+
+        // The banner warns a few seconds BEFORE a surge (anticipation), then counts it down.
+        private void RefreshHordeBanner(Threat.ThreatDirector director, float duration)
+        {
+            if (hordeBanner == null) return;
+            int state;   // -1 hidden, 0..n = seconds shown (warning = n, running = 100+n)
+            if (director == null) state = -1;
+            else if (director.Surging) state = 100 + Mathf.CeilToInt(director.SurgeSecondsLeftNow(duration));
+            else
+            {
+                float until = director.SecondsUntilSurgeNow(duration);
+                state = until <= hordeWarningSeconds ? Mathf.CeilToInt(until) : -1;
+            }
+            if (state == _shownBanner) return;
+            _shownBanner = state;
+
+            bool show = state >= 0;
+            if (hordeBanner.activeSelf != show)
+            {
+                hordeBanner.SetActive(show);
+                if (show) ZombieWar.UI.UIFx.Punch(hordeBanner.transform);
+            }
+            if (!show || hordeLabel == null) return;
+            hordeLabel.text = state >= 100 ? $"HORDE!  0:{state - 100:00}" : $"HORDE INCOMING  {state}";
         }
 
         public static string FormatClock(int seconds) => $"{seconds / 60}:{seconds % 60:00}";

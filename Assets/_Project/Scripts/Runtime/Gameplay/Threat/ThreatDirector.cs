@@ -160,6 +160,33 @@ namespace ZombieWar.Threat
 
         public bool Surging { get; private set; }
 
+        /// <summary>
+        /// Seconds until the next surge starts (0 while one is running, +inf when surges are off).
+        /// Drives the HUD warning so a surge is announced before it lands, not after.
+        /// </summary>
+        public static float SecondsUntilSurge(float runSeconds, float openingSeconds, float every, float length)
+        {
+            if (every <= 0f || length <= 0f) return float.PositiveInfinity;
+            if (IsSurgeAt(runSeconds, openingSeconds, every, length)) return 0f;
+            float t = runSeconds - Mathf.Max(0f, openingSeconds);
+            if (t < every) return every - t;
+            return every - (t % every);
+        }
+
+        /// <summary>Seconds left in the running surge, 0 when none is running.</summary>
+        public static float SurgeSecondsLeft(float runSeconds, float openingSeconds, float every, float length)
+        {
+            if (!IsSurgeAt(runSeconds, openingSeconds, every, length)) return 0f;
+            float t = runSeconds - Mathf.Max(0f, openingSeconds);
+            return Mathf.Min(length, every) - (t % every);
+        }
+
+        public float SecondsUntilSurgeNow(float runSeconds) =>
+            SecondsUntilSurge(runSeconds, openingSeconds, surgeEverySeconds, surgeSeconds);
+
+        public float SurgeSecondsLeftNow(float runSeconds) =>
+            SurgeSecondsLeft(runSeconds, openingSeconds, surgeEverySeconds, surgeSeconds);
+
         void Awake()
         {
             Instance = this;

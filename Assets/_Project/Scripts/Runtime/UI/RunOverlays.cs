@@ -171,23 +171,54 @@ namespace ZombieWar
             bool died = s.Outcome == RunOutcome.Died;
             string clock = HudController.FormatClock(Mathf.FloorToInt(s.Duration));
 
-            SetText("Banner", died ? "RUN OVER" : "RUN ENDED");
-            SetText("RecordPill/L", result.NewSurvivalRecord ? $"NEW BEST  {clock}" : $"Survived  {clock}");
+            SetText("Banner", died ? "THE HORDE GOT YOU" : "YOU WALKED AWAY");
+            SetText("Time/Label", clock);
+            int best = Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds);
+            SetText("RecordPill/L", result.NewSurvivalRecord ? "NEW BEST!" : $"Best  {HudController.FormatClock(best)}");
+            SetText("Stats/Stat0/Value/Label", $"{s.Kills:N0}");
+            SetText("Stats/Stat1/Value/Label", $"{s.Level}");
+            SetText("Stats/Stat2/Value/Label", $"{s.PeakThreatTier}");
             SetText("PayoutCard/Row0L", "Coins collected");
             SetText("PayoutCard/Row0V", $"+{s.Coin:N0}");
             SetText("PayoutCard/Row1L", died
-                ? $"Kept ({RunClosure.DiedCoinFraction:P0})"
-                : "Kept (walked away: 0%)");
+                ? $"You keep {RunClosure.DiedCoinFraction:P0} on death"
+                : "Walked away: coins lost");
             SetText("PayoutCard/Row1V", $"+{result.BankedCoin:N0}");
-            SetText("PayoutCard/Row2L", $"Kills  ·  peak threat {s.PeakThreatTier}");
-            SetText("PayoutCard/Row2V", $"{s.Kills:N0}");
+            SetText("PayoutCard/Row2L", "Gems (always kept)");
+            SetText("PayoutCard/Row2V", $"+{s.Gem}");
+            SetText("PayoutCard/TotalL", "Banked");
             SetText("PayoutCard/TotalV", $"{result.BankedCoin:N0}");
-            SetText("PayoutCard/KcRow", $"Gems secured  +{s.Gem}");
-            SetShown("PayoutCard/KcRow", s.Gem > 0);
+            SetShown("PayoutCard/KcRow", false);
+            BindResultBuild();
 
             // No live pass-XP value exists for a run; an invented number is worse than nothing.
             SetShown("PassXpBar", false);
             SetShown("PassXpLabel", false);
+        }
+
+        // Build recap on the result screen, same tiles as the level-up strip plus a rank badge.
+        private void BindResultBuild()
+        {
+            var items = resultRoot.transform.Find("Build/Items");
+            var skills = ZombieWar.Skills.SkillRuntime.Active;
+            if (items == null) return;
+            int k = 0;
+            if (skills != null)
+                for (int pass = 0; pass < 2; pass++)
+                    foreach (var kv in skills.Ranks)
+                    {
+                        var def = ZombieWar.Skills.SkillCatalogDefs.ById(kv.Key);
+                        if (def == null || def.IsEvolution || kv.Value <= 0) continue;
+                        if ((pass == 0) != (def.layer == ZombieWar.Skills.SkillLayer.Autonomous)) continue;
+                        if (k >= items.childCount) break;
+                        var it = items.GetChild(k++);
+                        it.gameObject.SetActive(true);
+                        BindIcon(it, def, 1f);
+                        var rank = it.Find("Rank/Label")?.GetComponent<TMP_Text>();
+                        if (rank != null) rank.text = skills.IsEvolved(def.id) ? "EVO" : kv.Value.ToString();
+                    }
+            for (; k < items.childCount; k++) items.GetChild(k).gameObject.SetActive(false);
+            SetShown("Build", skills != null && skills.Ranks.Count > 0);
         }
 
         private void SetText(string path, string value)
@@ -299,6 +330,10 @@ namespace ZombieWar
         // prefab's Perk{i}/Name and Perk{i}/Desc paths, so no UI prefab edit is needed.
         private int _pendingLevelUps;
         private System.Collections.Generic.List<ZombieWar.Skills.SkillDef> _skillOffer;
+
+        [Tooltip("M8: card id -> icon. Cards without art show a two-letter badge in their layer colour.")]
+        [SerializeField] private ZombieWar.UI.SkillIconSet skillIcons;
+        private int _shownAutoPickSeconds = -1;
         private float _levelUpShownAtRealtime;
         private const float LevelUpTimeoutSeconds = 30f;
 
@@ -334,8 +369,13 @@ namespace ZombieWar
                 int nextRank = skills.RankOf(def.id) + 1;
                 BindOfferText($"Perk{i}/Name", CardTitle(def, nextRank));
                 BindOfferText($"Perk{i}/Desc", ZombieWar.Skills.SkillDescriptions.Describe(def, nextRank));
+                BindCardVisuals(i, def, nextRank);
             }
             ShowOfferButtons(_skillOffer.Count);
+            var sub = levelUpRoot.transform.Find("Sub/Label")?.GetComponent<TMP_Text>();
+            if (sub != null) sub.text = $"Level {run.Level} · choose one";
+            BindBuildStrip(skills);
+            _shownAutoPickSeconds = -1;
 
             _levelUpShownAtRealtime = Time.realtimeSinceStartup;
             Time.timeScale = 0f;
@@ -349,7 +389,15 @@ namespace ZombieWar
         {
             if (levelUpRoot == null || !levelUpRoot.activeSelf) return;
             if (_skillOffer == null || _skillOffer.Count == 0) return;
-            if (Time.realtimeSinceStartup - _levelUpShownAtRealtime < LevelUpTimeoutSeconds) return;
+            float waited = Time.realtimeSinceStartup - _levelUpShownAtRealtime;
+            int left = Mathf.CeilToInt(LevelUpTimeoutSeconds - waited);
+            if (left != _shownAutoPickSeconds)
+            {
+                _shownAutoPickSeconds = left;
+                var hint = levelUpRoot.transform.Find("Hint")?.GetComponent<TMP_Text>();
+                if (hint != null) hint.text = $"Auto-picks in {Mathf.Max(0, left)} s";
+            }
+            if (waited < LevelUpTimeoutSeconds) return;
 
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             var auto = ZombieWar.Skills.SkillOfferBuilder.AutoPick(_skillOffer, skills);
@@ -389,6 +437,82 @@ namespace ZombieWar
             if (TerminalOverlayActive) return;
             _pendingLevelUps = Mathf.Max(_pendingLevelUps, 1);
             TryShowLevelUp();
+        }
+
+        static readonly Color CardBg = new(0.106f, 0.129f, 0.188f);
+        static readonly Color EvolutionBg = new(0.23f, 0.2f, 0.12f);
+
+        // Border in the layer colour, icon tile tinted from it, gold background for an evolution,
+        // and rank pips: the card reads (what kind, how far along) before the text does.
+        private void BindCardVisuals(int slot, ZombieWar.Skills.SkillDef def, int nextRank)
+        {
+            var card = levelUpRoot.transform.Find($"Perk{slot}");
+            if (card == null) return;
+            var color = ZombieWar.Skills.SkillDescriptions.LayerColor(def);
+
+            var border = card.Find("Border")?.GetComponent<Image>();
+            if (border != null) border.color = color;
+            var bg = card.Find("Bg")?.GetComponent<Image>();
+            if (bg != null) bg.color = def.IsEvolution ? EvolutionBg : CardBg;
+            var tile = card.Find("Icon")?.GetComponent<Image>();
+            if (tile != null) tile.color = Color.Lerp(CardBg, color, 0.35f);
+
+            BindIcon(card.Find("Icon"), def, 1f);
+
+            var pips = card.Find("Pips");
+            if (pips != null)
+            {
+                bool showPips = !def.IsEvolution && def.maxRank > 1;
+                pips.gameObject.SetActive(showPips);
+                for (int k = 0; k < pips.childCount; k++)
+                {
+                    var pip = pips.GetChild(k);
+                    bool used = k < def.maxRank;
+                    pip.gameObject.SetActive(used);
+                    var img = pip.GetComponent<Image>();
+                    if (img != null) img.color = k < nextRank ? color : new Color(0.06f, 0.07f, 0.1f, 0.8f);
+                }
+            }
+        }
+
+        /// Icon art when the set has it, otherwise the two-letter badge in the layer colour.
+        private void BindIcon(Transform holder, ZombieWar.Skills.SkillDef def, float alpha)
+        {
+            if (holder == null) return;
+            var sprite = skillIcons != null ? skillIcons.For(def.id) : null;
+            var art = holder.Find("Art")?.GetComponent<Image>();
+            if (art != null) { art.enabled = sprite != null; if (sprite != null) art.sprite = sprite; }
+            var badge = holder.Find("Badge")?.GetComponent<TMP_Text>();
+            if (badge != null)
+            {
+                badge.enabled = sprite == null;
+                badge.text = ZombieWar.UI.SkillIconSet.Abbreviation(def.displayName);
+                var c = ZombieWar.Skills.SkillDescriptions.LayerColor(def); c.a = alpha;
+                badge.color = Color.Lerp(c, Color.white, 0.35f);
+            }
+        }
+
+        // The build so far under the cards: powers first, then everything else, one tile each.
+        private void BindBuildStrip(ZombieWar.Skills.SkillRuntime skills)
+        {
+            var items = levelUpRoot.transform.Find("Build/Items");
+            if (items == null || skills == null) return;
+            int k = 0;
+            for (int pass = 0; pass < 2; pass++)
+                foreach (var kv in skills.Ranks)
+                {
+                    var def = ZombieWar.Skills.SkillCatalogDefs.ById(kv.Key);
+                    if (def == null || def.IsEvolution || kv.Value <= 0) continue;
+                    bool power = def.layer == ZombieWar.Skills.SkillLayer.Autonomous;
+                    if ((pass == 0) != power) continue;
+                    if (k >= items.childCount) break;
+                    var it = items.GetChild(k++);
+                    it.gameObject.SetActive(true);
+                    BindIcon(it, def, 1f);
+                }
+            for (; k < items.childCount; k++) items.GetChild(k).gameObject.SetActive(false);
+            var build = levelUpRoot.transform.Find("Build");
+            if (build != null) build.gameObject.SetActive(skills.Ranks.Count > 0);
         }
 
         /// Card title: the name in its layer colour plus a small NEW / Lv N / EVOLUTION tag. Rich text

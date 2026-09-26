@@ -92,6 +92,18 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void TheHudCanAnnounceASurgeBeforeItLands()
+        {
+            // opening 25 s, a 10 s surge every 75 s -> first surge 100..110
+            Assert.AreEqual(3f, ThreatDirector.SecondsUntilSurge(97f, 25f, 75f, 10f), 1e-4f);
+            Assert.AreEqual(0f, ThreatDirector.SecondsUntilSurge(104f, 25f, 75f, 10f), 1e-4f, "running");
+            Assert.AreEqual(6f, ThreatDirector.SurgeSecondsLeft(104f, 25f, 75f, 10f), 1e-4f);
+            Assert.AreEqual(0f, ThreatDirector.SurgeSecondsLeft(120f, 25f, 75f, 10f), 1e-4f, "none running");
+            Assert.AreEqual(55f, ThreatDirector.SecondsUntilSurge(120f, 25f, 75f, 10f), 1e-4f, "next one at 175");
+            Assert.IsTrue(float.IsPositiveInfinity(ThreatDirector.SecondsUntilSurge(50f, 25f, 0f, 10f)));
+        }
+
+        [Test]
         public void SurgesRunOnAFixedClock_AfterTheOpening()
         {
             // opening 25 s, a 10 s surge every 75 s
