@@ -259,7 +259,9 @@ Assets/_Project/Scripts/Runtime/
 Editor tooling đáng nhớ (`Assets/_Project/Scripts/Editor/`):
 `DesertMapGeneratorWindow` · `CampaignStageBuilder` · `MapNavigationAuthoring` ·
 `ZombieVATBaker` · `WeaponPoseAuthoring(Editor)` · `CombatPowerAuditWindow` ·
-`CheatBuildToggle` · `UI/HudInstaller` · `UI/*Installer` (⚠️ destructive — chỉ chạy khi owner yêu cầu).
+`CheatBuildToggle` · `DevCheatPanelInstaller` · `UI/M8UiLayout` (layout M8 owner duyệt) · `UI/*Installer`
+(⚠️ destructive — chỉ chạy khi owner yêu cầu). `HudInstaller`, `MenuScreensInstaller`, `SceneFlowBuilder`
+đã bị xoá (2026-09-26) vì dựng lại layout trước M8.
 
 ---
 
