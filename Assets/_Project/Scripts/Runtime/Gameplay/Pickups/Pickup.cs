@@ -56,6 +56,20 @@ namespace ZombieWar
 
         public PlayerProfile.CurrencyKind Kind => _kind;
         public bool Collected => _collected;
+        public int Amount => _amount;
+
+        /// <summary>
+        /// Folds another drop's value into this one instead of spawning a new object. Only a resting
+        /// currency pickup of the same kind can absorb: one already flying to the player has been
+        /// counted as collected-in-flight and must not change value mid-air.
+        /// </summary>
+        public bool TryAbsorb(PlayerProfile.CurrencyKind kind, int amount)
+        {
+            if (effect != PickupEffect.Currency || _collected || _flying || kind != _kind || amount <= 0)
+                return false;
+            _amount += amount;
+            return true;
+        }
 
         /// <summary>Called by the spawner right after the pool hands this instance over.</summary>
         public void Init(PlayerProfile.CurrencyKind kind, int amount, string poolKey, Vector3 position)

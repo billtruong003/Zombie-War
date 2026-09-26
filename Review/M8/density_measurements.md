@@ -39,3 +39,13 @@ development player build.
 
 Open item for step B: levels arrive slowly after Lv 5 (Lv 8 at 4 min). Re-tune the XP curve together
 with the skill overhaul, then re-measure.
+
+## Follow-up: loot at horde density
+
+A surge screenshot showed the ground carpeted with coins: each normal kill split its 2-4 coin reward
+into 2-4 objects, and there are ~3x the kills. Now a normal enemy drops one coin carrying its full
+value (elites still burst), above 60 live pickups a new coin merges into the nearest resting coin
+within 4 m, and the walk-over magnet radius is 4.5 m (was 3.5). Coin value per kill is unchanged, so
+**coin income per run is roughly 3x the Slice A figure — re-tune shop prices after playtest.**
+The surge pill no longer overflows: during a surge it reads `1:47 · HORDE · Lv 7` in red.
+Screenshot: `density_surge.png` (second surge, 78 alive, 60 pickups).

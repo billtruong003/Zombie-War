@@ -90,10 +90,11 @@ namespace ZombieWar
 
         public static string FormatClock(int seconds) => $"{seconds / 60}:{seconds % 60:00}";
 
-        /// <summary>"3:42 · Threat 2 · Lv 7", or a red HORDE! lead during a surge.</summary>
+        /// <summary>"3:42 · Threat 2 · Lv 7". During a surge the whole pill turns red and HORDE takes
+        /// the threat slot, so the text never grows past the owner-authored pill width.</summary>
         public static string FormatRunPill(int seconds, int tier, int level, bool surge) =>
             surge
-                ? $"<color=#FF4A3D>HORDE!</color> {FormatClock(seconds)} · Threat {tier} · Lv {level}"
+                ? $"<color=#FF4A3D>{FormatClock(seconds)} · HORDE · Lv {level}</color>"
                 : $"{FormatClock(seconds)} · Threat {tier} · Lv {level}";
 
         // Coin pill binds the live ledger: a pickup, a crate or a kill moves the number at once.

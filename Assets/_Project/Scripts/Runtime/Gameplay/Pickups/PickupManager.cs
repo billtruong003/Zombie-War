@@ -24,7 +24,7 @@ namespace ZombieWar
 
         [Header("Magnet")]
         [Tooltip("How close the player must get before loot flies to them.")]
-        [SerializeField] private float magnetRadius = 3.5f;
+        [SerializeField] private float magnetRadius = 4.5f;
 
         [Header("Drops")]
         [Tooltip("Coins are split into at most this many physical pickups, so a boss worth 40 coin " +
@@ -34,6 +34,16 @@ namespace ZombieWar
         [Range(0f, 1f)] [SerializeField] private float eliteGemChance = 0.5f;
         [SerializeField] private int eliteGemAmount = 1;
         [SerializeField] private float dropScatterRadius = 0.6f;
+
+        [Header("Crowd-scale drops (M8) — TUNING")]
+        [Tooltip("Physical coin pickups a NORMAL enemy drops (its whole coin value rides on them). " +
+                 "Measured 2026-09-26: at horde density, splitting every 2-4 coin reward into 2-4 " +
+                 "objects carpeted the ground. Elites still burst into up to maxCoinDropsPerKill.")]
+        [SerializeField] private int normalEnemyCoinDrops = 1;
+        [Tooltip("Above this many live pickups, a new coin merges into the nearest resting coin " +
+                 "within mergeRadius instead of adding another object.")]
+        [SerializeField] private int mergeAboveLive = 60;
+        [SerializeField] private float mergeRadius = 4f;
 
         private static readonly List<Pickup> Live = new List<Pickup>(128);
         private static readonly List<Pickup> Scratch = new List<Pickup>(128);
@@ -120,6 +130,22 @@ namespace ZombieWar
             RunScope.Register(ResetMagnet);
         }
 
+        /// <summary>Adds the value to the nearest resting pickup of the same kind within
+        /// <see cref="mergeRadius"/>. False when none is close enough, so the drop spawns normally.</summary>
+        private bool TryMerge(PlayerProfile.CurrencyKind kind, int amount, Vector3 origin)
+        {
+            Pickup best = null;
+            float bestSqr = mergeRadius * mergeRadius;
+            for (int i = 0; i < Live.Count; i++)
+            {
+                var p = Live[i];
+                if (p == null) continue;
+                float d = (p.transform.position - origin).sqrMagnitude;
+                if (d < bestSqr && p.Kind == kind && p.Amount > 0 && !p.Collected) { best = p; bestSqr = d; }
+            }
+            return best != null && best.TryAbsorb(kind, amount);
+        }
+
         /// <summary>
         /// Drops this kill's loot.
         ///
@@ -138,7 +164,7 @@ namespace ZombieWar
             int coin = Mathf.Max(0, data.coinReward);
             if (coin > 0)
             {
-                int drops = Mathf.Clamp(coin, 1, maxCoinDropsPerKill);
+                int drops = Mathf.Clamp(coin, 1, data.isElite ? maxCoinDropsPerKill : Mathf.Max(1, normalEnemyCoinDrops));
                 int per = Mathf.Max(1, coin / drops);
                 int remainder = coin - per * drops;
 
@@ -166,6 +192,8 @@ namespace ZombieWar
         private void Spawn(PlayerProfile.CurrencyKind kind, int amount, string key, Vector3 origin)
         {
             if (string.IsNullOrEmpty(key) || Bill.Pool == null) return;
+
+            if (amount > 0 && Live.Count >= mergeAboveLive && TryMerge(kind, amount, origin)) return;
 
             Vector2 scatter = Random.insideUnitCircle * dropScatterRadius;
             Vector3 pos = origin + new Vector3(scatter.x, 0.25f, scatter.y);
