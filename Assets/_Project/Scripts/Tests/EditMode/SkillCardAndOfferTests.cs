@@ -7,7 +7,7 @@ using ZombieWar.Skills;
 namespace ZombieWar.Tests
 {
     /// <summary>
-    /// M7.2 B2/B3/B5 — the 23 cards and the 1-of-3 offer.
+    /// M7.2 B2/B3/B5 — the cards and the 1-of-3 offer. M8: 23 originals + 6 powers + 6 evolutions.
     ///
     /// The offer builder is the part most likely to look fine and be subtly wrong, so its rules are
     /// asserted directly rather than only observed through play.
@@ -27,10 +27,10 @@ namespace ZombieWar.Tests
         // ══════════════════════════════════════════════════ catalog integrity
 
         [Test]
-        public void ExactlyTwentyThreeCards_WithTheOwnerLockedNames()
+        public void TheOwnerApprovedCardList_NothingMoreNothingLess()
         {
             var all = SkillCatalogDefs.All;
-            Assert.AreEqual(23, all.Count, "the card list is owner-locked at 23");
+            Assert.AreEqual(35, all.Count, "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26)");
 
             var expected = new[]
             {
@@ -40,9 +40,11 @@ namespace ZombieWar.Tests
                 "Heavy Pressure", "Shockwave Belt", "Longshot", "Hunter's Mark",
                 "Chain Lightning", "Ordnance Core", "Soul Burst", "Emergency Detonation",
                 "Execution Round", "Kinetic Shield",
+                "Orbit Blades", "Drone Buddy", "Frost Nova", "Fire Trail", "Boomerang", "Airstrike",
+                "Thunderstorm", "Carpet Bomb", "Buzzsaw Halo", "Absolute Zero", "Drone Squadron", "Reaper",
             };
             CollectionAssert.AreEquivalent(expected, all.Select(d => d.displayName).ToArray(),
-                "no card may be added, removed or renamed");
+                "no card may be added, removed or renamed without the owner");
         }
 
         [Test]
@@ -273,7 +275,7 @@ namespace ZombieWar.Tests
             Assert.IsFalse(_run.TryAbsorbDamage(), "uncharged shield blocks nothing");
 
             var p = Vector3.zero;
-            for (int i = 0; i < 60; i++) { p += Vector3.forward; _run.Tick(0.1f, p, true, false, 1f); }
+            for (int i = 0; i < 80; i++) { p += Vector3.forward; _run.Tick(0.1f, p, true, false, 1f); }
 
             Assert.IsTrue(_run.TryAbsorbDamage(), "charged shield blocks a hit");
             Assert.IsFalse(_run.TryAbsorbDamage(), "and only one");
@@ -321,7 +323,8 @@ namespace ZombieWar.Tests
             int total = 0;
             for (float t = 0f; t < 1f; t += 0.1f) total += _run.PollPowers(t, 0.1f).Count;
 
-            Assert.LessOrEqual(total, 2, "no combination of powers may exceed 2 procs per second");
+            Assert.LessOrEqual(total, (int)AutonomousPower.GlobalProcsPerSecond,
+                "no combination of powers may exceed the global procs-per-second ceiling");
         }
 
         // ══════════════════════════════════════════════════ offer rules
@@ -444,6 +447,154 @@ namespace ZombieWar.Tests
             for (int i = 0; i < 5; i++) _run.Take(SkillCatalogDefs.StatDamage);
             int after = SkillOfferBuilder.EligiblePool(_run, WeaponClass.Sidearm).Count;
             Assert.AreEqual(before - 1, after, "a maxed card leaves the pool");
+        }
+
+        // ══════════════════════════════════════════════════ M8: evolutions
+
+        [Test]
+        public void EveryEvolutionNamesAPowerAndAPartnerThatExist()
+        {
+            foreach (var evo in SkillCatalogDefs.All.Where(d => d.IsEvolution))
+            {
+                var power = SkillCatalogDefs.ById(evo.evolvesFrom);
+                Assert.IsNotNull(power, $"{evo.displayName} evolves a missing power");
+                Assert.AreEqual(SkillLayer.Autonomous, power.layer, $"{evo.displayName} must evolve a power");
+                Assert.IsNotNull(SkillCatalogDefs.ById(evo.partner), $"{evo.displayName} needs a real partner");
+                Assert.AreSame(evo, SkillCatalogDefs.EvolutionOf(evo.evolvesFrom));
+            }
+        }
+
+        [Test]
+        public void AnEvolutionNeedsTheMaxedPowerAndItsPartner()
+        {
+            var evo = SkillCatalogDefs.ById(SkillCatalogDefs.EvoThunderstorm);
+            Assert.IsFalse(_run.Take(evo.id), "not available from nothing");
+
+            for (int i = 0; i < 3; i++) _run.Take(SkillCatalogDefs.AutoChainLightning);
+            Assert.IsFalse(_run.CanEvolve(evo), "a maxed power alone is not enough");
+            Assert.IsFalse(_run.Take(evo.id));
+
+            _run.Take(SkillCatalogDefs.StatFireRate);
+            Assert.IsTrue(_run.CanEvolve(evo), "max power + partner owned");
+            Assert.IsTrue(_run.Take(evo.id));
+            Assert.IsTrue(_run.IsEvolved(SkillCatalogDefs.AutoChainLightning));
+            Assert.IsFalse(_run.CanEvolve(evo), "an evolution is taken once");
+        }
+
+        [Test]
+        public void AReadyEvolutionAlwaysTakesSlotA()
+        {
+            for (int seed = 0; seed < 50; seed++)
+            {
+                var run = new SkillRuntime();
+                for (int i = 0; i < 3; i++) run.Take(SkillCatalogDefs.AutoOrdnance);
+                run.Take(SkillCatalogDefs.StatDamage);
+                var offer = SkillOfferBuilder.Build(run, WeaponClass.Sidearm, seed, 9);
+                Assert.AreEqual(SkillCatalogDefs.EvoCarpetBomb, offer[0].id, $"seed {seed}: the payoff must be offered");
+            }
+        }
+
+        [Test]
+        public void EvolutionsAreNeverOfferedBeforeTheyAreEarned()
+        {
+            for (int seed = 0; seed < 100; seed++)
+                for (int level = 1; level <= 10; level++)
+                    Assert.IsFalse(SkillOfferBuilder.Build(new SkillRuntime(), WeaponClass.SMG, seed, level)
+                        .Any(d => d.IsEvolution), $"seed {seed} level {level}");
+        }
+
+        [Test]
+        public void LevelsTwoAndThreeAlwaysOfferAnAutonomousPower()
+        {
+            for (int seed = 0; seed < 200; seed++)
+                for (int level = 2; level <= 3; level++)
+                    Assert.IsTrue(SkillOfferBuilder.Build(new SkillRuntime(), WeaponClass.Shotgun, seed, level)
+                        .Any(d => d.layer == SkillLayer.Autonomous), $"seed {seed} level {level}");
+        }
+
+        // ══════════════════════════════════════════════════ M8: power magnitudes
+
+        [Test]
+        public void PowerDamageGrowsWithRankDamageUpAndEvolution()
+        {
+            for (int i = 0; i < 1; i++) _run.Take(SkillCatalogDefs.AutoOrbit);
+            float r1 = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
+            _run.Take(SkillCatalogDefs.AutoOrbit);
+            float r2 = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
+            _run.Take(SkillCatalogDefs.StatDamage);
+            float withDamageUp = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
+            _run.Take(SkillCatalogDefs.AutoOrbit);
+            _run.Take(SkillCatalogDefs.StatMoveSpeed);
+            _run.Take(SkillCatalogDefs.EvoBuzzsaw);
+            float evolved = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
+
+            Assert.Greater(r2, r1, "rank must add damage, not only cooldown");
+            Assert.Greater(withDamageUp, r2, "Damage Up must feed powers too");
+            Assert.Greater(evolved, withDamageUp);
+            Assert.AreEqual(6, _run.OrbitBladeCount, "Buzzsaw Halo is six blades");
+        }
+
+        [Test]
+        public void OrbitAndDroneCountsFollowRank()
+        {
+            Assert.AreEqual(0, _run.OrbitBladeCount);
+            _run.Take(SkillCatalogDefs.AutoOrbit);
+            Assert.AreEqual(2, _run.OrbitBladeCount);
+            _run.Take(SkillCatalogDefs.AutoOrbit);
+            Assert.AreEqual(3, _run.OrbitBladeCount);
+
+            Assert.AreEqual(0, _run.DroneCount);
+            _run.Take(SkillCatalogDefs.AutoDrone);
+            Assert.AreEqual(1, _run.DroneCount);
+        }
+
+        [Test]
+        public void FireTrailPaysOutByDistance_NotByStandingStill()
+        {
+            _run.Take(SkillCatalogDefs.AutoFireTrail);
+            for (int i = 0; i < 30; i++) _run.Tick(0.1f, Vector3.zero, false, false, 1f);
+            Assert.AreEqual(0, _run.ConsumeFireTrailDrops(), "standing still leaves no fire");
+
+            var p = Vector3.zero;
+            for (int i = 0; i < 10; i++) { p += Vector3.forward * 0.5f; _run.Tick(0.1f, p, true, false, 1f); }
+            Assert.AreEqual(4, _run.ConsumeFireTrailDrops(), "5 m walked at 1.1 m spacing = 4 patches");
+        }
+
+        [Test]
+        public void NewBurstPowersProcThroughTheSharedFramework()
+        {
+            _run.Take(SkillCatalogDefs.AutoFrostNova);
+            _run.Take(SkillCatalogDefs.AutoBoomerang);
+            _run.Take(SkillCatalogDefs.AutoAirstrike);
+            var ids = _run.PollPowers(0f, 1f).Select(p => p.skillId).ToArray();
+            CollectionAssert.AreEquivalent(new[] { SkillCatalogDefs.AutoFrostNova, SkillCatalogDefs.AutoBoomerang,
+                                                   SkillCatalogDefs.AutoAirstrike }, ids);
+            Assert.AreEqual(0, _run.PollPowers(0.5f, 1f).Count, "each waits for its own cooldown");
+        }
+
+        [Test]
+        public void ReaperOnlyRollsOnceEvolved_AndAboutAQuarterOfKills()
+        {
+            Assert.IsFalse(_run.RollReaper());
+            for (int i = 0; i < 3; i++) _run.Take(SkillCatalogDefs.AutoSoulBurst);
+            _run.Take(SkillCatalogDefs.UniExecution);
+            _run.Take(SkillCatalogDefs.EvoReaper);
+            int hits = 0;
+            for (int i = 0; i < 1000; i++) if (_run.RollReaper()) hits++;
+            Assert.That(hits, Is.InRange(180, 320));
+        }
+
+        [Test]
+        public void EveryCardHasASpecificDescriptionAtEveryRank()
+        {
+            foreach (var d in SkillCatalogDefs.All)
+                for (int r = 1; r <= d.maxRank; r++)
+                {
+                    string text = SkillDescriptions.Describe(d, r);
+                    Assert.IsNotEmpty(text, d.displayName);
+                    Assert.AreNotEqual(d.displayName, text, $"{d.displayName} fell through to its bare name");
+                    StringAssert.DoesNotContain("Automatic power", text, "the generic line is gone");
+                }
         }
 
         [Test]

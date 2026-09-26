@@ -76,10 +76,11 @@ namespace ZombieWar.Tests
         {
             RunState.Begin();
             var power = new AutonomousPower("p", AutonomousPower.TriggerKind.Interval, 0.01f);
-            // Spend the whole global 2-procs/second budget inside run one.
-            power.TryProc(0f);
-            power.TryProc(0.1f);
-            Assert.IsFalse(power.TryProc(0.2f), "sanity: run one exhausted the shared budget");
+            // Spend the whole global procs/second budget inside run one.
+            int budget = (int)AutonomousPower.GlobalProcsPerSecond;
+            // 0.06 s apart: above the 0.05 s per-power cooldown floor, all inside one second.
+            for (int i = 0; i < budget; i++) Assert.IsTrue(power.TryProc(i * 0.06f), $"proc {i + 1}");
+            Assert.IsFalse(power.TryProc(budget * 0.06f), "sanity: run one exhausted the shared budget");
 
             RunState.Abandon();
             RunState.Begin();

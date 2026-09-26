@@ -74,15 +74,34 @@ namespace ZombieWar.Tests
         [Test]
         public void P2_GlobalProcCeilingIsEnforcedAcrossAllPowers()
         {
-            // The guardrail is <=2 procs/s across ALL sources, so it cannot live inside one card.
-            var a = new AutonomousPower("a", AutonomousPower.TriggerKind.Interval, 0.01f);
-            var b = new AutonomousPower("b", AutonomousPower.TriggerKind.Interval, 0.01f);
-            var c = new AutonomousPower("c", AutonomousPower.TriggerKind.Interval, 0.01f);
+            // The guardrail is a shared procs/s ceiling across ALL sources, so it cannot live inside
+            // one card. Each power has a tiny cooldown, so only the shared ceiling can refuse.
+            int budget = (int)AutonomousPower.GlobalProcsPerSecond;
+            var powers = new AutonomousPower[budget + 1];
+            for (int i = 0; i < powers.Length; i++)
+                powers[i] = new AutonomousPower("p" + i, AutonomousPower.TriggerKind.Interval, 0.01f);
 
-            Assert.IsTrue(a.TryProc(0.0f));
-            Assert.IsTrue(b.TryProc(0.1f));
-            Assert.IsFalse(c.TryProc(0.2f), "third proc inside one second must be refused");
-            Assert.IsTrue(c.TryProc(1.2f), "the window reopens after a second");
+            for (int i = 0; i < budget; i++) Assert.IsTrue(powers[i].TryProc(i * 0.05f), $"proc {i + 1} fits");
+            Assert.IsFalse(powers[budget].TryProc(0.9f), "one more proc inside the same second must be refused");
+            Assert.IsTrue(powers[budget].TryProc(1.2f), "the window reopens after a second");
+        }
+
+        [Test]
+        public void P2_ARefundedProcRetriesSoon_AndCostsNoSharedBudget()
+        {
+            AutonomousPower.ResetGlobalBudget();
+            var chain = new AutonomousPower("chain", AutonomousPower.TriggerKind.Interval, 6f);
+            Assert.IsTrue(chain.TryProc(0f));
+            chain.Refund(0f);                      // nothing was in reach
+            Assert.IsFalse(chain.TryProc(0.1f), "does not retry every frame");
+            Assert.IsTrue(chain.TryProc(0.3f), "looks again after the short retry, not the 6 s cooldown");
+
+            // Budget: refunded procs must not starve the other powers.
+            AutonomousPower.ResetGlobalBudget();
+            var empty = new AutonomousPower("empty", AutonomousPower.TriggerKind.Interval, 0.01f);
+            for (int i = 0; i < 20; i++) if (empty.TryProc(i * 0.3f / 20f + 0.001f)) empty.Refund(i * 0.3f / 20f);
+            var other = new AutonomousPower("other", AutonomousPower.TriggerKind.Interval, 0.01f);
+            Assert.IsTrue(other.TryProc(0.5f), "the shared budget is still there for a power that hits");
         }
 
         [Test]

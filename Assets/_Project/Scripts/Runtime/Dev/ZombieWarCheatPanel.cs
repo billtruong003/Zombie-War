@@ -65,6 +65,8 @@ namespace ZombieWar
             cheat.Register("zw.heal", HealPlayer, "Restore player HP");
             cheat.Register("zw.god", ToggleGodMode, "Toggle player god mode");
             cheat.Register("zw.xp", AddRunXp, "Add 1,000 run XP");
+            cheat.Register<string>("zw.skill", GrantSkill, "Grant one rank of a card: zw.skill auto.orbit");
+            cheat.Register<string>("zw.skill.max", GrantSkillMax, "Max a card (and its evolution partner if any)");
             cheat.Register("zw.runcoin", AddRunCoin, "Add 1,000 run Coin");
             cheat.Register("zw.killall", KillAllZombies, "Kill every active zombie");
             cheat.Register("zw.threat", RaiseThreat, "Raise run threat by one tier");
@@ -283,6 +285,30 @@ namespace ZombieWar
         {
             if (_godMode && _godHealth != null)
                 _godHealth.ResetHealth();
+        }
+
+        // Skill showcase for play-testing a power's feel without levelling up to it.
+        private void GrantSkill(string id)
+        {
+            var skills = ZombieWar.Skills.SkillRuntime.Active ?? throw new InvalidOperationException("No active run.");
+            bool ok = skills.Take(id);
+            if (ok && ZombieWar.Skills.SkillCatalogDefs.ById(id)?.IsEvolution == true)
+                ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
+            SetStatus(ok ? $"{id} -> rank {skills.RankOf(id)}" : $"{id}: not takeable");
+        }
+
+        private void GrantSkillMax(string id)
+        {
+            var def = ZombieWar.Skills.SkillCatalogDefs.ById(id) ?? throw new InvalidOperationException($"Unknown card {id}");
+            var skills = ZombieWar.Skills.SkillRuntime.Active ?? throw new InvalidOperationException("No active run.");
+            if (def.IsEvolution)
+            {
+                while (skills.Take(def.evolvesFrom)) { }
+                skills.Take(def.partner);
+            }
+            while (skills.Take(id)) { }
+            if (def.IsEvolution) ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
+            SetStatus($"{id} maxed");
         }
 
         private void AddRunXp()

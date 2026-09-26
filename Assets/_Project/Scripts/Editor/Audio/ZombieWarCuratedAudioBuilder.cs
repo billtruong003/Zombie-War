@@ -93,6 +93,11 @@ namespace ZombieWar.Editor.Audio
                 "sfx.pickup.coin", "sfx.pickup.gem", "sfx.pickup.health", "sfx.pickup.bomb",
                 "sfx.prop.crate.hit", "sfx.prop.crate.break", "sfx.prop.barrel.hit",
                 "sfx.prop.barrel.explode", "sfx.footstep.player.earth",
+                "sfx.skill.chain", "sfx.skill.thunderstorm", "sfx.skill.target", "sfx.skill.blast",
+                "sfx.skill.soulburst", "sfx.skill.reaper", "sfx.skill.emergency", "sfx.skill.shield.ready",
+                "sfx.skill.shield.break", "sfx.skill.frost", "sfx.skill.fire", "sfx.skill.drone",
+                "sfx.skill.airstrike.mark", "sfx.skill.airstrike.blast", "sfx.skill.evolve",
+                "sfx.skill.blade.hit", "sfx.skill.boomerang.throw",
             };
             foreach (string key in required)
                 if (!keys.Contains(key)) throw new InvalidDataException($"Required runtime cue is missing: {key}");
@@ -280,6 +285,9 @@ namespace ZombieWar.Editor.Audio
                     Add(plan, "sfx.impact.bone.heavy");
                     AddFamilies(plan, "death", "skeleton_small", "skeleton_mage", "skeleton_giant");
                 }
+                if (n.StartsWith("blade_hit")) Add(plan, "sfx.skill.blade.hit");
+                if (n.StartsWith("kick_long_whoosh") || n.StartsWith("punch_long_whoosh"))
+                    Add(plan, "sfx.skill.boomerang.throw");
                 if (n.Contains("whoosh"))
                 {
                     Add(plan, "sfx.player.bomb.throw");
@@ -311,6 +319,24 @@ namespace ZombieWar.Editor.Audio
                 if (n.Contains("shoot_acid") || n.Contains("shoot_gas") || n.Contains("shoot_fireball"))
                     AddFamilies(plan, "attack", "plant_small", "plant_heavy", "plant_boss");
                 if (n.Contains("shoot_lightning")) Add(plan, "sfx.weapon.energy.fire");
+
+                // M8 — every skill has a voice. Chosen by ear from the same pack as the visuals so
+                // an effect and its sound belong together.
+                if (n is "etfx_shoot_lightning2") Add(plan, "sfx.skill.chain");
+                if (n is "etfx_explosion_storm") Add(plan, "sfx.skill.thunderstorm");
+                if (n is "etfx_explosion_scan") Add(plan, "sfx.skill.target");
+                if (n is "etfx_explosion_grenade" || n is "etfx_explosion_fireball") Add(plan, "sfx.skill.blast");
+                if (n is "etfx_explosion_soul") Add(plan, "sfx.skill.soulburst");
+                if (n is "etfx_explosion_dark01") Add(plan, "sfx.skill.reaper");
+                if (n is "etfx_explosion_nuke") Add(plan, "sfx.skill.emergency");
+                if (n is "etfx_explosion_minimagic") Add(plan, "sfx.skill.shield.ready");
+                if (n is "etfx_stun01") Add(plan, "sfx.skill.shield.break");
+                if (n is "etfx_explosion_frost" || n is "etfx_explosion_snow") Add(plan, "sfx.skill.frost");
+                if (n is "etfx_shoot_fireball2") Add(plan, "sfx.skill.fire");
+                if (n is "etfx_shoot_energy01" || n is "etfx_shoot_energy02") Add(plan, "sfx.skill.drone");
+                if (n is "etfx_explosion_chargeup") Add(plan, "sfx.skill.airstrike.mark");
+                if (n is "etfx_explosion_rocket" || n is "etfx_explosion_rocket2") Add(plan, "sfx.skill.airstrike.blast");
+                if (n is "etfx_explosion_magic2") Add(plan, "sfx.skill.evolve");
                 if (n.Contains("shoot_laser")) Add(plan, "sfx.weapon.laser.fire");
                 if (n.Contains("shoot_rocket")) Add(plan, "sfx.weapon.grenade.fire");
                 return;

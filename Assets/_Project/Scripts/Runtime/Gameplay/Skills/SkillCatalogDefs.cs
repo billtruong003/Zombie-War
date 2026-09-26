@@ -2,11 +2,12 @@ using System.Collections.Generic;
 
 namespace ZombieWar.Skills
 {
-    public enum SkillLayer { Stat, Signature, Autonomous, Universal }
+    public enum SkillLayer { Stat, Signature, Autonomous, Universal, Evolution }
 
     /// <summary>
-    /// One of the 23 owner-locked cards. Names and ids are NOT editable — W2 locked the list, so this
-    /// table mirrors `Review/M6_WeaponFactory/skill_catalog.csv` exactly.
+    /// One card. The original 23 mirror `Review/M6_WeaponFactory/skill_catalog.csv`; the owner
+    /// unlocked the list on 2026-09-26 and approved six more autonomous powers and six evolutions
+    /// (`Review/M8/skill_proposal.md`).
     ///
     /// Magnitudes are TUNING: they are starting hypotheses, not balance claims.
     /// </summary>
@@ -22,12 +23,21 @@ namespace ZombieWar.Skills
         public readonly float perRank;
         public readonly string status;   // MUST / SHOULD / LATER — build order, not scope
 
+        /// <summary>Evolution only: the power this card evolves (must be at max rank).</summary>
+        public readonly string evolvesFrom;
+        /// <summary>Evolution only: the partner card the player must also own.</summary>
+        public readonly string partner;
+
         public SkillDef(string id, string displayName, SkillLayer layer, WeaponClass? family,
-                        int maxRank, float baseValue, float perRank, string status)
+                        int maxRank, float baseValue, float perRank, string status,
+                        string evolvesFrom = null, string partner = null)
         {
             this.id = id; this.displayName = displayName; this.layer = layer; this.family = family;
             this.maxRank = maxRank; this.baseValue = baseValue; this.perRank = perRank; this.status = status;
+            this.evolvesFrom = evolvesFrom; this.partner = partner;
         }
+
+        public bool IsEvolution => layer == SkillLayer.Evolution;
 
         /// <summary>Rank 1 unlocks the behaviour; ranks 2+ strengthen the SAME fantasy.</summary>
         public float ValueAt(int rank) => rank <= 0 ? 0f : baseValue + perRank * (rank - 1);
@@ -35,7 +45,7 @@ namespace ZombieWar.Skills
         public bool IsCompatibleWith(WeaponClass equipped) => family == null || family.Value == equipped;
     }
 
-    /// <summary>The 23. Do not add, remove or rename — the names are owner-locked (W2).</summary>
+    /// <summary>The card list: the 23 originals, six M8 powers and their six evolutions.</summary>
     public static class SkillCatalogDefs
     {
         public const string StatDamage = "stat.damage";
@@ -61,6 +71,22 @@ namespace ZombieWar.Skills
         public const string AutoEmergency = "auto.emergency";
         public const string UniExecution = "uni.execution";
         public const string UniKinetic = "uni.kinetic";
+
+        // ── M8 powers (owner-approved 2026-09-26) ──
+        public const string AutoOrbit = "auto.orbit";
+        public const string AutoDrone = "auto.drone";
+        public const string AutoFrostNova = "auto.frostnova";
+        public const string AutoFireTrail = "auto.firetrail";
+        public const string AutoBoomerang = "auto.boomerang";
+        public const string AutoAirstrike = "auto.airstrike";
+
+        // ── M8 evolutions: power at max rank + partner card owned ──
+        public const string EvoThunderstorm = "evo.thunderstorm";
+        public const string EvoCarpetBomb = "evo.carpetbomb";
+        public const string EvoBuzzsaw = "evo.buzzsaw";
+        public const string EvoAbsoluteZero = "evo.absolutezero";
+        public const string EvoSquadron = "evo.squadron";
+        public const string EvoReaper = "evo.reaper";
 
         static readonly List<SkillDef> _all = new()
         {
@@ -93,12 +119,38 @@ namespace ZombieWar.Skills
 
             // ── UNIVERSAL (2) ───────────────────────────────────────────────────────────
             new(UniExecution, "Execution Round", SkillLayer.Universal, null, 3, 0.80f, 0.30f, "MUST"),
-            new(UniKinetic,   "Kinetic Shield",  SkillLayer.Universal, null, 3, 40f,   -8f,   "SHOULD"),
+            // M8: 40/32/24 m recharged every ~5 s at run speed; a circling test bot then went eight
+            // minutes without losing a single hit point (44 hits, all absorbed).
+            new(UniKinetic,   "Kinetic Shield",  SkillLayer.Universal, null, 3, 60f,   -8f,   "SHOULD"),
+
+            // ── M8 AUTONOMOUS (6) — value = the number each rank grows ─────────────────────
+            new(AutoOrbit,     "Orbit Blades",  SkillLayer.Autonomous, null, 3, 2f,   1f,    "MUST"),   // blades
+            new(AutoDrone,     "Drone Buddy",   SkillLayer.Autonomous, null, 3, 2.5f, 0.75f, "MUST"),   // shots/s
+            new(AutoFrostNova, "Frost Nova",    SkillLayer.Autonomous, null, 3, 4.5f, 0.75f, "MUST"),   // radius m
+            new(AutoFireTrail, "Fire Trail",    SkillLayer.Autonomous, null, 3, 14f,  7f,    "MUST"),   // burn dps
+            new(AutoBoomerang, "Boomerang",     SkillLayer.Autonomous, null, 3, 1f,   1f,    "MUST"),   // blades
+            new(AutoAirstrike, "Airstrike",     SkillLayer.Autonomous, null, 3, 3f,   1f,    "MUST"),   // blasts
+
+            // ── M8 EVOLUTIONS (6) — one rank, offered once the power is maxed and the partner owned ─
+            new(EvoThunderstorm, "Thunderstorm",   SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoChainLightning, StatFireRate),
+            new(EvoCarpetBomb,   "Carpet Bomb",    SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoOrdnance,       StatDamage),
+            new(EvoBuzzsaw,      "Buzzsaw Halo",   SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoOrbit,          StatMoveSpeed),
+            new(EvoAbsoluteZero, "Absolute Zero",  SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoFrostNova,      StatMaxHealth),
+            new(EvoSquadron,     "Drone Squadron", SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoDrone,          StatCoinGain),
+            new(EvoReaper,       "Reaper",         SkillLayer.Evolution, null, 1, 1f, 0f, "MUST", AutoSoulBurst,      UniExecution),
         };
 
         public static IReadOnlyList<SkillDef> All => _all;
 
-        // ById runs several times per pellet hit, so it is a dictionary, not a scan of 23 strings.
+        /// <summary>The evolution a power grows into, or null.</summary>
+        public static SkillDef EvolutionOf(string powerId)
+        {
+            for (int i = 0; i < _all.Count; i++)
+                if (_all[i].IsEvolution && _all[i].evolvesFrom == powerId) return _all[i];
+            return null;
+        }
+
+        // ById runs several times per pellet hit, so it is a dictionary, not a scan of the list.
         static Dictionary<string, SkillDef> _byId;
 
         public static SkillDef ById(string id)

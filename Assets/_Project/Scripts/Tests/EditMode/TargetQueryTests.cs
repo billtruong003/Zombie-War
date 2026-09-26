@@ -199,17 +199,31 @@ namespace ZombieWar.Tests
 
         // ───────────────────────────────────────────────────────── ceilings
         [Test]
-        public void Gather_NeverConsidersMoreThanSixtyFourEnemies()
+        public void Gather_NeverConsidersMoreThanTheCeiling()
         {
-            // The clustering guardrail is <=64 enemies. DensestCluster is O(n^2), so this ceiling is
-            // what keeps a large horde from turning one proc into a frame spike.
+            // The clustering guardrail. DensestCluster is O(n^2), so this ceiling is what keeps a
+            // large horde from turning one proc into a frame spike. M8 raised it to 128 because the
+            // crowd now reaches 160-200 (128^2 = 16k distance checks, once per Ordnance proc).
             var pts = new Vector3[200];
             for (int i = 0; i < pts.Length; i++) pts[i] = new Vector3(i * 0.1f, 0f, 0f);
 
             int n = TargetQuery.SeedForTest(pts, null, pts.Length);
 
             Assert.AreEqual(TargetQuery.MaxConsidered, n);
-            Assert.LessOrEqual(n, 64);
+            Assert.LessOrEqual(n, 128);
+        }
+
+        [Test]
+        public void ChainFirstReachOnlyExtendsTheFirstArc()
+        {
+            // An enemy 10 m away, then another 10 m beyond it.
+            var pts = new[] { new Vector3(10f, 0f, 0f), new Vector3(20f, 0f, 0f) };
+            int n = TargetQuery.SeedForTest(pts, null, pts.Length);
+
+            Assert.AreEqual(0, TargetQuery.Chain(n, Vector3.zero, 7f, 6, Buf),
+                "without the first reach, a crowd 10 m away gets no bolt");
+            Assert.AreEqual(1, TargetQuery.Chain(n, Vector3.zero, 7f, 6, Buf, firstJumpRange: 12f),
+                "the first arc reaches 12 m; later hops keep their own 7 m range");
         }
 
         [Test]

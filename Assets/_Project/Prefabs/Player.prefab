@@ -70,6 +70,7 @@ GameObject:
   - component: {fileID: 2043023434753208999}
   - component: {fileID: 8694213064035318181}
   - component: {fileID: 4636200563275553700}
+  - component: {fileID: 2280180652121723635}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -347,9 +348,15 @@ MonoBehaviour:
   soulBurstFx: {fileID: 198071127191036932, guid: cb8a83b63e008134da9393db9af8915f, type: 3}
   emergencyFx: {fileID: 198807330505795946, guid: d9e3deb54a0d566438734cb2731448ea, type: 3}
   shieldBreakFx: {fileID: 198825297873863668, guid: 6e3db7afa59301e48bc3999ec41f1410, type: 3}
+  explosionNativeRadius: 1.5
+  soulBurstNativeRadius: 1.6
+  emergencyNativeRadius: 1.5
+  ordnanceMarkerNativeRadius: 1.2
+  ordnanceDelay: 0.45
   chainDamage: 22
   blastDamage: 55
   chainJumpRange: 9
+  chainFirstReach: 12
   scanRadius: 22
   enemyMask:
     serializedVersion: 2
@@ -368,11 +375,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillFxDirector
   arcMaterial: {fileID: 2100000, guid: 9c3e0b2ba36f4c64b9f57ce35ce5cee5, type: 2}
   arcColor: {r: 0.55, g: 0.85, b: 1, a: 1}
-  arcWidth: 0.12
-  arcLifetime: 0.18
+  arcWidth: 0.2
+  arcLifetime: 0.3
   arcJitter: 0.22
   arcSegments: 6
-  arcPoolSize: 12
+  arcPoolSize: 36
   markMaterial: {fileID: 2100000, guid: 21276158bb9dbe04db8e522737244be4, type: 2}
   markPoolSize: 24
 --- !u!114 &8694213064035318181
@@ -397,6 +404,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 311510995a120c7439ee7b53d1742898, type: 2}
   - {fileID: 11400000, guid: f8cf8818ab64e664dbf282bd4c84d541, type: 2}
   - {fileID: 11400000, guid: bfced831a2240874781e221e911d98e9, type: 2}
+  bossRewardCoin: 150
+  bossRewardGem: 3
 --- !u!114 &4636200563275553700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -426,15 +435,88 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b4c30108ac4346b4cb208604f5d917b7, type: 2}
   baseSpawnInterval: 0.35
   intervalTightenPerTier: 0.85
+  minSpawnInterval: 0.08
+  catchUpIntervalScale: 0.2
   baseAlive: 40
   alivePerTier: 14
+  maxAlive: 160
+  openingSeconds: 25
+  openingAliveFraction: 0.35
+  openingIntervalScale: 1.8
   metresPerDistanceBand: 90
   secondsPerTimeStep: 90
   maxTier: 30
+  statScalingStartsAtTier: 6
+  statGrowthPerTier: 0.04
+  surgeEverySeconds: 75
+  surgeSeconds: 10
+  surgeAliveMultiplier: 1.5
+  surgeIntervalScale: 0.35
+  surgeMaxAlive: 200
   sectorsPerCycle: 8
   leadSeconds: 2.5
   spawnBurst: 1
   intervalJitter: 0.45
+--- !u!114 &2280180652121723635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205706992330529556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b536aa760d8ccc349a10b349e6247762, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillArsenal
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  bladeModel: {fileID: 0}
+  bladeMaterial: {fileID: 2100000, guid: cc0348986c7777b4eb8bdac2929b603d, type: 2}
+  trailMaterial: {fileID: 2100000, guid: 9c3e0b2ba36f4c64b9f57ce35ce5cee5, type: 2}
+  bladeHitFx: {fileID: 19818802, guid: 7f45705f5f30d8a45af0fc2eb8c8998a, type: 3}
+  orbitBaseDamage: 9
+  orbitHitInterval: 0.4
+  bladeScale: 0.9
+  orbitTrailColor: {r: 0.75, g: 0.95, b: 1, a: 0.9}
+  droneBodyFx: {fileID: 19882774, guid: f6322404d6e3b914aa01ac044fb9415e, type: 3}
+  droneTracer: {fileID: 6267678621344663077, guid: 9c417fa30c2397b49a4426d7767a4a84, type: 3}
+  droneMuzzleFx: {fileID: 198497614769362178, guid: 71052c1e9d47774439ae2a30c4489596, type: 3}
+  droneHitFx: {fileID: 19818802, guid: 7f45705f5f30d8a45af0fc2eb8c8998a, type: 3}
+  droneBaseDamage: 7
+  droneRange: 11
+  droneBodyScale: 0.6
+  frostNovaFx: {fileID: 19809116, guid: c4687addc3c65b24aab69e2c9efa22c5, type: 3}
+  frostNovaNativeRadius: 4
+  frostBaseDamage: 16
+  frostTint: {r: 0.45, g: 0.8, b: 1, a: 0.6}
+  frozenTint: {r: 0.7, g: 0.95, b: 1, a: 0.85}
+  firePatchFx: {fileID: 198392393371232998, guid: 0fc50fd3faa65944ea9ebd10b28a67ed, type: 3}
+  firePatchNativeRadius: 0.75
+  firePatchRadius: 1.1
+  firePatchSeconds: 2.2
+  burnTint: {r: 1, g: 0.55, b: 0.15, a: 0.45}
+  boomerangHitFx: {fileID: 19873388, guid: 185035e4680c4b344b62bf5ace4674b8, type: 3}
+  boomerangBaseDamage: 14
+  boomerangRange: 9
+  boomerangOutSeconds: 0.5
+  boomerangScale: 1.25
+  boomerangTint: {r: 1, g: 0.72, b: 0.3, a: 1}
+  boomerangTrailColor: {r: 1, g: 0.7, b: 0.25, a: 0.9}
+  strikeMarkerFx: {fileID: 198579860418196166, guid: c211cd63eef717741a0578bda14552a9, type: 3}
+  strikeMarkerNativeRadius: 1.2
+  strikeMissileFx: {fileID: 19803244, guid: 4b21d8abf8d26b449b109c8edb5cc78a, type: 3}
+  strikeBlastFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
+  strikeBlastNativeRadius: 2
+  strikeDecalFx: {fileID: 198129106043806410, guid: 628d050c815a3a3448ce1dcdf0578f21, type: 3}
+  airstrikeBaseDamage: 45
+  airstrikeDelay: 0.75
+  missileFallSeconds: 0.3
+  thunderStrikeFx: {fileID: 19828376, guid: 16f393fea92971c4f9d155ff0adab5a5, type: 3}
+  reaperFx: {fileID: 19879788, guid: 625165fb93553b14f8ed057807ed752a, type: 3}
+  shieldAuraFx: {fileID: 19874298, guid: 831c85159903ac84399ac3c3e1d5c5ad, type: 3}
+  evolveFx: {fileID: 19848580, guid: 9e4fad450282ac64daeb20efbc2b9dfb, type: 3}
 --- !u!1 &1610907586400478597
 GameObject:
   m_ObjectHideFlags: 0

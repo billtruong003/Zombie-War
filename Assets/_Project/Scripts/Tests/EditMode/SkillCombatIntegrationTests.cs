@@ -95,7 +95,7 @@ namespace ZombieWar.Tests
             run.Take(SkillCatalogDefs.UniKinetic);
 
             var p = Vector3.zero;
-            for (int i = 0; i < 60; i++) { p += Vector3.forward; run.Tick(0.1f, p, true, false, 1f); }
+            for (int i = 0; i < 80; i++) { p += Vector3.forward; run.Tick(0.1f, p, true, false, 1f); }
 
             Assert.IsTrue(run.TryAbsorbDamage());
             Assert.IsFalse(run.TryAbsorbDamage());
@@ -194,7 +194,8 @@ namespace ZombieWar.Tests
             int procs = 0;
             for (float t = 0f; t < 1f; t += 0.05f) procs += run.PollPowers(t, 0.1f).Count;
 
-            Assert.LessOrEqual(procs, 2, "four powers active must still not exceed 2 procs per second");
+            Assert.LessOrEqual(procs, (int)AutonomousPower.GlobalProcsPerSecond,
+                "however many powers are active, the shared ceiling holds");
         }
 
         [Test]

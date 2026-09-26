@@ -442,8 +442,9 @@ namespace ZombieWar
         public float SlowFactor()
         {
             if (ZombieWar.Skills.StatusCarrier.TrackedCount == 0) return 1f;
-            float slow = ZombieWar.Skills.StatusCarrier.Get(
-                transform.GetInstanceID(), ZombieWar.Skills.StatusKind.Slow, Time.time);
+            int id = transform.GetInstanceID();
+            if (ZombieWar.Skills.StatusCarrier.Has(id, ZombieWar.Skills.StatusKind.Frozen, Time.time)) return 0f;
+            float slow = ZombieWar.Skills.StatusCarrier.Get(id, ZombieWar.Skills.StatusKind.Slow, Time.time);
             return 1f - Mathf.Clamp(slow, 0f, 0.8f);
         }
 

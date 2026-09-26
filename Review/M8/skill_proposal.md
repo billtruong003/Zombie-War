@@ -1,7 +1,8 @@
 # M8 — Skill overhaul proposal (for owner approval)
 
-Status: **PROPOSAL, 2026-09-26.** Nothing here is implemented until the owner approves the list.
-The owner unlocked the W2 23-card lock on 2026-09-26 ("mở khoá, thêm skill + tiến hoá").
+Status: **APPROVED and IMPLEMENTED, 2026-09-26** (owner: "chốt duyệt nguyên danh sách"). Feel audit and the
+fixes it drove: `skill_feel_audit.md`. One deviation: an evolution needs its partner card OWNED, not
+maxed (see the audit).
 
 ## What is wrong today (read from code)
 

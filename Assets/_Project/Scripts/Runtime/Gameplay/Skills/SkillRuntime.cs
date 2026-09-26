@@ -19,7 +19,7 @@ namespace ZombieWar.Skills
     {
         public static SkillRuntime Active { get; set; }
 
-        readonly Dictionary<string, int> _ranks = new(23);
+        readonly Dictionary<string, int> _ranks = new(40);
 
         // ── primitive instances, one per card that needs one ───────────────────────────
         readonly DistanceAccumulator _quickstepDistance = new();
@@ -33,6 +33,15 @@ namespace ZombieWar.Skills
         readonly AutonomousPower _ordnance = new(SkillCatalogDefs.AutoOrdnance, AutonomousPower.TriggerKind.Interval, 7f);
         readonly AutonomousPower _soulBurst = new(SkillCatalogDefs.AutoSoulBurst, AutonomousPower.TriggerKind.KillCount, 0.5f, killsRequired: 12);
         readonly AutonomousPower _emergency = new(SkillCatalogDefs.AutoEmergency, AutonomousPower.TriggerKind.HealthThreshold, 30f, healthFraction: 0.3f);
+
+        // M8 burst powers. Orbit Blades, Drone Buddy and Fire Trail are continuous: SkillArsenal reads
+        // their magnitudes every frame instead of polling a proc.
+        readonly AutonomousPower _frost = new(SkillCatalogDefs.AutoFrostNova, AutonomousPower.TriggerKind.Interval, 5f);
+        readonly AutonomousPower _boomerang = new(SkillCatalogDefs.AutoBoomerang, AutonomousPower.TriggerKind.Interval, 2.5f);
+        readonly AutonomousPower _airstrike = new(SkillCatalogDefs.AutoAirstrike, AutonomousPower.TriggerKind.Interval, 8f);
+        readonly DistanceAccumulator _trailDistance = new();
+        int _trailDropsPending;
+        uint _reaperRng = 0x9E3779B9u;
 
         // counters that are themselves primitives (per-weapon shot counters)
         int _shotsSinceBreach, _shotsSinceShockwave;
@@ -51,11 +60,13 @@ namespace ZombieWar.Skills
             return def != null && RankOf(skillId) >= def.maxRank;
         }
 
-        /// <summary>Takes a card, or ranks it up. False when it is already at max rank.</summary>
+        /// <summary>Takes a card, or ranks it up. False when it is already at max rank, or when it is
+        /// an evolution whose requirements are not met.</summary>
         public bool Take(string skillId)
         {
             var def = SkillCatalogDefs.ById(skillId);
             if (def == null) return false;
+            if (def.IsEvolution && !CanEvolve(def)) return false;
             int current = RankOf(skillId);
             if (current >= def.maxRank) return false;
             _ranks[skillId] = current + 1;
@@ -67,7 +78,94 @@ namespace ZombieWar.Skills
         {
             // Max Health Up is the one card that must act at pick time rather than continuously.
             if (def.id == SkillCatalogDefs.StatMaxHealth) PendingMaxHealthBonus += def.perRank == 0f ? def.baseValue : (rank == 1 ? def.baseValue : def.perRank);
-            if (def.layer == SkillLayer.Autonomous) SyncAutonomousCooldowns();
+            if (def.layer == SkillLayer.Autonomous || def.IsEvolution) SyncAutonomousCooldowns();
+        }
+
+        // ══════════════════════════════════════════════════════════ EVOLUTIONS
+
+        /// <summary>An evolution is offered once its power is at max rank and its partner is owned.</summary>
+        public bool CanEvolve(SkillDef evo) =>
+            evo != null && evo.IsEvolution && !Has(evo.id) && IsMaxRank(evo.evolvesFrom) && Has(evo.partner);
+
+        /// <summary>True once the power's evolution has been taken.</summary>
+        public bool IsEvolved(string powerId)
+        {
+            var evo = SkillCatalogDefs.EvolutionOf(powerId);
+            return evo != null && Has(evo.id);
+        }
+
+        // ══════════════════════════════════════════════════════════ POWER MAGNITUDES
+        //
+        // One source of truth for the driver, the arsenal AND the card text, so a description can
+        // never promise a number the game does not deliver.
+
+        /// <summary>
+        /// Damage of a power hit. Grows with the power's rank and Damage Up, and keeps pace with the
+        /// enemies' own late-run stat growth so no power falls off in a long run. Evolutions hit
+        /// harder on top.
+        /// </summary>
+        public float PowerDamage(float baseDamage, string powerId)
+        {
+            int rank = Mathf.Max(1, RankOf(powerId));
+            float evolved = IsEvolved(powerId) ? 1.5f : 1f;
+            return baseDamage * (1f + 0.3f * (rank - 1)) * DamageMultiplier
+                   * Threat.ThreatDirector.EnemyStatMultiplier * evolved;
+        }
+
+        public int OrbitBladeCount => !Has(SkillCatalogDefs.AutoOrbit) ? 0
+            : IsEvolved(SkillCatalogDefs.AutoOrbit) ? 6 : Mathf.RoundToInt(Value(SkillCatalogDefs.AutoOrbit));
+        public float OrbitRadius => IsEvolved(SkillCatalogDefs.AutoOrbit) ? 3.2f : 2.3f;
+        public float OrbitDegreesPerSecond => IsEvolved(SkillCatalogDefs.AutoOrbit) ? 300f : 200f;
+
+        public int DroneCount => !Has(SkillCatalogDefs.AutoDrone) ? 0 : IsEvolved(SkillCatalogDefs.AutoDrone) ? 3 : 1;
+        public float DroneShotsPerSecond => Value(SkillCatalogDefs.AutoDrone);
+
+        public float FrostRadius => Value(SkillCatalogDefs.AutoFrostNova) + (IsEvolved(SkillCatalogDefs.AutoFrostNova) ? 1f : 0f);
+        public float FrostSlow => 0.35f + 0.1f * (RankOf(SkillCatalogDefs.AutoFrostNova) - 1);
+        /// <summary>Absolute Zero freezes instead of slowing.</summary>
+        public bool FrostFreezes => IsEvolved(SkillCatalogDefs.AutoFrostNova);
+
+        public float FireTrailDps => Value(SkillCatalogDefs.AutoFireTrail);
+        public const float FireTrailSpacing = 1.1f;
+
+        public int BoomerangCount => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoBoomerang));
+        public int AirstrikeBlasts => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoAirstrike));
+        public int ChainTargets => IsEvolved(SkillCatalogDefs.AutoChainLightning) ? TargetQuery.MaxChain
+            : Mathf.Min(TargetQuery.MaxChain, Mathf.RoundToInt(Value(SkillCatalogDefs.AutoChainLightning)));
+
+        /// <summary>Cooldown in seconds of a timed power at a rank — used by the card text too.</summary>
+        public static float CooldownAt(string powerId, int rank, bool evolved)
+        {
+            rank = Mathf.Max(1, rank);
+            return powerId switch
+            {
+                SkillCatalogDefs.AutoChainLightning => evolved ? 2f : 6f - (rank - 1),
+                SkillCatalogDefs.AutoOrdnance => 7f - (rank - 1),
+                SkillCatalogDefs.AutoEmergency => 30f - 5f * (rank - 1),
+                SkillCatalogDefs.AutoFrostNova => evolved ? 4f : 5f,
+                SkillCatalogDefs.AutoBoomerang => 2.5f,
+                SkillCatalogDefs.AutoAirstrike => 8f,
+                _ => 0f,
+            };
+        }
+
+        /// <summary>
+        /// Reaper: a kill has a quarter chance to release a small soul burst where the enemy fell.
+        /// Deterministic per runtime so tests can count it.
+        /// </summary>
+        public bool RollReaper()
+        {
+            if (!IsEvolved(SkillCatalogDefs.AutoSoulBurst)) return false;
+            _reaperRng ^= _reaperRng << 13; _reaperRng ^= _reaperRng >> 17; _reaperRng ^= _reaperRng << 5;
+            return (_reaperRng % 100u) < 25u;
+        }
+
+        /// <summary>Fire patches owed by distance travelled. The arsenal drains this each frame.</summary>
+        public int ConsumeFireTrailDrops()
+        {
+            int n = _trailDropsPending;
+            _trailDropsPending = 0;
+            return n;
         }
 
         /// <summary>Health granted by rank-ups that the player component has not yet consumed.</summary>
@@ -78,10 +176,17 @@ namespace ZombieWar.Skills
 
         void SyncAutonomousCooldowns()
         {
-            // Rank shortens the interval; the magnitude table holds the rank-1 interval.
-            if (Has(SkillCatalogDefs.AutoChainLightning)) _chain.Cooldown = 6f - 1f * (RankOf(SkillCatalogDefs.AutoChainLightning) - 1);
-            if (Has(SkillCatalogDefs.AutoOrdnance)) _ordnance.Cooldown = 7f - 1f * (RankOf(SkillCatalogDefs.AutoOrdnance) - 1);
-            if (Has(SkillCatalogDefs.AutoEmergency)) _emergency.Cooldown = 30f - 5f * (RankOf(SkillCatalogDefs.AutoEmergency) - 1);
+            Sync(_chain, SkillCatalogDefs.AutoChainLightning);
+            Sync(_ordnance, SkillCatalogDefs.AutoOrdnance);
+            Sync(_emergency, SkillCatalogDefs.AutoEmergency);
+            Sync(_frost, SkillCatalogDefs.AutoFrostNova);
+            Sync(_boomerang, SkillCatalogDefs.AutoBoomerang);
+            Sync(_airstrike, SkillCatalogDefs.AutoAirstrike);
+        }
+
+        void Sync(AutonomousPower power, string id)
+        {
+            if (Has(id)) power.Cooldown = CooldownAt(id, RankOf(id), IsEvolved(id));
         }
 
         // ══════════════════════════════════════════════════════════ STAT (P8 soft caps)
@@ -124,6 +229,11 @@ namespace ZombieWar.Skills
             // P4 — distance accumulators
             _quickstepDistance.Sample(playerPosition);
             _kineticDistance.Sample(playerPosition);
+            _trailDistance.Sample(playerPosition);
+
+            // Fire Trail pays out by distance, so standing still leaves no fire: it rewards moving.
+            if (Has(SkillCatalogDefs.AutoFireTrail))
+                while (_trailDistance.TryConsume(FireTrailSpacing) && _trailDropsPending < 8) _trailDropsPending++;
 
             if (Has(SkillCatalogDefs.SidearmQuickstep) && !_quickstepArmed &&
                 _quickstepDistance.TryConsume(Value(SkillCatalogDefs.SidearmQuickstep)))
@@ -210,6 +320,9 @@ namespace ZombieWar.Skills
             // AR — Breach Round's Exposed status (P1)
             if (StatusCarrier.Has(targetId, StatusKind.Exposed, now)) damage *= 1.25f;
 
+            // Absolute Zero — frozen enemies shatter for more (P1)
+            if (StatusCarrier.Has(targetId, StatusKind.Frozen, now)) damage *= 1.5f;
+
             // Marksman — Hunter's Mark first-hit empower (P1)
             if (Has(SkillCatalogDefs.MarksmanHunters) && StatusCarrier.Has(targetId, StatusKind.Marked, now))
             {
@@ -259,6 +372,9 @@ namespace ZombieWar.Skills
                 StatusCarrier.Apply(newTargetId, StatusKind.Marked, 1f, 8f, now);
         }
 
+        /// <summary>True while Kinetic Shield holds a charge — drives the visible bubble.</summary>
+        public bool KineticCharged => _kineticCharged;
+
         /// <summary>OnDamageTaken. Kinetic Shield blocks one hit per charge (P4).</summary>
         public bool TryAbsorbDamage()
         {
@@ -288,7 +404,7 @@ namespace ZombieWar.Skills
 
             if (Has(SkillCatalogDefs.AutoChainLightning) && _chain.TryProc(now))
                 ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoChainLightning,
-                    targets = Mathf.Min(TargetQuery.MaxChain, Mathf.RoundToInt(Value(SkillCatalogDefs.AutoChainLightning))), radius = 8f });
+                    targets = ChainTargets, radius = 8f });
 
             if (Has(SkillCatalogDefs.AutoOrdnance) && _ordnance.TryProc(now))
                 ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoOrdnance,
@@ -301,6 +417,18 @@ namespace ZombieWar.Skills
             if (Has(SkillCatalogDefs.AutoEmergency) && _emergency.TryProc(now, playerHealthFraction))
                 ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoEmergency,
                     targets = 0, radius = Value(SkillCatalogDefs.AutoEmergency) });
+
+            if (Has(SkillCatalogDefs.AutoFrostNova) && _frost.TryProc(now))
+                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoFrostNova,
+                    targets = 0, radius = FrostRadius });
+
+            if (Has(SkillCatalogDefs.AutoBoomerang) && _boomerang.TryProc(now))
+                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoBoomerang,
+                    targets = BoomerangCount, radius = 9f });
+
+            if (Has(SkillCatalogDefs.AutoAirstrike) && _airstrike.TryProc(now))
+                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoAirstrike,
+                    targets = AirstrikeBlasts, radius = 2.6f });
 
             // SMG Static Build-up is charge-driven rather than timer-driven, but it shares the chain
             // selection primitive with Chain Lightning.
@@ -315,19 +443,34 @@ namespace ZombieWar.Skills
 
         bool _staticFired;
 
+        /// <summary>A targeted power (chain, ordnance) proc'd with nothing in reach. Measured: a chain
+        /// firing at a crowd 8-12 m away drew no bolt and still waited its full cooldown.</summary>
+        public void Refund(string skillId)
+        {
+            switch (skillId)
+            {
+                case SkillCatalogDefs.AutoChainLightning: _chain.Refund(Time.time); break;
+                case SkillCatalogDefs.AutoOrdnance: _ordnance.Refund(Time.time); break;
+            }
+        }
+
         public float ReadinessOf(string skillId) => skillId switch
         {
             SkillCatalogDefs.AutoChainLightning => _chain.Readiness(Time.time),
             SkillCatalogDefs.AutoOrdnance => _ordnance.Readiness(Time.time),
             SkillCatalogDefs.AutoSoulBurst => _soulBurst.Readiness(Time.time),
             SkillCatalogDefs.AutoEmergency => _emergency.Readiness(Time.time),
+            SkillCatalogDefs.AutoFrostNova => _frost.Readiness(Time.time),
+            SkillCatalogDefs.AutoBoomerang => _boomerang.Readiness(Time.time),
+            SkillCatalogDefs.AutoAirstrike => _airstrike.Readiness(Time.time),
             _ => 1f,
         };
 
         public void Reset()
         {
             _ranks.Clear();
-            _quickstepDistance.Reset(); _kineticDistance.Reset();
+            _quickstepDistance.Reset(); _kineticDistance.Reset(); _trailDistance.Reset();
+            _trailDropsPending = 0;
             _bulletHose.Reset(); _heavyPressure.Reset(); _staticCharge.Reset(); _runGunMoving.Reset();
             _quickstepArmed = _kineticCharged = _staticFired = false;
             _shotsSinceBreach = _shotsSinceShockwave = 0;

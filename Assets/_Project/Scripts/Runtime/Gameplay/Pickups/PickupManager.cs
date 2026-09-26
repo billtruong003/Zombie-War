@@ -189,6 +189,13 @@ namespace ZombieWar
                 Spawn(PlayerProfile.CurrencyKind.Gem, eliteGemAmount, gemPoolKey, origin);
         }
 
+        /// <summary>A coin that is not a kill's authored reward (Drone Squadron's bonus).</summary>
+        public static void SpawnBonusCoin(Vector3 at, int amount)
+        {
+            if (Instance == null || amount <= 0) return;
+            Instance.Spawn(PlayerProfile.CurrencyKind.Coin, amount, Instance.coinPoolKey, at);
+        }
+
         private void Spawn(PlayerProfile.CurrencyKind kind, int amount, string key, Vector3 origin)
         {
             if (string.IsNullOrEmpty(key) || Bill.Pool == null) return;

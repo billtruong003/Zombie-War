@@ -67,12 +67,16 @@ namespace ZombieWar
 
         public bool IsOver => Outcome != RunOutcome.InProgress;
 
-        /// <summary>XP needed to reach the next level (M6 §16.2): the first card lands around 30-45 s,
-        /// then the gaps widen so an endless run is not a constant stream of pauses.</summary>
+        /// <summary>XP needed to reach the next level. The gaps still widen, so an endless run is not a
+        /// constant stream of pauses, but gently. M8 measurement (2026-09-26, starter pistol, circling
+        /// bot, new powers): the old 25 + (L-1)^1.35 x 12 curve spaced cards 30-48 s apart from level 4
+        /// on — six cards in a 3.5-minute run, far too few for a build to form. A first ease
+        /// (18 + (L-1)^1.2 x 7) still left 25-30 s gaps after level 5 (level 11 at 5:00). This curve
+        /// lands the first card in ~10 s and keeps later gaps around 15-25 s at horde kill rates.</summary>
         public int XpForNextLevel => XpForLevel(Level);
 
         public static int XpForLevel(int level) =>
-            25 + Mathf.RoundToInt(Mathf.Pow(Mathf.Max(0, level - 1), 1.35f) * 12f);
+            14 + Mathf.RoundToInt(Mathf.Pow(Mathf.Max(0, level - 1), 1.05f) * 5f);
 
         public static RunState Begin()
         {

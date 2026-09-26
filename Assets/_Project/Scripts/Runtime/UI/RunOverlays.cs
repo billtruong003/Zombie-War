@@ -332,8 +332,8 @@ namespace ZombieWar
             {
                 var def = _skillOffer[i];
                 int nextRank = skills.RankOf(def.id) + 1;
-                BindOfferText($"Perk{i}/Name", nextRank > 1 ? $"{def.displayName}  {nextRank}" : def.displayName);
-                BindOfferText($"Perk{i}/Desc", DescribeCard(def, nextRank));
+                BindOfferText($"Perk{i}/Name", CardTitle(def, nextRank));
+                BindOfferText($"Perk{i}/Desc", ZombieWar.Skills.SkillDescriptions.Describe(def, nextRank));
             }
             ShowOfferButtons(_skillOffer.Count);
 
@@ -380,18 +380,13 @@ namespace ZombieWar
             TryShowLevelUp();
         }
 
-        /// One-line card description, generated so no prefab text needs authoring per card.
-        private static string DescribeCard(ZombieWar.Skills.SkillDef def, int rank)
+        /// Card title: the name in its layer colour plus a small NEW / Lv N / EVOLUTION tag. Rich text
+        /// only (no glyphs the game font may lack), so the owner-authored card prefab is untouched.
+        public static string CardTitle(ZombieWar.Skills.SkillDef def, int rank)
         {
-            float v = def.ValueAt(rank);
-            string magnitude = Mathf.Abs(v) < 3f ? $"{v * 100f:0}%" : $"{v:0.#}";
-            return def.layer switch
-            {
-                ZombieWar.Skills.SkillLayer.Stat => $"{magnitude} — always on",
-                ZombieWar.Skills.SkillLayer.Signature => $"{def.family} signature · {magnitude}",
-                ZombieWar.Skills.SkillLayer.Autonomous => $"Automatic power · {magnitude}",
-                _ => $"Any weapon · {magnitude}",
-            };
+            string hex = ColorUtility.ToHtmlStringRGB(ZombieWar.Skills.SkillDescriptions.LayerColor(def));
+            string tag = def.IsEvolution ? "EVOLUTION" : rank <= 1 ? "NEW" : $"Lv {rank}";
+            return $"<color=#{hex}>{def.displayName}</color> <size=70%>{tag}</size>";
         }
 
         private void PickPerk(int slot)
@@ -399,8 +394,10 @@ namespace ZombieWar
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             if (skills != null && _skillOffer != null && slot >= 0 && slot < _skillOffer.Count)
             {
-                skills.Take(_skillOffer[slot].id);
+                var taken = _skillOffer[slot];
+                skills.Take(taken.id);
                 MissionTracker.ReportCardChosen();
+                if (taken.IsEvolution) ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
 
                 // Max Health is the one card that must act at pick time; the Health component owns
                 // the number.

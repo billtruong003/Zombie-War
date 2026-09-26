@@ -658,7 +658,7 @@ namespace ZombieWar
                 var col = ZombieWar.Skills.TargetQuery.Candidate(ConeBuffer[i]);
                 var enemy = col != null ? col.GetComponentInParent<ZombieBase>() : null;
                 if (enemy == null) continue;                 // never the player: enemies only
-                enemy.TakeDamage(18f);                       // TUNING
+                enemy.TakeDamage(skills.PowerDamage(18f, ZombieWar.Skills.SkillCatalogDefs.LmgShockwave));
                 enemy.ApplyPhysicalPush(1.5f);               // the "shockwave" part
             }
         }

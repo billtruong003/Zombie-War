@@ -21,6 +21,7 @@ namespace ZombieWar.Skills
         Marked = 2,      // per-target empower record (Hunter's Mark)
         HitCount = 3,    // per-target hit counter (Focus Fire)
         ShotCount = 4,   // per-target shot counter (Breach Round)
+        Frozen = 5,      // Absolute Zero: full stop, and hits land harder
     }
 
     // ─────────────────────────────────────────────────────────────────────────── P1
@@ -110,8 +111,9 @@ namespace ZombieWar.Skills
         float _healthFraction;
         bool _armed = true;
 
-        /// <summary>Global proc ceiling shared by ALL powers — the ≤2 procs/s guardrail.</summary>
-        public const float GlobalProcsPerSecond = 2f;
+        /// <summary>Global proc ceiling shared by ALL burst powers. Was 2/s, which made a full build
+        /// read the same as one card; continuous powers (orbit, drone, trail) are not procs.</summary>
+        public const float GlobalProcsPerSecond = 6f;
         static float _lastGlobalProcAt = float.NegativeInfinity;
         static int _globalProcsThisSecond;
         static float _globalWindowStart;
@@ -170,6 +172,17 @@ namespace ZombieWar.Skills
             return true;
         }
 
+        /// <summary>The proc found nothing to hit: make the power ready again at once, so a targeted
+        /// power waits for a target instead of spending its cooldown on empty air.</summary>
+        public void Refund(float now)
+        {
+            _readyAt = now + RefundRetrySeconds;     // look again shortly, not every frame
+            _globalProcsThisSecond = Mathf.Max(0, _globalProcsThisSecond - 1);   // an empty proc costs no budget
+        }
+
+        /// <summary>How soon a refunded power looks for a target again.</summary>
+        public const float RefundRetrySeconds = 0.25f;
+
         public static void ResetGlobalBudget()
         {
             _lastGlobalProcAt = float.NegativeInfinity;
@@ -191,7 +204,7 @@ namespace ZombieWar.Skills
     /// </summary>
     public static class TargetQuery
     {
-        public const int MaxConsidered = 64;   // clustering operates over at most 64 enemies
+        public const int MaxConsidered = 128;  // M8: the crowd reaches 160-200, so powers must see more of it
         public const int MaxChain = 6;         // ≤6 arcs per proc
 
         static readonly Collider[] Hits = new Collider[MaxConsidered];
@@ -209,6 +222,62 @@ namespace ZombieWar.Skills
                 Ids[i] = Hits[i].transform.GetInstanceID();
             }
             return n;
+        }
+
+        /// <summary>
+        /// Like <see cref="Gather"/>, but keeps only LIVING ENEMIES. Everything in the scene sits on
+        /// the Default layer, so a plain sweep also returns the player and the props — measured
+        /// 2026-09-26: the drone "nearest target" was the player's own collider (so it never fired),
+        /// an airstrike could land on the player, and a chain's first arc could hop to the player.
+        /// The kept entries are compacted to the front of the buffers.
+        /// </summary>
+        public static int GatherEnemies(Vector3 origin, float radius, LayerMask mask)
+        {
+            int n = Gather(origin, radius, mask);
+            int kept = 0;
+            for (int i = 0; i < n; i++)
+            {
+                var enemy = Hits[i] != null ? Hits[i].GetComponentInParent<ZombieBase>() : null;
+                if (enemy == null || enemy.IsDead) continue;
+                Hits[kept] = Hits[i];
+                Points[kept] = Points[i];
+                Ids[kept] = Ids[i];
+                Enemies[kept] = enemy;
+                kept++;
+            }
+            return kept;
+        }
+
+        static readonly ZombieBase[] Enemies = new ZombieBase[MaxConsidered];
+
+        /// <summary>The enemy at <paramref name="i"/> after <see cref="GatherEnemies"/>.</summary>
+        public static ZombieBase CandidateEnemy(int i) => Enemies[i];
+
+        /// <summary>Keeps only candidates whose point passes <paramref name="keep"/>, compacted to
+        /// the front. Returns the new count.</summary>
+        public static int Compact(int count, System.Predicate<Vector3> keep)
+        {
+            int kept = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (!keep(Points[i])) continue;
+                Hits[kept] = Hits[i]; Points[kept] = Points[i]; Ids[kept] = Ids[i]; Enemies[kept] = Enemies[i];
+                kept++;
+            }
+            return kept;
+        }
+
+        /// <summary>Index of the candidate nearest <paramref name="from"/>, or -1.</summary>
+        public static int Nearest(int count, Vector3 from)
+        {
+            int best = -1;
+            float bestSqr = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                float d = (Points[i] - from).sqrMagnitude;
+                if (d < bestSqr) { bestSqr = d; best = i; }
+            }
+            return best;
         }
 
         public static Collider Candidate(int i) => Hits[i];
@@ -238,7 +307,8 @@ namespace ZombieWar.Skills
         /// <paramref name="jumpRange"/>, up to <paramref name="maxJumps"/> (capped at 6).
         /// Writes collider indices into <paramref name="outIndices"/>; returns the count.
         /// </summary>
-        public static int Chain(int count, Vector3 start, float jumpRange, int maxJumps, int[] outIndices)
+        public static int Chain(int count, Vector3 start, float jumpRange, int maxJumps, int[] outIndices,
+                                float firstJumpRange = -1f)
         {
             maxJumps = Mathf.Min(maxJumps, MaxChain);
             int written = 0;
@@ -248,7 +318,8 @@ namespace ZombieWar.Skills
             while (written < maxJumps)
             {
                 int best = -1;
-                float bestSqr = jumpRange * jumpRange;
+                float reach = written == 0 && firstJumpRange > 0f ? firstJumpRange : jumpRange;
+                float bestSqr = reach * reach;
                 for (int i = 0; i < count; i++)
                 {
                     if (used[i]) continue;

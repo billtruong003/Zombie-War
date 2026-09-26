@@ -59,6 +59,7 @@ namespace ZombieWar
 
         private static readonly int DissolveID = Shader.PropertyToID("_Dissolve");
         private static readonly int HitFlashID = Shader.PropertyToID("_HitFlash");
+        private static readonly int StatusTintID = Shader.PropertyToID("_StatusTint");
 
         private PlanarEnemyMotor _motor;
         private float _statScale = 1f;
@@ -147,6 +148,22 @@ namespace ZombieWar
         /// are physically unreachable - a burrower underground must not soak up the player's fire.</summary>
         protected virtual bool CanBeTargeted => _state != State.Dead;
 
+        /// <summary>True from the killing blow until the pool takes the instance back.</summary>
+        public bool IsDead => _state == State.Dead;
+
+        /// <summary>
+        /// Colours the body to show a status (frost blue, burning orange). Alpha is the strength; a
+        /// clear colour removes it. Per-instance on the same property block as hit flash, so the
+        /// whole crowd still shares one material.
+        /// </summary>
+        public void SetStatusTint(Color tint)
+        {
+            if (bodyRenderer == null) return;
+            bodyRenderer.GetPropertyBlock(_dissolvePropertyBlock);
+            _dissolvePropertyBlock.SetVector(StatusTintID, tint);
+            bodyRenderer.SetPropertyBlock(_dissolvePropertyBlock);
+        }
+
         /// <summary>While true every incoming hit is ignored. Kept separate from
         /// <see cref="CanBeTargeted"/> because splash damage does not go through targeting.</summary>
         protected virtual bool IsInvulnerable => false;
@@ -233,6 +250,7 @@ namespace ZombieWar
             if (TryGetComponent(out Collider col)) col.enabled = true;
             SetDissolve(0f);
             SetHitFlash(0f); // a pooled instance must not reappear still lit from its last death
+            SetStatusTint(Color.clear); // nor still frozen or burning
             OnSpawned();
         }
 

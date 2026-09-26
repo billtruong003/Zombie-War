@@ -78,7 +78,7 @@ namespace ZombieWar.Tests
         [Test]
         public void XpCurve_WidensSoLevelUpsSpreadOut()
         {
-            Assert.AreEqual(25, RunState.XpForLevel(1), "the first card needs ~25 early kills (30-45 s)");
+            Assert.AreEqual(14, RunState.XpForLevel(1), "the first card needs ~14 early kills (~10 s at horde density)");
             int previousGap = 0;
             for (int level = 1; level < 15; level++)
             {

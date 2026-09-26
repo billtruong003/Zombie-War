@@ -129,6 +129,7 @@ Shader "ZombieWar/VAT/EnemyToon"
             UNITY_DEFINE_INSTANCED_PROP(float, _AnimationBlendWeight)
             UNITY_DEFINE_INSTANCED_PROP(float, _HitFlash)
             UNITY_DEFINE_INSTANCED_PROP(float, _Dissolve)
+            UNITY_DEFINE_INSTANCED_PROP(float4, _StatusTint)
         UNITY_INSTANCING_BUFFER_END(PerInstance)
 
         float3 DecodeVAT(float vertexU, float timeV)
@@ -305,6 +306,11 @@ Shader "ZombieWar/VAT/EnemyToon"
 
                 // Burning edge glows before the pixel disappears.
                 result = lerp(result, _DissolveEdgeColor.rgb, edge);
+
+                // Status tint (frost, burn): keeps the toon shading underneath so the enemy still
+                // reads as itself, just coloured by what is happening to it.
+                float4 tint = UNITY_ACCESS_INSTANCED_PROP(PerInstance, _StatusTint);
+                result = lerp(result, result * 0.45 + tint.rgb * 0.75, saturate(tint.a));
 
                 // Hit flash sits on top of everything so it reads at any light angle.
                 float flash = UNITY_ACCESS_INSTANCED_PROP(PerInstance, _HitFlash);

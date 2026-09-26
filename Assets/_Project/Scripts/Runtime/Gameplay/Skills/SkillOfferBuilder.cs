@@ -19,6 +19,10 @@ namespace ZombieWar.Skills
     /// <item>Deterministic from (run seed, level): the same seed produces the same offers.</item>
     /// <item>Early levels favour unlocking new mechanics; later levels favour ranking up what you
     /// already have, so a build converges instead of scattering.</item>
+    /// <item>M8: an evolution that has become available always takes slot A — it is the payoff the
+    /// player built toward, and hiding it behind a roll would feel like a bug.</item>
+    /// <item>M8: levels 2 and 3 always offer an autonomous power, so the build visibly changes on
+    /// screen within the first half-minute.</item>
     /// </list>
     /// </summary>
     public static class SkillOfferBuilder
@@ -59,6 +63,7 @@ namespace ZombieWar.Skills
                 var def = all[i];
                 if (!def.IsCompatibleWith(family)) continue;
                 if (run.RankOf(def.id) >= def.maxRank) continue;
+                if (def.IsEvolution && !run.CanEvolve(def)) continue;
                 list.Add(def);
             }
             return list;
@@ -84,15 +89,17 @@ namespace ZombieWar.Skills
             // Early levels want NEW mechanics; later levels want the build to converge.
             bool preferNew = level <= 4;
 
-            // ── Slot A: a signature card for this family ────────────────────────────────
-            var pick = PickWeighted(ref rng, run, preferNew, d => d.layer == SkillLayer.Signature);
+            // ── Slot A: a ready evolution, else a signature card for this family ─────────
+            var pick = PickWeighted(ref rng, run, preferNew, d => d.IsEvolution);
+            if (pick == null) pick = PickWeighted(ref rng, run, preferNew, d => d.layer == SkillLayer.Signature);
             if (pick == null) pick = PickWeighted(ref rng, run, preferNew, d => !IsStat(d));
             if (pick == null) pick = PickWeighted(ref rng, run, preferNew, _ => true);
             if (pick != null) { offer.Add(pick); statTaken |= IsStat(pick); Eligible.Remove(pick); }
 
-            // ── Slot B: autonomous or universal ────────────────────────────────────────
+            // ── Slot B: autonomous (guaranteed at levels 2-3) or universal ─────────────
+            bool powerGuaranteed = level >= 2 && level <= 3;
             pick = PickWeighted(ref rng, run, preferNew,
-                d => d.layer == SkillLayer.Autonomous || d.layer == SkillLayer.Universal);
+                d => d.layer == SkillLayer.Autonomous || (!powerGuaranteed && d.layer == SkillLayer.Universal));
             if (pick == null) pick = PickWeighted(ref rng, run, preferNew, d => !IsStat(d) || !statTaken);
             if (pick != null) { offer.Add(pick); statTaken |= IsStat(pick); Eligible.Remove(pick); }
 
