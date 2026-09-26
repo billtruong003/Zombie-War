@@ -369,7 +369,18 @@ namespace ZombieWar
         private void BindOfferText(string path, string value)
         {
             var t = levelUpRoot.transform.Find(path)?.GetComponent<TMP_Text>();
-            if (t != null) t.text = value;
+            if (t == null) return;
+            // The generated text is longer than the placeholder the card was laid out for
+            // ("Emergency Detonation NEW" ran past the card edge). Shrink to fit instead of
+            // overflowing; the authored size stays the ceiling, so short names look as designed.
+            if (!t.enableAutoSizing)
+            {
+                t.fontSizeMax = t.fontSize;
+                t.fontSizeMin = Mathf.Max(8f, t.fontSize * 0.6f);
+                t.enableAutoSizing = true;
+            }
+            t.overflowMode = TextOverflowModes.Ellipsis;
+            t.text = value;
         }
 
         /// <summary>Test hook: shows the overlay with a fresh offer without needing earned XP.</summary>
