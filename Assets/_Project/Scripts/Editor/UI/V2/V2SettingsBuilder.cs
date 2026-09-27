@@ -148,7 +148,7 @@ namespace ZombieWar.EditorTools.V2
         /// Segmented control (deep well, padding 3, gap 3, 26 high options).
         static Button[] Segment(RectTransform row, params string[] options)
         {
-            float w = options.Length == 4 ? 48 : options.Length == 3 ? 40 : 32;
+            float w = options.Length == 4 ? 58 : options.Length == 3 ? 40 : 32;   // "MEADOW" needs 58
             float total = options.Length * w + (options.Length - 1) * 3 + 6;
             var rt = Box(Node(row, "Segment"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -12, 0, total, 32);
             Surface(rt, Deep, 9f);
@@ -159,7 +159,7 @@ namespace ZombieWar.EditorTools.V2
             {
                 var o = Node(rt, options[i]);
                 var img = Surface(o, i == 1 ? Ink : new Color(0, 0, 0, 0), 7f, true);
-                Body(Fill(Node(o, "T"), 0, 0, 0, 0), options[i], 11f, i == 1 ? Ground : Dim, TextAlignmentOptions.Center);
+                Shrink(Body(Fill(Node(o, "T"), 3, 0, 3, 0), options[i], 11f, i == 1 ? Ground : Dim, TextAlignmentOptions.Center), 0.75f);
                 buttons[i] = o.gameObject.AddComponent<Button>();
                 buttons[i].targetGraphic = img; buttons[i].transition = Selectable.Transition.None;
             }

@@ -61,7 +61,7 @@ namespace ZombieWar.UI
             m.SetColor(GlowColor, Color.Lerp(rc, Color.white, 0.6f));
             m.SetFloat(Glow, tier >= 2 ? 0.8f + 0.25f * (tier - 2) : 0f);
             m.SetFloat(Sheen, tier >= 3 ? (tier == 4 ? 1f : 0.7f) : 0f);
-            m.SetFloat(Stripes, 0.035f);
+            m.SetFloat(Stripes, ThemeService.Current != null && ThemeService.Current.dark ? 0.02f : 0.035f);   // additive: reads stronger on dark tiles
             m.SetFloat(Aspect, aspect4 / 4f);
             Cache[key] = m;
             return m;
