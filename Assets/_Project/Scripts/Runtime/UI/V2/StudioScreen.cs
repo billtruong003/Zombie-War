@@ -8,11 +8,12 @@ using UnityEngine.UI;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// M10 Studio (owner-approved V2_Studio mockup): the character in the middle with hotspots for
-    /// the main slots (hat, face, jacket, back, pants, shoes), a chip row for every slot, a film
-    /// strip of that slot's pieces, and a bar for the picked piece. Any piece can be tried on
-    /// before buying (visual only; leaving restores the saved outfit). Gacha-only pieces point to
-    /// the Gacha. Up to three looks can be saved and worn in one tap.
+    /// M10 Studio (owner-approved V2_Studio mockup): the character in the middle with six group
+    /// hotspots (head, face, top, back, pants, shoes); the chip row lists only the slots of the
+    /// picked group, then a film strip of that slot's pieces and a bar for the picked piece. Any
+    /// piece can be tried on before buying (visual only; leaving restores the saved outfit), and the
+    /// piece that changed flashes an outline on the character. Random dresses the character from
+    /// owned pieces. Gacha-only pieces point to the Gacha. Up to three looks can be saved.
     /// Built by HordeCall/UI v2/Build Studio.
     /// </summary>
     public sealed class StudioScreen : UIScreen
@@ -27,6 +28,9 @@ namespace ZombieWar.UI
         [SerializeField] private Button[] hotspots = new Button[6];
         [SerializeField] private Button[] looks = new Button[PlayerProfile.MaxLooks];
         [SerializeField] private Button saveLook;
+        [SerializeField] private Button randomButton;
+        [Tooltip("PieceHighlight material: the outline flashed on the piece that changed.")]
+        [SerializeField] private Material highlight;
 
         [Header("Sheet")]
         [SerializeField] private TMP_Text slotTitle;
@@ -49,8 +53,20 @@ namespace ZombieWar.UI
         [SerializeField] private UIScreen gachaScreen;
 
         public const int MaxPieces = 80;
-        /// Hotspot order: HAT, FACE, JACKET, BACK, PANTS, SHOES.
-        public static readonly string[] HotspotSlots = { "Head", "Eyewear", "Chest", "Back", "Legs", "Feet" };
+        /// Hotspot order: HEAD, FACE, TOP, BACK, PANTS, SHOES; each opens its first slot.
+        public static readonly string[] HotspotSlots = { "Head", "Eye", "Chest", "Back", "Legs", "Feet" };
+
+        /// The slots behind each hotspot (owner: outfits must read as clear groups). A slot not
+        /// listed here falls into the group of its catalog CostumeGroup (head / top / pants).
+        public static readonly string[][] HotspotGroups =
+        {
+            new[] { "Head", "Hair", "HairAccessory" },
+            new[] { "Eye", "Brow", "Mouth", "Beard", "Mask", "Eyewear", "Earring" },
+            new[] { "Chest", "Hands", "Bracelet", "Watch", "HandAccessory" },
+            new[] { "Back" },
+            new[] { "Legs" },
+            new[] { "Feet" },
+        };
 
 
         MenuCharacterStage _stage;
@@ -58,21 +74,26 @@ namespace ZombieWar.UI
         string _slot = "Chest";
         List<ModularCostumeCatalog.PartEntry> _parts = new();
         string _picked;          // itemId being shown (worn or tried)
+        List<ModularCostumeCatalog.SlotDefinition> _groupSlots = new();
+        Coroutine _flash;
+        SkinnedMeshRenderer _flashRenderer;
+        Material _flashMat;
 
         protected override void Awake()
         {
             base.Awake();
             if (backButton != null) backButton.onClick.AddListener(() => { UIFeedback.Back(); UIManager.Instance?.Pop(); });
             for (int i = 0; i < hotspots.Length; i++) { int idx = i; if (hotspots[i] != null) hotspots[i].onClick.AddListener(() => SelectSlot(HotspotSlots[idx])); }
-            for (int i = 0; i < chips.Length; i++) { int idx = i; if (chips[i] != null) chips[i].onClick.AddListener(() => { if (idx < _slots.Count) SelectSlot(_slots[idx].id); }); }
+            for (int i = 0; i < chips.Length; i++) { int idx = i; if (chips[i] != null) chips[i].onClick.AddListener(() => { if (idx < _groupSlots.Count) SelectSlot(_groupSlots[idx].id); }); }
             for (int i = 0; i < films.Length; i++) { int idx = i; if (films[i]?.button != null) films[i].button.onClick.AddListener(() => Pick(idx)); }
             for (int i = 0; i < looks.Length; i++) { int idx = i; if (looks[i] != null) looks[i].onClick.AddListener(() => WearLook(idx)); }
             if (saveLook != null) saveLook.onClick.AddListener(SaveLook);
+            if (randomButton != null) randomButton.onClick.AddListener(RandomOutfit);
             if (actionButton != null) actionButton.onClick.AddListener(Act);
         }
 
         private void OnEnable() { PlayerProfile.CostumeChanged += Refresh; PlayerProfile.WalletChanged += Refresh; }
-        private void OnDisable() { PlayerProfile.CostumeChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; RestoreOutfit(); }
+        private void OnDisable() { PlayerProfile.CostumeChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; StopFlash(); RestoreOutfit(); }
 
         protected override void OnShow()
         {
@@ -92,6 +113,8 @@ namespace ZombieWar.UI
             UIFeedback.Tap();
             RestoreOutfit();
             _slot = slot;
+            int g = GroupOf(slot);
+            _groupSlots = _slots.Where(d => GroupOf(d.id) == g).ToList();
             var s = catalog != null ? catalog.GetSlot(slot) : null;
             _parts = s != null ? s.parts.ToList() : new();
             _picked = PlayerProfile.GetPart(slot);
@@ -108,6 +131,88 @@ namespace ZombieWar.UI
             if (PlayerProfile.IsCostumeOwned(p.itemId)) { if (catalog != null) PlayerProfile.TryEquipCostume(catalog, p.itemId); }
             else if (_stage != null && _stage.ModularApplier != null) _stage.ModularApplier.Apply(_slot, p);   // try on
             Refresh();
+            Flash(_slot);
+        }
+
+        /// Which hotspot group a slot belongs to (index into HotspotGroups).
+        int GroupOf(string slot)
+        {
+            for (int i = 0; i < HotspotGroups.Length; i++) if (Array.IndexOf(HotspotGroups[i], slot) >= 0) return i;
+            var def = catalog != null ? catalog.GetSlotDefinition(slot) : null;
+            return def == null ? 0 : def.group switch
+            {
+                ModularCostumeCatalog.CostumeGroup.Body => 2,
+                ModularCostumeCatalog.CostumeGroup.Legs => 4,
+                _ => 0,
+            };
+        }
+
+        /// Owned pieces only: required slots always get one, optional ones half the time.
+        void RandomOutfit()
+        {
+            if (catalog == null) return;
+            var outfit = new List<LoadoutState.PartSel>();
+            foreach (var def in catalog.slotDefinitions)
+            {
+                if (catalog.IsTechnicalCasualSlot(def.id)) continue;
+                var slot = catalog.GetSlot(def.id);
+                if (slot == null) continue;
+                var owned = slot.parts.Where(p => PlayerProfile.IsCostumeOwned(p.itemId)).Select(p => p.itemId).ToList();
+                if (owned.Count == 0) continue;
+                if (def.allowNone && UnityEngine.Random.value < 0.5f) continue;
+                outfit.Add(new LoadoutState.PartSel { slot = def.id, guid = owned[UnityEngine.Random.Range(0, owned.Count)] });
+            }
+            if (PlayerProfile.TrySetCasualOutfit(catalog, outfit) == PlayerProfile.CostumeEquipResult.Equipped)
+            {
+                UIFeedback.Equip();
+                _picked = PlayerProfile.GetPart(_slot);
+                RestoreOutfit();
+                Refresh();
+                Flash(_slot);
+            }
+            else UIFeedback.Error();
+        }
+
+        // ------------------------------------------------------------ changed-piece outline
+        /// Outlines the piece now worn in a slot for a moment, so the swap is easy to see.
+        void Flash(string slot)
+        {
+            StopFlash();
+            if (highlight == null || !isActiveAndEnabled) return;
+            _flash = StartCoroutine(FlashRoutine(slot));
+        }
+
+        System.Collections.IEnumerator FlashRoutine(string slot)
+        {
+            yield return null;   // the stage may swap the piece's renderer this frame
+            var applier = _stage != null ? _stage.ModularApplier : null;
+            var r = applier != null ? applier.GetRenderer(slot) : null;
+            if (r == null) { _flash = null; yield break; }
+            _flashRenderer = r;
+            _flashMat = new Material(highlight) { name = "PieceHighlight (flash)" };
+            var mats = r.sharedMaterials.ToList(); mats.Add(_flashMat); r.sharedMaterials = mats.ToArray();
+            var baseColor = _flashMat.color;
+            const float Time0 = 1.4f;
+            for (float t = 0f; t < Time0; t += Time.unscaledDeltaTime)
+            {
+                // Two soft pulses, then fade out.
+                float a = Mathf.Abs(Mathf.Sin(t / Time0 * Mathf.PI * 2f)) * (1f - t / Time0 * 0.6f);
+                _flashMat.color = new Color(baseColor.r, baseColor.g, baseColor.b, a);
+                yield return null;
+            }
+            StopFlash();
+        }
+
+        void StopFlash()
+        {
+            if (_flash != null) { StopCoroutine(_flash); _flash = null; }
+            if (_flashRenderer != null && _flashMat != null)
+            {
+                var mats = _flashRenderer.sharedMaterials.Where(m => m != _flashMat).ToArray();
+                _flashRenderer.sharedMaterials = mats;
+            }
+            if (_flashMat != null) Destroy(_flashMat);
+            _flashRenderer = null; _flashMat = null;
         }
 
         void Act()
@@ -150,6 +255,24 @@ namespace ZombieWar.UI
         /// Piece tile fill per rarity, Common..Legendary (same tints as the gacha rate tiles).
         static readonly ThemeRole[] TileRoles = { ThemeRole.Card, ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.GemTint, ThemeRole.LegendTint };
 
+        /// The owned count follows the slot title, so a long name ("HAIR ACCESSORY") never runs
+        /// into it; the title shrinks first when both would not fit before the gacha tag.
+        void PlaceOwnedLabel()
+        {
+            if (slotTitle == null || ownedLabel == null) return;
+            var tr = slotTitle.rectTransform; var or = ownedLabel.rectTransform;
+            var head = tr.parent as RectTransform; if (head == null) return;
+            float room = head.rect.width - (gachaTag != null && gachaTag.activeSelf ? ((RectTransform)gachaTag.transform).rect.width + 8f : 0f);
+            float ownedW = ownedLabel.GetPreferredValues(ownedLabel.text).x;
+            float maxTitle = Mathf.Max(40f, room - ownedW - 10f);
+            tr.sizeDelta = new Vector2(maxTitle, tr.sizeDelta.y);
+            slotTitle.ForceMeshUpdate();
+            float titleW = Mathf.Min(slotTitle.GetPreferredValues(slotTitle.text).x, maxTitle);
+            if (slotTitle.enableAutoSizing) titleW = Mathf.Min(slotTitle.textBounds.size.x, maxTitle);
+            or.anchoredPosition = new Vector2(tr.anchoredPosition.x + titleW + 10f, or.anchoredPosition.y);
+            or.sizeDelta = new Vector2(ownedW + 4f, or.sizeDelta.y);
+        }
+
         static Graphic Face(Button b)
         {
             var f = b.transform.Find("Face");
@@ -165,7 +288,7 @@ namespace ZombieWar.UI
             for (int i = 0; i < hotspots.Length; i++)
             {
                 if (hotspots[i] == null) continue;
-                bool on = HotspotSlots[i] == _slot;
+                bool on = i == GroupOf(_slot);
                 ThemeTint.Set(Face(hotspots[i]), on ? ThemeRole.Primary : ThemeRole.Card);
                 var t = hotspots[i].GetComponentInChildren<TMP_Text>(true); ThemeTint.Set(t, on ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
             }
@@ -182,6 +305,7 @@ namespace ZombieWar.UI
             if (slotTitle != null) slotTitle.text = (def != null ? def.displayName : _slot).ToUpperInvariant();
             int owned = _parts.Count(p => PlayerProfile.IsCostumeOwned(p.itemId));
             if (ownedLabel != null) ownedLabel.text = $"{owned} / {_parts.Count} OWNED";
+            PlaceOwnedLabel();
             int gachaOnly = _parts.Count(p => economy != null && economy.TryGetCostume(p.itemId, out var e) && e.source == AcquireSource.Gacha);
             if (gachaTag != null) gachaTag.SetActive(gachaOnly > 0);
             if (gachaTagText != null) gachaTagText.text = $"GACHA ONLY {gachaOnly}";
@@ -189,12 +313,12 @@ namespace ZombieWar.UI
             for (int i = 0; i < chips.Length; i++)
             {
                 if (chips[i] == null) continue;
-                bool has = i < _slots.Count; chips[i].gameObject.SetActive(has);
+                bool has = i < _groupSlots.Count; chips[i].gameObject.SetActive(has);
                 if (!has) continue;
-                bool on = _slots[i].id == _slot;
+                bool on = _groupSlots[i].id == _slot;
                 ThemeTint.Set(chips[i].targetGraphic, on ? ThemeRole.Ink : ThemeRole.Card);
                 var t = chips[i].GetComponentInChildren<TMP_Text>(true);
-                if (t != null) { t.text = _slots[i].displayName.ToUpperInvariant(); ThemeTint.Set(t, on ? ThemeRole.OnInk : ThemeRole.Dim); }
+                if (t != null) { t.text = _groupSlots[i].displayName.ToUpperInvariant(); ThemeTint.Set(t, on ? ThemeRole.OnInk : ThemeRole.Dim); }
             }
 
             for (int i = 0; i < films.Length; i++)

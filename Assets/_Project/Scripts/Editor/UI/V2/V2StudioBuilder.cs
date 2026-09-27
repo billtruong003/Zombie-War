@@ -19,6 +19,7 @@ namespace ZombieWar.EditorTools.V2
         const string Economy = "Assets/_Project/Data/Economy/EconomyConfig.asset";
         const string Costumes = "Assets/_Project/Data/Character/CasualCostumeCatalog.asset";
         const float SheetH = 272;
+        const string HighlightMat = "Assets/_Project/Art/Materials/UI/PieceHighlight.mat";
 
         [MenuItem("HordeCall/UI v2/Build Studio")]
         public static string Build()
@@ -42,6 +43,7 @@ namespace ZombieWar.EditorTools.V2
 
                 Wire(s, "catalog", AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(Costumes));
                 Wire(s, "economy", AssetDatabase.LoadAssetAtPath<EconomyConfig>(Economy));
+                Wire(s, "highlight", EnsureHighlight());
                 var go = PrefabUtility.SaveAsPrefabAsset(r.gameObject, Path);
                 return AssetDatabase.GetAssetPath(go);
             }
@@ -61,7 +63,7 @@ namespace ZombieWar.EditorTools.V2
             fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; fit.aspectRatio = 512f / 900f;   // MenuCharacterPreview is 512x900
             Wire(s, "character", raw);
 
-            string[] names = { "HAT", "FACE", "JACKET", "BACK", "PANTS", "SHOES" };
+            string[] names = { "HEAD", "FACE", "TOP", "BACK", "PANTS", "SHOES" };
             string[] icons = { "Hat", "Glasses", "Clothes", "Bag", "Hanger", "Sheos" };
             float[] y = { 0.155f, 0.186f, 0.39f, 0.45f, 0.66f, 0.8f };
             bool[] left = { true, false, true, false, true, false };
@@ -100,6 +102,26 @@ namespace ZombieWar.EditorTools.V2
             var si = save.gameObject.AddComponent<Image>(); si.sprite = Spr("rounded_dashed"); si.type = Image.Type.Sliced; si.color = Hex("5a6275");
             Body(Fill(Node(save, "P"), 0, 0, 0, 0), "+", 16f, Dim, TextAlignmentOptions.Center);
             Wire(s, "saveLook", save.gameObject.AddComponent<Button>());
+
+            // Random: dress from owned pieces (top right of the stage, clear of the hotspots).
+            var rnd = Box(Node(st, "Random"), new Vector2(1, 1), new Vector2(1, 1), -14, -10, 44, 44);
+            var rl = Surface(rnd, Deep, 13f, true);
+            var rf = Fill(Node(rnd, "Face"), 0, 0, 0, 0); rf.offsetMin = new Vector2(0, Px(3));
+            Surface(rf, Card, 13f);
+            Picto(Fill(Node(rf, "P"), 9, 9, 9, 9), "Dice");
+            var rb = rnd.gameObject.AddComponent<Button>(); rb.targetGraphic = rl; rb.transition = Selectable.Transition.None;
+            rnd.gameObject.AddComponent<UIPressFeel>();
+            Wire(s, "randomButton", rb);
+        }
+
+        static Material EnsureHighlight()
+        {
+            var m = AssetDatabase.LoadAssetAtPath<Material>(HighlightMat);
+            if (m != null) return m;
+            m = new Material(Shader.Find("ZombieWar/PieceHighlight")) { name = "PieceHighlight" };
+            m.color = new Color(1f, 0.79f, 0.24f, 1f); m.SetFloat("_Width", 0.02f);
+            AssetDatabase.CreateAsset(m, HighlightMat);
+            return m;
         }
 
         static void Sheet(RectTransform safe, StudioScreen s)
@@ -108,7 +130,9 @@ namespace ZombieWar.EditorTools.V2
             Surface(sheet, Deep, 18f, true);
 
             var head = TopBand(Node(sheet, "Head"), 12, 26, 14, 14);
-            Wire(s, "slotTitle", Title(Box(Node(head, "T"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 110, 26), "JACKET", 20f));
+            // Title width and the owned count's x are set at runtime (PlaceOwnedLabel) so a long
+            // slot name shrinks instead of running into the count.
+            Wire(s, "slotTitle", Shrink(Title(Box(Node(head, "T"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 110, 26), "JACKET", 20f), 0.6f));
             Wire(s, "ownedLabel", Label(Box(Node(head, "Owned"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 110, -1, 130, 16), "12 / 38 OWNED"));
             var tag = Box(Node(head, "Gacha"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), 0, 0, 92, 18);
             Surface(tag, Hex("3a2a55"), RTag);
@@ -167,7 +191,7 @@ namespace ZombieWar.EditorTools.V2
             Surface(pi, Deep, 10f);
             var pimg = Fill(Node(pi, "I"), 3, 3, 3, 3).gameObject.AddComponent<Image>(); pimg.preserveAspect = true; pimg.raycastTarget = false; pimg.enabled = false;
             Wire(s, "pickedIcon", pimg);
-            Wire(s, "pickedName", Body(Box(Node(pb, "Name"), new Vector2(0, 0.5f), new Vector2(0, 0), 60, 1, 150, 20), "Varsity Jacket", 14f));
+            Wire(s, "pickedName", Shrink(Body(Box(Node(pb, "Name"), new Vector2(0, 0.5f), new Vector2(0, 0), 60, 1, 150, 20), "Varsity Jacket", 14f), 0.7f));
             Wire(s, "pickedState", Label(Box(Node(pb, "State"), new Vector2(0, 0.5f), new Vector2(0, 1), 60, -1, 170, 14), "TRYING ON · RARE", null, 10f));
             var act = Box(Node(pb, "Action"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -8, 0, 140, 46);
             Wire(s, "actionButton", Button(act, "BUY 1,800", Role.Primary, 16f));

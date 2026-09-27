@@ -292,6 +292,10 @@ namespace ZombieWar
             return false;
         }
 
+        /// <summary>The renderer worn in a slot right now, or null (Studio highlight).</summary>
+        public SkinnedMeshRenderer GetRenderer(string slotName) =>
+            _active.TryGetValue(slotName, out var smr) && smr != null && smr.gameObject.activeInHierarchy ? smr : null;
+
         /// <summary>Ten part dang mac o slot ("" neu trong).</summary>
         public string GetEquipped(string slotName)
         {
