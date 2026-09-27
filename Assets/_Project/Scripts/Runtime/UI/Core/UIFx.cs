@@ -23,7 +23,7 @@ namespace ZombieWar.UI
             t.localScale = Vector3.one;
             BillTween.Scale(t, 1.12f, 0.09f)
                 ?.SetLoops(2, LoopType.Yoyo).SetEase(EaseType.OutQuad)
-                .OnComplete(() => t.localScale = Vector3.one)
+                .OnComplete(() => { if (t != null) t.localScale = Vector3.one; })   // the HUD may be unloaded mid-punch
                 .SetUnscaled().SetTarget(t);
         }
 

@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using BillGameCore;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using ZombieWar.UI;
 
@@ -24,7 +26,33 @@ namespace ZombieWar
             if (!Bill.Scene.IsAdditiveLoaded(MenuScene))
                 Bill.Scene.LoadAdditive(MenuScene, LoadingScreen.Complete);   // no-op at boot (not loading)
             else
+            {
+                SetMenuActive(true);
+                UIManager.Instance?.Replace<HubScreen>();   // same as a fresh load: Hub alone, refreshed
                 LoadingScreen.Complete();
+            }
+        }
+
+        // M8-F (owner: back to the menu took ~5 s): the Menu scene stays loaded under the world and
+        // is switched off during a run. Reloading it rebuilt ~930 dependencies (the Shop alone holds
+        // hundreds of cards) in one 1.5-3.5 s frame; switching it back on is a single frame. Its
+        // assets were never unloaded anyway (nothing calls UnloadUnusedAssets).
+        static readonly List<GameObject> _menuRoots = new();
+
+        static void SetMenuActive(bool on)
+        {
+            var scene = SceneManager.GetSceneByName(MenuScene);
+            if (!scene.isLoaded) return;
+            if (!on)
+            {
+                _menuRoots.Clear();
+                foreach (var root in scene.GetRootGameObjects())
+                    if (root.activeSelf) { _menuRoots.Add(root); root.SetActive(false); }
+                return;
+            }
+            foreach (var root in _menuRoots)
+                if (root != null) root.SetActive(true);
+            _menuRoots.Clear();
         }
 
         /// Hub PLAY -> unload menu, additive-load the world, make it the active scene (so runtime
@@ -34,8 +62,7 @@ namespace ZombieWar
             LoadingScreen.Begin();
             Bill.State.GoTo<LoadingState>();
 
-            if (Bill.Scene.IsAdditiveLoaded(MenuScene))
-                Bill.Scene.Unload(MenuScene);
+            SetMenuActive(false);
 
             if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
             {
@@ -64,11 +91,13 @@ namespace ZombieWar
             LoadingScreen.Begin();
             RunState.Abandon();
 
-            if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
-                Bill.Scene.Unload(GameplayScene);
             InGameplay = false;
-
-            EnterMenu();
+            // The menu comes back once the world is gone, so its camera, light and audio listener
+            // never overlap the world's.
+            if (Bill.Scene.IsAdditiveLoaded(GameplayScene))
+                Bill.Scene.Unload(GameplayScene, EnterMenu);
+            else
+                EnterMenu();
         }
 
 #if UNITY_EDITOR

@@ -54,6 +54,7 @@ namespace ZombieWar.EditorTools
                 log.Add($"press-feel {AddPressFeel(root)}");
                 log.Add($"outline-text {WhiteOnOutline(root)}");
                 if (System.IO.Path.GetFileNameWithoutExtension(path) == "UI_HubScreen") PolishHub(root, log);
+                if (System.IO.Path.GetFileNameWithoutExtension(path) == "UI_PassScreen") PolishPass(root, log);
                 log.Add($"slice-fit +{UiKitApply.AddSliceFit(root)}");
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
@@ -184,6 +185,25 @@ namespace ZombieWar.EditorTools
         }
 
         /// Hub: the weapon plate's tile sits 16 px inside a 32 px plate, so it gets the tile radius.
+        /// <summary>
+        /// Pass (M8-F, owner: the reward row stopped dead at the edge): the track scrolls under a soft
+        /// edge. It runs to the screen edge, and the row padding keeps the first and last reward
+        /// clear of the fade when scrolled to either end.
+        /// </summary>
+        static void PolishPass(GameObject root, List<string> log)
+        {
+            var track = root.transform.Find("Safe/TrackScroll") as RectTransform;
+            if (track == null) return;
+            const int Fade = 96;
+            var mask = track.GetComponent<RectMask2D>();
+            if (mask != null) mask.softness = new Vector2Int(Fade, 0);
+            track.offsetMin = new Vector2(0f, track.offsetMin.y);
+            track.offsetMax = new Vector2(0f, track.offsetMax.y);
+            var row = track.Find("Content")?.GetComponent<HorizontalLayoutGroup>();
+            if (row != null) { row.padding.left = 32 + Fade / 2; row.padding.right = 32 + Fade / 2; }
+            log.Add("pass fade");
+        }
+
         static void PolishHub(GameObject root, List<string> log)
         {
             var plate = root.transform.Find("Safe/Podium/WeaponPlate");
