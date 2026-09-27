@@ -88,14 +88,13 @@ namespace ZombieWar
             scaler.referenceResolution = new Vector2(1080f, 1920f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            var tab = CreateButton(canvasGo.transform, "CheatTab", "CHEAT", new Color(0.05f, 0.06f, 0.08f, 0.48f), 24);
+            var tab = CreateButton(canvasGo.transform, "CheatTab", "QA", new Color(0.05f, 0.06f, 0.08f, 0.48f), 22);
             var tabRt = (RectTransform)tab.transform;
             tabRt.anchorMin = tabRt.anchorMax = tabRt.pivot = new Vector2(0f, 1f);
-            // Upper-left edge, below the hub's avatar chip and mission bar and above the result
-            // screen's payout card (which starts at y -560). The old top-left spot sat on the hub's
-            // avatar/BEST badge (M5 audit, dev-only).
-            tabRt.anchoredPosition = new Vector2(18f, -360f);
-            tabRt.sizeDelta = new Vector2(132f, 54f);
+            // M10 UI audit: a slim tab on the left edge, below the Home side rails and above the
+            // joystick, so it covers no button in the menu or in a run (dev builds only).
+            tabRt.anchoredPosition = new Vector2(0f, -880f);
+            tabRt.sizeDelta = new Vector2(56f, 72f);
             tab.onClick.AddListener(() => SetPanelVisible(true));
 
             _panel = CreateRect(canvasGo.transform, "CheatOverlay", PanelColor).gameObject;

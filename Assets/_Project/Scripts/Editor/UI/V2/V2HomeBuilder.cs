@@ -93,10 +93,12 @@ namespace ZombieWar.EditorTools.V2
         {
             var stage = Fill(Node(safe, "Stage"), 0, 62, 0, 310);
 
-            var floor = Fill(Node(stage, "Floor"), 70, 0, 70, 0);
-            Surface(floor, Hex("2c3140"), RPanel);
-
-            var view = Fill(Node(stage, "Character"), 70, 6, 70, 76);
+            // Owner: the 3D view needs only the shadow blob under the feet (drawn in the preview
+            // itself), no panel or pedestal behind the character.
+            // The fitter sizes against its PARENT, so the character sits in its own area that stops
+            // above the gun card; fitting against the whole stage put the feet under the card.
+            var area = Fill(Node(stage, "CharacterArea"), 70, 6, 70, 6 + 62 + 8);
+            var view = Node(area, "Character");
             var raw = view.gameObject.AddComponent<RawImage>();
             var rt = AssetDatabase.LoadAssetAtPath<RenderTexture>(PreviewRT);
             raw.texture = rt; raw.raycastTarget = true;
@@ -279,12 +281,8 @@ namespace ZombieWar.EditorTools.V2
         static void PlayRow(RectTransform safe, HomeScreen home)
         {
             var band = BottomBand(Node(safe, "PlayRow"), 64 + 10, 66, 12, 12);
-            var mode = Box(Node(band, "Mode"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 66, 66);
-            Button(mode, "MODE", Role.Quiet, 12f);
-            Body(Box(Node(mode.Find("Face") as RectTransform, "Sub"), new Vector2(0.5f, 0), new Vector2(0.5f, 0), 0, 10, 60, 12), "ENDLESS", 9f, Dim, TextAlignmentOptions.Center);
-            ((RectTransform)mode.Find("Face/Label")).offsetMin = new Vector2(0, Px(12));
-
-            var play = Fill(Node(band, "Play"), 74, 0, 0, 0);
+            // Owner: Endless is the only mode for now, so no Mode button; PLAY takes the row.
+            var play = Fill(Node(band, "Play"), 0, 0, 0, 0);
             var btn = Button(play, "PLAY", Role.Primary, 32f);
             Wire(home, "playButton", btn);
             ((RectTransform)play.Find("Face/Label")).offsetMin = new Vector2(0, Px(14));

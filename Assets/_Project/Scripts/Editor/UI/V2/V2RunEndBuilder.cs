@@ -33,6 +33,11 @@ namespace ZombieWar.EditorTools.V2
                 Revive(root, end);
                 Result(root, end);
 
+                // Same scaling as the menu (Expand @1080x1920): taller phones get more room and a
+                // tablet no longer pushes the revive and result buttons off the bottom.
+                var scaler = hud.GetComponent<CanvasScaler>();
+                if (scaler != null) scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+
                 var ro = hud.GetComponentInChildren<RunOverlays>(true);
                 Wire(ro, "endV2", end);
                 var confirm = new SerializedObject(ro).FindProperty("confirmRoot").objectReferenceValue as GameObject;
@@ -94,7 +99,9 @@ namespace ZombieWar.EditorTools.V2
             Wire(e, "carried", CoinValue(card, 12, Ink));
             Wire(e, "costLabel", Body(TopBand(Node(card, "L1"), 38, 20, 12, 120), "Revive 2 of 3 costs", 13f));
             Wire(e, "costValue", CoinValue(card, 38, Yellow));
-            Wire(e, "costNote", Body(TopBand(Node(card, "Note"), 64, 16, 12, 12), "Price doubles each time. This one costs more than you carry.", 11f, Hex("e5a0a2")));
+            var note = Shrink(Body(TopBand(Node(card, "Note"), 62, 26, 12, 12), "Price doubles each time. This one costs more than you carry.", 11f, Hex("e5a0a2")), 0.8f);
+            note.enableWordWrapping = true;
+            Wire(e, "costNote", note);
 
             var ad = TopBand(Node(col, "Ad"), 432, 60);
             Wire(e, "adButton", Button(ad, "WATCH AD · FREE", Role.Claim, 20f));

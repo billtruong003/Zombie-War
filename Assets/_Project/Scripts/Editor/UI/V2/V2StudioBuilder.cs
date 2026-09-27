@@ -53,10 +53,8 @@ namespace ZombieWar.EditorTools.V2
             var st = Fill(Node(safe, "Stage"), 0, 58, 0, SheetH - 16);
             var glow = Box(Node(st, "Glow"), new Vector2(0.5f, 0.45f), new Vector2(0.5f, 0.5f), 0, 0, 360, 360);
             var gi = glow.gameObject.AddComponent<Image>(); gi.sprite = Spr("glow_soft"); gi.color = new Color(0.23f, 0.25f, 0.32f, 0.9f); gi.raycastTarget = false;
-            var floor = Box(Node(st, "Floor"), new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), 0, 50, 230, 44);
-            var fi = floor.gameObject.AddComponent<Image>(); fi.sprite = Spr("circle"); fi.color = Deep; fi.raycastTarget = false;
-
-            var ch = Fill(Node(st, "Character"), 60, 20, 60, 30);
+            // Owner: only the shadow blob under the feet (drawn by the preview), no pedestal.
+            var ch = Fill(Node(st, "Character"), 60, 50, 60, 20);
             var raw = Node(ch, "RT").gameObject.AddComponent<RawImage>();
             raw.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(CharacterRT); raw.raycastTarget = false;
             var fit = raw.gameObject.AddComponent<AspectRatioFitter>();
@@ -84,19 +82,21 @@ namespace ZombieWar.EditorTools.V2
             }
             WireArray(s, "hotspots", hs);
 
-            var looks = Box(Node(st, "Looks"), new Vector2(0, 1), new Vector2(0, 1), 14, -14, 200, 28);
-            Label(Box(Node(looks, "L"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 48, 14), "LOOKS");
+            // Saved looks, then "+": a row, so "+" follows the looks instead of floating at a fixed x.
+            var looks = Box(Node(st, "Looks"), new Vector2(0, 1), new Vector2(0, 1), 14, -14, 220, 28);
+            var lr = Row(looks, 6, TextAnchor.MiddleLeft); lr.childForceExpandHeight = false;
+            var lt = Node(looks, "L"); Size(lt, 48, 14); Label(lt, "LOOKS");
             var lb = new Button[ZombieWar.PlayerProfile.MaxLooks];
             for (int i = 0; i < lb.Length; i++)
             {
-                var b = Box(Node(looks, "Look" + (i + 1)), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 52 + i * 34, 0, 28, 28);
+                var b = Node(looks, "Look" + (i + 1)); Size(b, 28, 28);
                 var bg = Surface(b, Card, RTile, true);
                 Title(Fill(Node(b, "N"), 0, 0, 0, 0), (i + 1).ToString(), 13f, Ink, TextAlignmentOptions.Center);
                 lb[i] = b.gameObject.AddComponent<Button>(); lb[i].targetGraphic = bg; lb[i].transition = Selectable.Transition.None;
                 b.gameObject.SetActive(false);
             }
             WireArray(s, "looks", lb);
-            var save = Box(Node(looks, "Save"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 52 + lb.Length * 34, 0, 28, 28);
+            var save = Node(looks, "Save"); Size(save, 28, 28);
             var si = save.gameObject.AddComponent<Image>(); si.sprite = Spr("rounded_dashed"); si.type = Image.Type.Sliced; si.color = Hex("5a6275");
             Body(Fill(Node(save, "P"), 0, 0, 0, 0), "+", 16f, Dim, TextAlignmentOptions.Center);
             Wire(s, "saveLook", save.gameObject.AddComponent<Button>());

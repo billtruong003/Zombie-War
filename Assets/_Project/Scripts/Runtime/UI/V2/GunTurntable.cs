@@ -19,7 +19,8 @@ namespace ZombieWar.UI
 
         GameObject _root, _gun;
         Camera _cam;
-        float _yaw = 55f, _pitch = 10f, _idle;
+        const float RestYaw = 55f;
+        float _yaw = RestYaw, _pitch = 10f, _idle, _t;
 
         public void Show(WeaponData data, Skins.WeaponSkins.Set skin)
         {
@@ -68,7 +69,16 @@ namespace ZombieWar.UI
         void LateUpdate()
         {
             if (_cam == null) return;
-            if (_idle > 0f) _idle -= Time.unscaledDeltaTime; else _yaw += spinSpeed * Time.unscaledDeltaTime;
+            // A full spin shows the muzzle end-on (a thin black line) half the time; rock around the
+            // three-quarter view instead, and ease back to it after the player lets go.
+            if (_idle > 0f) _idle -= Time.unscaledDeltaTime;
+            else
+            {
+                _t += Time.unscaledDeltaTime * spinSpeed / 60f;
+                float target = RestYaw + Mathf.Sin(_t) * 30f;
+                _yaw = Mathf.LerpAngle(_yaw, target, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
+                _pitch = Mathf.Lerp(_pitch, 10f, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
+            }
             var rot = Quaternion.Euler(_pitch, _yaw, 0f);
             _cam.transform.position = Stage + rot * new Vector3(0f, 0f, -5f);
             _cam.transform.rotation = rot;

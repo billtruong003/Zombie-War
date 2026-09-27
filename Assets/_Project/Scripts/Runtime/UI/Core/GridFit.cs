@@ -21,6 +21,16 @@ namespace ZombieWar.UI
 
         public void Fit()
         {
+            // GridLayoutGroup reports columns x cell as its minimum width. Once the screen got wider
+            // (rotation, a resized window, a tablet) the cells grew, the parent layout could never
+            // make the grid narrower again, and the last columns ran off the right edge. The grid's
+            // width comes from its parent only.
+            var le = GetComponent<LayoutElement>();
+            if (le == null) le = gameObject.AddComponent<LayoutElement>();
+            le.minWidth = 0f;
+            le.preferredWidth = 0f;
+            if (le.flexibleWidth < 0f) le.flexibleWidth = 1f;
+
             var grid = GetComponent<GridLayoutGroup>();
             var rt = (RectTransform)transform;
             float w = rt.rect.width - grid.padding.left - grid.padding.right - grid.spacing.x * (columns - 1);

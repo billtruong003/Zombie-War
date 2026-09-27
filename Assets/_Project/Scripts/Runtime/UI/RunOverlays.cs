@@ -67,8 +67,9 @@ namespace ZombieWar
         {
             HideAll();
             Wire(resumeButton, ResumeWithCountdown);
-            Wire(exitButton, () => { Show(confirmRoot, true); UIFx.ModalIn(confirmRoot != null ? confirmRoot.transform : null); });
-            Wire(confirmNoButton, () => Show(confirmRoot, false));
+            // The quit question replaces the pause panel instead of sitting on top of it.
+            Wire(exitButton, () => { Show(pauseRoot, false); Show(confirmRoot, true); UIFx.ModalIn(confirmRoot != null ? confirmRoot.transform : null); });
+            Wire(confirmNoButton, () => { Show(confirmRoot, false); Show(pauseRoot, true); });
             Wire(confirmYesButton, EndRun);
             Wire(settingsButton, OpenSettings);
             Wire(settingsCloseButton, () => Show(settingsRoot, false));
@@ -412,8 +413,15 @@ namespace ZombieWar
         /// The <=30 s unscaled pause. On expiry it auto-picks a VALID card — never a broken or
         /// ineligible one — so a player who walks away never loses an earned choice or gets stuck on
         /// a frozen screen.
+        private GameObject _skillBar;
+
         private void Update()
         {
+            // The level-up sheet shows the build itself; the HUD skill bar underneath overlapped it.
+            if (_skillBar == null) _skillBar = transform.Find("Safe/SkillBar")?.gameObject;
+            bool picking = levelUpRoot != null && levelUpRoot.activeSelf;
+            if (_skillBar != null && _skillBar.activeSelf == picking) _skillBar.SetActive(!picking);
+
             if (levelUpRoot == null || !levelUpRoot.activeSelf) return;
             if (_skillOffer == null || _skillOffer.Count == 0) return;
             float waited = Time.realtimeSinceStartup - _levelUpShownAtRealtime;

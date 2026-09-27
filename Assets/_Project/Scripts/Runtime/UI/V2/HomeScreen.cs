@@ -301,6 +301,7 @@ namespace ZombieWar.UI
 
         public static string Short(long v) =>
             v >= 1_000_000 ? (v / 1_000_000f).ToString("0.#") + "M" :
+            v >= 100_000 ? (v / 1000f).ToString("0") + "K" :   // "118K", not "117.6K": pills are narrow
             v >= 10_000 ? (v / 1000f).ToString("0.#") + "K" : v.ToString("N0");
     }
 }

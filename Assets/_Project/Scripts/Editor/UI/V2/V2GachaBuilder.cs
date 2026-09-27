@@ -88,7 +88,12 @@ namespace ZombieWar.EditorTools.V2
             var glow = Box(Node(b, "Glow"), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), 0, 0, 300, 300);
             var gi = glow.gameObject.AddComponent<Image>(); gi.sprite = Spr("glow_soft"); gi.color = new Color(1f, 0.4f, 0.8f, 0.35f); gi.raycastTarget = false;
 
-            var gun = Box(Node(b, "GunArt"), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), 0, 0, 300, 300).gameObject.AddComponent<RawImage>();
+            // The art lives between the title (top 104) and the featured block (bottom 110), square,
+            // so it never sits on the text whatever the banner height is.
+            var artArea = Fill(Node(b, "ArtArea"), 20, 104, 20, 110);
+            var gun = Node(artArea, "GunArt").gameObject.AddComponent<RawImage>();
+            var gfit = gun.gameObject.AddComponent<AspectRatioFitter>();
+            gfit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; gfit.aspectRatio = 1f;
             gun.color = new Color(1, 1, 1, 0); gun.raycastTarget = true;
             Wire(s, "gunArt", gun);
             var drag = gun.gameObject.AddComponent<TurntableDrag>(); Wire(drag, "turntable", s.GetComponent<GunTurntable>());
@@ -154,7 +159,8 @@ namespace ZombieWar.EditorTools.V2
                 var bg = Surface(t, Card, RTile);
                 IconImage(Box(Node(t, "I"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -6, 26, 26), icons[i]);
                 var pct = Body(BottomBand(Node(t, "P"), 18, 13), "12%", 9f, Ink, TextAlignmentOptions.Center);
-                var what = Body(BottomBand(Node(t, "W"), 4, 13, 2, 2), "item", 7.5f, Dim, TextAlignmentOptions.Center);
+                var what = Shrink(Body(BottomBand(Node(t, "W"), 3, 15, 2, 2), "item", 8f, Dim, TextAlignmentOptions.Center), 0.7f);
+                what.enableWordWrapping = true;
                 var e = arr.GetArrayElementAtIndex(i);
                 e.FindPropertyRelative("root").objectReferenceValue = t.gameObject;
                 e.FindPropertyRelative("bg").objectReferenceValue = bg;
@@ -165,7 +171,7 @@ namespace ZombieWar.EditorTools.V2
             var card = BottomBand(Node(info, "Note"), 0, 36);
             Surface(card, Card, RCard);
             var n = Body(Fill(Node(card, "T"), 12, 0, 12, 0), "Duplicates turn into tickets. Pity carries over to the next banner.", 11f, Ink, TextAlignmentOptions.MidlineLeft);
-            n.enableWordWrapping = true;
+            n.enableWordWrapping = true; Shrink(n, 0.75f);
             Wire(s, "note", n);
         }
 

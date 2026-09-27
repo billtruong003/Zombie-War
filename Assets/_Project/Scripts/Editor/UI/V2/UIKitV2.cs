@@ -224,6 +224,18 @@ namespace ZombieWar.EditorTools.V2
             return t;
         }
 
+        /// <summary>Lets a label shrink (down to <paramref name="minFactor"/> of its size) instead of
+        /// spilling out of its box when runtime text is longer than the mockup's.</summary>
+        public static TextMeshProUGUI Shrink(TextMeshProUGUI t, float minFactor = 0.6f)
+        {
+            float max = t.fontSize;
+            t.enableAutoSizing = true; t.fontSizeMax = max; t.fontSizeMin = Mathf.Max(8f, max * minFactor);
+            // TMP only measures overflow against the box when it may wrap: without wrapping a long
+            // single line never triggers the shrink.
+            t.enableWordWrapping = true;
+            return t;
+        }
+
         /// <summary>Small caps label (dim, letter-spaced).</summary>
         public static TextMeshProUGUI Label(RectTransform rt, string text, Color? color = null, float sizePx = 11f)
         {
@@ -257,6 +269,7 @@ namespace ZombieWar.EditorTools.V2
             faceRt.offsetMin = new Vector2(0, Px(4));
             Surface(faceRt, face, RButton);
             var lbl = Title(Fill(Node(faceRt, "Label"), 6, 0, 6, 0), label, labelPx, Ink, TextAlignmentOptions.Center);
+            Shrink(lbl);   // runtime labels ("COME BACK TOMORROW", prices) must never leave the button
             var b = rt.gameObject.AddComponent<Button>();
             b.targetGraphic = lipImg; b.transition = Selectable.Transition.None;
             rt.gameObject.AddComponent<UIPressFeel>();
@@ -293,7 +306,7 @@ namespace ZombieWar.EditorTools.V2
             var row = Row(rt, 5, TextAnchor.MiddleLeft, false, 5, 5);
             row.childForceExpandHeight = false;
             var ic = Node(rt, "Icon"); IconImage(ic, icon); Size(ic, 18, 18);
-            var tx = Node(rt, "Value"); var t = Body(tx, value, 13f, Ink); Size(tx, -1, 22, 1);
+            var tx = Node(rt, "Value"); var t = Shrink(Body(tx, value, 13f, Ink), 0.7f); Size(tx, -1, 22, 1);
             var pb = Node(rt, "Plus"); Size(pb, 18, 18);
             Surface(pb, Green, 5f, true);
             Body(Fill(Node(pb, "T"), 0, 0, 0, 0), "+", 14f, OnGreen, TextAlignmentOptions.Center);

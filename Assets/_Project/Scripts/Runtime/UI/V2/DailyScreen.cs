@@ -149,7 +149,7 @@ namespace ZombieWar.UI
             if (makeUpButton != null) makeUpButton.gameObject.GetComponent<CanvasGroup>()?.SetAlpha(DailyRewards.CanMakeUp(today) ? 1f : 0.45f);
 
             bool full = stamps >= DailyRewards.CardDays;
-            if (stampLabel != null) stampLabel.text = full ? "CARD COMPLETE" : stampedToday ? "COME BACK TOMORROW" : $"STAMP DAY {stamps + 1}";
+            if (stampLabel != null) stampLabel.text = full ? "CARD COMPLETE" : stampedToday ? "BACK TOMORROW" : $"STAMP DAY {stamps + 1}";
             if (stampButton != null) stampButton.gameObject.GetComponent<CanvasGroup>()?.SetAlpha(DailyRewards.CanStamp(today) ? 1f : 0.5f);
         }
     }
