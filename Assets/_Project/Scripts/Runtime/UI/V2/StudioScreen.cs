@@ -38,6 +38,7 @@ namespace ZombieWar.UI
         [SerializeField] private GameObject gachaTag;
         [SerializeField] private TMP_Text gachaTagText;
         [SerializeField] private Button[] chips = new Button[24];
+        [SerializeField] private ScrollEdgeFade chipsFade;
         [SerializeField] private ScrollRect strip;
         [SerializeField] private Film[] films = new Film[MaxPieces];
 
@@ -154,7 +155,7 @@ namespace ZombieWar.UI
             if (catalog == null) return;
             // No clipping pieces, colours that go together (CostumeRandomizer).
             _randomizer ??= CostumeRandomizer.Load();
-            var outfit = _randomizer.Generate(catalog, PlayerProfile.IsCostumeOwned, _rng);
+            var outfit = _randomizer.Generate(catalog, PlayerProfile.IsCostumeOwned, _rng, economy != null ? economy.costumeSets : null);
             if (PlayerProfile.TrySetCasualOutfit(catalog, outfit) == PlayerProfile.CostumeEquipResult.Equipped)
             {
                 UIFeedback.Equip();
@@ -302,6 +303,7 @@ namespace ZombieWar.UI
                 ThemeTint.Set(chips[i].targetGraphic, on ? ThemeRole.Ink : ThemeRole.Card);
                 var t = chips[i].GetComponentInChildren<TMP_Text>(true);
                 if (t != null) { t.text = _groupSlots[i].displayName.ToUpperInvariant(); ThemeTint.Set(t, on ? ThemeRole.OnInk : ThemeRole.Dim); }
+                if (on && chipsFade != null) chipsFade.Reveal((RectTransform)chips[i].transform);
             }
 
             for (int i = 0; i < films.Length; i++)

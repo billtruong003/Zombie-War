@@ -34,6 +34,14 @@ namespace ZombieWar.EditorTools
             new[] { "Chest", "Back", "Hands", "Bracelet", "Watch", "HandAccessory" },
         };
 
+        /// Baked only for their colour (no clash pairs): what the outfit's palette is built from.
+        static readonly string[] ColourOnly = { "Legs", "Feet" };
+
+        /// Gender of Layer Lab's 30 preset characters (casual.pro.set.NNN), judged from the renders
+        /// (face, hair, lashes). A piece worn only by F presets is F, only by M presets is M, else U.
+        /// Owner can correct any entry here and re-run.
+        static readonly string Genders = "MFMFMFMUMFUMMFFMMFMUUFMMMFFFFF";
+
         struct Piece { public string id, slot; public HashSet<long> cells; public Color color; }
 
         static List<(string slot, ModularCostumeCatalog.PartEntry part)> _todo;
@@ -61,6 +69,11 @@ namespace ZombieWar.EditorTools
                     if (s == null) continue;
                     foreach (var p in s.parts) if (p.skinnedMesh != null && !string.IsNullOrEmpty(p.itemId)) _todo.Add((slot, p));
                 }
+            foreach (var slot in ColourOnly)
+            {
+                var s = cat.GetSlot(slot);
+                if (s != null) foreach (var p in s.parts) if (p.skinnedMesh != null && !string.IsNullOrEmpty(p.itemId)) _todo.Add((slot, p));
+            }
             _done = new List<Piece>();
             if (_stage != null) Object.DestroyImmediate(_stage);
             _stage = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StagePrefab));
@@ -121,14 +134,58 @@ namespace ZombieWar.EditorTools
                         report.AppendLine($"{region[i]} x {region[j]}: {scores.Count} pairs, share median {med:F3} cut {cut:F3}, cells median {medN:F0} cut {cutN:F0}, clash {flagged}");
                     }
 
+            // Gender per piece from the preset sets; headgear cover type from its clashes.
+            var econ = AssetDatabase.LoadAssetAtPath<EconomyConfig>("Assets/_Project/Data/Economy/EconomyConfig.asset");
+            var fem = new HashSet<string>(); var mal = new HashSet<string>();
+            var setGender = new List<(string id, char g)>();
+            if (econ != null)
+                foreach (var set in econ.costumeSets)
+                {
+                    int n = int.TryParse(set.setId.Substring(set.setId.Length - 3), out var k) ? k : 0;
+                    char g = n >= 1 && n <= Genders.Length ? Genders[n - 1] : 'U';
+                    setGender.Add((set.setId, g));
+                    foreach (var id in set.itemIds) { if (g == 'F') fem.Add(id); else if (g == 'M') mal.Add(id); }
+                }
+            string GenderOf(string id, string slot)
+            {
+                if (slot == "Beard") return "M";
+                bool f = fem.Contains(id), m = mal.Contains(id);
+                return f && !m ? "F" : m && !f ? "M" : "U";
+            }
+            var eyewearCount = bySlot.TryGetValue("Eyewear", out var ew) ? ew.Count : 1;
+            var earCount = bySlot.TryGetValue("Earring", out var er) ? er.Count : 1;
+            string Cover(string id)
+            {
+                // A hood or helmet clips most glasses or earrings: nothing else goes on the head with it.
+                int e = clashes.Count(c => (c.a == id || c.b == id) && Slot(c.a == id ? c.b : c.a) == "Eyewear");
+                int r = clashes.Count(c => (c.a == id || c.b == id) && Slot(c.a == id ? c.b : c.a) == "Earring");
+                return e >= eyewearCount * 0.4f || r >= earCount * 0.4f ? "full" : "hat";
+            }
+            string Slot(string id) { foreach (var p in _done) if (p.id == id) return p.slot; return ""; }
+
+            var cat = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(CatalogPath);
+            var baked = _done.ToDictionary(p => p.id, p => p);
             var sb = new StringBuilder();
             sb.Append("{\"voxel\":").Append(Voxel.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(",\"parts\":[");
-            for (int i = 0; i < _done.Count; i++)
+            bool first = true;
+            foreach (var def in cat.slotDefinitions)
             {
-                var p = _done[i];
-                if (i > 0) sb.Append(',');
-                sb.Append("{\"id\":\"").Append(p.id).Append("\",\"slot\":\"").Append(p.slot).Append("\",\"color\":\"").Append(ColorUtility.ToHtmlStringRGB(p.color)).Append("\"}");
+                if (cat.IsTechnicalCasualSlot(def.id)) continue;
+                var slot = cat.GetSlot(def.id); if (slot == null) continue;
+                foreach (var part in slot.parts)
+                {
+                    if (string.IsNullOrEmpty(part.itemId)) continue;
+                    baked.TryGetValue(part.itemId, out var bp);
+                    if (!first) sb.Append(','); first = false;
+                    sb.Append("{\"id\":\"").Append(part.itemId).Append("\",\"slot\":\"").Append(def.id)
+                      .Append("\",\"color\":\"").Append(bp.cells != null ? ColorUtility.ToHtmlStringRGB(bp.color) : "")
+                      .Append("\",\"n\":").Append(bp.cells != null ? bp.cells.Count : 0)
+                      .Append(",\"g\":\"").Append(GenderOf(part.itemId, def.id))
+                      .Append("\",\"cover\":\"").Append(def.id == "Head" && bp.cells != null ? Cover(part.itemId) : "").Append("\"}");
+                }
             }
+            sb.Append("],\"sets\":[");
+            for (int i = 0; i < setGender.Count; i++) { if (i > 0) sb.Append(','); sb.Append("{\"id\":\"").Append(setGender[i].id).Append("\",\"g\":\"").Append(setGender[i].g).Append("\"}"); }
             sb.Append("],\"clash\":[");
             for (int i = 0; i < clashes.Count; i++)
             {

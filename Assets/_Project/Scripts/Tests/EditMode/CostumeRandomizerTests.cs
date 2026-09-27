@@ -66,6 +66,57 @@ namespace ZombieWar.Tests
             Object.DestroyImmediate(cat);
         }
 
+        static ModularCostumeCatalog StyleCatalog()
+        {
+            var c = ScriptableObject.CreateInstance<ModularCostumeCatalog>();
+            void Slot(string id, bool required, params string[] items)
+            {
+                var s = new ModularCostumeCatalog.Slot { slot = id };
+                foreach (var it in items) s.parts.Add(new ModularCostumeCatalog.PartEntry { name = it, itemId = it });
+                c.slots.Add(s);
+                c.slotDefinitions.Add(new ModularCostumeCatalog.SlotDefinition { id = id, required = required, allowNone = !required });
+            }
+            Slot("Chest", true, "top.a", "dress.f");
+            Slot("Hair", true, "hair.short", "hair.big.f", "hair.bun.f");
+            Slot("Head", false, "hat.cap", "hood.full");
+            Slot("Mask", false, "mask.a");
+            Slot("Beard", false, "beard.a");
+            Slot("Eyewear", false, "glass.a");
+            Slot("Earring", false, "ear.a");
+            Slot("HairAccessory", false, "bow.f");
+            return c;
+        }
+
+        static CostumeRandomizer StyleRules()
+        {
+            var r = new CostumeRandomizer();
+            r.SetGender("dress.f", 'F'); r.SetGender("hair.big.f", 'F'); r.SetGender("hair.bun.f", 'F'); r.SetGender("bow.f", 'F'); r.SetGender("beard.a", 'M');
+            r.SetSize("hair.short", 100); r.SetSize("hair.big.f", 900); r.SetSize("hair.bun.f", 700);
+            r.SetHairLimits(300, 150);
+            r.SetFullCover("hood.full");
+            return r;
+        }
+
+        [Test]
+        public void Styling_FollowsTheHeadAndGenderRules()
+        {
+            var cat = StyleCatalog(); var r = StyleRules();
+            var rng = new System.Random(5);
+            for (int i = 0; i < 2000; i++)
+            {
+                var o = r.Generate(cat, _ => true, rng);
+                bool Has(string id) => o.Exists(p => p.guid == id);
+                bool female = Has("dress.f") || Has("hair.big.f") || Has("hair.bun.f") || Has("bow.f");
+                bool male = Has("beard.a");
+                Assert.IsFalse(female && male, "one gender per outfit");
+                if (Has("mask.a")) { Assert.IsFalse(Has("beard.a"), "mask: no beard"); Assert.IsFalse(Has("glass.a"), "mask: no glasses"); }
+                if (Has("hat.cap") || Has("hood.full")) { Assert.IsTrue(Has("hair.short"), "hat: compact hair only"); Assert.IsFalse(Has("bow.f"), "hat: no hair bow"); }
+                if (Has("hood.full")) { Assert.IsFalse(Has("glass.a")); Assert.IsFalse(Has("ear.a")); Assert.IsFalse(Has("beard.a")); }
+                Assert.IsFalse(Has("mask.a") && (Has("hat.cap") || Has("hood.full")), "hat or mask, not both");
+            }
+            Object.DestroyImmediate(cat);
+        }
+
         [Test]
         public void Harmony_PrefersColoursNearTheTop()
         {

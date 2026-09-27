@@ -143,7 +143,7 @@ namespace ZombieWar.EditorTools.V2
 
             // slot chips (horizontal scroll)
             var chipsView = TopBand(Node(sheet, "Chips"), 48, 28, 14, 0);
-            var chipContent = HScroll(chipsView, 6, out _);
+            var chipContent = HScroll(chipsView, 6, out var chipScroll);
             var chips = new Button[24];
             for (int i = 0; i < chips.Length; i++)
             {
@@ -156,6 +156,20 @@ namespace ZombieWar.EditorTools.V2
                 if (i >= 8) c.gameObject.SetActive(false);
             }
             WireArray(s, "chips", chips);
+            // Edge fades (only while more tags hide that way) + reveal of the selected tag.
+            var fade = chipScroll.gameObject.AddComponent<ScrollEdgeFade>();
+            Image EdgeFade(string name, bool right)
+            {
+                var f = Box(Node(chipsView, name), new Vector2(right ? 1 : 0, 0.5f), new Vector2(right ? 1 : 0, 0.5f), 0, 0, 40, 28);
+                f.anchorMin = new Vector2(right ? 1 : 0, 0); f.anchorMax = new Vector2(right ? 1 : 0, 1); f.sizeDelta = new Vector2(Px(40), 0);
+                if (!right) f.localScale = new Vector3(-1, 1, 1);
+                var img = f.gameObject.AddComponent<Image>(); img.sprite = Spr("grad_h"); img.raycastTarget = false;
+                ThemeTint.Set(img, ThemeRole.Deep);
+                return img;
+            }
+            Wire(fade, "leftFade", EdgeFade("FadeL", false));
+            Wire(fade, "rightFade", EdgeFade("FadeR", true));
+            Wire(s, "chipsFade", fade);
 
             // film strip
             var stripView = TopBand(Node(sheet, "Strip"), 86, 98, 14, 0);
