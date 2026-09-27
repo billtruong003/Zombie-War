@@ -137,7 +137,7 @@ namespace ZombieWar.UI
             SetStat(4, PlayerProfile.BossesDefeated.ToString("N0"));
             SetStat(5, PlayTime(PlayerProfile.TotalSeconds));
 
-            var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
             int gunTotal = guns?.Count(w => w != null) ?? 0;
             int gunOwned = guns?.Count(w => w != null && PlayerProfile.IsWeaponOwned(w.WeaponId)) ?? 0;
             SetCollection(0, gunOwned, gunTotal);

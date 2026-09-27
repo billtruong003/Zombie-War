@@ -94,7 +94,7 @@ namespace ZombieWar.UI
         protected override void OnShow()
         {
             if (bigView != null) bigView.SetActive(false);
-            _guns = (WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : new List<WeaponData>())
+            _guns = (WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : new List<WeaponData>())
                 .Where(w => w != null)
                 .OrderByDescending(w => PlayerProfile.IsWeaponOwned(w.WeaponId)).ThenBy(w => w.tier).ThenBy(w => w.price).ToList();
             _selected = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, _guns);

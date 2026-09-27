@@ -277,7 +277,7 @@ namespace ZombieWar.UI
 
         void RefreshNextBuy()
         {
-            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
             var next = all?.Where(w => w != null && w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId))
                           .OrderBy(w => w.price).FirstOrDefault();
             if (nextBuyCard != null) nextBuyCard.gameObject.SetActive(next != null);

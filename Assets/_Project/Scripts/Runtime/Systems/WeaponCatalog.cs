@@ -115,6 +115,14 @@ namespace ZombieWar
             return list;
         }
 
+        /// <summary>The guns a player can see (see <see cref="DisplayEntries"/>), as data.</summary>
+        public List<WeaponData> DisplayData()
+        {
+            var list = new List<WeaponData>();
+            foreach (var e in DisplayEntries()) if (e.data != null) list.Add(e.data);
+            return list;
+        }
+
         public List<WeaponData> AllData()
         {
             var list = new List<WeaponData>();

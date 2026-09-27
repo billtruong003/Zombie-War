@@ -163,7 +163,7 @@ namespace ZombieWar
         /// <summary>The cheapest rare-or-better gun the player does not own yet, or null.</summary>
         public static WeaponData WelcomeGun()
         {
-            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
             return all?.Where(w => w != null && w.tier >= WeaponTier.Rare && !PlayerProfile.IsWeaponOwned(w.WeaponId))
                       .OrderBy(w => w.price).FirstOrDefault();
         }

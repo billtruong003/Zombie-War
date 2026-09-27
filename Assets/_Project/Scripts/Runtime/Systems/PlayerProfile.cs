@@ -110,6 +110,11 @@ namespace ZombieWar
             public bool passPremium;
             public List<string> passClaimed = new List<string>();
             public List<string> equippedSkins = new List<string>();   // "weaponId|skinId"
+            // M10 Shop v2.
+            public int dealDay;
+            public List<string> dealsBought = new List<string>();
+            public List<string> packsBought = new List<string>();
+            public bool noAds;
         }
 
         [Serializable]
@@ -257,6 +262,15 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(id) || Data.ownedSkins.Contains(id)) return;
             Data.ownedSkins.Add(id); SaveNow(); LoadoutChanged?.Invoke();
         }
+
+        public static void AddWeaponShards(string weaponId, int amount)
+        {
+            if (string.IsNullOrEmpty(weaponId) || amount <= 0) return;
+            AddWeaponShardsInMemory(weaponId, amount);
+            SaveNow(); LoadoutChanged?.Invoke();
+        }
+
+        public static bool NoAds => Data.noAds;
 
         /// <summary>The skin set shown and counted on a gun, or null for the plain gun.</summary>
         public static string GetEquippedSkin(string weaponId)
@@ -1628,6 +1642,8 @@ namespace ZombieWar
             d.ownedSkins = DedupeNonEmpty(d.ownedSkins);
             d.passClaimed = DedupeNonEmpty(d.passClaimed);
             d.equippedSkins = DedupeNonEmpty(d.equippedSkins);
+            d.dealsBought = DedupeNonEmpty(d.dealsBought);
+            d.packsBought = DedupeNonEmpty(d.packsBought);
             if (d.tickets < 0) d.tickets = 0;
             if (float.IsNaN(d.bestSurvivalSeconds) || d.bestSurvivalSeconds < 0f) d.bestSurvivalSeconds = 0f;
             d.missionProgress ??= new List<MissionProgressEntry>();
