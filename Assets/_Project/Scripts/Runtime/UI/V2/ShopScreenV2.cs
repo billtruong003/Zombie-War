@@ -8,8 +8,9 @@ using UnityEngine.UI;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// M10 Shop (owner-approved V2_Shop mockup): section chips over one scrolling page with today's
-    /// deals, the boutique look of the week, real-money packs, gun skin sets and coin guns. Rules
+    /// M10 Shop (owner-approved R2_Shop mockup): section chips (Featured, Deals, Gems, Guns, Skins)
+    /// over one scrolling page: the one-time starter pack hero with its countdown, the boutique look
+    /// of the week, today's deals, gem packs with bonus ribbons, no ads, coin guns and skin sets. Rules
     /// and grants live in <see cref="ShopOffers"/>; real money goes through <see cref="Purchases"/>.
     /// Built by HordeCall/UI v2/Build Shop.
     /// </summary>
@@ -44,8 +45,17 @@ namespace ZombieWar.UI
         [SerializeField] private Button lookBuyButton;
         [SerializeField] private TMP_Text lookBuyLabel;
 
-        [Header("Packs: starter, gems, no ads")]
-        [SerializeField] private Cell[] packs = new Cell[3];
+        [Header("Starter pack hero")]
+        [SerializeField] private GameObject hero;
+        [SerializeField] private TMP_Text heroTimer;
+        [SerializeField] private Button heroButton;
+        [SerializeField] private TMP_Text heroPrice;
+        [SerializeField] private TMP_Text heroWas;
+
+        [Header("Gem packs (ShopOffers.GemPackIds order) and no ads")]
+        [SerializeField] private Cell[] gemPacks = new Cell[4];
+        [SerializeField] private TMP_Text[] gemBonus = new TMP_Text[4];
+        [SerializeField] private Cell noAdsCell;
 
         [Header("Skin sets: biohazard, neon, gilded")]
         [SerializeField] private Cell[] skinSets = new Cell[3];
@@ -60,7 +70,6 @@ namespace ZombieWar.UI
         [SerializeField] private NavBarV2 nav;
 
         public const int MaxGuns = 64;
-        static readonly string[] PackIds = { "pack.starter", "pack.gems440", "pack.noads" };
         static readonly string[] SkinIds = { "biohazard", "neon", "gilded" };
 
         ShopOffers.Deal[] _deals = new ShopOffers.Deal[0];
@@ -73,7 +82,9 @@ namespace ZombieWar.UI
             base.Awake();
             for (int i = 0; i < chips.Length; i++) { int idx = i; if (chips[i] != null) chips[i].onClick.AddListener(() => Jump(idx)); }
             for (int i = 0; i < deals.Length; i++) { int idx = i; if (deals[i]?.button != null) deals[i].button.onClick.AddListener(() => BuyDeal(idx)); }
-            for (int i = 0; i < packs.Length; i++) { int idx = i; if (packs[i]?.button != null) packs[i].button.onClick.AddListener(() => BuyPack(PackIds[idx])); }
+            for (int i = 0; i < gemPacks.Length && i < ShopOffers.GemPackIds.Length; i++) { string id = ShopOffers.GemPackIds[i]; if (gemPacks[i]?.button != null) gemPacks[i].button.onClick.AddListener(() => BuyPack(id)); }
+            if (noAdsCell?.button != null) noAdsCell.button.onClick.AddListener(() => BuyPack("pack.noads"));
+            if (heroButton != null) heroButton.onClick.AddListener(() => BuyPack("pack.starter"));
             for (int i = 0; i < skinSets.Length; i++) { int idx = i; if (skinSets[i]?.button != null) skinSets[i].button.onClick.AddListener(() => TapSkin(idx)); }
             for (int i = 0; i < guns.Length; i++) { int idx = i; if (guns[i]?.button != null) guns[i].button.onClick.AddListener(() => BuyGun(idx)); }
             if (tryOnButton != null) tryOnButton.onClick.AddListener(() => { UIFeedback.Tap(); if (studioScreen != null) UIManager.Instance?.Push(studioScreen); else Toast.Show("Coming soon"); });
@@ -90,6 +101,9 @@ namespace ZombieWar.UI
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
             if (dealsTimer != null) dealsTimer.text = "NEW IN " + ShopOffers.RefreshIn(DateTime.Now);
+            var left = ShopOffers.StarterLeft(DateTime.UtcNow);
+            if (hero != null && hero.activeSelf != left > TimeSpan.Zero) hero.SetActive(left > TimeSpan.Zero);
+            if (heroTimer != null) heroTimer.text = "ONE TIME · ENDS " + ShopOffers.Clock(left);
         }
 
         void Jump(int i, bool feedback = true)
@@ -188,6 +202,9 @@ namespace ZombieWar.UI
                 Set(c.title, d.Title);
                 Set(c.price, sold ? "SOLD" : d.pay == ShopOffers.Pay.Ad ? "FREE" : d.price.ToString("N0"));
                 if (c.done != null) c.done.SetActive(sold);
+                // Top band: the gun's rarity for shards, gem purple for tickets, green for the free one.
+                ThemeTint.Set(c.tile, d.kind == ShopOffers.Kind.Shards && d.gun != null ? ThemePalette.Rarity(Mathf.Clamp((int)d.gun.tier, 0, 4))
+                    : d.kind == ShopOffers.Kind.Tickets ? ThemeRole.Gem : ThemeRole.Claim);
                 if (c.icon != null)
                 {
                     var gunIcon = d.kind == ShopOffers.Kind.Shards && d.gun != null && catalog != null ? catalog.GetWeaponIcon(d.gun, true) : null;
@@ -207,12 +224,21 @@ namespace ZombieWar.UI
                 Set(lookBuyLabel, owned ? "OWNED" : $"{price:N0} {(cur == WalletCurrency.Gem ? "GEMS" : "COINS")}");
             }
 
-            for (int i = 0; i < packs.Length; i++)
+            var starter = ShopOffers.FindPack("pack.starter");
+            if (hero != null) hero.SetActive(ShopOffers.StarterLeft(DateTime.UtcNow) > TimeSpan.Zero);
+            if (starter != null) { Set(heroPrice, starter.price); Set(heroWas, $"<s>{starter.was}</s>"); }
+            for (int i = 0; i < gemPacks.Length && i < ShopOffers.GemPackIds.Length; i++)
             {
-                var c = packs[i]; var p = ShopOffers.FindPack(PackIds[i]); if (c == null || p == null) continue;
-                bool sold = !ShopOffers.CanBuyPack(p);
-                Set(c.title, p.title); Set(c.price, sold ? "OWNED" : p.price);
-                if (c.done != null) c.done.SetActive(sold);
+                var c = gemPacks[i]; var p = ShopOffers.FindPack(ShopOffers.GemPackIds[i]); if (c == null || p == null) continue;
+                Set(c.title, p.gems.ToString("N0")); Set(c.price, p.price);
+                if (i < gemBonus.Length) Set(gemBonus[i], p.bonusPercent > 0 ? $"+{p.bonusPercent}% BONUS" : "");
+            }
+            var noAds = ShopOffers.FindPack("pack.noads");
+            if (noAdsCell != null && noAds != null)
+            {
+                bool sold = !ShopOffers.CanBuyPack(noAds);
+                Set(noAdsCell.price, sold ? "OWNED" : noAds.price);
+                if (noAdsCell.done != null) noAdsCell.done.SetActive(sold);
             }
 
             for (int i = 0; i < skinSets.Length; i++)
@@ -231,6 +257,8 @@ namespace ZombieWar.UI
             }
 
             _forSale = all.Where(w => w != null && w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId)).OrderBy(w => w.price).ToList();
+            var gunSub = sections.Length > 3 && sections[3] != null ? sections[3].Find("Sub")?.GetComponent<TMP_Text>() : null;
+            Set(gunSub, _forSale.Count > 0 ? "COINS" : "ALL OWNED");
             for (int i = 0; i < guns.Length; i++)
             {
                 var c = guns[i]; if (c?.button == null) continue;

@@ -99,17 +99,40 @@ namespace ZombieWar
         {
             public string id, title, price; public bool once;
             public int coins, gems, tickets; public string skin; public bool noAds;
+            /// Shop dressing: the struck-through "was" price, extra gems in percent, a ribbon.
+            public string was; public int bonusPercent; public string ribbon;
         }
 
         public static readonly Pack[] Packs =
         {
-            new() { id = "pack.starter", title = "Starter", price = "$0.99", once = true, coins = 2000, gems = 100, tickets = 3 },
-            new() { id = "pack.gems440", title = "440 gems", price = "$4.99", gems = 440 },
+            new() { id = "pack.starter", title = "Starter", price = "$0.99", was = "$4.99", once = true, coins = 2000, gems = 100, tickets = 3 },
+            new() { id = "pack.gems80", title = "80 gems", price = "$0.99", gems = 80 },
+            new() { id = "pack.gems440", title = "440 gems", price = "$4.99", gems = 440, bonusPercent = 10 },
+            new() { id = "pack.gems950", title = "950 gems", price = "$9.99", gems = 950, bonusPercent = 20, ribbon = "POPULAR" },
+            new() { id = "pack.gems2600", title = "2,600 gems", price = "$19.99", gems = 2600, bonusPercent = 30, ribbon = "BEST" },
             new() { id = "pack.noads", title = "No ads", price = "$2.99", once = true, noAds = true },
             new() { id = "pack.legend", title = "Legend pack", price = "$9.99", once = true, gems = 500, skin = "gilded" },
         };
 
         public static Pack FindPack(string id) => Packs.FirstOrDefault(p => p.id == id);
+
+        /// Gem packs in shop order (the GEMS grid).
+        public static readonly string[] GemPackIds = { "pack.gems80", "pack.gems440", "pack.gems950", "pack.gems2600" };
+
+        /// The starter pack is offered for this long from the first time the shop shows it.
+        public const double StarterOfferHours = 72;
+
+        /// <summary>Time left on the one-time starter offer; starts the clock on first call. Zero once
+        /// it ran out or the pack was bought.</summary>
+        public static System.TimeSpan StarterLeft(System.DateTime utcNow)
+        {
+            if (IsPackBought("pack.starter")) return System.TimeSpan.Zero;
+            if (D.starterEndsTicks == 0) { D.starterEndsTicks = utcNow.AddHours(StarterOfferHours).Ticks; PlayerProfile.SaveDaily(); }
+            var left = new System.DateTime(D.starterEndsTicks, System.DateTimeKind.Utc) - utcNow;
+            return left > System.TimeSpan.Zero ? left : System.TimeSpan.Zero;
+        }
+
+        public static string Clock(System.TimeSpan t) => $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
         public static bool IsPackBought(string id) => D.packsBought.Contains(id);
         public static bool CanBuyPack(Pack p) => p != null && !(p.once && IsPackBought(p.id));
 

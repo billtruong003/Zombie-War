@@ -118,6 +118,7 @@ namespace ZombieWar
             public List<string> dealsBought = new List<string>();
             public List<string> packsBought = new List<string>();
             public bool noAds;
+            public long starterEndsTicks;   // UTC end of the one-time starter offer (0 = not shown yet)
             // M10 Gacha v2.
             public int gachaEpoch;
             public int gachaFreeDay;
