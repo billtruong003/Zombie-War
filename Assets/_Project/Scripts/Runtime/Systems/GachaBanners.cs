@@ -136,6 +136,15 @@ namespace ZombieWar
                     PlayerProfile.AddSkin(b.featuredSkin);
                     return new Result(rate.label, rate.tier, true, 0);
                 case 1:
+                    // Gacha-only pieces first (owner: some outfits only come from the gacha).
+                    var only = econ?.costumeItems?.Where(c => c.source == AcquireSource.Gacha && !string.IsNullOrEmpty(c.itemId)
+                                                            && !PlayerProfile.IsCostumeItemOwned(c.itemId)).ToList();
+                    if (only != null && only.Count > 0)
+                    {
+                        var piece = only[rng.Range(only.Count)];
+                        PlayerProfile.GrantCostumeInMemory(piece.itemId);
+                        return new Result(piece.displayName, piece.rarity, true, 0);
+                    }
                     var sets = econ?.costumeSets?.Where(s => s != null && s.rarity >= WeaponTier.Epic && s.itemIds != null && s.itemIds.Count > 0).ToList();
                     if (sets == null || sets.Count == 0) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result("Gacha ticket", rate.tier, false, OutfitDupeTickets); }
                     var set = sets[rng.Range(sets.Count)];

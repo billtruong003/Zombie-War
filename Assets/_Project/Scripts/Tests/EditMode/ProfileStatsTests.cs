@@ -90,6 +90,20 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void Looks_SaveUpToThree_AndMatchWornOutfit()
+        {
+            Assert.AreEqual(0, PlayerProfile.LookCount);
+            Assert.IsTrue(PlayerProfile.SaveLook(0));
+            Assert.IsTrue(PlayerProfile.IsWearingLook(0));
+            Assert.IsFalse(PlayerProfile.SaveLook(5), "no gaps");
+            Assert.IsTrue(PlayerProfile.SaveLook(1));
+            Assert.IsTrue(PlayerProfile.SaveLook(2));
+            Assert.IsFalse(PlayerProfile.SaveLook(3), "three at most");
+            PlayerProfile.ResetCacheForTests();
+            Assert.AreEqual(3, PlayerProfile.LookCount, "saved with the profile");
+        }
+
+        [Test]
         public void Formatting()
         {
             Assert.AreEqual("4821 3390", ProfileScreen.FormatId("48213390"));

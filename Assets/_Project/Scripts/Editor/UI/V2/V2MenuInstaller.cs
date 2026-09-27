@@ -87,6 +87,7 @@ namespace ZombieWar.EditorTools.V2
             Step("Arsenal", V2ArsenalBuilder.Build);
             Step("Shop", V2ShopBuilder.Build);
             Step("Gacha", V2GachaBuilder.Build);
+            Step("Studio", V2StudioBuilder.Build);
             try { log.Add("Toast: " + BuildToast()); } catch (Exception e) { log.Add("Toast: FAILED " + e.Message); }
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);

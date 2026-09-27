@@ -45,6 +45,9 @@ namespace ZombieWar
         }
 
         [Serializable]
+        public class SavedLook { public List<LoadoutState.PartSel> parts = new List<LoadoutState.PartSel>(); }
+
+        [Serializable]
         public class ProfileData
         {
             public int version = SchemaVersion;
@@ -118,6 +121,8 @@ namespace ZombieWar
             // M10 Gacha v2.
             public int gachaEpoch;
             public int gachaFreeDay;
+            // M10 Studio saved looks.
+            public List<SavedLook> looks = new List<SavedLook>();
         }
 
         [Serializable]
@@ -274,6 +279,31 @@ namespace ZombieWar
         }
 
         public static bool NoAds => Data.noAds;
+
+        public const int MaxLooks = 3;
+        public static int LookCount => Data.looks.Count;
+
+        /// <summary>Saves the current outfit into look <paramref name="index"/> (appends when index == count).</summary>
+        public static bool SaveLook(int index)
+        {
+            if (index < 0 || index > Data.looks.Count || index >= MaxLooks) return false;
+            var look = new SavedLook { parts = new List<LoadoutState.PartSel>(Data.equippedParts) };
+            if (index == Data.looks.Count) Data.looks.Add(look); else Data.looks[index] = look;
+            SaveNow();
+            return true;
+        }
+
+        public static IReadOnlyList<LoadoutState.PartSel> GetLook(int index) =>
+            index >= 0 && index < Data.looks.Count ? Data.looks[index].parts : null;
+
+        /// <summary>True when the worn outfit is exactly look <paramref name="index"/>.</summary>
+        public static bool IsWearingLook(int index)
+        {
+            var l = GetLook(index);
+            if (l == null || l.Count != Data.equippedParts.Count) return false;
+            foreach (var p in l) if (!Data.equippedParts.Exists(x => x.slot == p.slot && x.guid == p.guid)) return false;
+            return true;
+        }
 
         /// <summary>The skin set shown and counted on a gun, or null for the plain gun.</summary>
         public static string GetEquippedSkin(string weaponId)
@@ -1643,6 +1673,7 @@ namespace ZombieWar
             d.unseenItems = DedupeNonEmpty(d.unseenItems);
             d.ownedFrames = DedupeNonEmpty(d.ownedFrames);
             d.ownedSkins = DedupeNonEmpty(d.ownedSkins);
+            d.looks ??= new List<SavedLook>();
             d.passClaimed = DedupeNonEmpty(d.passClaimed);
             d.equippedSkins = DedupeNonEmpty(d.equippedSkins);
             d.dealsBought = DedupeNonEmpty(d.dealsBought);
