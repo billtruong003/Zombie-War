@@ -90,6 +90,16 @@ namespace ZombieWar.UI
         [SerializeField] private Button playButton;
         [SerializeField] private TMP_Text playSub;
         [SerializeField] private GameObject playHint;
+
+        [Header("First run (FTUE)")]
+        [Tooltip("Shown instead of missions + next buy until the first run is played.")]
+        [SerializeField] private GameObject firstRunCard;
+        [SerializeField] private GameObject revealRoot;
+        [SerializeField] private Image revealTile;
+        [SerializeField] private Image revealIcon;
+        [SerializeField] private TMP_Text revealName;
+        [SerializeField] private Button revealOpen;
+        [SerializeField] private Button revealLater;
         [SerializeField] private NavBarV2 nav;
 
         [Header("Targets")]
@@ -105,26 +115,44 @@ namespace ZombieWar.UI
 
         bool _launching;
 
+        /// Set once the post-first-run reveal was shown.
+        public const string FirstRunRevealKey = "ftue_reveal";
+
+        /// Owner (2026-09-27): the first session starts in the menu with only PLAY; everything else
+        /// opens after the first run.
+        public static bool FirstRunPending => PlayerProfile.RunsPlayed == 0;
+
+        /// Blocks a tap while the first run is pending. True = blocked (toast shown).
+        public static bool GateFirstRun()
+        {
+            if (!FirstRunPending) return false;
+            UIFeedback.Error();
+            Toast.Show("Play your first run to unlock");
+            return true;
+        }
+
         protected override void Awake()
         {
             base.Awake();
             On(profileButton, () => Open(profileScreen));
             On(settingsButton, () => Open(settingsScreen));
-            On(coinPlus, () => Open(shopScreen));
-            On(gemPlus, () => Open(shopScreen));
+            On(coinPlus, () => { if (!GateFirstRun()) Open(shopScreen); });
+            On(gemPlus, () => { if (!GateFirstRun()) Open(shopScreen); });
             On(daily?.button, () => Open(dailyScreen));
             On(events?.button, () => OpenGated(gachaScreen, AccountProgress.Feature.Events));
             On(gacha?.button, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(pass?.button, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
-            On(starter?.button, () => Open(shopScreen));
-            On(stageButton, () => Open(studioScreen));
-            On(outfitButton, () => Open(studioScreen));
-            On(gunCard, () => Open(arsenalScreen));
+            On(starter?.button, () => { if (!GateFirstRun()) Open(shopScreen); });
+            On(stageButton, () => { if (!GateFirstRun()) Open(studioScreen); });
+            On(outfitButton, () => { if (!GateFirstRun()) Open(studioScreen); });
+            On(gunCard, () => { if (!GateFirstRun()) Open(arsenalScreen); });
+            On(revealOpen, () => { CloseReveal(); Open(arsenalScreen); });
+            On(revealLater, () => { UIFeedback.Back(); CloseReveal(); });
             On(stripDaily, () => Open(dailyScreen));
             On(stripGacha, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(stripPass, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
             On(missionsCard, () => OpenGated(passScreen, AccountProgress.Feature.Missions));
-            On(nextBuyCard, () => Open(shopScreen));
+            On(nextBuyCard, () => { if (!GateFirstRun()) Open(shopScreen); });
             On(playButton, Play);
             // Server features are designed, not built (owner rule).
             if (mail?.button != null) mail.button.gameObject.SetActive(FeatureFlags.Backend);
@@ -149,11 +177,44 @@ namespace ZombieWar.UI
         protected override void OnShow()
         {
             Refresh();
+            MaybeReveal();
             // The run result's Shop link lands here first, then goes on to the Shop.
             if (MenuIntent.Take() == MenuIntent.Shop && shopScreen != null) UIManager.Instance?.Push(shopScreen);
         }
         protected override void OnFocus() => Refresh();
-        public override bool OnEscape() => true;   // root screen
+        public override bool OnEscape()
+        {
+            if (revealRoot != null && revealRoot.activeSelf) { CloseReveal(); return true; }
+            return true;   // root screen
+        }
+
+        /// First time back from a run: show what just opened (the player's gun, Arsenal + Shop).
+        void MaybeReveal()
+        {
+            if (revealRoot == null || FirstRunPending || PlayerPrefs.GetInt(FirstRunRevealKey, 0) == 1) return;
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var d = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
+            if (d != null)
+            {
+                Set(revealName, d.weaponName.ToUpperInvariant());
+                if (revealTile != null) revealTile.color = d.TileColor;
+                var icon = catalog != null ? catalog.GetWeaponIcon(d, true) : null;
+                if (revealIcon != null) { revealIcon.enabled = icon != null; revealIcon.sprite = icon; }
+            }
+            revealRoot.SetActive(true);
+            revealRoot.transform.SetAsLastSibling();
+            var card = revealRoot.transform.Find("Card");
+            if (card != null) UIFx.PopIn(card, 0f, 0.35f, 0.4f);
+            UIFeedback.LevelUp();
+        }
+
+        void CloseReveal()
+        {
+            PlayerPrefs.SetInt(FirstRunRevealKey, 1);
+            PlayerPrefs.Save();
+            if (revealRoot != null) revealRoot.SetActive(false);
+            Refresh();
+        }
 
         void Play()
         {
@@ -210,8 +271,15 @@ namespace ZombieWar.UI
             Set(stripDailyText, DailyRewards.CanStamp(today) ? $"Stamp day {DailyRewards.Stamps + 1}" : DailyRewards.Stamps >= DailyRewards.CardDays ? "Card complete" : "Back tomorrow");
             Set(stripPassText, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass) ? $"PASS LV {PassLevel()}" : "LV 2 UNLOCKS");
 
-            bool firstRun = PlayerProfile.RunsPlayed == 0;
+            bool firstRun = FirstRunPending;
             if (playHint != null) playHint.SetActive(firstRun);
+            if (firstRunCard != null) firstRunCard.SetActive(firstRun);
+            if (missionsCard != null) missionsCard.transform.parent.gameObject.SetActive(!firstRun);
+            if (stripDaily != null) stripDaily.transform.parent.gameObject.SetActive(!firstRun);
+            // First launch: only Daily stays on the rails; starter offer and gated rails wait.
+            if (starter?.button != null) starter.button.gameObject.SetActive(!firstRun);
+            if (events?.button != null) events.button.gameObject.SetActive(!firstRun);
+            nav?.Refresh();
             Set(playSub, best > 0 ? $"Beat your best {HudController.FormatClock(best)}" : "Survive as long as you can");
             if (nav != null) nav.SetDot(4, claimable + PassRewards.ClaimableCount() > 0 && AccountProgress.IsUnlocked(AccountProgress.Feature.Pass));
         }

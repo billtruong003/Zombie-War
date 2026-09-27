@@ -45,13 +45,27 @@ namespace ZombieWar.UI
             var track = transform.parent as RectTransform;
             if (track == null) return;
             var self = (RectTransform)transform;
-            // Graphic spans the track: left-anchored, the track's width, the clip's height.
+            // Graphic spans the clip at full value: from the clip's left edge to where its right edge
+            // sits at 100% (track width + the clip's right inset). A clip inset inside its track (the
+            // HUD health bar, 5 px) used to get a track-wide graphic shifted left, so the rounded
+            // start was cut flat and the pill sat off-centre.
             graphic.anchorMin = new Vector2(0f, 0f);
             graphic.anchorMax = new Vector2(0f, 1f);
             graphic.pivot = new Vector2(0f, 0.5f);
-            float left = self.anchorMin.x * track.rect.width + self.offsetMin.x;
-            graphic.anchoredPosition = new Vector2(-left, 0f);
-            graphic.sizeDelta = new Vector2(track.rect.width, 0f);
+            float w = track.rect.width;
+            float left = self.anchorMin.x * w + self.offsetMin.x;
+            if (self.offsetMin.x >= 0f && self.offsetMax.x <= 0f)
+            {
+                float right = w + self.offsetMax.x;
+                graphic.anchoredPosition = Vector2.zero;
+                graphic.sizeDelta = new Vector2(Mathf.Max(0f, right - left), 0f);
+            }
+            else
+            {
+                // Slider-style fill that reaches past its area: keep the track-wide graphic.
+                graphic.anchoredPosition = new Vector2(-left, 0f);
+                graphic.sizeDelta = new Vector2(w, 0f);
+            }
         }
     }
 }

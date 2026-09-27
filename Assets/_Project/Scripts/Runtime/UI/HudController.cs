@@ -174,7 +174,18 @@ namespace ZombieWar
         private void SetHp(float normalized, float current)
         {
             if (healthFillRect)
-                healthFillRect.anchorMax = new Vector2(Mathf.Clamp01(normalized), 1f);
+            {
+                // The pill shrinks instead of being clipped, so both ends stay round inside the round
+                // track at any value (owner: a flat cut looked off). Never thinner than it is tall.
+                var clip = healthFillRect.GetComponent<ZombieWar.UI.UIBarClip>();
+                if (clip != null && clip.Graphic != null)
+                {
+                    healthFillRect.anchorMax = new Vector2(1f, 1f);
+                    float inner = healthFillRect.rect.width, h = healthFillRect.rect.height, v = Mathf.Clamp01(normalized);
+                    clip.Graphic.sizeDelta = new Vector2(v <= 0f ? 0f : Mathf.Lerp(Mathf.Min(h, inner), inner, v), 0f);
+                }
+                else healthFillRect.anchorMax = new Vector2(Mathf.Clamp01(normalized), 1f);
+            }
             // Compact format (12.3K) - the label sits INSIDE the bar and must never overflow it.
             if (healthLabel) healthLabel.text = ZombieWar.UI.CurrencyClusterWidget.Format(Mathf.CeilToInt(current));
             if (healthFillImage)

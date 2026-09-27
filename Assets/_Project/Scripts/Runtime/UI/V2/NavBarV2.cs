@@ -36,6 +36,7 @@ namespace ZombieWar.UI
         {
             var ui = UIManager.Instance;
             if (ui == null || index < 0 || index >= targets.Length) return;
+            if (index != 0 && HomeScreen.GateFirstRun()) return;
             var gate = Gates[index];
             if (gate.HasValue && !AccountProgress.IsUnlocked(gate.Value))
             {
@@ -47,6 +48,21 @@ namespace ZombieWar.UI
             var target = targets[index];
             ui.PopTo<HomeScreen>();
             if (index != 0 && target != null) ui.Push(target);
+        }
+
+        private void OnEnable() => Refresh();
+
+        /// Locked tabs (first run pending, or account level) are dimmed.
+        public void Refresh()
+        {
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                if (tabs[i] == null) continue;
+                var gate = Gates[i];
+                bool locked = i != 0 && (HomeScreen.FirstRunPending || (gate.HasValue && !AccountProgress.IsUnlocked(gate.Value)));
+                if (!tabs[i].TryGetComponent(out CanvasGroup cg)) cg = tabs[i].gameObject.AddComponent<CanvasGroup>();
+                cg.alpha = locked ? 0.45f : 1f;
+            }
         }
 
         public void SetDot(int index, bool on)

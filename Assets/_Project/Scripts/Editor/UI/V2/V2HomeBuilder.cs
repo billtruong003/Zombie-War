@@ -35,6 +35,7 @@ namespace ZombieWar.EditorTools.V2
                 Stage(safe, home);
                 Strip(safe, home);
                 Missions(safe, home);
+                FirstRunCard(safe, home);
                 PlayRow(safe, home);
                 var buttons = NavBar(safe, 0, out var dots);
                 var nav = safe.Find("Nav").gameObject.AddComponent<NavBarV2>();
@@ -42,6 +43,7 @@ namespace ZombieWar.EditorTools.V2
                 WireArray(nav, "dots", dots);
                 Wire(home, "nav", nav);
                 Wire(home, "catalog", AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>(Catalog));
+                Reveal(r, home);
 
                 var go = PrefabUtility.SaveAsPrefabAsset(r.gameObject, Path);
                 return AssetDatabase.GetAssetPath(go);
@@ -248,6 +250,62 @@ namespace ZombieWar.EditorTools.V2
             Wire(home, "nextBuyValue", Body(Box(Node(nb, "Value"), new Vector2(0, 1), new Vector2(0, 1), 10, -64, 120, 14), "1,240 / 2,600", 10f, Dim));
         }
 
+        // ------------------------------------------------------------ FTUE (owner 2026-09-27)
+        /// First launch (approved HomeFirst mockup): a "First run" card where missions and next buy
+        /// sit, with the unlock ladder above it. HomeScreen swaps it in while no run was played.
+        static void FirstRunCard(RectTransform safe, HomeScreen home)
+        {
+            var band = BottomBand(Node(safe, "FirstRun"), 148, 88, 12, 12);
+            var ladder = TopBand(Node(band, "Ladder"), 0, 34);
+            Row(ladder, 6, TextAnchor.MiddleLeft, true);
+            string[] lv = { "AFTER RUN 1", "LV 2", "LV 3" }, what = { "Arsenal + shop", "Pass + missions", "Gacha + events" };
+            for (int i = 0; i < 3; i++)
+            {
+                var w = Node(ladder, "Step" + i);
+                Surface(w, Deep, 10f);
+                Label(Box(Node(w, "L"), new Vector2(0, 1), new Vector2(0, 1), 8, -4, 110, 12), lv[i], null, 9f);
+                Shrink(Body(Box(Node(w, "T"), new Vector2(0, 1), new Vector2(0, 1), 8, -16, 110, 14), what[i], 11f));
+            }
+            var card = BottomBand(Node(band, "Card"), 0, 48);
+            Surface(card, Card, RCard);
+            var n = Box(Node(card, "N"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 8, 0, 34, 34);
+            Surface(n, Hex("c7efff"), 10f);
+            Title(Fill(Node(n, "T"), 0, 0, 0, 0), "1", 18f, Ink, TextAlignmentOptions.Center);
+            Body(Box(Node(card, "Title"), new Vector2(0, 0.5f), new Vector2(0, 0), 50, 1, 260, 18), "First run", 13f);
+            Shrink(Body(Box(Node(card, "Sub"), new Vector2(0, 0.5f), new Vector2(0, 1), 50, -1, 280, 16), "Drag to move. Your gun fires by itself.", 11f, Dim));
+            Wire(home, "firstRunCard", band.gameObject);
+            band.gameObject.SetActive(false);
+        }
+
+        /// After the first run: the Arsenal and Shop open with a short reveal of the player's gun.
+        static void Reveal(RectTransform root, HomeScreen home)
+        {
+            var p = Fill(Node(root, "FirstRunReveal"), 0, 0, 0, 0);
+            UIKitV2.NoTheme = true;
+            try { Flat(p, new Color(0.047f, 0.055f, 0.078f, 0.82f), true); } finally { UIKitV2.NoTheme = false; }
+            var card = Box(Node(p, "Card"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 10, 330, 410);
+            Surface(card, Card, 18f);
+            var glow = Box(Node(card, "Glow"), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), 0, -130, 300, 300).gameObject.AddComponent<Image>();
+            glow.sprite = Spr("glow_soft"); glow.color = new Color(1f, 0.79f, 0.24f, 0.45f); glow.raycastTarget = false;
+            Label(TopBand(Node(card, "Kicker"), 18, 14), "UNLOCKED").alignment = TextAlignmentOptions.Center;
+            Title(TopBand(Node(card, "Title"), 34, 36), "ARSENAL + SHOP", 28f, Ink, TextAlignmentOptions.Center);
+            var tile = Box(Node(card, "Gun"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -84, 220, 120);
+            var ti = Surface(tile, Rarity[0], 14f);
+            Wire(home, "revealTile", ti);
+            var gi = Fill(Node(tile, "Icon"), 14, 10, 14, 10).gameObject.AddComponent<Image>();
+            gi.preserveAspect = true; gi.raycastTarget = false;
+            Wire(home, "revealIcon", gi);
+            Wire(home, "revealName", Title(TopBand(Node(card, "Name"), 214, 28), "PISTOL", 22f, Ink, TextAlignmentOptions.Center));
+            var sub = Body(TopBand(Node(card, "Sub"), 244, 46, 20, 20), "Your gun levels up with stars in the Arsenal. New guns wait in the Shop.", 12f, Dim, TextAlignmentOptions.Top);
+            sub.enableWordWrapping = true; sub.enableAutoSizing = true; sub.fontSizeMin = sub.fontSize * 0.75f; sub.fontSizeMax = sub.fontSize;
+            var go = BottomBand(Node(card, "Open"), 60, 52, 18, 18);
+            Wire(home, "revealOpen", Button(go, "OPEN ARSENAL", Role.Primary, 20f));
+            var later = BottomBand(Node(card, "Later"), 14, 36, 18, 18);
+            Wire(home, "revealLater", Button(later, "LATER", Role.Quiet, 14f));
+            Wire(home, "revealRoot", p.gameObject);
+            p.gameObject.SetActive(false);
+        }
+
         static void WireRail(HomeScreen home, string field, HomeScreen.Rail rail)
         {
             var so = new SerializedObject(home);
@@ -290,6 +348,7 @@ namespace ZombieWar.EditorTools.V2
 
             var hint = Box(Node(band, "Hint"), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), -40, -6, 40, 48);
             Picto(hint, "Hand_Touch", Ink);
+            hint.gameObject.AddComponent<UIFxPulse>();   // first run: the hand points at PLAY
             Wire(home, "playHint", hint.gameObject);
         }
     }

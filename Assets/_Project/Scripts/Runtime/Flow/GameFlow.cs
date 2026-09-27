@@ -22,6 +22,10 @@ namespace ZombieWar
         /// Called once from BootstrapEntry after Bill services are ready.
         public static void EnterMenu()
         {
+            // A new profile gets its starter gun (owned + equipped) before any menu shows it; this
+            // used to happen only at run start, so the menu showed the starter as "get in shop".
+            var arsenal = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            if (arsenal != null) PlayerProfile.EnsureValidLoadout(arsenal);
             Bill.State.GoTo<MenuState>();
             if (!Bill.Scene.IsAdditiveLoaded(MenuScene))
                 Bill.Scene.LoadAdditive(MenuScene, LoadingScreen.Complete);   // no-op at boot (not loading)
