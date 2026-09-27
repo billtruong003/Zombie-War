@@ -1,5 +1,23 @@
 # Zombie War — trạng thái thật của project
 
+> **2026-09-27 — M9 (HordeCall).** Điều gì dưới đây mâu thuẫn với khối này thì khối này thắng.
+> - **Tên game: HordeCall** (store: "HordeCall: Zombie Shooter"). Tên hiển thị đã đổi ở splash và bảng cheat;
+>   `productName`, bundle id và namespace `ZombieWar.*` giữ nguyên tới lúc phát hành.
+> - **Payout:** mọi kết thúc trận giữ 100% coin (`Systems/RunClosure.cs:19-22`). Giá súng theo bảng D2
+>   (`Data/Weapons/WD_*.asset`, commit `0dd77756`).
+> - **Meta v2 đã được owner duyệt** (canvas "HordeCall UI Mockups", trang "Meta v2 (current)"): Home, Studio,
+>   Arsenal, Shop, Gacha, Pass, Daily, Revive, Result, Profile, Settings, Leaderboard, Splash. Agent được dựng
+>   UI theo đúng mockup đã duyệt; thay đổi layout ngoài mockup vẫn phải hỏi owner.
+> - **Cấp tài khoản:** `Systems/AccountProgress.cs` + `PlayerProfile.AccountXp/AccountLevel`; trận trả XP qua
+>   `RunClosure.Close`. Mở khóa: LV2 Pass/nhiệm vụ, LV3 Gacha/Events, LV5 nâng sao.
+> - **Build:** `ZW_CHEATS` đã gỡ; cheat chỉ có trong Editor và bản Development. `HordeCall/Build/*` build
+>   Android Dev/Release; `ReleaseGuard` chặn bản Release còn cheat hoặc bundle id mặc định.
+> - **UI kit v2:** `Scripts/Editor/UI/V2/UIKitV2.cs` (thành phần theo design system đã duyệt),
+>   `UiShot.cs` (render prefab ra PNG không cần Play), `Runtime/UI/Core/GridFit.cs`.
+> - **Backend để sau:** leaderboard, bạn bè, lưu đám mây, thư từ server, cấu hình sự kiện từ xa chỉ thiết kế.
+> - Lộ trình M9–M14: artifact "HordeCall Roadmap".
+
+
 > **2026-09-25 — M7 Slice A.** Phần "M7 Slice A — DELIVERED" trong `MVP_SHIP_PLAN.md` là trạng thái
 > hiện hành và THẮNG mọi mô tả cũ bên dưới về campaign/stage, wave, Victory, 3 slot súng, bom,
 > perk pool 7 thẻ, gacha/nâng sao trong Shop. Các mục đó đã bị xoá khỏi code.

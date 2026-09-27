@@ -1,5 +1,10 @@
 # Zombie War — MVP Ship Plan
 
+> **2026-09-27 — superseded where it conflicts:** the game is now **HordeCall**; runs bank **100%** of
+> coins on death and walk-away (the "25 % / 0 %" lines below are history); weapons cost **Coin** (no
+> Blueprint); the approved Meta v2 screens and the M9–M14 roadmap (artifact "HordeCall Roadmap") are the
+> current plan. See the top block of `CURRENT_STATE.md`.
+
 **Phase:** SHIP · M0-M5+ complete · **M6 LOCKED** · M7.0 delivered (2026-08-15) · **M7 Slice A DELIVERED** (2026-09-25) — see the section below  
 **Updated:** 2026-08-15  
 **Design authority:** [M6_ENDLESS_RUN_SYSTEM_DESIGN.md](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)  

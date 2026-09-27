@@ -32,13 +32,18 @@ namespace ZombieWar
             public readonly RunSummary Summary;
             public readonly long BankedCoin;
             public readonly bool NewSurvivalRecord;
+            /// <summary>Account XP this run paid, and how many account levels it gained (M9).</summary>
+            public readonly int AccountXpGained;
+            public readonly int AccountLevelsGained;
 
-            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord)
+            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord, int accountXpGained = 0, int accountLevelsGained = 0)
             {
                 Closed = closed;
                 Summary = summary;
                 BankedCoin = bankedCoin;
                 NewSurvivalRecord = newSurvivalRecord;
+                AccountXpGained = accountXpGained;
+                AccountLevelsGained = accountLevelsGained;
             }
         }
 
@@ -56,7 +61,9 @@ namespace ZombieWar
             run.Payout(CoinFractionFor(summary.Outcome));
 
             bool record = PlayerProfile.RecordSurvival(summary.Duration);
-            return new Result(true, summary, run.BankedCoin, record);
+            int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills);
+            int levels = PlayerProfile.AddAccountXp(xp);
+            return new Result(true, summary, run.BankedCoin, record, xp, levels);
         }
     }
 }

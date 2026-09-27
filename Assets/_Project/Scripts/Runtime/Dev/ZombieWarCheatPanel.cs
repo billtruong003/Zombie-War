@@ -101,7 +101,7 @@ namespace ZombieWar
             _panel = CreateRect(canvasGo.transform, "CheatOverlay", PanelColor).gameObject;
             Stretch((RectTransform)_panel.transform);
 
-            var header = CreateText(_panel.transform, "Header", "ZOMBIE WAR — QA CHEATS", 42,
+            var header = CreateText(_panel.transform, "Header", "HORDECALL — QA CHEATS", 42,
                 FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
             SetAnchored(header.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -32f), new Vector2(760f, 72f));
 

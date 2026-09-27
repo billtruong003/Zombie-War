@@ -55,7 +55,7 @@ namespace ZombieWar.Editor.UI
             var logoEdge = logoBox.gameObject.AddComponent<Outline>();
             logoEdge.effectColor = UITheme.Gold; logoEdge.effectDistance = new Vector2(3, -3);
 
-            var title = UIKit.Text(logoBox.rectTransform, "Title", "ZOMBIE WAR", 84,
+            var title = UIKit.Text(logoBox.rectTransform, "Title", "HORDECALL", 84,
                 UITheme.Gold, FontStyles.Bold | FontStyles.UpperCase);
             UIKit.Place(title.rectTransform, UIKit.Anch.C, new Vector2(0, 30), new Vector2(560, 120));
             var sub = UIKit.Text(logoBox.rectTransform, "Sub", "LOGO PLACEHOLDER", UITheme.FontLabel,

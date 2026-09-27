@@ -83,6 +83,8 @@ namespace ZombieWar
             public int missionDayKey;
             public int missionWeekKey;
             public int passXp;
+            // M9 account level (AccountProgress turns XP into a level and feature gates).
+            public int accountXp;
         }
 
         [Serializable]
@@ -183,6 +185,24 @@ namespace ZombieWar
             Data.bestSurvivalSeconds = seconds;
             SaveNow();
             return true;
+        }
+
+        // ===== Account level (M9) =====
+
+        public static event Action AccountChanged;
+
+        public static int AccountXp => Data.accountXp;
+        public static int AccountLevel => AccountProgress.LevelFor(Data.accountXp);
+
+        /// <summary>Adds account XP and returns how many levels it gained.</summary>
+        public static int AddAccountXp(int xp)
+        {
+            if (xp <= 0) return 0;
+            int before = AccountLevel;
+            Data.accountXp += xp;
+            SaveNow();
+            AccountChanged?.Invoke();
+            return AccountLevel - before;
         }
 
         // ===== Battle Pass missions =====
@@ -1475,6 +1495,7 @@ namespace ZombieWar
             d.claimedMissionIds = DedupeNonEmpty(d.claimedMissionIds);
             MigrateToSingleWeapon(d);
             if (d.passXp < 0) d.passXp = 0;
+            if (d.accountXp < 0) d.accountXp = 0;
             d.bodyColor ??= "";
             d.bodyEar ??= "";
 
