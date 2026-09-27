@@ -20,13 +20,27 @@ namespace ZombieWar.UI
     {
         [Header("Revive")]
         [SerializeField] private GameObject reviveRoot;
+        [Tooltip("The frozen game, blurred, behind the revive panel.")]
+        [SerializeField] private RawImage backdrop;
+        [Tooltip("A still of the player inside the countdown ring.")]
+        [SerializeField] private RawImage portrait;
         [SerializeField] private Image ring;
         [SerializeField] private TMP_Text seconds;
+        [SerializeField] private TMP_Text nearMiss;
+        [SerializeField] private Image[] hearts = new Image[3];
+        [SerializeField] private Sprite heartFull;
+        [SerializeField] private Sprite heartEmpty;
+        [SerializeField] private TMP_Text runTime;
+        [SerializeField] private TMP_Text runKills;
         [SerializeField] private TMP_Text carried;
-        [SerializeField] private TMP_Text costLabel;
-        [SerializeField] private TMP_Text costValue;
+        [SerializeField] private GameObject bestCard;
+        [SerializeField] private TMP_Text bestLabel2;
+        [SerializeField] private TMP_Text bestPercent;
+        [SerializeField] private Image bestFill;
         [SerializeField] private TMP_Text costNote;
         [SerializeField] private Button adButton;
+        [Tooltip("Bar inside the free button that drains with the countdown.")]
+        [SerializeField] private Image adDrain;
         [SerializeField] private Button coinButton;
         [SerializeField] private TMP_Text coinLabel;
         [SerializeField] private Button noButton;
@@ -56,6 +70,7 @@ namespace ZombieWar.UI
         Coroutine _count;
         long _banked;
         bool _doubled;
+        RenderTexture _blur, _still;
 
         void Awake()
         {
@@ -86,21 +101,43 @@ namespace ZombieWar.UI
             if (_player != null) _player.ReviveGate = OfferRevive;
         }
 
-        void OnDestroy() { if (_player != null && _player.ReviveGate == (Func<bool>)OfferRevive) _player.ReviveGate = null; }
+        void OnDestroy()
+        {
+            if (_player != null && _player.ReviveGate == (Func<bool>)OfferRevive) _player.ReviveGate = null;
+            ReleaseStills();
+        }
 
         // ------------------------------------------------------------ revive
         bool OfferRevive()
         {
             if (!ReviveRules.CanOffer || reviveRoot == null) return false;
             Time.timeScale = 0f;
+            TakeStills();
             reviveRoot.SetActive(true);
             reviveRoot.transform.SetAsLastSibling();
             long cost = ReviveRules.NextCoinCost, carry = ReviveRules.Carried;
+            var run = RunState.Current;
+            float dur = run != null ? run.Duration : 0f, best = PlayerProfile.BestSurvivalSeconds;
+            Set(runTime, HudController.FormatClock(Mathf.FloorToInt(dur)));
+            Set(runKills, run != null ? run.Kills.ToString("N0") : "0");
             Set(carried, carry.ToString("N0"));
-            Set(costLabel, $"Revive {ReviveRules.Used + 1} of {ReviveRules.MaxRevives} costs");
-            Set(costValue, cost.ToString("N0"));
-            Set(costNote, cost > carry ? "Price doubles each time. This one costs more than you carry." : "Price doubles each time.");
-            Set(coinLabel, $"REVIVE · {cost:N0}");
+            Set(nearMiss, best <= 0f ? "Get back up and keep going!"
+                : dur < best ? $"Only {HudController.FormatClock(Mathf.CeilToInt(best - dur))} from your best!" : "You are past your best!");
+            if (bestCard != null) bestCard.SetActive(best > 0f);
+            Set(bestLabel2, $"YOUR BEST {HudController.FormatClock(Mathf.FloorToInt(best))}");
+            float pct = best > 0f ? Mathf.Clamp01(dur / best) : 0f;
+            Set(bestPercent, $"{Mathf.FloorToInt(pct * 100f)}%");
+            Bar(bestFill, pct);
+            // Hearts: revives still available this run.
+            int left = ReviveRules.MaxRevives - ReviveRules.Used;
+            for (int i = 0; i < hearts.Length; i++)
+            {
+                if (hearts[i] == null) continue;
+                hearts[i].gameObject.SetActive(i < ReviveRules.MaxRevives);
+                hearts[i].sprite = i < left ? heartFull : heartEmpty;
+            }
+            Set(costNote, cost > carry ? $"Coin price doubles each revive · you carry {carry:N0}" : "Coin price doubles each revive");
+            Set(coinLabel, cost.ToString("N0"));
             if (adButton != null) adButton.gameObject.SetActive(ReviveRules.AdAvailable);
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
             if (_count != null) StopCoroutine(_count);
@@ -114,6 +151,7 @@ namespace ZombieWar.UI
             {
                 Set(seconds, Mathf.CeilToInt(t).ToString());
                 if (ring != null) ring.fillAmount = t / ReviveRules.OfferSeconds;
+                Bar(adDrain, t / ReviveRules.OfferSeconds);
                 yield return null;
             }
             GiveUp();
@@ -123,6 +161,7 @@ namespace ZombieWar.UI
         {
             if (_count != null) StopCoroutine(_count);
             reviveRoot.SetActive(false);
+            ReleaseStills();
             Time.timeScale = 1f;
             UIFeedback.Confirm();
             _player?.Revive();
@@ -132,8 +171,86 @@ namespace ZombieWar.UI
         {
             if (_count != null) StopCoroutine(_count);
             if (reviveRoot != null) reviveRoot.SetActive(false);
+            ReleaseStills();
             Time.timeScale = 1f;
             _player?.ConfirmDeath();
+        }
+
+        // The frozen world, blurred by halving it a few times (bilinear), and a still of the player
+        // for the ring. Both are taken once when the offer opens; the world is paused anyway.
+        void TakeStills()
+        {
+            ReleaseStills();
+            var cam = Camera.main;
+            if (cam == null) return;
+            if (backdrop != null)
+            {
+                var src = RenderTexture.GetTemporary(Mathf.Max(64, Screen.width / 2), Mathf.Max(64, Screen.height / 2), 24);
+                Render(cam, src);
+                for (int i = 0; i < 3; i++)
+                {
+                    var d = RenderTexture.GetTemporary(Mathf.Max(8, src.width / 2), Mathf.Max(8, src.height / 2), 0);
+                    d.filterMode = FilterMode.Bilinear;
+                    Graphics.Blit(src, d);
+                    RenderTexture.ReleaseTemporary(src); src = d;
+                }
+                // Back up twice: bilinear up-steps turn the blocky 1/16 image into a soft blur.
+                for (int i = 0; i < 2; i++)
+                {
+                    var u = RenderTexture.GetTemporary(src.width * 2, src.height * 2, 0);
+                    u.filterMode = FilterMode.Bilinear;
+                    Graphics.Blit(src, u);
+                    RenderTexture.ReleaseTemporary(src); src = u;
+                }
+                _blur = src; backdrop.texture = _blur;
+            }
+            if (portrait != null && _player != null) portrait.enabled = Portrait(_player.transform);
+        }
+
+        bool Portrait(Transform who)
+        {
+            const int Layer = 8;   // CharacterPreview: nothing else of the run lives there
+            var rs = who.GetComponentsInChildren<Renderer>(false);
+            if (rs.Length == 0) return false;
+            var layers = new int[rs.Length];
+            var go = new GameObject("RevivePortraitCam");
+            try
+            {
+                for (int i = 0; i < rs.Length; i++) { layers[i] = rs[i].gameObject.layer; rs[i].gameObject.layer = Layer; }
+                var c = go.AddComponent<Camera>();
+                c.clearFlags = CameraClearFlags.SolidColor; c.backgroundColor = new Color(0.2f, 0.23f, 0.29f, 1f);
+                c.cullingMask = 1 << Layer; c.fieldOfView = 26f; c.nearClipPlane = 0.1f; c.farClipPlane = 20f;
+                var fwd = who.forward; fwd.y = 0f; if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.back; fwd.Normalize();
+                var aim = who.position + Vector3.up * 1.0f;
+                c.transform.position = aim + fwd * 5.2f + Vector3.up * 0.9f;
+                c.transform.LookAt(aim);
+                _still = new RenderTexture(320, 320, 24, RenderTextureFormat.ARGB32) { name = "RevivePortrait", antiAliasing = 2 };
+                Render(c, _still);
+                portrait.texture = _still;
+                return true;
+            }
+            finally
+            {
+                for (int i = 0; i < rs.Length; i++) if (rs[i] != null) rs[i].gameObject.layer = layers[i];
+                Destroy(go);
+            }
+        }
+
+        // Bars keep their rounded 9-slice ends: the width follows the value, not a fill cut.
+        static void Bar(Image i, float v) { if (i != null) i.rectTransform.anchorMax = new Vector2(Mathf.Clamp01(v), 1f); }
+
+        static void Render(Camera c, RenderTexture rt)
+        {
+            var prev = c.targetTexture;
+            c.targetTexture = rt; c.Render(); c.targetTexture = prev;
+        }
+
+        void ReleaseStills()
+        {
+            if (_blur != null) { RenderTexture.ReleaseTemporary(_blur); _blur = null; }
+            if (_still != null) { _still.Release(); Destroy(_still); _still = null; }
+            if (backdrop != null) backdrop.texture = null;
+            if (portrait != null) portrait.texture = null;
         }
 
         // ------------------------------------------------------------ result

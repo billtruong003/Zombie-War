@@ -76,50 +76,111 @@ namespace ZombieWar.EditorTools.V2
 
         static void Revive(RectTransform root, RunEndV2 e)
         {
+            // Owner-approved R2_Revive: the frozen game blurred behind a dark scrim with a red edge,
+            // a countdown ring around the player, revives left, the run so far, the near-miss bar,
+            // then the free (ad) and coin revives and a quiet "Give up". Fits 16:9 (693 tall).
             var p = Fill(Node(root, "Revive"), 0, 0, 0, 0);
             Flat(p, Hex("1b1e27"), true);
-            var glow = Box(Node(p, "Glow"), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), 0, -300, 520, 520);
-            var gi = glow.gameObject.AddComponent<Image>(); gi.sprite = Spr("glow_soft"); gi.color = new Color(0.45f, 0.12f, 0.14f, 0.9f); gi.raycastTarget = false;
-            var col = Fill(Node(p, "Col"), 22, 0, 22, 0);
-            Title(TopBand(Node(col, "Title"), 70, 48), "DOWN!", 40f, Ink, TextAlignmentOptions.Center);
-            Body(TopBand(Node(col, "Sub"), 122, 20), "Get back up and keep your run going", 14f, Hex("d9c2c4"), TextAlignmentOptions.Center);
+            var bd = Fill(Node(p, "Backdrop"), 0, 0, 0, 0).gameObject.AddComponent<RawImage>();
+            bd.color = Color.white; bd.raycastTarget = false;
+            Wire(e, "backdrop", bd);
+            var scrim = Fill(Node(p, "Scrim"), 0, 0, 0, 0).gameObject.AddComponent<Image>();
+            scrim.color = new Color(0.106f, 0.118f, 0.153f, 0.72f); scrim.raycastTarget = false;
+            // The vignette sprite fades out a quarter in; pushed past the screen edges so only a thin
+            // red glow stays at the rim (the mockup's inset shadow), not a red wash.
+            var edge = Fill(Node(p, "RedEdge"), -110, -260, -110, -260).gameObject.AddComponent<Image>();
+            edge.sprite = Spr("grad_red_vignette"); edge.color = new Color(1f, 1f, 1f, 0.45f); edge.raycastTarget = false;
 
-            var ringBg = Box(Node(col, "Ring"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -160, 150, 150);
-            var rb = ringBg.gameObject.AddComponent<Image>(); rb.sprite = Spr("circle"); rb.color = Card; rb.raycastTarget = false;
-            var fill = Fill(Node(ringBg, "Fill"), 0, 0, 0, 0).gameObject.AddComponent<Image>();
-            fill.sprite = Spr("circle"); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Radial360; fill.fillOrigin = (int)Image.Origin360.Top;
-            fill.color = Yellow; fill.fillAmount = 0.7f; fill.raycastTarget = false;
+            var safe = Fill(Node(p, "Safe"), 0, 0, 0, 0); safe.gameObject.AddComponent<SafeArea>();
+            var col = Fill(Node(safe, "Col"), 20, 0, 20, 0);
+            Title(TopBand(Node(col, "Title"), 34, 48), "DOWN!", 44f, Ink, TextAlignmentOptions.Center);
+            Wire(e, "nearMiss", Shrink(Body(TopBand(Node(col, "Sub"), 84, 20), "Only 0:18 from your best!", 14f, Yellow, TextAlignmentOptions.Center)));
+
+            // Ring: track, draining yellow fill, the player's still inside a circle mask, seconds badge.
+            var ring = Box(Node(col, "Ring"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -112, 184, 184);
+            var track = ring.gameObject.AddComponent<Image>(); track.sprite = Spr("circle_hd"); track.color = Card; track.raycastTarget = false;
+            var fill = Fill(Node(ring, "Fill"), 0, 0, 0, 0).gameObject.AddComponent<Image>();
+            fill.sprite = Spr("circle_hd"); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Radial360; fill.fillOrigin = (int)Image.Origin360.Top;
+            fill.fillClockwise = false; fill.color = Yellow; fill.fillAmount = 0.7f; fill.raycastTarget = false;
             Wire(e, "ring", fill);
-            var inner = Fill(Node(ringBg, "Inner"), 13, 13, 13, 13).gameObject.AddComponent<Image>(); inner.sprite = Spr("circle"); inner.color = Deep; inner.raycastTarget = false;
-            Wire(e, "seconds", Title(Box(Node(ringBg, "N"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 8, 100, 50), "7", 46f, Ink, TextAlignmentOptions.Center));
-            Label(Box(Node(ringBg, "S"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -26, 100, 14), "SECONDS").alignment = TextAlignmentOptions.Center;
+            var hole = Fill(Node(ring, "Inner"), 12, 12, 12, 12);
+            var hi = hole.gameObject.AddComponent<Image>(); hi.sprite = Spr("circle_hd"); hi.color = Hex("333a49"); hi.raycastTarget = false;
+            hole.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+            var still = Fill(Node(hole, "Portrait"), 0, 0, 0, 0).gameObject.AddComponent<RawImage>(); still.raycastTarget = false;
+            Wire(e, "portrait", still);
+            var badge = Box(Node(ring, "Badge"), new Vector2(1, 1), new Vector2(0.5f, 0.5f), -18, -18, 54, 54);
+            var bi = badge.gameObject.AddComponent<Image>(); bi.sprite = Spr("circle_hd"); bi.color = Yellow; bi.raycastTarget = false;
+            Wire(e, "seconds", Title(Box(Node(badge, "N"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 5, 50, 28), "5", 24f, Ink, TextAlignmentOptions.Center));
+            Body(Box(Node(badge, "S"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -14, 50, 12), "SEC", 8f, OnYellow, TextAlignmentOptions.Center);
 
-            var card = TopBand(Node(col, "Card"), 328, 92);
-            Surface(card, Card, RCard);
-            Body(TopBand(Node(card, "L0"), 12, 20, 12, 120), "You are carrying", 13f);
-            Wire(e, "carried", CoinValue(card, 12, Ink));
-            Wire(e, "costLabel", Body(TopBand(Node(card, "L1"), 38, 20, 12, 120), "Revive 2 of 3 costs", 13f));
-            Wire(e, "costValue", CoinValue(card, 38, Yellow));
-            var note = Shrink(Body(TopBand(Node(card, "Note"), 62, 26, 12, 12), "Price doubles each time. This one costs more than you carry.", 11f, Hex("e5a0a2")), 0.8f);
-            note.enableWordWrapping = true;
-            Wire(e, "costNote", note);
+            // Revives left.
+            var hearts = Box(Node(col, "Hearts"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -304, 220, 22);
+            Label(Box(Node(hearts, "L"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 110, 14), "REVIVES LEFT").alignment = TextAlignmentOptions.MidlineRight;
+            var hs = new Image[3];
+            for (int i = 0; i < 3; i++) hs[i] = IconImage(Box(Node(hearts, "H" + i), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 118 + i * 26, 0, 22, 22), "Heart_Red");
+            WireArray(e, "hearts", hs);
+            Wire(e, "heartFull", Icon("Heart_Red"));
+            Wire(e, "heartEmpty", Icon("Heart_Dimmed"));
 
-            var ad = TopBand(Node(col, "Ad"), 432, 60);
-            Wire(e, "adButton", Button(ad, "WATCH AD · FREE", Role.Claim, 20f));
-            var coin = TopBand(Node(col, "Coin"), 500, 54);
-            Wire(e, "coinButton", Button(coin, "REVIVE · 1,488", Role.Primary, 18f));
-            Wire(e, "coinLabel", coin.Find("Face/Label").GetComponent<TextMeshProUGUI>());
-            var no = TopBand(Node(col, "No"), 562, 46);
-            Wire(e, "noButton", Button(no, "NO THANKS", Role.Quiet, 15f));
+            // The run so far.
+            var stats = TopBand(Node(col, "Stats"), 334, 52);
+            Row(stats, 8, TextAnchor.MiddleLeft, true);
+            Wire(e, "runTime", Well(stats, "TIME", "9:42", false));
+            Wire(e, "runKills", Well(stats, "KILLS", "412", false));
+            Wire(e, "carried", Well(stats, "CARRYING", "1,240", true));
+
+            // Near-miss bar against the best time.
+            var best = TopBand(Node(col, "Best"), 394, 46);
+            Surface(best, Deep, 10f);
+            Wire(e, "bestCard", best.gameObject);
+            Wire(e, "bestLabel2", Label(TopBand(Node(best, "L"), 8, 14, 12, 60), "YOUR BEST 10:00"));
+            var pctT = Label(TopBand(Node(best, "P"), 8, 14, 200, 12), "97%", Yellow); pctT.alignment = TextAlignmentOptions.MidlineRight;
+            Wire(e, "bestPercent", pctT);
+            var bar = TopBand(Node(best, "Bar"), 26, 10, 12, 12);
+            Surface(bar, Card, 5f);
+            var bfr = Fill(Node(bar, "Fill"), 0, 0, 0, 0);
+            var bf = Surface(bfr, Yellow, 5f); bfr.anchorMax = new Vector2(0.97f, 1f);
+            Wire(e, "bestFill", bf);
+            var mark = Box(Node(bar, "Mark"), new Vector2(1, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 4, 20);
+            Surface(mark, Ink, 2f);
+
+            // Actions, from the bottom up.
+            var no = BottomBand(Node(col, "No"), 10, 30, 110, 110);
+            var nt = Body(Fill(Node(no, "T"), 0, 0, 0, 0), "<u>Give up</u>", 14f, Dim, TextAlignmentOptions.Center);
+            nt.raycastTarget = true;
+            Wire(e, "noButton", no.gameObject.AddComponent<Button>());
+            Wire(e, "costNote", Shrink(Body(BottomBand(Node(col, "Note"), 42, 16), "Coin price doubles each revive · you carry 1,240", 11f, Dim, TextAlignmentOptions.Center)));
+            var coin = BottomBand(Node(col, "Coin"), 62, 52);
+            var cb = Button(coin, "REVIVE", Role.Primary, 18f);
+            Wire(e, "coinButton", cb);
+            var clbl = coin.Find("Face/Label") as RectTransform;
+            clbl.anchorMin = new Vector2(0, 0); clbl.anchorMax = new Vector2(0.5f, 1); clbl.offsetMin = Vector2.zero; clbl.offsetMax = new Vector2(-Px(4), 0);
+            clbl.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.MidlineRight;
+            IconImage(Box(Node(coin.Find("Face"), "Coin"), new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), 4, 0, 20, 20), "Money_Coin");
+            var cv = Title(Box(Node(coin.Find("Face"), "Value"), new Vector2(0.5f, 0.5f), new Vector2(0, 0.5f), 28, 0, 130, 30), "1,488", 18f, Ink, TextAlignmentOptions.MidlineLeft);
+            Wire(e, "coinLabel", cv);
+            var ad = BottomBand(Node(col, "Ad"), 120, 62);
+            var ab = Button(ad, "REVIVE FREE", Role.Claim, 22f);
+            Wire(e, "adButton", ab);
+            var alb = ad.Find("Face/Label") as RectTransform; alb.offsetMin = new Vector2(Px(34), 0);
+            IconImage(Box(Node(ad.Find("Face"), "Video"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), -86, 1, 28, 28), "Video");
+            var dtrack = BottomBand(Node(ad.Find("Face"), "Drain"), 5, 5, 12, 12);
+            var dr = Fill(Node(dtrack, "Fill"), 0, 0, 0, 0);
+            var drain = Surface(dr, new Color(0f, 0.2f, 0.14f, 0.35f), 2.5f); dr.anchorMax = new Vector2(0.7f, 1f);
+            Wire(e, "adDrain", drain);
             Wire(e, "reviveRoot", p.gameObject);
             p.gameObject.SetActive(false);
         }
 
-        static TextMeshProUGUI CoinValue(RectTransform card, float y, Color c)
+        static TextMeshProUGUI Well(RectTransform row, string label, string value, bool coin)
         {
-            var row = TopBand(Node(card, "V" + y), y, 20, 150, 12);
-            IconImage(Box(Node(row, "I"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -70, 0, 16, 16), "Money_Coin");
-            return Body(Box(Node(row, "T"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), 0, 0, 66, 20), "1,240", 14f, c, TextAlignmentOptions.MidlineRight);
+            var c = Node(row, label);
+            Surface(c, Deep, 10f);
+            var v = Title(TopBand(Node(c, "V"), 6, 26, coin ? 26 : 4, 4), value, 20f, Ink, TextAlignmentOptions.Center);
+            Shrink(v);
+            if (coin) IconImage(Box(Node(c, "I"), new Vector2(0, 1), new Vector2(0, 0.5f), 8, -19, 16, 16), "Money_Coin");
+            Label(BottomBand(Node(c, "L"), 5, 12), label, null, 9f).alignment = TextAlignmentOptions.Center;
+            return v;
         }
 
         static void Result(RectTransform root, RunEndV2 e)

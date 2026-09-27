@@ -30,7 +30,7 @@ namespace ZombieWar.EditorTools.V2
                     // Draw the 3D world under the UI, from the scene camera's point of view.
                     c.CopyFrom(sceneCamera); c.targetTexture = rt;
                 }
-                else { c.clearFlags = CameraClearFlags.SolidColor; c.backgroundColor = new Color(0.106f, 0.118f, 0.153f, 1f); c.cullingMask = 1 << LayerMask.NameToLayer("UI"); }
+                else { if (Camera.main != null) { c.CopyFrom(Camera.main); c.targetTexture = rt; } c.clearFlags = CameraClearFlags.SolidColor; c.backgroundColor = new Color(0.106f, 0.118f, 0.153f, 1f); c.cullingMask = (1 << LayerMask.NameToLayer("UI")) | (1 << canvas.gameObject.layer); }
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
                 canvas.worldCamera = c; canvas.planeDistance = Mathf.Min(c.farClipPlane * 0.5f, 1f + c.nearClipPlane * 2f);
                 for (int i = 0; i < 3; i++)
