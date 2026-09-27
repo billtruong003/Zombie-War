@@ -7,7 +7,7 @@ Shader "ZombieWar/PieceHighlight"
     Properties
     {
         _Color ("Color", Color) = (1, 0.79, 0.24, 1)
-        _Width ("Width", Range(0, 0.05)) = 0.02
+        _Width ("Width", Range(0, 0.05)) = 0.026
     }
     SubShader
     {

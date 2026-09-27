@@ -53,14 +53,16 @@ namespace ZombieWar.EditorTools.V2
         static void Stage(RectTransform safe, StudioScreen s)
         {
             var st = Fill(Node(safe, "Stage"), 0, 58, 0, SheetH - 16);
-            var glow = Box(Node(st, "Glow"), new Vector2(0.5f, 0.45f), new Vector2(0.5f, 0.5f), 0, 0, 360, 360);
-            var gi = glow.gameObject.AddComponent<Image>(); gi.sprite = Spr("glow_soft"); gi.color = new Color(0.23f, 0.25f, 0.32f, 0.9f); gi.raycastTarget = false;
+            // Owner 2026-09-27: no dark glow behind the character (it read as a dirty blob).
             // Owner: only the shadow blob under the feet (drawn by the preview), no pedestal.
-            var ch = Fill(Node(st, "Character"), 60, 50, 60, 20);
+            // Full stage width (hotspots float over the transparent sides) so big outfits fit.
+            var ch = Fill(Node(st, "Character"), 0, 40, 0, 12);
             var raw = Node(ch, "RT").gameObject.AddComponent<RawImage>();
-            raw.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(CharacterRT); raw.raycastTarget = false;
+            raw.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(CharacterRT); raw.raycastTarget = true;
+            raw.gameObject.AddComponent<CharacterDragRotate>();   // drag to turn the character (no zoom)
             var fit = raw.gameObject.AddComponent<AspectRatioFitter>();
-            fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; fit.aspectRatio = 512f / 900f;   // MenuCharacterPreview is 512x900
+            var crt = AssetDatabase.LoadAssetAtPath<RenderTexture>(CharacterRT);
+            fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; fit.aspectRatio = crt != null ? crt.width / (float)crt.height : 0.8f;
             Wire(s, "character", raw);
 
             string[] names = { "HEAD", "FACE", "TOP", "BACK", "PANTS", "SHOES" };
@@ -119,7 +121,7 @@ namespace ZombieWar.EditorTools.V2
             var m = AssetDatabase.LoadAssetAtPath<Material>(HighlightMat);
             if (m != null) return m;
             m = new Material(Shader.Find("ZombieWar/PieceHighlight")) { name = "PieceHighlight" };
-            m.color = new Color(1f, 0.79f, 0.24f, 1f); m.SetFloat("_Width", 0.02f);
+            m.color = new Color(1f, 0.84f, 0.2f, 1f); m.SetFloat("_Width", 0.026f);
             AssetDatabase.CreateAsset(m, HighlightMat);
             return m;
         }

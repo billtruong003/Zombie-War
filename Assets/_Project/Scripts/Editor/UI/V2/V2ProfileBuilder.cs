@@ -69,7 +69,8 @@ namespace ZombieWar.EditorTools.V2
             var raw = Fill(Node(inner, "Character"), -8, -4, -8, -30).gameObject.AddComponent<RawImage>();
             raw.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(PreviewRT); raw.raycastTarget = false;
             var fit = raw.gameObject.AddComponent<AspectRatioFitter>();
-            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = 512f / 900f;
+            var prt = raw.texture as RenderTexture;
+            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = prt != null ? prt.width / (float)prt.height : 0.8f;
 
             var info = Fill(Node(card, "Info"), 98, 12, 12, 12);
             // name row (y 0, h 28)

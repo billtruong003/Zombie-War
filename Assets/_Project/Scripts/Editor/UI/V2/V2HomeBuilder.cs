@@ -99,7 +99,8 @@ namespace ZombieWar.EditorTools.V2
             // itself), no panel or pedestal behind the character.
             // The fitter sizes against its PARENT, so the character sits in its own area that stops
             // above the gun card; fitting against the whole stage put the feet under the card.
-            var area = Fill(Node(stage, "CharacterArea"), 70, 6, 70, 6 + 62 + 8);
+            // Full width: the side rails float over the transparent edges of the wider preview.
+            var area = Fill(Node(stage, "CharacterArea"), 0, 6, 0, 6 + 62 + 8);
             var view = Node(area, "Character");
             var raw = view.gameObject.AddComponent<RawImage>();
             var rt = AssetDatabase.LoadAssetAtPath<RenderTexture>(PreviewRT);
@@ -110,6 +111,7 @@ namespace ZombieWar.EditorTools.V2
                 fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; fit.aspectRatio = rt.width / (float)rt.height;
             }
             Wire(home, "stageButton", view.gameObject.AddComponent<Button>());
+            view.gameObject.AddComponent<CharacterDragRotate>();   // drag turns, tap opens the Studio
 
             var outfit = Box(Node(stage, "Outfit"), new Vector2(1, 1), new Vector2(1, 1), -78, -10, 70, 28);
             Surface(outfit, Card, 9f, true);

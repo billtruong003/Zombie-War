@@ -4,14 +4,14 @@ using UnityEngine;
 namespace ZombieWar.UI
 {
     /// <summary>
-    /// The current UI theme (owner 2026-09-27: Light Sky by default, Dark mode, Candy and Meadow as
-    /// extra themes). Kept in PlayerPrefs like other device settings. <see cref="ThemeTint"/> and
+    /// The current UI theme (owner 2026-09-27: Sky, Dark mode, Candy and Meadow; Meadow became the
+    /// default the same day). Kept in PlayerPrefs like other device settings. <see cref="ThemeTint"/> and
     /// <see cref="MenuBackgroundView"/> listen to <see cref="Changed"/>.
     /// </summary>
     public static class ThemeService
     {
         const string Key = "set.theme";
-        public const string DefaultId = "sky";
+        public const string DefaultId = "meadow";
         static ThemeSet _set;
         static ThemePalette _current;
 

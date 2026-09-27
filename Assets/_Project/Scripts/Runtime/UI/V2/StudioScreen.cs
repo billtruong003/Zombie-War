@@ -12,7 +12,7 @@ namespace ZombieWar.UI
     /// hotspots (head, face, top, back, pants, shoes); the chip row lists only the slots of the
     /// picked group, then a film strip of that slot's pieces and a bar for the picked piece. Any
     /// piece can be tried on before buying (visual only; leaving restores the saved outfit), and the
-    /// piece that changed flashes an outline on the character. Random dresses the character from
+    /// piece in the open slot keeps a breathing outline on the character. Random dresses the character from
     /// owned pieces. Gacha-only pieces point to the Gacha. Up to three looks can be saved.
     /// Built by HordeCall/UI v2/Build Studio.
     /// </summary>
@@ -75,9 +75,8 @@ namespace ZombieWar.UI
         List<ModularCostumeCatalog.PartEntry> _parts = new();
         string _picked;          // itemId being shown (worn or tried)
         List<ModularCostumeCatalog.SlotDefinition> _groupSlots = new();
-        Coroutine _flash;
-        SkinnedMeshRenderer _flashRenderer;
-        Material _flashMat;
+        SkinnedMeshRenderer _hlRenderer;
+        Material _hlMat;
 
         protected override void Awake()
         {
@@ -93,7 +92,7 @@ namespace ZombieWar.UI
         }
 
         private void OnEnable() { PlayerProfile.CostumeChanged += Refresh; PlayerProfile.WalletChanged += Refresh; }
-        private void OnDisable() { PlayerProfile.CostumeChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; StopFlash(); RestoreOutfit(); }
+        private void OnDisable() { PlayerProfile.CostumeChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; StopHighlight(); RestoreOutfit(); }
 
         protected override void OnShow()
         {
@@ -131,7 +130,6 @@ namespace ZombieWar.UI
             if (PlayerProfile.IsCostumeOwned(p.itemId)) { if (catalog != null) PlayerProfile.TryEquipCostume(catalog, p.itemId); }
             else if (_stage != null && _stage.ModularApplier != null) _stage.ModularApplier.Apply(_slot, p);   // try on
             Refresh();
-            Flash(_slot);
         }
 
         /// Which hotspot group a slot belongs to (index into HotspotGroups).
@@ -168,51 +166,41 @@ namespace ZombieWar.UI
                 _picked = PlayerProfile.GetPart(_slot);
                 RestoreOutfit();
                 Refresh();
-                Flash(_slot);
             }
             else UIFeedback.Error();
         }
 
-        // ------------------------------------------------------------ changed-piece outline
-        /// Outlines the piece now worn in a slot for a moment, so the swap is easy to see.
-        void Flash(string slot)
+        // ------------------------------------------------------------ picked-piece outline
+        /// Owner 2026-09-27: the piece being worn or tried in the open slot always carries a soft,
+        /// breathing outline. Followed every frame, so a swapped renderer (new piece, try-on, look,
+        /// Random) picks it up without any caller having to remember.
+        void Update()
         {
-            StopFlash();
-            if (highlight == null || !isActiveAndEnabled) return;
-            _flash = StartCoroutine(FlashRoutine(slot));
-        }
-
-        System.Collections.IEnumerator FlashRoutine(string slot)
-        {
-            yield return null;   // the stage may swap the piece's renderer this frame
+            if (!IsShown || highlight == null) { StopHighlight(); return; }
             var applier = _stage != null ? _stage.ModularApplier : null;
-            var r = applier != null ? applier.GetRenderer(slot) : null;
-            if (r == null) { _flash = null; yield break; }
-            _flashRenderer = r;
-            _flashMat = new Material(highlight) { name = "PieceHighlight (flash)" };
-            var mats = r.sharedMaterials.ToList(); mats.Add(_flashMat); r.sharedMaterials = mats.ToArray();
-            var baseColor = _flashMat.color;
-            const float Time0 = 1.4f;
-            for (float t = 0f; t < Time0; t += Time.unscaledDeltaTime)
+            var r = applier != null ? applier.GetRenderer(_slot) : null;
+            if (r != _hlRenderer) { StopHighlight(); if (r != null) StartHighlight(r); }
+            if (_hlMat != null)
             {
-                // Two soft pulses, then fade out.
-                float a = Mathf.Abs(Mathf.Sin(t / Time0 * Mathf.PI * 2f)) * (1f - t / Time0 * 0.6f);
-                _flashMat.color = new Color(baseColor.r, baseColor.g, baseColor.b, a);
-                yield return null;
+                var c = _hlMat.color;
+                c.a = 0.7f + 0.3f * Mathf.Sin(Time.unscaledTime * 3.2f);
+                _hlMat.color = c;
             }
-            StopFlash();
         }
 
-        void StopFlash()
+        void StartHighlight(SkinnedMeshRenderer r)
         {
-            if (_flash != null) { StopCoroutine(_flash); _flash = null; }
-            if (_flashRenderer != null && _flashMat != null)
-            {
-                var mats = _flashRenderer.sharedMaterials.Where(m => m != _flashMat).ToArray();
-                _flashRenderer.sharedMaterials = mats;
-            }
-            if (_flashMat != null) Destroy(_flashMat);
-            _flashRenderer = null; _flashMat = null;
+            _hlRenderer = r;
+            _hlMat = new Material(highlight) { name = "PieceHighlight (picked)" };
+            var mats = r.sharedMaterials.ToList(); mats.Add(_hlMat); r.sharedMaterials = mats.ToArray();
+        }
+
+        void StopHighlight()
+        {
+            if (_hlRenderer != null && _hlMat != null)
+                _hlRenderer.sharedMaterials = _hlRenderer.sharedMaterials.Where(m => m != _hlMat).ToArray();
+            if (_hlMat != null) Destroy(_hlMat);
+            _hlRenderer = null; _hlMat = null;
         }
 
         void Act()
