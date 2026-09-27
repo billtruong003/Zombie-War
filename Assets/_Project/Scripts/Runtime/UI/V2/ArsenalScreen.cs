@@ -240,6 +240,7 @@ namespace ZombieWar.UI
                 int level = PlayerProfile.GetWeaponLevel(d.WeaponId);
                 Set(c.name, d.weaponName);
                 if (c.tile != null) { if (owned) ThemeTint.Clear(c.tile, d.TileColor); else ThemeTint.Set(c.tile, ThemeRole.Edge); }
+                ItemTileFx.On(c.tile, owned ? Mathf.Clamp((int)d.tier, 0, 4) : -1);
                 var icon = catalog != null ? catalog.GetWeaponIcon(d, owned) : null;
                 if (c.icon != null) { c.icon.enabled = icon != null; if (icon != null) { c.icon.sprite = icon; c.icon.preserveAspect = true; } }
                 if (c.stars != null) for (int s = 0; s < c.stars.Length; s++) if (c.stars[s] != null) { c.stars[s].gameObject.SetActive(owned); Star(c.stars[s], s < level); }

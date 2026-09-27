@@ -187,6 +187,7 @@ namespace ZombieWar.UI
         {
             int tier = Mathf.Clamp((int)r.tier, 0, 4);
             if (t.bg != null) t.bg.color = TierColor[0];
+            ItemTileFx.On(t.bg, -1);
             if (t.chest != null)
             {
                 t.chest.gameObject.SetActive(true);
@@ -203,6 +204,7 @@ namespace ZombieWar.UI
             int tier = Mathf.Clamp((int)r.tier, 0, 4);
             if (t.chest != null) t.chest.gameObject.SetActive(false);
             if (t.bg != null) t.bg.color = TierColor[tier];
+            ItemTileFx.On(t.bg, tier);
             if (t.icon != null)
             {
                 var sp = rewardIcons?.FirstOrDefault(n => n.name == r.icon)?.sprite;

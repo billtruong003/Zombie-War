@@ -147,6 +147,9 @@ namespace ZombieWar.UI
             if (PlayerProfile.SaveLook(index)) { UIFeedback.Confirm(); Toast.Show($"Saved as look {index + 1}"); Refresh(); }
         }
 
+        /// Piece tile fill per rarity, Common..Legendary (same tints as the gacha rate tiles).
+        static readonly ThemeRole[] TileRoles = { ThemeRole.Card, ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.GemTint, ThemeRole.LegendTint };
+
         static Graphic Face(Button b)
         {
             var f = b.transform.Find("Face");
@@ -204,6 +207,9 @@ namespace ZombieWar.UI
                 bool known = economy != null && economy.TryGetCostume(p.itemId, out item);
                 bool own = PlayerProfile.IsCostumeOwned(p.itemId);
                 ThemeTint.Set(f.bar, ThemePalette.Rarity(known ? (int)item.rarity : 0));
+                int tier = known ? Mathf.Clamp((int)item.rarity, 0, 4) : 0;
+                ThemeTint.Set(f.button.targetGraphic, TileRoles[tier]);
+                ItemTileFx.On(f.button.targetGraphic, tier);
                 if (f.icon != null) { f.icon.sprite = p.icon; f.icon.enabled = p.icon != null; f.icon.preserveAspect = true; }
                 if (f.price != null)
                 {
