@@ -103,6 +103,8 @@ namespace ZombieWar
         // Permanent star level of the equipped weapon. It only changes in the menu, so it is read once
         // per equip instead of scanning the profile on every shot and every pellet hit.
         private int _starLevel = 1;
+        // M10: the equipped skin set multiplies damage (owner: skins add power).
+        private float _skinBonus;
 
         // Card stats are consumed at the two spots weapon numbers leave the data layer: rate here,
         // damage in ApplyHit (through SkillRuntime.ModifyHitDamage). Outside a run there is no
@@ -580,7 +582,7 @@ namespace ZombieWar
                 float distance = Vector3.Distance(origin, hit.point);
                 float dist01 = data.range > 0f ? distance / data.range : 0f;
                 float damage = WeaponUpgradeMath.EffectiveDamage(data, _starLevel)
-                               * dmgMult * data.RangeFalloff(dist01);
+                               * dmgMult * data.RangeFalloff(dist01) * (1f + _skinBonus);
 
                 // Every damage-shaping card, Damage Up included, resolves here.
                 var skills = ZombieWar.Skills.SkillRuntime.Active;
@@ -849,6 +851,8 @@ namespace ZombieWar
             if (_currentInstance != null) Destroy(_currentInstance);
             _currentData = data;
             _starLevel = PlayerProfile.GetWeaponLevel(data.WeaponId);
+            var skin = Skins.WeaponSkins.Find(PlayerProfile.GetEquippedSkin(data.WeaponId));
+            _skinBonus = Skins.WeaponSkins.DamageBonus(skin);
 
             // Signature cards are gated by the family in hand, so the build learns it at equip time -
             // not only when a level-up happens to open.
@@ -868,6 +872,7 @@ namespace ZombieWar
             _currentInstance.transform.localPosition = data.gripLocalPosition;
             _currentInstance.transform.localRotation = Quaternion.Euler(data.gripLocalEuler);
             _currentInstance.transform.localScale = data.gripLocalScale;
+            if (skin != null) _currentInstance.AddComponent<Skins.WeaponSkinApplier>().Apply(skin);
             _weaponRestLocalPosition = _currentInstance.transform.localPosition;
             _currentGripPoints = _currentInstance.GetComponent<WeaponGripPoints>();
 

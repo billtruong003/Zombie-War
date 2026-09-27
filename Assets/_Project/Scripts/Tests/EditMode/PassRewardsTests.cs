@@ -101,6 +101,20 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void Skins_EquipOnlyWhenOwned_BonusFollowsSet()
+        {
+            Assert.IsFalse(PlayerProfile.SetEquippedSkin("weapon.test", "inferno"), "not owned");
+            PlayerProfile.AddSkin("inferno");
+            Assert.IsTrue(PlayerProfile.SetEquippedSkin("weapon.test", "inferno"));
+            Assert.AreEqual("inferno", PlayerProfile.GetEquippedSkin("weapon.test"));
+            Assert.IsNull(PlayerProfile.GetEquippedSkin("weapon.other"), "one gun at a time");
+            Assert.Greater(Skins.WeaponSkins.DamageBonus("inferno"), Skins.WeaponSkins.DamageBonus("frostbite"));
+            Assert.AreEqual(0f, Skins.WeaponSkins.DamageBonus((string)null));
+            PlayerProfile.SetEquippedSkin("weapon.test", null);
+            Assert.IsNull(PlayerProfile.GetEquippedSkin("weapon.test"));
+        }
+
+        [Test]
         public void Lanes_Have30Rewards_WithTheSeasonSkins()
         {
             Assert.AreEqual(PassRewards.Kind.Skin, PassRewards.Free(10).kind);

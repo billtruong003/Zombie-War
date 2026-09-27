@@ -292,7 +292,8 @@ namespace ZombieWar.Tests
             Assert.AreEqual(PlayerProfile.WeaponUpgradeResult.Upgraded, PlayerProfile.TryUpgradeWeapon(weapon, econ));
             Assert.AreEqual(2, PlayerProfile.GetWeaponLevel(weapon.WeaponId));
             Assert.AreEqual(5, PlayerProfile.GetWeaponShards(weapon.WeaponId));
-            Assert.AreEqual(60, PlayerProfile.Gold);
+            Assert.AreEqual(50, PlayerProfile.Coin, "star upgrades charge Coin (Gold is Coin, M10)");
+            Assert.AreEqual(100, PlayerProfile.Gold);
             Object.DestroyImmediate(weapon); Object.DestroyImmediate(econ);
         }
 

@@ -241,7 +241,7 @@ namespace ZombieWar.UI
             int stars = Mathf.Clamp(PlayerProfile.GetWeaponLevel(d.WeaponId), 1, 3);
             for (int i = 0; i < gunStars.Length; i++)
                 if (gunStars[i] != null) gunStars[i].color = i < stars ? Color.white : new Color(0.25f, 0.27f, 0.33f, 1f);
-            int power = Mathf.RoundToInt(CombatPower.WeaponPower(d, stars));
+            int power = Mathf.RoundToInt(CombatPower.WeaponPower(d, stars) * (1f + Skins.WeaponSkins.DamageBonus(PlayerProfile.GetEquippedSkin(d.WeaponId))));
             Set(gunMeta, $"{HubScreen.FamilyName(d.weaponClass)} · POWER {power:N0}");
         }
 

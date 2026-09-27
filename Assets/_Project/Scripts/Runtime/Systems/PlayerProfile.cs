@@ -109,6 +109,7 @@ namespace ZombieWar
             public int passSeasonStart;
             public bool passPremium;
             public List<string> passClaimed = new List<string>();
+            public List<string> equippedSkins = new List<string>();   // "weaponId|skinId"
         }
 
         [Serializable]
@@ -255,6 +256,27 @@ namespace ZombieWar
         {
             if (string.IsNullOrEmpty(id) || Data.ownedSkins.Contains(id)) return;
             Data.ownedSkins.Add(id); SaveNow(); LoadoutChanged?.Invoke();
+        }
+
+        /// <summary>The skin set shown and counted on a gun, or null for the plain gun.</summary>
+        public static string GetEquippedSkin(string weaponId)
+        {
+            if (string.IsNullOrEmpty(weaponId)) return null;
+            string prefix = weaponId + "|";
+            foreach (var e in Data.equippedSkins) if (e.StartsWith(prefix, StringComparison.Ordinal)) return e.Substring(prefix.Length);
+            return null;
+        }
+
+        /// <summary>Puts an owned set on a gun (null takes it off). False when not owned.</summary>
+        public static bool SetEquippedSkin(string weaponId, string skinId)
+        {
+            if (string.IsNullOrEmpty(weaponId)) return false;
+            if (!string.IsNullOrEmpty(skinId) && !IsSkinOwned(skinId)) return false;
+            string prefix = weaponId + "|";
+            Data.equippedSkins.RemoveAll(e => e.StartsWith(prefix, StringComparison.Ordinal));
+            if (!string.IsNullOrEmpty(skinId)) Data.equippedSkins.Add(prefix + skinId);
+            SaveNow(); LoadoutChanged?.Invoke();
+            return true;
         }
 
         /// <summary>Pass season XP. Only <see cref="PassRewards"/> resets it at a season change.</summary>
@@ -704,11 +726,12 @@ namespace ZombieWar
                 return WeaponUpgradeResult.InvalidData;
             int shardCost = shardTable[tier]; long goldCost = goldTable[tier];
             if (GetWeaponShards(weapon.WeaponId) < shardCost) return WeaponUpgradeResult.InsufficientShards;
-            if (Gold < goldCost) return WeaponUpgradeResult.InsufficientGold;
+            // Owner (M10): Gold is Coin. The star cost tables keep their "Gold" names but charge Coin.
+            if (Coin < goldCost) return WeaponUpgradeResult.InsufficientGold;
 
             string snapshot = JsonUtility.ToJson(Data);
             SetWeaponShardsInMemory(weapon.WeaponId, GetWeaponShards(weapon.WeaponId) - shardCost);
-            SetBalance(CurrencyKind.Gold, Gold - goldCost);
+            SetBalance(CurrencyKind.Coin, Coin - goldCost);
             SetWeaponLevelInMemory(weapon.WeaponId, level + 1);
             try { SaveNow(); }
             catch (Exception e)
@@ -1604,6 +1627,7 @@ namespace ZombieWar
             d.ownedFrames = DedupeNonEmpty(d.ownedFrames);
             d.ownedSkins = DedupeNonEmpty(d.ownedSkins);
             d.passClaimed = DedupeNonEmpty(d.passClaimed);
+            d.equippedSkins = DedupeNonEmpty(d.equippedSkins);
             if (d.tickets < 0) d.tickets = 0;
             if (float.IsNaN(d.bestSurvivalSeconds) || d.bestSurvivalSeconds < 0f) d.bestSurvivalSeconds = 0f;
             d.missionProgress ??= new List<MissionProgressEntry>();

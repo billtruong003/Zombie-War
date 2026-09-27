@@ -46,6 +46,24 @@ namespace ZombieWar.Skins
                     rimCut = 0.7f, rimColor = new Color(1f, 0.72f, 0.25f, 0.55f), edge = 1.4f, edgeColor = new Color(1.6f, 1.4f, 0.9f) },
         };
 
+        /// <summary>Damage bonus per set, tuned toward paying players (owner, M10): pass skins
+        /// are the floor, shop sets are stronger, Gilded is the top.</summary>
+        static readonly Dictionary<string, float> Bonus = new()
+        {
+            ["frostbite"] = 0.05f, ["biohazard"] = 0.06f, ["cosmos"] = 0.07f,
+            ["neon"] = 0.08f, ["inferno"] = 0.10f, ["gilded"] = 0.12f,
+        };
+
+        public static Set Find(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            foreach (var s in Season1) if (s.id == id) return s;
+            return null;
+        }
+
+        public static float DamageBonus(Set set) => set != null && Bonus.TryGetValue(set.id, out var b) ? b : 0f;
+        public static float DamageBonus(string id) => DamageBonus(Find(id));
+
         static Shader _shader;
         static readonly Dictionary<string, Material> Cache = new();
 
