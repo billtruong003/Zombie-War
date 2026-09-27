@@ -145,21 +145,16 @@ namespace ZombieWar.UI
             };
         }
 
-        /// Owned pieces only: required slots always get one, optional ones half the time.
+        CostumeRandomizer _randomizer;
+        readonly System.Random _rng = new();
+
+        /// Owned pieces only; see CostumeRandomizer for the clash and colour rules.
         void RandomOutfit()
         {
             if (catalog == null) return;
-            var outfit = new List<LoadoutState.PartSel>();
-            foreach (var def in catalog.slotDefinitions)
-            {
-                if (catalog.IsTechnicalCasualSlot(def.id)) continue;
-                var slot = catalog.GetSlot(def.id);
-                if (slot == null) continue;
-                var owned = slot.parts.Where(p => PlayerProfile.IsCostumeOwned(p.itemId)).Select(p => p.itemId).ToList();
-                if (owned.Count == 0) continue;
-                if (def.allowNone && UnityEngine.Random.value < 0.5f) continue;
-                outfit.Add(new LoadoutState.PartSel { slot = def.id, guid = owned[UnityEngine.Random.Range(0, owned.Count)] });
-            }
+            // No clipping pieces, colours that go together (CostumeRandomizer).
+            _randomizer ??= CostumeRandomizer.Load();
+            var outfit = _randomizer.Generate(catalog, PlayerProfile.IsCostumeOwned, _rng);
             if (PlayerProfile.TrySetCasualOutfit(catalog, outfit) == PlayerProfile.CostumeEquipResult.Equipped)
             {
                 UIFeedback.Equip();
