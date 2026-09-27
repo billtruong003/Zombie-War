@@ -171,12 +171,10 @@ namespace ZombieWar.EditorTools.V2
             var hero = Node(page, "Hero"); Size(hero, -1, 194);
             Wire(s, "hero", hero.gameObject);
             var body = Fill(Node(hero, "Card"), 0, 0, 0, 6);
-            Surface(body, Hex("7663de"), 18f);
+            // Living background (BannerFx): gradient, rays behind the chest, sparkles, gold rim.
+            var bodyImg = Surface(body, Hex("7663de"), 18f);
+            Banner(bodyImg, Hex("6d5ae0"), Hex("e5487e"), Hex("ffd27a"), new Vector2(0.8f, 0.55f), 0.9f, 1f, 0.7f);
             body.gameObject.AddComponent<Mask>().showMaskGraphic = true;
-            var grad = Fill(Node(body, "Grad"), 0, 0, 0, 0).gameObject.AddComponent<Image>();
-            grad.sprite = Spr("grad_h"); grad.color = Hex("e5487e"); grad.raycastTarget = false;
-            var glow = Box(Node(body, "Glow"), new Vector2(1, 1), new Vector2(0.5f, 0.5f), -80, -80, 240, 240).gameObject.AddComponent<Image>();
-            glow.sprite = Spr("glow_soft"); glow.color = new Color(1, 1, 1, 0.35f); glow.raycastTarget = false;
             IconImage(Box(Node(body, "Chest"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -14, 4, 128, 128), "Chest_Premium");
             var tag = Box(Node(body, "Tag"), new Vector2(0, 1), new Vector2(0, 1), 16, -14, 200, 20);
             Surface(tag, Yellow, RTag);
@@ -243,7 +241,9 @@ namespace ZombieWar.EditorTools.V2
         static ShopScreenV2.Cell GemCard(RectTransform parent, int i, string amount, string price, string ribbon, out TextMeshProUGUI bonus)
         {
             var card = Node(parent, "Gem" + i);
-            Surface(card, Card, RButton);
+            var cardImg = Surface(card, Card, RButton);
+            // The two big packs look premium: purple living background with a gold rim.
+            if (ribbon != null) Banner(cardImg, Hex("5b3bc4"), Hex("9b6bff"), Hex("ffe7a3"), new Vector2(0.5f, 0.7f), i == 3 ? 1.1f : 0.6f, 0.9f, i == 3 ? 0.8f : 0.5f);
             var art = TopBand(Node(card, "Art"), 10, 58, 4, 4);
             float g = 22 + i * 2;
             int n = i == 0 ? 1 : 2;
@@ -251,7 +251,9 @@ namespace ZombieWar.EditorTools.V2
                 IconImage(Box(Node(art, "G" + k), new Vector2(0.5f, 0), new Vector2(0.5f, 0), n == 1 ? 0 : (k == 0 ? -g * 0.45f : g * 0.45f), 0, g, g), "Gem_Diamond_Purple");
             if (i >= 2) IconImage(Box(Node(art, "G2"), new Vector2(0.5f, 0), new Vector2(0.5f, 0), 0, g * 0.55f, g, g), "Gem_Diamond_Purple");
             var amt = Shrink(Title(TopBand(Node(card, "Amount"), 70, 22, 4, 4), amount, 18f, Ink, TextAlignmentOptions.Center));
-            bonus = Shrink(Body(TopBand(Node(card, "Bonus"), 92, 14, 2, 2), i == 0 ? "" : $"+{i * 10}% BONUS", 10f, Green, TextAlignmentOptions.Center));
+            if (ribbon != null) UIKitV2.NoTheme = true;
+            try { bonus = Shrink(Body(TopBand(Node(card, "Bonus"), 92, 14, 2, 2), i == 0 ? "" : $"+{i * 10}% BONUS", 10f, ribbon != null ? Yellow : Green, TextAlignmentOptions.Center)); }
+            finally { UIKitV2.NoTheme = false; }
             var btnRt = BottomBand(Node(card, "Buy"), 8, 32, 6, 6);
             var b = Button(btnRt, price, Role.Claim, 14f);
             if (ribbon != null)
@@ -311,7 +313,7 @@ namespace ZombieWar.EditorTools.V2
         static void Boutique(RectTransform page, ShopScreenV2 s)
         {
             var b = Node(page, "Boutique"); Size(b, -1, 150);
-            Surface(b, Hex("3a2a55"), RPanel);
+            Banner(Surface(b, Hex("3a2a55"), RPanel), Hex("2e2150"), Hex("6b3fa0"), Hex("c9a7ff"), new Vector2(0.18f, 0.5f), 0.35f, 0.7f, 0.5f);
             var art = Box(Node(b, "Art"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 10, 0, 100, 120);
             Surface(art, Hex("262040"), RCard);
             var icon = Fill(Node(art, "Icon"), 10, 10, 10, 10).gameObject.AddComponent<Image>();

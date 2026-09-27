@@ -28,7 +28,7 @@ namespace ZombieWar.EditorTools.V2
                 r.gameObject.AddComponent<CanvasGroup>();
                 ScreenBackground(r);
                 var s = r.gameObject.AddComponent<GachaScreen>();
-                var turn = r.gameObject.AddComponent<GunTurntable>();
+                var turn = r.gameObject.AddComponent<GunTurntable>(); turn.Framing = 0.72f;   // big banner art: show the gun larger
                 Wire(s, "turntable", turn);
                 var safe = Fill(Node(r, "Safe"), 0, 0, 0, 0);
                 safe.gameObject.AddComponent<SafeArea>();
@@ -83,10 +83,11 @@ namespace ZombieWar.EditorTools.V2
         {
             float bottom = NavH + 12 + InfoH + 12 + PullH + 10;
             var b = Fill(Node(safe, "Banner"), 14, 124, 14, bottom);
-            Wire(s, "bannerBg", Surface(b, Hex("4a1f3a"), 18f));
+            var bg = Surface(b, Hex("4a1f3a"), 18f);
+            Wire(s, "bannerBg", bg);
+            // Living background (BannerFx); GachaScreen recolours it per banner.
+            Wire(s, "bannerFx", UIKitV2.Banner(bg, Hex("3a1636"), Hex("a0336e"), Hex("ff9ad6"), new Vector2(0.5f, 0.55f), 0.6f, 1f, 0.6f));
             b.gameObject.AddComponent<RectMask2D>();
-            var glow = Box(Node(b, "Glow"), new Vector2(0.5f, 0.55f), new Vector2(0.5f, 0.5f), 0, 0, 300, 300);
-            var gi = glow.gameObject.AddComponent<Image>(); gi.sprite = Spr("glow_soft"); gi.color = new Color(1f, 0.4f, 0.8f, 0.35f); gi.raycastTarget = false;
 
             // The art lives between the title (top 104) and the featured block (bottom 110), square,
             // so it never sits on the text whatever the banner height is.

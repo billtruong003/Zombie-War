@@ -17,6 +17,9 @@ namespace ZombieWar.UI
 
         [SerializeField] private int textureSize = 768;
         [SerializeField] private float spinSpeed = 24f;
+        [Tooltip("Framing on top of the fit-any-turn default: below 1 shows the gun bigger (big banner art).")]
+        [SerializeField, Range(0.4f, 1.5f)] private float framing = 1f;
+        public float Framing { get => framing; set => framing = value; }
 
         public RenderTexture Texture { get; private set; }
 
@@ -44,7 +47,7 @@ namespace ZombieWar.UI
             // Frame the gun's bounding sphere with a margin, so it fits the square view at any turn
             // (the old 0.3 x longest side cropped long guns and filled the tile with short ones).
             float radius = bounds.extents.magnitude;
-            _frame = radius * 1.15f; _zoom = 1f;
+            _frame = radius * 1.15f * framing; _zoom = 1f;
             ApplyZoom();
             if (skin != null) _gun.AddComponent<Skins.WeaponSkinApplier>().Apply(skin);
             PlaceCamera();   // right away: the first frame must not look out from inside the gun

@@ -456,6 +456,28 @@ namespace ZombieWar.EditorTools.V2
             return t;
         }
 
+        const string BannerMat = "Assets/_Project/Art/Materials/UI/BannerFx.mat";
+
+        /// <summary>
+        /// Premium banner background (BannerFx shader) on a rounded surface: fixed colours in every
+        /// theme (the ThemeTint is removed so a theme never dyes it).
+        /// </summary>
+        public static BannerFx Banner(Graphic g, Color a, Color b, Color glow, Vector2 rayCenter, float rim, float sparkle = 0.8f, float sheen = 0.6f)
+        {
+            var tint = g.GetComponent<ThemeTint>(); if (tint != null) Object.DestroyImmediate(tint);
+            g.color = Color.white;
+            var fx = g.GetComponent<BannerFx>() ?? g.gameObject.AddComponent<BannerFx>();
+            var m = AssetDatabase.LoadAssetAtPath<Material>(BannerMat);
+            if (m == null)
+            {
+                m = new Material(Shader.Find("ZombieWar/UI/BannerFx")) { name = "BannerFx" };
+                AssetDatabase.CreateAsset(m, BannerMat);
+            }
+            fx.BaseMaterial = m;
+            fx.Configure(a, b, glow, rayCenter, rim, sparkle, sheen);
+            return fx;
+        }
+
         /// <summary>Progress bar: deep track + clipped fill (UIBarClip) so the ends stay round.</summary>
         public static UIBarClip Bar(RectTransform rt, Color fill, float value01)
         {

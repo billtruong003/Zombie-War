@@ -31,6 +31,7 @@ namespace ZombieWar.UI
 
         [Header("Banner")]
         [SerializeField] private Image bannerBg;
+        [SerializeField] private BannerFx bannerFx;
         [SerializeField] private TMP_Text bannerTimer;
         [SerializeField] private TMP_Text bannerTitle;
         [SerializeField] private GunTurntable turntable;
@@ -73,6 +74,14 @@ namespace ZombieWar.UI
         };
         /// Rate tiles on the screen follow the theme; the results sheet is a dark overlay in every theme.
         static readonly ThemeRole[] TierRoles = { ThemeRole.Card, ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.GemTint, ThemeRole.LegendTint };
+        /// Living banner colours: event (magenta night), outfits (teal street), shards (navy gold).
+        static readonly (Color a, Color b, Color glow)[] BannerPalette =
+        {
+            (new Color(0.227f, 0.086f, 0.212f), new Color(0.627f, 0.2f, 0.431f), new Color(1f, 0.604f, 0.839f)),
+            (new Color(0.086f, 0.2f, 0.243f), new Color(0.165f, 0.478f, 0.549f), new Color(0.624f, 0.941f, 1f)),
+            (new Color(0.122f, 0.18f, 0.314f), new Color(0.231f, 0.357f, 0.69f), new Color(1f, 0.824f, 0.478f)),
+        };
+
         static readonly Color[] BannerColor = { new(0.29f, 0.12f, 0.25f), new(0.16f, 0.2f, 0.3f), new(0.12f, 0.19f, 0.31f) };
 
         int _banner;
@@ -265,7 +274,9 @@ namespace ZombieWar.UI
             }
 
             var bn = B; bool evt = bn.kind == GachaBanners.Kind.Event;
-            if (bannerBg != null) bannerBg.color = BannerColor[Mathf.Clamp(_banner, 0, BannerColor.Length - 1)];
+            int bi = Mathf.Clamp(_banner, 0, BannerPalette.Length - 1);
+            if (bannerFx != null) bannerFx.SetPalette(BannerPalette[bi].a, BannerPalette[bi].b, BannerPalette[bi].glow);
+            else if (bannerBg != null) bannerBg.color = BannerColor[Mathf.Clamp(_banner, 0, BannerColor.Length - 1)];
             int daysLeft = GachaBanners.DaysLeft(bn, today);
             if (bannerTimer != null) bannerTimer.text = evt ? $"EVENT BANNER · ENDS IN {daysLeft}D" : daysLeft < 0 ? "PERMANENT BANNER" : $"OUTFIT BANNER · ENDS IN {daysLeft}D";
             if (bannerTitle != null) bannerTitle.text = evt ? bn.title : bn.kind == GachaBanners.Kind.Shards ? "GUN\nSHARDS" : "STREET\nSTYLE";
