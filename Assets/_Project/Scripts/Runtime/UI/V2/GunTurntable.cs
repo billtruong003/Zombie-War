@@ -24,6 +24,8 @@ namespace ZombieWar.UI
         Camera _cam;
         const float RestYaw = 55f;
         float _yaw = RestYaw, _pitch = 10f, _idle, _t;
+        float _spin, _frame = 1f, _zoom = 1f;
+        bool _held;
 
         public void Show(WeaponData data, Skins.WeaponSkins.Set skin)
         {
@@ -34,13 +36,16 @@ namespace ZombieWar.UI
             foreach (var b in _gun.GetComponentsInChildren<Behaviour>(true)) if (!(b is Skins.WeaponSkinApplier)) b.enabled = false;
             foreach (var c in _gun.GetComponentsInChildren<Collider>(true)) c.enabled = false;
             _gun.transform.localPosition = Vector3.zero; _gun.transform.localRotation = Quaternion.identity;
-            // Centre on the gun's bounds and frame its longest side.
+            // Centre on the gun's bounds.
             var rs = _gun.GetComponentsInChildren<Renderer>(true);
             if (rs.Length == 0) return;
             var bounds = rs[0].bounds; foreach (var r in rs) bounds.Encapsulate(r.bounds);
             _gun.transform.position += Stage - bounds.center;
-            float size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-            _cam.orthographicSize = size * 0.3f;
+            // Frame the gun's bounding sphere with a margin, so it fits the square view at any turn
+            // (the old 0.3 x longest side cropped long guns and filled the tile with short ones).
+            float radius = bounds.extents.magnitude;
+            _frame = radius * 1.15f; _zoom = 1f;
+            ApplyZoom();
             if (skin != null) _gun.AddComponent<Skins.WeaponSkinApplier>().Apply(skin);
             PlaceCamera();   // right away: the first frame must not look out from inside the gun
         }
@@ -49,8 +54,24 @@ namespace ZombieWar.UI
         {
             _yaw += delta.x * 0.4f;
             _pitch = Mathf.Clamp(_pitch - delta.y * 0.3f, -60f, 70f);
-            _idle = 2f;
+            float dt = Mathf.Max(Time.unscaledDeltaTime, 1e-3f);
+            _spin = Mathf.Lerp(_spin, delta.x * 0.4f / dt, 0.5f);
+            _held = true;
+            _idle = 2.5f;
         }
+
+        /// <summary>Finger lifted: the gun keeps turning for a moment, slowing down.</summary>
+        public void Release() { _held = false; }
+
+        /// <summary>Pinch / wheel zoom, as a factor on the framed size (clamped 0.45..1.6).</summary>
+        public void Zoom(float factor)
+        {
+            _zoom = Mathf.Clamp(_zoom / Mathf.Max(0.01f, factor), 0.45f, 1.6f);
+            _idle = 2.5f;
+            ApplyZoom();
+        }
+
+        void ApplyZoom() { if (_cam != null) _cam.orthographicSize = _frame * _zoom; }
 
         void Ensure()
         {
@@ -82,7 +103,15 @@ namespace ZombieWar.UI
 
         void Rock()
         {
-            if (_idle > 0f) _idle -= Time.unscaledDeltaTime;
+            float dt = Time.unscaledDeltaTime;
+            if (!_held && Mathf.Abs(_spin) > 2f)
+            {
+                _yaw += _spin * dt;
+                _spin *= Mathf.Exp(-3.5f * dt);   // a flick keeps turning, then settles
+                _idle = 2.5f;
+                return;
+            }
+            if (_idle > 0f) _idle -= dt;
             else
             {
                 _t += Time.unscaledDeltaTime * spinSpeed / 60f;
@@ -110,10 +139,4 @@ namespace ZombieWar.UI
         }
     }
 
-    /// <summary>Drag on a RawImage to turn the <see cref="GunTurntable"/>.</summary>
-    public sealed class TurntableDrag : MonoBehaviour, IDragHandler
-    {
-        [SerializeField] private GunTurntable turntable;
-        public void OnDrag(PointerEventData e) { if (turntable != null) turntable.Drag(e.delta); }
-    }
 }

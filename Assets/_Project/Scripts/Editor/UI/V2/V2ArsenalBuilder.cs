@@ -66,7 +66,7 @@ namespace ZombieWar.EditorTools.V2
             var fit = raw.gameObject.AddComponent<AspectRatioFitter>();
             fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = 1f;
             Wire(s, "preview", raw);
-            var drag = pv.gameObject.AddComponent<TurntableDrag>(); Wire(drag, "turntable", turn);
+            var drag = pv.gameObject.AddComponent<TurntableDrag>(); drag.Turntable = turn; drag.AllowZoom = false;   // pinch lives in the big 360 view
 
             var info = Fill(Node(card, "Info"), 156, 10, 10, 62);
             var nameRow = TopBand(Node(info, "Name"), 0, 26);
@@ -207,12 +207,15 @@ namespace ZombieWar.EditorTools.V2
         static void BigView(RectTransform root, ArsenalScreen s, GunTurntable turn)
         {
             var v = Fill(Node(root, "BigView"), 0, 0, 0, 0);
-            Flat(v, new Color(0.08f, 0.09f, 0.12f, 0.96f), true);
+            UIKitV2.NoTheme = true;   // a dark stage in every theme (a themed tint left it see-through)
+            try { Flat(v, new Color(0.08f, 0.09f, 0.12f, 0.97f), true); } finally { UIKitV2.NoTheme = false; }
             var raw = Box(Node(v, "Gun"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 20, 380, 380).gameObject.AddComponent<RawImage>();
             raw.color = new Color(1, 1, 1, 0);
             Wire(s, "bigPreview", raw);
-            var drag = raw.gameObject.AddComponent<TurntableDrag>(); Wire(drag, "turntable", turn);
-            Label(Box(Node(v, "Hint"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -190, 300, 16), "DRAG TO TURN").alignment = TextAlignmentOptions.Center;
+            var drag = raw.gameObject.AddComponent<TurntableDrag>(); drag.Turntable = turn;
+            UIKitV2.NoTheme = true;
+            try { Label(Box(Node(v, "Hint"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -190, 300, 16), "DRAG TO TURN · PINCH TO ZOOM", Hex("c9cfdb")).alignment = TextAlignmentOptions.Center; }
+            finally { UIKitV2.NoTheme = false; }
             var close = Box(Node(v, "Close"), new Vector2(0.5f, 0), new Vector2(0.5f, 0), 0, 40, 200, 50);
             Wire(s, "bigClose", Button(close, "CLOSE", Role.Quiet, 17f));
             Wire(s, "bigView", v.gameObject);

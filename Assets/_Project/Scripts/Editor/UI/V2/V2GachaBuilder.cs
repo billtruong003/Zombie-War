@@ -96,7 +96,7 @@ namespace ZombieWar.EditorTools.V2
             gfit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; gfit.aspectRatio = 1f;
             gun.color = new Color(1, 1, 1, 0); gun.raycastTarget = true;
             Wire(s, "gunArt", gun);
-            var drag = gun.gameObject.AddComponent<TurntableDrag>(); Wire(drag, "turntable", s.GetComponent<GunTurntable>());
+            var drag = gun.gameObject.AddComponent<TurntableDrag>(); drag.Turntable = s.GetComponent<GunTurntable>();
             var outfit = Box(Node(b, "OutfitArt"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 30, -10, 256, 320).gameObject.AddComponent<RawImage>();
             outfit.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(OutfitRT); outfit.raycastTarget = false;
             var ofit = outfit.gameObject.AddComponent<AspectRatioFitter>();
