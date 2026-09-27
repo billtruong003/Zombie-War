@@ -115,6 +115,9 @@ namespace ZombieWar
             public List<string> dealsBought = new List<string>();
             public List<string> packsBought = new List<string>();
             public bool noAds;
+            // M10 Gacha v2.
+            public int gachaEpoch;
+            public int gachaFreeDay;
         }
 
         [Serializable]
