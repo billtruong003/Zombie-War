@@ -26,7 +26,7 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 r.gameObject.AddComponent<CanvasGroup>();
-                Flat(r, Ground, true);
+                ScreenBackground(r);
                 var s = r.gameObject.AddComponent<GachaScreen>();
                 var turn = r.gameObject.AddComponent<GunTurntable>();
                 Wire(s, "turntable", turn);
@@ -43,8 +43,8 @@ namespace ZombieWar.EditorTools.V2
                 WireArray(nav, "tabs", buttons);
                 WireArray(nav, "dots", dots);
                 Wire(s, "nav", nav);
-                Results(r, s);
-                Rates(r, s);
+                UIKitV2.NoTheme = true;   // result and rate sheets are dark overlays in every theme
+                try { Results(r, s); Rates(r, s); } finally { UIKitV2.NoTheme = false; }
                 Wire(s, "economy", AssetDatabase.LoadAssetAtPath<EconomyConfig>(Economy));
 
                 var go = PrefabUtility.SaveAsPrefabAsset(r.gameObject, Path);

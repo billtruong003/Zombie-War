@@ -30,7 +30,8 @@ namespace ZombieWar.EditorTools.V2
                 var root = Node(overlays, "RunEndV2");
                 root.anchorMin = Vector2.zero; root.anchorMax = Vector2.one; root.offsetMin = root.offsetMax = Vector2.zero;
                 var end = root.gameObject.AddComponent<RunEndV2>();
-                Revive(root, end);
+                UIKitV2.NoTheme = true;   // the revive overlay stays dark in every theme
+                try { Revive(root, end); } finally { UIKitV2.NoTheme = false; }
                 Result(root, end);
 
                 // Same scaling as the menu (Expand @1080x1920): taller phones get more room and a
@@ -59,7 +60,7 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 var end = r.gameObject.AddComponent<RunEndV2>();
-                Revive(r, end); Result(r, end);
+                UIKitV2.NoTheme = true; try { Revive(r, end); } finally { UIKitV2.NoTheme = false; } Result(r, end);
                 r.Find("Revive").gameObject.SetActive(true);
                 var p1 = PrefabUtility.SaveAsPrefabAsset(r.gameObject, "Assets/_Project/UI/Prefabs/V2/Review_Revive.prefab");
                 r.Find("Revive").gameObject.SetActive(false); r.Find("Result").gameObject.SetActive(true);
@@ -124,7 +125,7 @@ namespace ZombieWar.EditorTools.V2
         static void Result(RectTransform root, RunEndV2 e)
         {
             var p = Fill(Node(root, "Result"), 0, 0, 0, 0);
-            Flat(p, Ground, true);
+            ScreenBackground(p);
             var safe = Fill(Node(p, "Safe"), 0, 0, 0, 0); safe.gameObject.AddComponent<SafeArea>();
             Wire(e, "banner", Title(TopBand(Node(safe, "Banner"), 36, 26, 16, 16), "THE HORDE GOT YOU", 20f, Ink, TextAlignmentOptions.Center));
             Wire(e, "time", Title(TopBand(Node(safe, "Time"), 62, 72, 16, 16), "9:58", 64f, Ink, TextAlignmentOptions.Center));

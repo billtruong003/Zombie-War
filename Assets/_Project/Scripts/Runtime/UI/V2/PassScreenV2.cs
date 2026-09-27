@@ -55,9 +55,6 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text premiumLabel;
         [SerializeField] private NavBarV2 nav;
 
-        static readonly Color Claimed = new(0.149f, 0.227f, 0.180f), Open = new(0.184f, 0.208f, 0.267f),
-            NodeOn = new(0.357f, 0.839f, 0.541f), NodeOff = new(0.227f, 0.255f, 0.322f),
-            BarBlue = new(0.31f, 0.639f, 1f), BarGreen = new(0.357f, 0.839f, 0.541f), BarPurple = new(0.545f, 0.482f, 0.847f);
 
         string[] _missionIds = new string[0];
 
@@ -143,10 +140,10 @@ namespace ZombieWar.UI
                 var c = columns[i]; if (c == null) continue;
                 int l = i + 1; bool reached = l <= level;
                 bool fDone = PassRewards.IsClaimed(l, false), pDone = PassRewards.IsClaimed(l, true);
-                if (c.freeBg != null) c.freeBg.color = fDone ? Claimed : Open;
+                ThemeTint.Set(c.freeBg, fDone ? ThemeRole.ClaimTint : ThemeRole.Card);
                 Show(c.freeCheck, fDone); Show(c.freeRing, PassRewards.CanClaim(l, false));
                 Show(c.premCheck, pDone); Show(c.premLock, !PassRewards.IsPremium); Show(c.premRing, PassRewards.CanClaim(l, true));
-                if (c.node != null) c.node.color = reached ? NodeOn : NodeOff;
+                ThemeTint.Set(c.node, reached ? ThemeRole.Claim : ThemeRole.Edge);
             }
 
             var active = PassMissions.ActiveFor(DateTime.UtcNow)
@@ -162,7 +159,7 @@ namespace ZombieWar.UI
                 bool done = PlayerProfile.IsMissionComplete(m), claimed = PlayerProfile.IsMissionClaimed(m.id);
                 Set(card.title, (m.scope == MissionScope.Weekly ? "WEEKLY · " : "") + m.title);
                 UIBarClip.Set(card.bar, Mathf.Clamp01(PlayerProfile.GetMissionProgress(m.id) / (float)Mathf.Max(1, m.target)));
-                if (card.barFill != null) card.barFill.color = done ? BarGreen : m.scope == MissionScope.Weekly ? BarPurple : BarBlue;
+                ThemeTint.Set(card.barFill, done ? ThemeRole.Claim : m.scope == MissionScope.Weekly ? ThemeRole.Rarity3 : ThemeRole.Info);
                 if (card.claimButton != null) card.claimButton.gameObject.SetActive(done && !claimed);
                 Set(card.claimLabel, $"+{m.passXp} XP");
                 if (card.xpLabel != null) { card.xpLabel.gameObject.SetActive(!done || claimed); card.xpLabel.text = claimed ? "DONE" : $"{m.passXp} XP"; }

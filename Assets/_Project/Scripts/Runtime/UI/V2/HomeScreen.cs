@@ -245,7 +245,7 @@ namespace ZombieWar.UI
             if (gunIcon != null) { gunIcon.enabled = icon != null; if (icon != null) { gunIcon.sprite = icon; gunIcon.preserveAspect = true; } }
             int stars = Mathf.Clamp(PlayerProfile.GetWeaponLevel(d.WeaponId), 1, 3);
             for (int i = 0; i < gunStars.Length; i++)
-                if (gunStars[i] != null) gunStars[i].color = i < stars ? Color.white : new Color(0.25f, 0.27f, 0.33f, 1f);
+                if (i < stars) ThemeTint.Clear(gunStars[i], Color.white); else ThemeTint.Set(gunStars[i], ThemeRole.Edge);
             int power = Mathf.RoundToInt(CombatPower.WeaponPower(d, stars) * (1f + Skins.WeaponSkins.DamageBonus(PlayerProfile.GetEquippedSkin(d.WeaponId))));
             Set(gunMeta, $"{HubScreen.FamilyName(d.weaponClass)} · POWER {power:N0}");
         }

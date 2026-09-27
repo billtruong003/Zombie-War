@@ -52,9 +52,6 @@ namespace ZombieWar.UI
         /// Hotspot order: HAT, FACE, JACKET, BACK, PANTS, SHOES.
         public static readonly string[] HotspotSlots = { "Head", "Eyewear", "Chest", "Back", "Legs", "Feet" };
 
-        static readonly Color Yellow = new(1f, 0.788f, 0.235f), Quiet = new(0.184f, 0.208f, 0.267f),
-            Ink = new(0.957f, 0.945f, 0.918f), OnYellow = new(0.165f, 0.114f, 0f);
-        static readonly Color[] Rarity = { new(0.604f, 0.639f, 0.698f), new(0.298f, 0.686f, 0.431f), new(0.31f, 0.639f, 0.969f), new(0.545f, 0.482f, 0.847f), new(0.949f, 0.6f, 0.29f) };
 
         MenuCharacterStage _stage;
         List<ModularCostumeCatalog.SlotDefinition> _slots = new();
@@ -150,6 +147,12 @@ namespace ZombieWar.UI
             if (PlayerProfile.SaveLook(index)) { UIFeedback.Confirm(); Toast.Show($"Saved as look {index + 1}"); Refresh(); }
         }
 
+        static Graphic Face(Button b)
+        {
+            var f = b.transform.Find("Face");
+            return f != null ? f.GetComponent<Graphic>() : b.targetGraphic;
+        }
+
         public void Refresh()
         {
             if (!IsShown && !gameObject.activeInHierarchy) return;
@@ -160,15 +163,15 @@ namespace ZombieWar.UI
             {
                 if (hotspots[i] == null) continue;
                 bool on = HotspotSlots[i] == _slot;
-                if (hotspots[i].targetGraphic is Image img) img.color = on ? Yellow : Quiet;
-                var t = hotspots[i].GetComponentInChildren<TMP_Text>(true); if (t != null) t.color = on ? OnYellow : Ink;
+                ThemeTint.Set(Face(hotspots[i]), on ? ThemeRole.Primary : ThemeRole.Card);
+                var t = hotspots[i].GetComponentInChildren<TMP_Text>(true); ThemeTint.Set(t, on ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
             }
             for (int i = 0; i < looks.Length; i++)
             {
                 if (looks[i] == null) continue;
                 bool has = i < PlayerProfile.LookCount;
                 looks[i].gameObject.SetActive(has);
-                if (looks[i].targetGraphic is Image img) img.color = PlayerProfile.IsWearingLook(i) ? Yellow : Quiet;
+                ThemeTint.Set(looks[i].targetGraphic, PlayerProfile.IsWearingLook(i) ? ThemeRole.Primary : ThemeRole.Card);
             }
             if (saveLook != null) saveLook.gameObject.SetActive(true);
 
@@ -186,9 +189,9 @@ namespace ZombieWar.UI
                 bool has = i < _slots.Count; chips[i].gameObject.SetActive(has);
                 if (!has) continue;
                 bool on = _slots[i].id == _slot;
-                if (chips[i].targetGraphic is Image img) img.color = on ? Ink : Quiet;
+                ThemeTint.Set(chips[i].targetGraphic, on ? ThemeRole.Ink : ThemeRole.Card);
                 var t = chips[i].GetComponentInChildren<TMP_Text>(true);
-                if (t != null) { t.text = _slots[i].displayName.ToUpperInvariant(); t.color = on ? new Color(0.149f, 0.165f, 0.212f) : new Color(0.725f, 0.749f, 0.8f); }
+                if (t != null) { t.text = _slots[i].displayName.ToUpperInvariant(); ThemeTint.Set(t, on ? ThemeRole.OnInk : ThemeRole.Dim); }
             }
 
             for (int i = 0; i < films.Length; i++)
@@ -200,13 +203,12 @@ namespace ZombieWar.UI
                 EconomyConfig.CostumeEntry item = default;
                 bool known = economy != null && economy.TryGetCostume(p.itemId, out item);
                 bool own = PlayerProfile.IsCostumeOwned(p.itemId);
-                if (f.bar != null) f.bar.color = Rarity[Mathf.Clamp(known ? (int)item.rarity : 0, 0, 4)];
+                ThemeTint.Set(f.bar, ThemePalette.Rarity(known ? (int)item.rarity : 0));
                 if (f.icon != null) { f.icon.sprite = p.icon; f.icon.enabled = p.icon != null; f.icon.preserveAspect = true; }
                 if (f.price != null)
                 {
                     f.price.text = own ? "OWNED" : !known ? "-" : item.source == AcquireSource.Gacha ? "GACHA" : $"{item.price:N0}";
-                    f.price.color = own ? new Color(0.357f, 0.839f, 0.541f) : known && item.source == AcquireSource.Gacha ? new Color(0.949f, 0.6f, 0.29f)
-                                  : known && item.currency == WalletCurrency.Gem ? new Color(0.788f, 0.655f, 1f) : Ink;
+                    ThemeTint.Set(f.price, own ? ThemeRole.ClaimLip : known && item.source == AcquireSource.Gacha ? ThemeRole.Rarity4 : known && item.currency == WalletCurrency.Gem ? ThemeRole.GemLip : ThemeRole.TextOnSurface);
                 }
                 if (f.selected != null) f.selected.SetActive(p.itemId == _picked);
             }

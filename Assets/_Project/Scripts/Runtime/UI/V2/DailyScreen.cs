@@ -49,8 +49,6 @@ namespace ZombieWar.UI
         [SerializeField] private Button stampButton;
         [SerializeField] private TMP_Text stampLabel;
 
-        static readonly Color ClaimedBg = new(0.149f, 0.227f, 0.180f), OpenBg = new(0.122f, 0.137f, 0.188f),
-            MilestoneBg = new(0.227f, 0.200f, 0.122f), MilestoneText = new(1f, 0.851f, 0.541f), Dim = new(0.604f, 0.631f, 0.690f);
 
         protected override void Awake()
         {
@@ -122,7 +120,7 @@ namespace ZombieWar.UI
                     bool done = i < claimed, isToday = canClaim && i == claimed;
                     if (t.check != null) t.check.SetActive(done);
                     if (t.ring != null) t.ring.SetActive(isToday);
-                    if (t.bg != null && i < DailyRewards.WelcomeDays - 1) t.bg.color = done ? ClaimedBg : OpenBg;
+                    if (t.bg != null && i < DailyRewards.WelcomeDays - 1) ThemeTint.Set(t.bg, done ? ThemeRole.ClaimTint : ThemeRole.Deep);
                     if (t.button != null) t.button.interactable = isToday;
                 }
             }
@@ -136,9 +134,9 @@ namespace ZombieWar.UI
                 var t = stampTiles[i]; if (t == null) continue;
                 bool milestone = DailyRewards.IsMilestone(i + 1);
                 if (t.stamp != null) t.stamp.SetActive(i < stamps);
-                if (t.number != null) { t.number.gameObject.SetActive(i >= stamps); t.number.color = milestone ? MilestoneText : Dim; }
+                if (t.number != null) { t.number.gameObject.SetActive(i >= stamps); ThemeTint.Set(t.number, milestone ? ThemeRole.Gold : ThemeRole.Dim); }
                 if (t.ring != null) t.ring.SetActive(i == todayTile);
-                if (t.bg != null) t.bg.color = milestone ? MilestoneBg : OpenBg;
+                ThemeTint.Set(t.bg, milestone ? ThemeRole.PrimaryTint : ThemeRole.Deep);
             }
 
             int missed = DailyRewards.Missed(today), left = DailyRewards.MakeUpsLeft;

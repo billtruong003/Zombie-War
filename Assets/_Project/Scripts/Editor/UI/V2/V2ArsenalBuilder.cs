@@ -26,7 +26,7 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 r.gameObject.AddComponent<CanvasGroup>();
-                Flat(r, Ground, true);
+                ScreenBackground(r);
                 var s = r.gameObject.AddComponent<ArsenalScreen>();
                 var turn = r.gameObject.AddComponent<GunTurntable>();
                 Wire(s, "turntable", turn);

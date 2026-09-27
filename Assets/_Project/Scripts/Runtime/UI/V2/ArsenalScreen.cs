@@ -73,7 +73,6 @@ namespace ZombieWar.UI
         public const int MaxGuns = 64;
 
         static readonly HashSet<string> PassSkins = new() { PassRewards.FreeSkin, PassRewards.PremiumSkinMid, PassRewards.PremiumSkinTop };
-        static readonly Color StarOff = new(0.25f, 0.27f, 0.33f, 1f), Locked = new(0.227f, 0.255f, 0.322f);
 
         List<WeaponData> _guns = new();
         WeaponData _selected;
@@ -185,7 +184,7 @@ namespace ZombieWar.UI
             Set(tierLabel, d.tier.ToString().ToUpperInvariant());
             if (tierBg != null) tierBg.color = d.TierColor;
             if (previewBg != null) previewBg.color = d.TileColor;
-            for (int i = 0; i < stars.Length; i++) if (stars[i] != null) stars[i].color = owned && i < level ? Color.white : StarOff;
+            for (int i = 0; i < stars.Length; i++) Star(stars[i], owned && i < level);
 
             float maxDmg = Mathf.Max(1f, _guns.Max(w => WeaponUpgradeMath.EffectiveDamage(w, 3)));
             float maxRate = Mathf.Max(0.01f, _guns.Max(w => WeaponUpgradeMath.EffectiveFireRate(w, 3)));
@@ -240,15 +239,16 @@ namespace ZombieWar.UI
                 bool owned = PlayerProfile.IsWeaponOwned(d.WeaponId);
                 int level = PlayerProfile.GetWeaponLevel(d.WeaponId);
                 Set(c.name, d.weaponName);
-                if (c.tile != null) c.tile.color = owned ? d.TileColor : Locked;
+                if (c.tile != null) { if (owned) ThemeTint.Clear(c.tile, d.TileColor); else ThemeTint.Set(c.tile, ThemeRole.Edge); }
                 var icon = catalog != null ? catalog.GetWeaponIcon(d, owned) : null;
                 if (c.icon != null) { c.icon.enabled = icon != null; if (icon != null) { c.icon.sprite = icon; c.icon.preserveAspect = true; } }
-                if (c.stars != null) for (int s = 0; s < c.stars.Length; s++) if (c.stars[s] != null) { c.stars[s].gameObject.SetActive(owned); c.stars[s].color = s < level ? Color.white : StarOff; }
+                if (c.stars != null) for (int s = 0; s < c.stars.Length; s++) if (c.stars[s] != null) { c.stars[s].gameObject.SetActive(owned); Star(c.stars[s], s < level); }
                 if (c.shopTag != null) c.shopTag.SetActive(!owned);
                 if (c.selected != null) c.selected.SetActive(_selected == d);
             }
         }
 
         static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
+        static void Star(Image i, bool lit) { if (lit) ThemeTint.Clear(i, Color.white); else ThemeTint.Set(i, ThemeRole.Edge); }
     }
 }

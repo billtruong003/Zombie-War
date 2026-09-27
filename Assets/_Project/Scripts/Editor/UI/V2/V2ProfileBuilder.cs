@@ -25,7 +25,7 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 r.gameObject.AddComponent<CanvasGroup>();
-                Flat(r, Ground, true);
+                ScreenBackground(r);
                 var s = r.gameObject.AddComponent<ProfileScreen>();
                 var safe = Fill(Node(r, "Safe"), 0, 0, 0, 0);
                 safe.gameObject.AddComponent<SafeArea>();

@@ -161,7 +161,7 @@ namespace ZombieWar.UI
                 if (on) earned++;
                 var tile = badgeTiles[i];
                 if (tile == null) continue;
-                tile.color = on ? Badges[i].color : new Color(0.227f, 0.255f, 0.322f, 1f);
+                if (on) ThemeTint.Clear(tile, Badges[i].color); else ThemeTint.Set(tile, ThemeRole.Edge);
                 var cg = tile.GetComponent<CanvasGroup>();
                 if (cg != null) cg.alpha = on ? 1f : 0.55f;
             }

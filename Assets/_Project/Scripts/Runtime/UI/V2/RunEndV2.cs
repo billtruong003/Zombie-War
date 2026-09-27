@@ -150,8 +150,8 @@ namespace ZombieWar.UI
             {
                 newBest.SetActive(true);
                 var img = newBest.GetComponent<Image>();
-                if (img != null) img.color = result.NewSurvivalRecord ? new Color(1f, 0.788f, 0.235f) : new Color(0.184f, 0.208f, 0.267f);
-                if (bestLabel != null) bestLabel.color = result.NewSurvivalRecord ? new Color(0.165f, 0.114f, 0f) : new Color(0.957f, 0.945f, 0.918f);
+                ThemeTint.Set(img, result.NewSurvivalRecord ? ThemeRole.Primary : ThemeRole.Card);
+                ThemeTint.Set(bestLabel, result.NewSurvivalRecord ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
             }
             Set(bestLabel, result.NewSurvivalRecord ? "NEW BEST" : "BEST " + HudController.FormatClock(Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds)));
             UIFx.CountUp(kills, s.Kills, 0.6f, v => $"{v:N0}", 0.25f);

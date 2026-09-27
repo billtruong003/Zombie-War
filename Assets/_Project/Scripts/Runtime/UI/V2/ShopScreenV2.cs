@@ -62,8 +62,6 @@ namespace ZombieWar.UI
         public const int MaxGuns = 64;
         static readonly string[] PackIds = { "pack.starter", "pack.gems440", "pack.noads" };
         static readonly string[] SkinIds = { "biohazard", "neon", "gilded" };
-        static readonly Color ChipOn = new(0.957f, 0.945f, 0.918f), ChipOff = new(0.184f, 0.208f, 0.267f),
-            ChipOnText = new(0.149f, 0.165f, 0.212f), ChipOffText = new(0.725f, 0.749f, 0.8f);
 
         ShopOffers.Deal[] _deals = new ShopOffers.Deal[0];
         List<WeaponData> _forSale = new();
@@ -100,8 +98,8 @@ namespace ZombieWar.UI
             for (int c = 0; c < chips.Length; c++)
             {
                 if (chips[c] == null) continue;
-                if (chips[c].targetGraphic is Image img) img.color = c == i ? ChipOn : ChipOff;
-                var t = chips[c].GetComponentInChildren<TMP_Text>(true); if (t != null) t.color = c == i ? ChipOnText : ChipOffText;
+                ThemeTint.Set(chips[c].targetGraphic, c == i ? ThemeRole.Ink : ThemeRole.Card);
+                var t = chips[c].GetComponentInChildren<TMP_Text>(true); ThemeTint.Set(t, c == i ? ThemeRole.OnInk : ThemeRole.Dim);
             }
             if (page == null || i >= sections.Length || sections[i] == null) return;
             Canvas.ForceUpdateCanvases();

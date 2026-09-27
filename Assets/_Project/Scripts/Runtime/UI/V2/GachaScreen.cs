@@ -71,6 +71,8 @@ namespace ZombieWar.UI
         {
             new(0.184f, 0.208f, 0.267f), new(0.122f, 0.227f, 0.149f), new(0.122f, 0.192f, 0.314f), new(0.227f, 0.165f, 0.333f), new(0.29f, 0.165f, 0.047f),
         };
+        /// Rate tiles on the screen follow the theme; the results sheet is a dark overlay in every theme.
+        static readonly ThemeRole[] TierRoles = { ThemeRole.Card, ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.GemTint, ThemeRole.LegendTint };
         static readonly Color[] BannerColor = { new(0.29f, 0.12f, 0.25f), new(0.16f, 0.2f, 0.3f), new(0.12f, 0.19f, 0.31f) };
 
         int _banner;
@@ -306,7 +308,7 @@ namespace ZombieWar.UI
                 var t = rateTiles[i]; if (t?.root == null) continue;
                 bool has = i < rates.Length; t.root.SetActive(has);
                 if (!has) continue;
-                if (t.bg != null) t.bg.color = TierColor[Mathf.Clamp((int)rates[i].tier, 0, 4)];
+                ThemeTint.Set(t.bg, TierRoles[Mathf.Clamp((int)rates[i].tier, 0, 4)]);
                 if (t.label != null) t.label.text = $"{rates[i].percent:0.#}%";
                 if (t.note != null) t.note.text = rates[i].label;
             }

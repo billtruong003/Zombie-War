@@ -32,6 +32,8 @@ namespace ZombieWar.UI
         [Header("Game")]
         [SerializeField] private Button[] graphics = new Button[3];
         [SerializeField] private Button[] fps = new Button[2];
+        [Tooltip("Sky, Dark, Candy, Meadow (ThemeSet order).")]
+        [SerializeField] private Button[] themes = new Button[4];
         [SerializeField] private Button languageRow;
         [SerializeField] private Switch notifications;
 
@@ -51,8 +53,6 @@ namespace ZombieWar.UI
         [SerializeField] private Button deleteYes;
         [SerializeField] private TMP_Text versionLabel;
 
-        static readonly Color SegOn = new(0.957f, 0.945f, 0.918f), SegOnText = new(0.149f, 0.165f, 0.212f),
-            SegOffText = new(0.604f, 0.631f, 0.690f), SwitchOn = new(0.357f, 0.839f, 0.541f), SwitchOff = new(0.227f, 0.255f, 0.322f);
 
         protected override void Awake()
         {
@@ -63,6 +63,16 @@ namespace ZombieWar.UI
             On(vibration?.button, () => { GameSettings.Haptics = !GameSettings.Haptics; UIFeedback.Tap(); Refresh(); });
             On(notifications?.button, () => { GameSettings.Notifications = !GameSettings.Notifications; UIFeedback.Tap(); Refresh(); });
             for (int i = 0; i < graphics.Length; i++) { int g = i; On(graphics[i], () => { GameSettings.Quality = (GameSettings.Graphics)g; UIFeedback.Tap(); Refresh(); }); }
+            for (int i = 0; i < themes.Length; i++)
+            {
+                int t = i;
+                On(themes[i], () =>
+                {
+                    var set = ThemeService.Set;
+                    if (set == null || t >= set.themes.Length) return;
+                    ThemeService.Use(set.themes[t].id); UIFeedback.Tap(); Refresh();
+                });
+            }
             for (int i = 0; i < fps.Length; i++) { int f = i; On(fps[i], () => { GameSettings.Fps = f == 0 ? 30 : 60; UIFeedback.Tap(); Refresh(); }); }
             On(languageRow, () => Toast.Show("More languages coming soon"));
             On(restoreRow, () => Toast.Show("No purchases to restore"));
@@ -106,6 +116,8 @@ namespace ZombieWar.UI
             SetSwitch(notifications, GameSettings.Notifications);
             SetSegment(graphics, (int)GameSettings.Quality);
             SetSegment(fps, GameSettings.Fps >= 60 ? 1 : 0);
+            var ts = ThemeService.Set;
+            if (ts != null) SetSegment(themes, System.Array.FindIndex(ts.themes, p => p != null && p.id == ThemeService.CurrentId));
             if (playerIdValue != null) playerIdValue.text = ProfileScreen.FormatId(PlayerProfile.PlayerId);
             if (versionLabel != null) versionLabel.text = $"HordeCall {Application.version} · Season 1";
         }
@@ -113,7 +125,7 @@ namespace ZombieWar.UI
         static void SetSwitch(Switch s, bool on)
         {
             if (s == null) return;
-            if (s.track != null) s.track.color = on ? SwitchOn : SwitchOff;
+            ThemeTint.Set(s.track, on ? ThemeRole.Claim : ThemeRole.Edge);
             if (s.knob != null)
             {
                 var a = on ? new Vector2(1f, 0.5f) : new Vector2(0f, 0.5f);
@@ -129,9 +141,9 @@ namespace ZombieWar.UI
                 if (seg[i] == null) continue;
                 bool on = i == active;
                 var img = seg[i].targetGraphic as Image;
-                if (img != null) img.color = on ? SegOn : new Color(0, 0, 0, 0);
+                if (on) ThemeTint.Set(img, ThemeRole.Ink); else ThemeTint.Clear(img, new Color(0, 0, 0, 0));
                 var t = seg[i].GetComponentInChildren<TMP_Text>(true);
-                if (t != null) t.color = on ? SegOnText : SegOffText;
+                ThemeTint.Set(t, on ? ThemeRole.OnInk : ThemeRole.Dim);
             }
         }
 

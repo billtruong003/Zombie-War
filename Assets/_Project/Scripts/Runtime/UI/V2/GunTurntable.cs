@@ -10,7 +10,10 @@ namespace ZombieWar.UI
     /// </summary>
     public sealed class GunTurntable : MonoBehaviour
     {
-        static readonly Vector3 Stage = new(0f, 3000f, 0f);
+        // Each turntable gets its own stage far from the menu and from the others: two screens
+        // (Arsenal, Gacha) sharing one spot showed each other's gun.
+        static int _count;
+        Vector3 Stage;
 
         [SerializeField] private int textureSize = 768;
         [SerializeField] private float spinSpeed = 24f;
@@ -39,6 +42,7 @@ namespace ZombieWar.UI
             float size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
             _cam.orthographicSize = size * 0.3f;
             if (skin != null) _gun.AddComponent<Skins.WeaponSkinApplier>().Apply(skin);
+            PlaceCamera();   // right away: the first frame must not look out from inside the gun
         }
 
         public void Drag(Vector2 delta)
@@ -51,6 +55,7 @@ namespace ZombieWar.UI
         void Ensure()
         {
             if (_root != null) return;
+            Stage = new Vector3(_count++ * 50f, 3000f, 0f);
             _root = new GameObject("GunTurntableStage");
             _root.transform.position = Stage;
             Texture = new RenderTexture(textureSize, textureSize, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "GunTurntable" };
@@ -71,6 +76,12 @@ namespace ZombieWar.UI
             if (_cam == null) return;
             // A full spin shows the muzzle end-on (a thin black line) half the time; rock around the
             // three-quarter view instead, and ease back to it after the player lets go.
+            Rock();
+            PlaceCamera();
+        }
+
+        void Rock()
+        {
             if (_idle > 0f) _idle -= Time.unscaledDeltaTime;
             else
             {
@@ -79,6 +90,11 @@ namespace ZombieWar.UI
                 _yaw = Mathf.LerpAngle(_yaw, target, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
                 _pitch = Mathf.Lerp(_pitch, 10f, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
             }
+        }
+
+        void PlaceCamera()
+        {
+            if (_cam == null) return;
             var rot = Quaternion.Euler(_pitch, _yaw, 0f);
             _cam.transform.position = Stage + rot * new Vector3(0f, 0f, -5f);
             _cam.transform.rotation = rot;

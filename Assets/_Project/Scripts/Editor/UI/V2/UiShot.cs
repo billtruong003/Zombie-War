@@ -27,6 +27,26 @@ namespace ZombieWar.EditorTools.V2
             return string.Join(", ", list);
         }
 
+        /// <summary>One render per theme at two phone shapes: Review/V2/shots/{name}_{theme}_{shape}.png.</summary>
+        public static string RenderThemes(string prefabPath, string outName)
+        {
+            var set = ZombieWar.UI.ThemeService.Set;
+            if (set == null) return "no ThemeSet";
+            string was = ZombieWar.UI.ThemeService.CurrentId;
+            var list = new System.Collections.Generic.List<string>();
+            try
+            {
+                foreach (var t in set.themes)
+                {
+                    ZombieWar.UI.ThemeService.Use(t.id);
+                    list.Add(Render(prefabPath, $"{outName}_{t.id}_16x9", 1080, 1920));
+                    list.Add(Render(prefabPath, $"{outName}_{t.id}_20x9", 1080, 2400));
+                }
+            }
+            finally { ZombieWar.UI.ThemeService.Use(was); }
+            return string.Join(", ", list);
+        }
+
         public static string Render(string prefabPath, string outName = null, int w = 1080, int h = 1920)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -60,6 +80,9 @@ namespace ZombieWar.EditorTools.V2
 
                 var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab, canvasGo.transform);
                 inst.SetActive(true);
+                // Edit mode: theme components do not run by themselves.
+                foreach (var t in inst.GetComponentsInChildren<ZombieWar.UI.ThemeTint>(true)) t.Apply();
+                foreach (var bg in inst.GetComponentsInChildren<ZombieWar.UI.MenuBackgroundView>(true)) bg.SendMessage("OnEnable");
                 var irt = (RectTransform)inst.transform;
                 irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one; irt.offsetMin = irt.offsetMax = Vector2.zero;
                 foreach (var cg in inst.GetComponentsInChildren<CanvasGroup>(true)) cg.alpha = cg.gameObject == inst ? 1f : cg.alpha;

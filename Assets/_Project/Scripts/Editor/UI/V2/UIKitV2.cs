@@ -43,6 +43,24 @@ namespace ZombieWar.EditorTools.V2
         public static readonly Color[] Rarity = { Hex("9aa3b2"), Hex("4caf6e"), Hex("4fa3f7"), Hex("8b7bd8"), Hex("f2994a") };
 
         static TMP_FontAsset _display, _body;
+        const string DisplayPlainPath = "Assets/_Project/UI/Theme/DisplayPlain.mat";
+        static Material _plain;
+        /// <summary>The display font without outline or drop line, for dark text on light cards.</summary>
+        public static Material DisplayPlain
+        {
+            get
+            {
+                if (_plain != null) return _plain;
+                _plain = AssetDatabase.LoadAssetAtPath<Material>(DisplayPlainPath);
+                if (_plain != null) return _plain;
+                _plain = new Material(DisplayFont.material) { name = "Cairo Display Plain" };
+                _plain.DisableKeyword("OUTLINE_ON"); _plain.DisableKeyword("UNDERLAY_ON");
+                _plain.SetFloat("_OutlineWidth", 0f); _plain.SetFloat("_FaceDilate", 0.12f);
+                System.IO.Directory.CreateDirectory("Assets/_Project/UI/Theme");
+                AssetDatabase.CreateAsset(_plain, DisplayPlainPath);
+                return _plain;
+            }
+        }
         public static TMP_FontAsset DisplayFont => _display != null ? _display : (_display = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "Cairo_Line_Black SDF_Light.asset"));
         public static TMP_FontAsset BodyFont => _body != null ? _body : (_body = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontDir + "Cairo SDF.asset"));
 
@@ -64,6 +82,14 @@ namespace ZombieWar.EditorTools.V2
             var img = rt.GetComponent<Image>() ?? rt.gameObject.AddComponent<Image>();
             img.sprite = PictoSprite(name); img.preserveAspect = true; img.raycastTarget = false;
             img.color = tint ?? Ink;
+            // Line icons follow text rules: ink on light surfaces, as built elsewhere.
+            if (!NoTheme && Key(img.color) == Key(Ink))
+            {
+                var back = Backdrop(rt);
+                var bt = back != null ? back.GetComponent<ThemeTint>() : null;
+                if (bt != null && SurfaceRoles.Contains(bt.role)) Theme(img, img.color, ThemeRole.TextOnSurface);
+            }
+            else if (!NoTheme && Key(img.color) == Key(Dim)) Theme(img, img.color);
             return img;
         }
 
@@ -164,6 +190,117 @@ namespace ZombieWar.EditorTools.V2
             return g;
         }
 
+        // ------------------------------------------------------------ theme
+        /// <summary>
+        /// Every kit colour has a theme role (owner 2026-09-27: Light Sky default, Dark, Candy,
+        /// Meadow). Graphics built with one of these colours get a <see cref="ThemeTint"/>, so a
+        /// theme change recolours the whole UI at runtime. Colours outside the map (banner art,
+        /// runtime rarity) stay as built.
+        /// </summary>
+        static Dictionary<string, ThemeRole> _roles;
+        static Dictionary<string, ThemeRole> Roles => _roles ??= BuildRoles();
+        /// <summary>Set while building something that must stay dark in every theme (revive overlay).</summary>
+        public static bool NoTheme;
+
+        static string Key(Color c) => ColorUtility.ToHtmlStringRGB(c);
+
+        static Dictionary<string, ThemeRole> BuildRoles()
+        {
+            var m = new Dictionary<string, ThemeRole>();
+            void A(Color c, ThemeRole r) { var k = Key(c); if (!m.ContainsKey(k)) m[k] = r; }
+            A(Ground, ThemeRole.Ground); A(Card, ThemeRole.Card); A(Deep, ThemeRole.Deep); A(Edge, ThemeRole.Edge);
+            A(Ink, ThemeRole.Ink); A(Dim, ThemeRole.Dim); A(OutlineInk, ThemeRole.Outline);
+            A(Yellow, ThemeRole.Primary); A(YellowLip, ThemeRole.PrimaryLip); A(OnYellow, ThemeRole.PrimaryOn);
+            A(Gem, ThemeRole.Gem); A(GemLip, ThemeRole.GemLip); A(OnGem, ThemeRole.GemOn);
+            A(Green, ThemeRole.Claim); A(GreenLip, ThemeRole.ClaimLip); A(OnGreen, ThemeRole.ClaimOn);
+            A(Blue, ThemeRole.Info); A(BlueLip, ThemeRole.InfoLip);
+            A(Red, ThemeRole.Danger); A(RedLip, ThemeRole.DangerLip);
+            A(Gold3A, ThemeRole.PrimaryTint); A(GoldText, ThemeRole.Gold);
+            for (int i = 0; i < Rarity.Length; i++) A(Rarity[i], ThemePalette.Rarity(i));
+            // Dark tints used by builders for tiles and cards.
+            foreach (var h in new[] { "263a2e", "1f3a26", "2c5236" }) A(Hex(h), ThemeRole.ClaimTint);
+            foreach (var h in new[] { "3a2a55", "262040" }) A(Hex(h), ThemeRole.GemTint);
+            foreach (var h in new[] { "1f3150", "1f3a52" }) A(Hex(h), ThemeRole.InfoTint);
+            foreach (var h in new[] { "4a1f22" }) A(Hex(h), ThemeRole.DangerTint);
+            foreach (var h in new[] { "4a2a0c" }) A(Hex(h), ThemeRole.LegendTint);
+            foreach (var h in new[] { "b9bfcc", "6c7384", "5a6275" }) A(Hex(h), ThemeRole.Dim);
+            return m;
+        }
+
+        static readonly HashSet<ThemeRole> SurfaceRoles = new()
+        {
+            ThemeRole.Card, ThemeRole.Deep, ThemeRole.Edge, ThemeRole.Nav, ThemeRole.PrimaryTint, ThemeRole.GemTint,
+            ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.DangerTint,
+        };
+
+        /// <summary>Tags a graphic with the role of the colour it was built with.</summary>
+        public static void Theme(Graphic g, Color c, ThemeRole force = ThemeRole.None)
+        {
+            if (NoTheme || g == null) return;
+            var role = force != ThemeRole.None ? force : Roles.TryGetValue(Key(c), out var r) ? r : ThemeRole.None;
+            if (role == ThemeRole.None) return;
+            var t = g.GetComponent<ThemeTint>() ?? g.gameObject.AddComponent<ThemeTint>();
+            t.role = role; t.alpha = c.a;
+        }
+
+        /// <summary>Nearest ancestor graphic that draws a background (skips clear hit areas).</summary>
+        static Graphic Backdrop(Transform t)
+        {
+            for (var p = t.parent; p != null; p = p.parent)
+            {
+                var g = p.GetComponent<Image>() as Graphic ?? p.GetComponent<RawImage>();
+                if (g != null && g.color.a > 0.3f && g.enabled) return g;
+            }
+            return null;
+        }
+
+        /// <summary>Text: follows the theme when it sits on a themed surface (or the screen), keeps
+        /// its colour when it sits on fixed art (banners, rarity tiles).</summary>
+        static void ThemeText(TMP_Text t, Color c, bool display)
+        {
+            if (NoTheme) return;
+            var back = Backdrop(t.transform);
+            var tint = back != null ? back.GetComponent<ThemeTint>() : null;
+            bool onSurface = tint != null && SurfaceRoles.Contains(tint.role);
+            bool onTheme = back == null || tint != null || back.GetComponent<MenuBackgroundView>() != null;
+            if (display)
+            {
+                // Outline font: white on colour, ink on light surfaces (without the outline there).
+                if (onSurface && Key(c) == Key(Ink))
+                {
+                    Theme(t, c, ThemeRole.TextOnSurface);
+                    var tt = t.GetComponent<ThemeTint>();
+                    if (tt != null) { tt.outlined = DisplayFont.material; tt.plain = DisplayPlain; }
+                }
+                return;
+            }
+            if (!onTheme) return;
+            var k = Key(c);
+            if (tint != null && tint.role == ThemeRole.QuietFace && k != Key(Ink)) { Theme(t, c, ThemeRole.OnQuiet); return; }
+            if (k == Key(Ink)) Theme(t, c, onSurface ? ThemeRole.TextOnSurface : ThemeRole.Ink);
+            else if (k == Key(Yellow) || k == Key(GoldText)) Theme(t, c, ThemeRole.PrimaryText);
+            else if (k == Key(Gem)) Theme(t, c, ThemeRole.GemText);
+            else if (k == Key(Green)) Theme(t, c, ThemeRole.ClaimText);
+            else if (k == Key(Blue)) Theme(t, c, ThemeRole.InfoText);
+            else if (k == Key(Red)) Theme(t, c, ThemeRole.DangerText);
+            else if (k == Key(Hex("c9bfe0")) || k == Key(Hex("ffd2e8"))) Theme(t, c, ThemeRole.Dim);
+            else if (k == Key(Hex("ffb27a")) || k == Key(Hex("ffd98a"))) Theme(t, c, ThemeRole.PrimaryText);
+            else if (k == Key(Hex("9fd0f5"))) Theme(t, c, ThemeRole.InfoText);
+            else if (k == Key(Hex("7fe3a6"))) Theme(t, c, ThemeRole.ClaimText);
+            else if (k == Key(Hex("c9a7ff"))) Theme(t, c, ThemeRole.GemText);
+            else Theme(t, c);
+        }
+
+        /// <summary>Screen background: the animated MenuBackground shader behind everything.</summary>
+        public static void ScreenBackground(RectTransform root)
+        {
+            Flat(root, Ground, true);
+            var bg = Fill(Node(root, "Background"), 0, 0, 0, 0);
+            bg.SetAsFirstSibling();
+            var raw = bg.gameObject.AddComponent<RawImage>(); raw.raycastTarget = false;
+            bg.gameObject.AddComponent<MenuBackgroundView>();
+        }
+
         // ------------------------------------------------------------ surfaces
         /// <summary>A rounded surface: radius in mockup px, 9-slice scaled so corners stay round.</summary>
         public static Image Surface(RectTransform rt, Color color, float radius, bool ray = false)
@@ -178,6 +315,7 @@ namespace ZombieWar.EditorTools.V2
             img.pixelsPerUnitMultiplier = mult;
             var fit = rt.GetComponent<UISliceFit>() ?? rt.gameObject.AddComponent<UISliceFit>();
             fit.BaseMultiplier = mult;
+            Theme(img, color);
             return img;
         }
 
@@ -185,6 +323,7 @@ namespace ZombieWar.EditorTools.V2
         {
             var img = rt.GetComponent<Image>() ?? rt.gameObject.AddComponent<Image>();
             img.sprite = null; img.color = color; img.raycastTarget = ray;
+            Theme(img, color);
             return img;
         }
 
@@ -208,6 +347,7 @@ namespace ZombieWar.EditorTools.V2
             // Overflow, not Ellipsis: Cairo's line height is ~1.5x the size, and Ellipsis drops the
             // whole line when that is taller than the box, leaving an empty label.
             t.enableWordWrapping = false; t.overflowMode = TextOverflowModes.Overflow; t.raycastTarget = false;
+            ThemeText(t, c, true);
             return t;
         }
 
@@ -221,6 +361,7 @@ namespace ZombieWar.EditorTools.V2
             // Overflow, not Ellipsis: Cairo's line height is ~1.5x the size, and Ellipsis drops the
             // whole line when that is taller than the box, leaving an empty label.
             t.enableWordWrapping = false; t.overflowMode = TextOverflowModes.Overflow; t.raycastTarget = false;
+            ThemeText(t, t.color, false);
             return t;
         }
 
@@ -267,7 +408,8 @@ namespace ZombieWar.EditorTools.V2
             var lipImg = Surface(rt, lip, RButton, true);
             var faceRt = Fill(Node(rt, "Face"), 0, 0, 0, 0);
             faceRt.offsetMin = new Vector2(0, Px(4));
-            Surface(faceRt, face, RButton);
+            var faceImg = Surface(faceRt, face, RButton);
+            if (role == Role.Quiet) { Theme(lipImg, lip, ThemeRole.QuietLip); Theme(faceImg, face, ThemeRole.QuietFace); }
             var lbl = Title(Fill(Node(faceRt, "Label"), 6, 0, 6, 0), label, labelPx, Ink, TextAlignmentOptions.Center);
             Shrink(lbl);   // runtime labels ("COME BACK TOMORROW", prices) must never leave the button
             var b = rt.gameObject.AddComponent<Button>();
@@ -332,7 +474,7 @@ namespace ZombieWar.EditorTools.V2
         public static Button[] NavBar(RectTransform root, int active, out Image[] dots)
         {
             var bar = BottomBand(Node(root, "Nav"), 0, 64);
-            Flat(bar, Deep, true);
+            Theme(Flat(bar, Deep, true), Deep, ThemeRole.Nav);
             var line = TopBand(Node(bar, "Line"), 0, 1); Flat(line, Edge);
             var row = Fill(Node(bar, "Tabs"), 0, 1, 0, 0);
             Row(row, 0, TextAnchor.MiddleCenter, true);

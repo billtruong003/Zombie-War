@@ -23,7 +23,7 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 r.gameObject.AddComponent<CanvasGroup>();
-                Flat(r, Ground, true);
+                ScreenBackground(r);
                 var s = r.gameObject.AddComponent<SettingsScreen>();
                 var safe = Fill(Node(r, "Safe"), 0, 0, 0, 0);
                 safe.gameObject.AddComponent<SafeArea>();
@@ -40,6 +40,7 @@ namespace ZombieWar.EditorTools.V2
                 var game = CardColumn(page, "Game");
                 WireArray(s, "graphics", Segment(RowNode(game, "Graphics", true), "LOW", "MID", "HIGH"));
                 WireArray(s, "fps", Segment(RowNode(game, "Frame rate"), "30", "60"));
+                WireArray(s, "themes", Segment(RowNode(game, "Theme"), "SKY", "DARK", "CANDY", "MEADOW"));
                 Wire(s, "languageRow", Tappable(RowNode(game, "Language"), "English"));
                 WireSwitch(s, "notifications", Switch(RowNode(game, "Notifications")));
 
@@ -147,7 +148,7 @@ namespace ZombieWar.EditorTools.V2
         /// Segmented control (deep well, padding 3, gap 3, 26 high options).
         static Button[] Segment(RectTransform row, params string[] options)
         {
-            float w = options.Length == 3 ? 40 : 32;
+            float w = options.Length == 4 ? 48 : options.Length == 3 ? 40 : 32;
             float total = options.Length * w + (options.Length - 1) * 3 + 6;
             var rt = Box(Node(row, "Segment"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -12, 0, total, 32);
             Surface(rt, Deep, 9f);
