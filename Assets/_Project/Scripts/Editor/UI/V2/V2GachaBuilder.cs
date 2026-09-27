@@ -175,29 +175,56 @@ namespace ZombieWar.EditorTools.V2
             Wire(s, "note", n);
         }
 
+        /// Results sheet: 11 boxes (10 + bonus) in a 4-column grid, centred, each a chest that opens
+        /// into the prize. A full-screen transparent button behind the grid skips the animation.
         static void Results(RectTransform root, GachaScreen s)
         {
             var sheet = Fill(Node(root, "Results"), 0, 0, 0, 0);
-            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.94f), true);
-            Title(Box(Node(sheet, "T"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 190, 300, 36), "RESULTS", 26f, Ink, TextAlignmentOptions.Center);
-            var grid = Box(Node(sheet, "Grid"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 20, 362, 282);
-            UIKitV2.Grid(grid, 2, 50, 6);
+            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.98f), true);   // linear space: 0.94 still showed the banner through
+            var skip = Fill(Node(sheet, "Skip"), 0, 0, 0, 0);
+            var si = skip.gameObject.AddComponent<Image>(); si.color = new Color(0, 0, 0, 0);
+            Wire(s, "resultsSkip", skip.gameObject.AddComponent<Button>());
+            Label(Box(Node(skip, "Hint"), new Vector2(0.5f, 0), new Vector2(0.5f, 0), 0, 90, 200, 16), "TAP TO SKIP").alignment = TextAlignmentOptions.Center;
+
+            Wire(s, "resultsTitle", Title(Box(Node(sheet, "T"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 235, 340, 36), "OPENING", 24f, Ink, TextAlignmentOptions.Center));
+            var grid = Box(Node(sheet, "Grid"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 20, 362, 3 * 118 + 2 * 8);
+            var g = UIKitV2.Grid(grid, 4, 118, 8);
+            g.childAlignment = TextAnchor.UpperCenter;
             var so = new SerializedObject(s);
-            var arr = so.FindProperty("resultTiles"); arr.arraySize = 10;
-            for (int i = 0; i < 10; i++)
+            var arr = so.FindProperty("resultTiles"); arr.arraySize = ZombieWar.GachaBanners.MultiBoxes;
+            for (int i = 0; i < ZombieWar.GachaBanners.MultiBoxes; i++)
             {
-                var t = Node(grid, "R" + i);
+                var t = Node(grid, "Box" + i);
                 var bg = Surface(t, Card, RTile);
-                var label = Body(TopBand(Node(t, "L"), 6, 18, 8, 8), "Gun shards ×10", 12f);
-                var note = Label(TopBand(Node(t, "N"), 27, 14, 8, 8), "NEW", Green, 9f);
+                var chest = Box(Node(t, "Chest"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -8, 62, 62).gameObject.AddComponent<Image>();
+                chest.preserveAspect = true; chest.raycastTarget = false; chest.sprite = Icon("Chest_Wood");
+                var icon = Box(Node(t, "Icon"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -10, 52, 52).gameObject.AddComponent<Image>();
+                icon.preserveAspect = true; icon.raycastTarget = false; icon.gameObject.SetActive(false);
+                var label = Shrink(Body(BottomBand(Node(t, "L"), 20, 28, 4, 4), "Gun shards ×10", 10f, Ink, TextAlignmentOptions.Center), 0.7f);
+                var note = Shrink(Body(BottomBand(Node(t, "N"), 5, 14, 3, 3), "NEW", 8f, Green, TextAlignmentOptions.Center), 0.7f);
                 var e = arr.GetArrayElementAtIndex(i);
                 e.FindPropertyRelative("root").objectReferenceValue = t.gameObject;
                 e.FindPropertyRelative("bg").objectReferenceValue = bg;
                 e.FindPropertyRelative("label").objectReferenceValue = label;
                 e.FindPropertyRelative("note").objectReferenceValue = note;
+                e.FindPropertyRelative("chest").objectReferenceValue = chest;
+                e.FindPropertyRelative("icon").objectReferenceValue = icon;
+            }
+            // Chest per rarity (Common, Uncommon, Rare, Epic, Legendary) and the prize icons by name.
+            var chestArr = so.FindProperty("chests"); chestArr.arraySize = 5;
+            string[] chestNames = { "Chest_Wood", "Chest_Wood", "Chest_Gold", "Chest_Gem", "Chest_Premium" };
+            for (int i = 0; i < 5; i++) chestArr.GetArrayElementAtIndex(i).objectReferenceValue = Icon(chestNames[i]);
+            string[] prizes = { "Gear_Sword", "Gear_Armor_Top", "Chest_Gold", "Ticket_Gold", "Money_Coin" };
+            var icons = so.FindProperty("rewardIcons"); icons.arraySize = prizes.Length;
+            for (int i = 0; i < prizes.Length; i++)
+            {
+                var e = icons.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("name").stringValue = prizes[i];
+                e.FindPropertyRelative("sprite").objectReferenceValue = Icon(prizes[i]);
             }
             so.ApplyModifiedPropertiesWithoutUndo();
-            var ok = Box(Node(sheet, "Ok"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -170, 200, 50);
+
+            var ok = Box(Node(sheet, "Ok"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -215, 200, 50);
             Wire(s, "resultsOk", Button(ok, "OK", Role.Primary, 18f));
             Wire(s, "resultsSheet", sheet.gameObject);
             sheet.gameObject.SetActive(false);
@@ -206,7 +233,7 @@ namespace ZombieWar.EditorTools.V2
         static void Rates(RectTransform root, GachaScreen s)
         {
             var sheet = Fill(Node(root, "RatesSheet"), 0, 0, 0, 0);
-            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.94f), true);
+            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.98f), true);   // linear space: 0.94 still showed the banner through
             var panel = Box(Node(sheet, "Panel"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 340, 330);
             Surface(panel, Card, RPanel);
             Title(TopBand(Node(panel, "T"), 16, 28, 16, 16), "DROP RATES", 22f);

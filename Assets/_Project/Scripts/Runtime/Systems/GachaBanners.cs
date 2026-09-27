@@ -5,18 +5,23 @@ using UnityEngine;
 namespace ZombieWar
 {
     /// <summary>
-    /// M10 Gacha v2 (owner decisions 2026-09-27): banners are data (a list the remote config can
-    /// replace later), the weapon-shard banner is permanent and paid in gems, an event banner
-    /// features a gun skin set with a guaranteed hit after <see cref="Banner.guarantee"/> pulls,
-    /// its pity carries over to the next banner with the same featured prize, duplicates turn
-    /// into tickets, and every rate is public. The outfit and shard banners reuse
-    /// <see cref="GachaService"/> with gem prices.
+    /// M10 Gacha v2. Banners are data (a list the remote config can replace later).
+    ///
+    /// Event banner (owner, 2026-09-27 after the first playtest): the top prize is very rare
+    /// (<see cref="Banner.legendaryPercent"/>), a Legendary is certain by pull
+    /// <see cref="Banner.hardPity"/>, and it is a 50/50: when a Legendary is not the featured prize
+    /// ("off-rate"), the next Legendary is guaranteed to be it. Pity and the guarantee carry over to
+    /// the next banner with the same featured prize. Gems are earned by playing, so a hard rate is
+    /// still fair to a free player. x10 opens ten boxes one by one plus one bonus box (11), and
+    /// always holds an Epic or better. Duplicates turn into tickets; every rate is public.
+    ///
+    /// The outfit and shard banners reuse <see cref="GachaService"/> with gem prices.
     /// </summary>
     public static class GachaBanners
     {
         public enum Kind { Event, Outfits, Shards }
 
-        public sealed class Rate { public string label; public float percent; public WeaponTier tier; }
+        public sealed class Rate { public string label; public float percent; public WeaponTier tier; public string icon; }
 
         public sealed class Banner
         {
@@ -24,9 +29,14 @@ namespace ZombieWar
             public Kind kind;
             public int days;              // length of one run of the banner
             public int gemSingle = 30, gemMulti = 270, ticketSingle = 1, ticketMulti = 10;
-            public int guarantee = 80;    // event: featured prize by this pull at the latest
-            public Rate[] rates;
+            public float legendaryPercent = 0.6f;
+            public int hardPity = 90;
+            public Rate[] rates;          // index 0 = Legendary (featured / off-rate)
+            public string GuaranteeKey => pityKey + ".guaranteed";
         }
+
+        /// <summary>Boxes in a multi pull: ten paid plus one bonus.</summary>
+        public const int MultiPaid = 10, MultiBoxes = 11;
 
         /// <summary>Season 1 banners. Order = tab order.</summary>
         public static readonly Banner[] All =
@@ -37,23 +47,26 @@ namespace ZombieWar
                 featuredSkin = "neon", pityKey = "gacha.featured.neon",
                 rates = new[]
                 {
-                    new Rate { label = "Neon Circuit skin set", percent = 0.8f, tier = WeaponTier.Legendary },
-                    new Rate { label = "Epic outfit", percent = 3f, tier = WeaponTier.Epic },
-                    new Rate { label = "Gun shards ×10", percent = 12f, tier = WeaponTier.Rare },
-                    new Rate { label = "Gacha ticket", percent = 25f, tier = WeaponTier.Uncommon },
-                    new Rate { label = "300 coins", percent = 59.2f, tier = WeaponTier.Common },
+                    new Rate { label = "Legendary: Neon Circuit skin set (50%)", percent = 0.6f, tier = WeaponTier.Legendary, icon = "Gear_Sword" },
+                    new Rate { label = "Epic outfit piece", percent = 5.1f, tier = WeaponTier.Epic, icon = "Gear_Armor_Top" },
+                    new Rate { label = "Gun shards ×10", percent = 13f, tier = WeaponTier.Rare, icon = "Chest_Gold" },
+                    new Rate { label = "Gacha ticket", percent = 25f, tier = WeaponTier.Uncommon, icon = "Ticket_Gold" },
+                    new Rate { label = "300 coins", percent = 56.3f, tier = WeaponTier.Common, icon = "Money_Coin" },
                 },
             },
             new() { id = "outfits", title = "STREET", subtitle = "OUTFITS", kind = Kind.Outfits, days = 28, pityKey = "gacha.costume" },
             new() { id = "shards", title = "SHARDS", subtitle = "ALWAYS", kind = Kind.Shards, days = 0, pityKey = "gacha.weapon" },
         };
 
-        public const int FeaturedDupeTickets = 5, OutfitDupeTickets = 1;
+        public const int FeaturedDupeTickets = 5, OutfitDupeTickets = 1, OffRateFallbackTickets = 10;
 
         public readonly struct Result
         {
-            public readonly string label; public readonly WeaponTier tier; public readonly bool isNew; public readonly int tickets;
-            public Result(string l, WeaponTier t, bool n, int tk) { label = l; tier = t; isNew = n; tickets = tk; }
+            public readonly string label, icon; public readonly WeaponTier tier; public readonly bool isNew, bonus, offRate;
+            public readonly int tickets;
+            public Result(string l, WeaponTier t, bool n, int tk, string i = null, bool b = false, bool off = false)
+            { label = l; tier = t; isNew = n; tickets = tk; icon = i; bonus = b; offRate = off; }
+            public Result AsBonus() => new(label, tier, isNew, tickets, icon, true, offRate);
         }
 
         static PlayerProfile.ProfileData D => PlayerProfile.DailyData;
@@ -70,7 +83,10 @@ namespace ZombieWar
 
         public static bool FreePullReady(int today) => D.gachaFreeDay != today;
 
-        public static int PullsToGuarantee(Banner b) => Mathf.Max(0, b.guarantee - PlayerProfile.GetPity(b.pityKey));
+        /// <summary>Pulls until a Legendary is certain.</summary>
+        public static int PullsToLegendary(Banner b) => Mathf.Max(1, b.hardPity - PlayerProfile.GetPity(b.pityKey));
+        /// <summary>True when the last Legendary was off-rate: the next one is the featured prize.</summary>
+        public static bool FeaturedGuaranteed(Banner b) => PlayerProfile.GetPity(b.GuaranteeKey) > 0;
 
         // ------------------------------------------------------------------ cost
         public enum Pay { Free, Tickets, Gems }
@@ -82,7 +98,7 @@ namespace ZombieWar
             _ => PlayerProfile.Gem >= (count == 1 ? b.gemSingle : b.gemMulti),
         };
 
-        /// <summary>Tickets when the player has enough, otherwise gems.</summary>
+        /// <summary>The free daily pull, then tickets when the player has enough, otherwise gems.</summary>
         public static Pay BestPay(Banner b, int count, int today) =>
             count == 1 && FreePullReady(today) ? Pay.Free
             : PlayerProfile.Tickets >= (count == 1 ? b.ticketSingle : b.ticketMulti) ? Pay.Tickets : Pay.Gems;
@@ -98,32 +114,81 @@ namespace ZombieWar
         }
 
         // ------------------------------------------------------------------ pull
-        /// <summary>Pays, rolls and grants. Null when the player cannot pay.</summary>
+        /// <summary>
+        /// Pays, rolls and grants. <paramref name="count"/> is 1 or 10; a 10 opens
+        /// <see cref="MultiBoxes"/> boxes, the last one flagged as the bonus. Null when unpaid.
+        /// </summary>
         public static List<Result> Pull(Banner b, int count, Pay pay, int today, EconomyConfig econ,
                                         IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
         {
-            if (b == null || (count != 1 && count != 10)) return null;
+            if (b == null || (count != 1 && count != MultiPaid)) return null;
             if (b.kind != Kind.Event) return PullPool(b, count, pay, today, econ, guns, rng);
             if (!CanPay(b, count, pay, today) || !Spend(b, count, pay, today)) return null;
 
-            var results = new List<Result>(count);
+            int boxes = count == 1 ? 1 : MultiBoxes;
+            var results = new List<Result>(boxes);
             int pity = PlayerProfile.GetPity(b.pityKey);
-            bool epicInTen = false;
-            for (int n = 0; n < count; n++)
+            bool guaranteed = FeaturedGuaranteed(b);
+            bool epicSeen = false;
+            for (int n = 0; n < boxes; n++)
             {
                 pity++;
-                int roll = rng.Range(10000);
-                float acc = 0f; int pick = b.rates.Length - 1;
-                for (int i = 0; i < b.rates.Length; i++) { acc += b.rates[i].percent * 100f; if (roll < acc) { pick = i; break; } }
-                if (pity >= b.guarantee) pick = 0;                                    // hard guarantee
-                if (count == 10 && n == 9 && !epicInTen && pick > 1) pick = 1;       // x10: at least one Epic+
-                if (pick <= 1) epicInTen = true;
-                if (pick == 0) pity = 0;
-                results.Add(Grant(b, pick, econ, guns, rng));
+                int pick = Roll(b, rng);
+                if (pity >= b.hardPity) pick = 0;                                            // hard pity
+                if (count == MultiPaid && n == MultiPaid - 1 && !epicSeen && pick > 1) pick = 1; // x10 holds an Epic+
+                if (pick <= 1) epicSeen = true;
+
+                Result r;
+                if (pick == 0)
+                {
+                    pity = 0;
+                    bool featured = guaranteed || rng.Range(2) == 0;                            // 50/50
+                    guaranteed = !featured;
+                    r = featured ? GrantFeatured(b) : GrantOffRate(b, econ, rng);
+                }
+                else r = Grant(b, pick, econ, guns, rng);
+                results.Add(n == MultiPaid ? r.AsBonus() : r);
             }
             PlayerProfile.SetPityInMemory(b.pityKey, pity);
+            PlayerProfile.SetPityInMemory(b.GuaranteeKey, guaranteed ? 1 : 0);
             PlayerProfile.SaveDaily();
             return results;
+        }
+
+        static int Roll(Banner b, GachaService.IRng rng)
+        {
+            int roll = rng.Range(100000);   // 0.001% resolution
+            float acc = 0f;
+            for (int i = 0; i < b.rates.Length; i++) { acc += b.rates[i].percent * 1000f; if (roll < acc) return i; }
+            return b.rates.Length - 1;
+        }
+
+        static Result GrantFeatured(Banner b)
+        {
+            var set = Skins.WeaponSkins.Find(b.featuredSkin);
+            string name = (set != null ? set.name : b.featuredSkin) + " skin set";
+            if (PlayerProfile.IsSkinOwned(b.featuredSkin))
+            {
+                PlayerProfile.AddTickets(FeaturedDupeTickets);
+                return new Result(name, WeaponTier.Legendary, false, FeaturedDupeTickets, "Gear_Sword");
+            }
+            PlayerProfile.AddSkin(b.featuredSkin);
+            return new Result(name, WeaponTier.Legendary, true, 0, "Gear_Sword");
+        }
+
+        /// <summary>Lost 50/50: a gacha-only Legendary outfit piece, or tickets once all are owned.</summary>
+        static Result GrantOffRate(Banner b, EconomyConfig econ, GachaService.IRng rng)
+        {
+            var pieces = econ?.costumeItems?.Where(c => c.source == AcquireSource.Gacha && c.rarity >= WeaponTier.Legendary
+                                                        && !string.IsNullOrEmpty(c.itemId) && !PlayerProfile.IsCostumeItemOwned(c.itemId)).ToList();
+            if (pieces != null && pieces.Count > 0)
+            {
+                var p = pieces[rng.Range(pieces.Count)];
+                PlayerProfile.GrantCostumeInMemory(p.itemId);
+                return new Result(p.displayName, WeaponTier.Legendary, true, 0, "Gear_Armor_Top", false, true);
+            }
+            PlayerProfile.AddTickets(OffRateFallbackTickets);
+            return new Result($"{OffRateFallbackTickets} tickets", WeaponTier.Legendary, true, 0, "Ticket_Gold", false, true);
         }
 
         static Result Grant(Banner b, int pick, EconomyConfig econ, IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
@@ -131,38 +196,34 @@ namespace ZombieWar
             var rate = b.rates[pick];
             switch (pick)
             {
-                case 0:
-                    if (PlayerProfile.IsSkinOwned(b.featuredSkin)) { PlayerProfile.AddTickets(FeaturedDupeTickets); return new Result(rate.label, rate.tier, false, FeaturedDupeTickets); }
-                    PlayerProfile.AddSkin(b.featuredSkin);
-                    return new Result(rate.label, rate.tier, true, 0);
                 case 1:
-                    // Gacha-only pieces first (owner: some outfits only come from the gacha).
-                    var only = econ?.costumeItems?.Where(c => c.source == AcquireSource.Gacha && !string.IsNullOrEmpty(c.itemId)
-                                                            && !PlayerProfile.IsCostumeItemOwned(c.itemId)).ToList();
+                    // Gacha-only Epic pieces first (owner: some outfits only come from the gacha).
+                    var only = econ?.costumeItems?.Where(c => c.source == AcquireSource.Gacha && c.rarity == WeaponTier.Epic
+                                                            && !string.IsNullOrEmpty(c.itemId) && !PlayerProfile.IsCostumeItemOwned(c.itemId)).ToList();
                     if (only != null && only.Count > 0)
                     {
                         var piece = only[rng.Range(only.Count)];
                         PlayerProfile.GrantCostumeInMemory(piece.itemId);
-                        return new Result(piece.displayName, piece.rarity, true, 0);
+                        return new Result(piece.displayName, rate.tier, true, 0, rate.icon);
                     }
                     var sets = econ?.costumeSets?.Where(s => s != null && s.rarity >= WeaponTier.Epic && s.itemIds != null && s.itemIds.Count > 0).ToList();
-                    if (sets == null || sets.Count == 0) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result("Gacha ticket", rate.tier, false, OutfitDupeTickets); }
+                    if (sets == null || sets.Count == 0) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result("Gacha ticket", rate.tier, false, OutfitDupeTickets, "Ticket_Gold"); }
                     var set = sets[rng.Range(sets.Count)];
-                    if (PlayerProfile.IsCostumeSetOwned(set)) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result(set.displayName, rate.tier, false, OutfitDupeTickets); }
+                    if (PlayerProfile.IsCostumeSetOwned(set)) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result(set.displayName, rate.tier, false, OutfitDupeTickets, rate.icon); }
                     foreach (var id in set.itemIds) PlayerProfile.GrantCostumeInMemory(id);
-                    return new Result(set.displayName, rate.tier, true, 0);
+                    return new Result(set.displayName, rate.tier, true, 0, rate.icon);
                 case 2:
                     var owned = guns?.Where(g => g != null && PlayerProfile.IsWeaponOwned(g.WeaponId)).ToList();
-                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 600); return new Result("600 coins", rate.tier, true, 0); }
+                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 600); return new Result("600 coins", rate.tier, true, 0, "Money_Coin"); }
                     var gun = owned[rng.Range(owned.Count)];
                     PlayerProfile.AddWeaponShards(gun.WeaponId, 10);
-                    return new Result($"{gun.weaponName} shards ×10", rate.tier, true, 0);
+                    return new Result($"{gun.weaponName} shards ×10", rate.tier, true, 0, rate.icon);
                 case 3:
                     PlayerProfile.AddTickets(1);
-                    return new Result(rate.label, rate.tier, true, 0);
+                    return new Result(rate.label, rate.tier, true, 0, rate.icon);
                 default:
                     PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 300);
-                    return new Result(rate.label, rate.tier, true, 0);
+                    return new Result(rate.label, rate.tier, true, 0, rate.icon);
             }
         }
 
@@ -178,16 +239,19 @@ namespace ZombieWar
             var items = GachaService.BuildPool(pool, econ, guns, new HashSet<string> { WeaponCatalog.Active?.Starter?.weaponId });
             if (items.Count == 0) return null;   // check before anything is spent
             if (pay != Pay.Gems) { if (!Spend(b, count, pay, today)) return null; pool.singleCost = 0; pool.multiCost = 0; }
-            var raw = GachaService.Pull(econ, pool, items, count, rng);
+            int boxes = count == 1 ? 1 : MultiBoxes;
+            var raw = GachaService.Pull(econ, pool, items, boxes, rng);
             if (raw == null) return null;
             if (pay != Pay.Gems) PlayerProfile.SaveDaily();
             var list = new List<Result>(raw.Count);
-            foreach (var r in raw)
+            for (int i = 0; i < raw.Count; i++)
             {
+                var r = raw[i];
                 int tickets = 0;
                 if (!r.isNew && !r.isWeapon) { tickets = OutfitDupeTickets; PlayerProfile.AddTickets(tickets); }
                 string label = r.isWeapon && !r.isNew ? $"{r.displayName} shards ×{r.weaponShards}" : r.displayName;
-                list.Add(new Result(label, r.rarity, r.isNew, tickets));
+                var res = new Result(label, r.rarity, r.isNew, tickets, r.isWeapon ? "Gear_Sword" : "Gear_Armor_Top");
+                list.Add(i == MultiPaid ? res.AsBonus() : res);
             }
             return list;
         }
@@ -212,9 +276,10 @@ namespace ZombieWar
             float total = pool.rarityWeights.Sum();
             string[] names = { "Common", "Uncommon", "Rare", "Epic", "Legendary" };
             string what = b.kind == Kind.Shards ? "gun (dupes give shards)" : "outfit";
+            string icon = b.kind == Kind.Shards ? "Gear_Sword" : "Gear_Armor_Top";
             return Enumerable.Range(0, Mathf.Min(5, pool.rarityWeights.Length)).Reverse()
                 .Where(i => pool.rarityWeights[i] > 0)
-                .Select(i => new Rate { label = $"{names[i]} {what}", percent = 100f * pool.rarityWeights[i] / total, tier = (WeaponTier)i }).ToArray();
+                .Select(i => new Rate { label = $"{names[i]} {what}", percent = 100f * pool.rarityWeights[i] / total, tier = (WeaponTier)i, icon = icon }).ToArray();
         }
     }
 }

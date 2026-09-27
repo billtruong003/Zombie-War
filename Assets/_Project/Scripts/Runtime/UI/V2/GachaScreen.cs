@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -19,7 +20,10 @@ namespace ZombieWar.UI
         public sealed class Tab { public Button button; public TMP_Text sub; public GameObject selected; }
 
         [Serializable]
-        public sealed class Tile { public GameObject root; public Image bg; public TMP_Text label; public TMP_Text note; }
+        public sealed class Tile { public GameObject root; public Image bg; public TMP_Text label; public TMP_Text note; public Image chest; public Image icon; }
+
+        [Serializable]
+        public sealed class NamedSprite { public string name; public Sprite sprite; }
 
         [SerializeField] private TMP_Text coinLabel;
         [SerializeField] private TMP_Text gemLabel;
@@ -49,8 +53,13 @@ namespace ZombieWar.UI
 
         [Header("Sheets")]
         [SerializeField] private GameObject resultsSheet;
-        [SerializeField] private Tile[] resultTiles = new Tile[10];
+        [SerializeField] private Tile[] resultTiles = new Tile[GachaBanners.MultiBoxes];
         [SerializeField] private Button resultsOk;
+        [SerializeField] private Button resultsSkip;
+        [SerializeField] private TMP_Text resultsTitle;
+        [Tooltip("Chest per rarity, Common..Legendary.")]
+        [SerializeField] private Sprite[] chests = new Sprite[5];
+        [SerializeField] private NamedSprite[] rewardIcons;
         [SerializeField] private GameObject ratesSheet;
         [SerializeField] private TMP_Text ratesText;
         [SerializeField] private Button ratesOk;
@@ -78,6 +87,7 @@ namespace ZombieWar.UI
             if (pullTen != null) pullTen.onClick.AddListener(() => DoPull(10));
             if (ratesButton != null) ratesButton.onClick.AddListener(ShowRates);
             if (resultsOk != null) resultsOk.onClick.AddListener(() => { UIFeedback.Back(); resultsSheet.SetActive(false); });
+            if (resultsSkip != null) resultsSkip.onClick.AddListener(() => _skip = true);
             if (ratesOk != null) ratesOk.onClick.AddListener(() => { UIFeedback.Back(); ratesSheet.SetActive(false); });
         }
 
@@ -119,20 +129,110 @@ namespace ZombieWar.UI
             Refresh();
         }
 
+        // ------------------------------------------------------------ chest reveal
+        bool _skip;
+        Coroutine _reveal;
+
         void ShowResults(List<GachaBanners.Result> results)
         {
             if (resultsSheet == null) return;
+            resultsSheet.SetActive(true);
+            resultsSheet.transform.SetAsLastSibling();
+            if (_reveal != null) StopCoroutine(_reveal);
+            _reveal = StartCoroutine(Reveal(results));
+        }
+
+        /// <summary>
+        /// Owner (2026-09-27): chests with a tween. Every box appears closed, its chest showing the
+        /// rarity; then one by one each shakes (harder for rarer boxes), pops open and shows the
+        /// prize. A tap skips to the end. x10 opens ten plus the bonus box.
+        /// </summary>
+        IEnumerator Reveal(List<GachaBanners.Result> results)
+        {
+            _skip = false;
+            if (resultsOk != null) resultsOk.gameObject.SetActive(false);
+            if (resultsSkip != null) resultsSkip.gameObject.SetActive(true);
+            if (resultsTitle != null) resultsTitle.text = results.Count > 1 ? "OPENING 10 + 1 BONUS" : "OPENING";
             for (int i = 0; i < resultTiles.Length; i++)
             {
                 var t = resultTiles[i]; if (t?.root == null) continue;
                 bool has = i < results.Count; t.root.SetActive(has);
                 if (!has) continue;
-                var r = results[i];
-                if (t.bg != null) t.bg.color = TierColor[Mathf.Clamp((int)r.tier, 0, 4)];
-                if (t.label != null) t.label.text = r.label;
-                if (t.note != null) t.note.text = r.tickets > 0 ? $"DUPE · +{r.tickets} TICKET{(r.tickets > 1 ? "S" : "")}" : r.isNew ? "NEW" : "";
+                Closed(t, results[i]);
+                UIFx.PopIn(t.root.transform, i * 0.035f, 0.4f, 0.25f);
             }
-            resultsSheet.SetActive(true);
+            yield return Wait(0.35f + results.Count * 0.035f);
+
+            float gap = results.Count > 1 ? 0.12f : 0.3f;
+            for (int i = 0; i < results.Count && i < resultTiles.Length; i++)
+            {
+                var t = resultTiles[i]; var r = results[i];
+                if (!_skip)
+                {
+                    int tier = Mathf.Clamp((int)r.tier, 0, 4);
+                    yield return Shake(t.chest != null ? t.chest.transform : t.root.transform, 0.18f + tier * 0.08f, 5f + tier * 4f);
+                }
+                Open(t, r);
+                if (!_skip) yield return Wait(gap + (r.tier >= WeaponTier.Epic ? 0.25f : 0f));
+            }
+            if (resultsTitle != null) resultsTitle.text = results.Count > 1 ? "10 + 1 BONUS" : "RESULT";
+            if (resultsSkip != null) resultsSkip.gameObject.SetActive(false);
+            if (resultsOk != null) { resultsOk.gameObject.SetActive(true); UIFx.PopIn(resultsOk.transform); }
+            _reveal = null;
+        }
+
+        void Closed(Tile t, GachaBanners.Result r)
+        {
+            int tier = Mathf.Clamp((int)r.tier, 0, 4);
+            if (t.bg != null) t.bg.color = TierColor[0];
+            if (t.chest != null)
+            {
+                t.chest.gameObject.SetActive(true);
+                t.chest.sprite = chests != null && tier < chests.Length ? chests[tier] : null;
+                t.chest.transform.localScale = Vector3.one; t.chest.transform.localRotation = Quaternion.identity;
+            }
+            if (t.icon != null) t.icon.gameObject.SetActive(false);
+            if (t.label != null) t.label.text = r.bonus ? "BONUS" : "";
+            if (t.note != null) t.note.text = "";
+        }
+
+        void Open(Tile t, GachaBanners.Result r)
+        {
+            int tier = Mathf.Clamp((int)r.tier, 0, 4);
+            if (t.chest != null) t.chest.gameObject.SetActive(false);
+            if (t.bg != null) t.bg.color = TierColor[tier];
+            if (t.icon != null)
+            {
+                var sp = rewardIcons?.FirstOrDefault(n => n.name == r.icon)?.sprite;
+                t.icon.sprite = sp; t.icon.enabled = sp != null; t.icon.gameObject.SetActive(true);
+                if (!_skip) UIFx.PopIn(t.icon.transform, 0f, 0.3f, 0.3f);
+            }
+            if (t.label != null) t.label.text = r.label;
+            string note = r.tickets > 0 ? $"DUPE +{r.tickets} TICKET{(r.tickets > 1 ? "S" : "")}" : r.offRate ? "50/50 LOST · NEXT IS FEATURED" : r.isNew ? "NEW" : "";
+            if (r.bonus) note = string.IsNullOrEmpty(note) ? "BONUS" : "BONUS · " + note;
+            if (t.note != null) t.note.text = note;
+            if (!_skip)
+            {
+                if (tier >= (int)WeaponTier.Epic) { UIFx.Punch(t.root.transform); UIFeedback.LevelUp(); }
+                else UIFeedback.Card();
+            }
+        }
+
+        IEnumerator Wait(float seconds)
+        {
+            for (float t = 0f; t < seconds && !_skip; t += Time.unscaledDeltaTime) yield return null;
+        }
+
+        IEnumerator Shake(Transform tr, float seconds, float degrees)
+        {
+            for (float t = 0f; t < seconds && !_skip; t += Time.unscaledDeltaTime)
+            {
+                float k = t / seconds;
+                tr.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(k * Mathf.PI * 8f) * degrees * (0.4f + k));
+                tr.localScale = Vector3.one * (1f + 0.12f * k);
+                yield return null;
+            }
+            tr.localRotation = Quaternion.identity;
         }
 
         void ShowRates()
@@ -141,7 +241,9 @@ namespace ZombieWar.UI
             var rates = GachaBanners.RatesFor(B, economy);
             if (ratesText != null)
                 ratesText.text = string.Join("\n", rates.Select(r => $"{r.percent:0.##}%   {r.label}")) +
-                                 (B.kind == GachaBanners.Kind.Event ? $"\n\nFeatured guaranteed by pull {B.guarantee}. Pity carries over.\nDuplicates turn into tickets." : "\n\nDuplicate outfits turn into tickets; duplicate guns into shards.");
+                                 (B.kind == GachaBanners.Kind.Event
+                                     ? $"\n\nA Legendary is certain by pull {B.hardPity}. It is the featured prize 50% of the time; if not, the next Legendary is. Pity carries over.\nx10 opens 10 boxes + 1 bonus box. Duplicates turn into tickets."
+                                     : "\n\nx10 opens 10 boxes + 1 bonus box. Duplicate outfits turn into tickets; duplicate guns into shards.");
             if (ratesSheet != null) ratesSheet.SetActive(true);
         }
 
@@ -181,8 +283,10 @@ namespace ZombieWar.UI
             int pity = PlayerProfile.GetPity(bn.pityKey);
             if (evt)
             {
-                if (pityLabel != null) pityLabel.text = $"FEATURED GUARANTEED IN {GachaBanners.PullsToGuarantee(bn)}";
-                UIBarClip.Set(pityBar, pity / (float)bn.guarantee);
+                if (pityLabel != null) pityLabel.text = GachaBanners.FeaturedGuaranteed(bn)
+                    ? $"FEATURED CERTAIN IN {GachaBanners.PullsToLegendary(bn)}"
+                    : $"LEGENDARY CERTAIN IN {GachaBanners.PullsToLegendary(bn)} · 50/50";
+                UIBarClip.Set(pityBar, pity / (float)bn.hardPity);
             }
             else
             {
@@ -194,7 +298,7 @@ namespace ZombieWar.UI
 
             var p1 = GachaBanners.BestPay(bn, 1, today);
             if (pullOneSub != null) pullOneSub.text = p1 == GachaBanners.Pay.Free ? "FREE TODAY" : $"{bn.ticketSingle} TICKET OR {bn.gemSingle} GEMS";
-            if (pullTenSub != null) pullTenSub.text = $"{(PlayerProfile.Tickets >= bn.ticketMulti ? bn.ticketMulti + " TICKETS" : bn.gemMulti + " GEMS")}{(evt ? " · 1 EPIC+" : "")}";
+            if (pullTenSub != null) pullTenSub.text = $"{(PlayerProfile.Tickets >= bn.ticketMulti ? bn.ticketMulti + " TICKETS" : bn.gemMulti + " GEMS")} · 10+1 BOX";
 
             var rates = GachaBanners.RatesFor(bn, economy);
             for (int i = 0; i < rateTiles.Length; i++)

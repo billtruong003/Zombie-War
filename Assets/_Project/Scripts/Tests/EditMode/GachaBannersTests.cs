@@ -79,18 +79,41 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void Guarantee_HitsFeatured_ThenDupesGiveTickets()
+        public void HardPity90_LostFiftyFifty_ThenFeaturedGuaranteed()
         {
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, 100000);
-            var rng = new FixedRng(9999);   // always the most common prize unless guaranteed
-            int pulls = 0;
-            while (!PlayerProfile.IsSkinOwned(Event.featuredSkin) && pulls < 200)
-            { GachaBanners.Pull(Event, 10, GachaBanners.Pay.Gems, Day0, null, null, rng); pulls += 10; }
+            var never = new FixedRng(99999);   // always the most common prize, and always loses a 50/50
+            int boxes = 0;
+            while (!PlayerProfile.IsSkinOwned(Event.featuredSkin) && boxes < 400)
+                boxes += GachaBanners.Pull(Event, GachaBanners.MultiPaid, GachaBanners.Pay.Gems, Day0, null, null, never).Count;
             Assert.IsTrue(PlayerProfile.IsSkinOwned(Event.featuredSkin));
-            Assert.LessOrEqual(pulls, Event.guarantee);
-            Assert.AreEqual(0, PlayerProfile.GetPity(Event.pityKey) % Event.guarantee, "pity restarts after the featured prize");
-            var dupe = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Gems, Day0, null, null, new FixedRng(0));
+            // First Legendary at 90 is off-rate, the next one (by 180) must be the featured prize.
+            Assert.LessOrEqual(boxes, Event.hardPity * 2 + GachaBanners.MultiBoxes);
+            Assert.Greater(boxes, Event.hardPity, "the first Legendary lost the 50/50");
+            Assert.IsFalse(GachaBanners.FeaturedGuaranteed(Event), "guarantee used up");
+        }
+
+        [Test]
+        public void WinningFiftyFifty_GivesFeatured_AndDupesBecomeTickets()
+        {
+            PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, 1000);
+            var lucky = new FixedRng(0);        // Legendary on the first box, wins the 50/50
+            var r = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Gems, Day0, null, null, lucky);
+            Assert.IsTrue(PlayerProfile.IsSkinOwned(Event.featuredSkin));
+            Assert.IsFalse(r[0].offRate);
+            var dupe = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Gems, Day0, null, null, lucky);
             Assert.AreEqual(GachaBanners.FeaturedDupeTickets, dupe[0].tickets);
+        }
+
+        [Test]
+        public void TenPull_OpensElevenBoxes_LastIsBonus_HoldsEpic()
+        {
+            PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, 1000);
+            var r = GachaBanners.Pull(Event, GachaBanners.MultiPaid, GachaBanners.Pay.Gems, Day0, null, null, new FixedRng(99999));
+            Assert.AreEqual(GachaBanners.MultiBoxes, r.Count);
+            Assert.IsTrue(r[GachaBanners.MultiBoxes - 1].bonus);
+            Assert.IsFalse(r[0].bonus);
+            Assert.IsTrue(r.Exists(x => x.tier >= WeaponTier.Epic));
         }
 
         [Test]
