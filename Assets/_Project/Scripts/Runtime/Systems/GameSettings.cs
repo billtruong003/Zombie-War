@@ -1,5 +1,8 @@
 using BillGameCore;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace ZombieWar
 {
@@ -23,7 +26,7 @@ namespace ZombieWar
 
         public static Graphics Quality
         {
-            get => (Graphics)Mathf.Clamp(PlayerPrefs.GetInt(KGraphics, (int)Graphics.Mid), 0, 2);
+            get => (Graphics)Mathf.Clamp(PlayerPrefs.GetInt(KGraphics, (int)DeviceDefault(SystemInfo.systemMemorySize)), 0, 2);
             set { PlayerPrefs.SetInt(KGraphics, (int)value); ApplyGraphics(); }
         }
 
@@ -42,19 +45,60 @@ namespace ZombieWar
             ApplyGraphics();
         }
 
-        /// <summary>Render resolution as a share of the native screen (Low 70%, Mid 85%, High 100%).
-        /// Changes the device resolution, never the URP asset, so nothing is written to project files.</summary>
-        public static float ResolutionScale(Graphics g) => g switch { Graphics.Low => 0.7f, Graphics.Mid => 0.85f, _ => 1f };
+        /// <summary>What each Graphics option turns on. Render scale only touches the 3D world (the
+        /// overlay UI stays at native resolution and sharp).</summary>
+        public readonly struct Preset
+        {
+            public readonly float renderScale, shadowDistance; public readonly int msaa; public readonly bool hdr, postFx;
+            public Preset(float scale, float shadows, int msaa, bool hdr, bool post)
+            { renderScale = scale; shadowDistance = shadows; this.msaa = msaa; this.hdr = hdr; postFx = post; }
+        }
 
-        static int _nativeW, _nativeH;
+        /// Low: no shadows, no post, 70% 3D. Mid: short shadows, post, 85%. High: longer shadows,
+        /// 2x MSAA, HDR, full resolution.
+        public static Preset PresetFor(Graphics g) => g switch
+        {
+            Graphics.Low => new Preset(0.7f, 0f, 1, false, false),
+            Graphics.Mid => new Preset(0.85f, 25f, 1, false, true),
+            _ => new Preset(1f, 40f, 2, true, true),
+        };
+
+        public static float ResolutionScale(Graphics g) => PresetFor(g).renderScale;
+
+        /// <summary>First launch: pick by device memory (under 3 GB Low, under 6 GB Mid, else High).</summary>
+        public static Graphics DeviceDefault(int memoryMb) => memoryMb < 3000 ? Graphics.Low : memoryMb < 6000 ? Graphics.Mid : Graphics.High;
+
+        static UniversalRenderPipelineAsset _runtime;
+        static bool _hooked;
 
         static void ApplyGraphics()
         {
+            if (!PlayerPrefs.HasKey(KGraphics)) PlayerPrefs.SetInt(KGraphics, (int)DeviceDefault(SystemInfo.systemMemorySize));
+            // The editor keeps the project's URP asset as authored (a runtime copy there would leak
+            // into QualitySettings); players get a copy tuned to the preset.
             if (Application.isEditor) return;
-            if (_nativeW == 0) { _nativeW = Screen.currentResolution.width; _nativeH = Screen.currentResolution.height; }
-            if (_nativeW <= 0 || _nativeH <= 0) return;
-            float s = ResolutionScale(Quality);
-            Screen.SetResolution(Mathf.RoundToInt(_nativeW * s), Mathf.RoundToInt(_nativeH * s), true);
+            var p = PresetFor(Quality);
+            if (_runtime == null)
+            {
+                var src = (QualitySettings.renderPipeline ?? GraphicsSettings.defaultRenderPipeline) as UniversalRenderPipelineAsset;
+                if (src == null) return;
+                _runtime = Object.Instantiate(src); _runtime.name = src.name + " (runtime)";
+                QualitySettings.renderPipeline = _runtime;
+            }
+            _runtime.renderScale = p.renderScale;
+            _runtime.shadowDistance = p.shadowDistance;
+            _runtime.msaaSampleCount = p.msaa;
+            _runtime.supportsHDR = p.hdr;
+            ApplyPostFx();
+            if (!_hooked) { _hooked = true; SceneManager.sceneLoaded += (_, _) => ApplyPostFx(); }
+        }
+
+        /// Post effects follow the preset on the game camera.
+        static void ApplyPostFx()
+        {
+            var cam = Camera.main;
+            if (cam != null && cam.TryGetComponent(out UniversalAdditionalCameraData data))
+                data.renderPostProcessing = PresetFor(Quality).postFx;
         }
     }
 }
