@@ -14,6 +14,7 @@ namespace ZombieWar
         {
             if (_entered || !Bill.IsReady) return;
             _entered = true;
+            GameSettings.Apply();
 #if UNITY_EDITOR
             // ZombieWar/Dev/Play Skill Sandbox sets this for one play session.
             if (UnityEditor.SessionState.GetBool("zw.sandbox", false))

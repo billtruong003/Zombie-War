@@ -41,7 +41,7 @@ namespace ZombieWar.EditorTools.V2
                 var rar = TopBand(Node(r, "Rarity"), 184, 20, 16, 16);
                 Row(rar, 5);
                 string[] rn = { "COMMON", "UNCOMMON", "RARE", "EPIC", "LEGEND" };
-                for (int i = 0; i < 5; i++) Tag(rar, rn[i], rn[i], Rarity[i], Outline);
+                for (int i = 0; i < 5; i++) Tag(rar, rn[i], rn[i], Rarity[i], OutlineInk);
 
                 var lab = TopBand(Node(r, "TextLabel"), 218, 16, 16, 16); Label(lab, "Text");
                 var ok = TopBand(Node(r, "TextOk"), 238, 34, 16, 16); Title(ok, "PLAY AGAIN", 24f);

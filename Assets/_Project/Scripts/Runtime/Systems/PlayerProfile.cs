@@ -85,6 +85,15 @@ namespace ZombieWar
             public int passXp;
             // M9 account level (AccountProgress turns XP into a level and feature gates).
             public int accountXp;
+            // M10 Profile: a display name and a stable 8-digit player id (made on first load).
+            public string displayName;
+            public string playerId;
+            public int runsPlayed;
+            // M10 Profile stats.
+            public long totalKills;
+            public int peakThreat;
+            public float totalSeconds;
+            public int bossesDefeated;
         }
 
         [Serializable]
@@ -146,7 +155,8 @@ namespace ZombieWar
                     {
                         // An older schema is migrated by Normalize and written back once, so the
                         // upgrade is persisted rather than silently re-run on every launch.
-                        bool outdated = loaded.version < SchemaVersion;
+                        // A profile from before M10 has no player ID; the one Normalize makes must be kept.
+                        bool outdated = loaded.version < SchemaVersion || string.IsNullOrEmpty(loaded.playerId);
                         _data = Normalize(loaded);
                         if (outdated) SaveNow();
                         return _data;
@@ -194,12 +204,61 @@ namespace ZombieWar
         public static int AccountXp => Data.accountXp;
         public static int AccountLevel => AccountProgress.LevelFor(Data.accountXp);
 
+        public static string DisplayName => Data.displayName;
+        public static string PlayerId => Data.playerId;
+        public static int RunsPlayed => Data.runsPlayed;
+        public static long TotalKills => Data.totalKills;
+        public static int PeakThreat => Data.peakThreat;
+        public static float TotalSeconds => Data.totalSeconds;
+        public static int BossesDefeated => Data.bossesDefeated;
+
+        public static void RecordBossDefeated()
+        {
+            Data.bossesDefeated++;
+            SaveNow();
+        }
+
+        /// <summary>
+        /// Settings "Delete my data": wipes the saved profile in every build (store privacy rule),
+        /// unlike <see cref="ResetForDev"/>, which only runs in dev builds.
+        /// </summary>
+        public static void DeleteAllData()
+        {
+            var storage = Storage;
+            storage.Delete(SaveKey);
+            storage.Flush();
+            ResetCacheForTests();
+            AccountChanged?.Invoke();
+        }
+
+        /// <summary>Lifetime stats for the Profile screen, added once per closed run.</summary>
+        public static void RecordRunStats(int kills, int peakThreat, float seconds)
+        {
+            Data.totalKills += Math.Max(0, kills);
+            Data.peakThreat = Math.Max(Data.peakThreat, peakThreat);
+            if (!float.IsNaN(seconds) && seconds > 0f) Data.totalSeconds += seconds;
+            SaveNow();
+        }
+
+        /// <summary>Renames the player (Profile screen). Trims, caps at 16 characters, ignores blanks.</summary>
+        public static bool SetDisplayName(string name)
+        {
+            name = (name ?? "").Trim();
+            if (name.Length == 0) return false;
+            if (name.Length > 16) name = name.Substring(0, 16);
+            Data.displayName = name;
+            SaveNow();
+            AccountChanged?.Invoke();
+            return true;
+        }
+
         /// <summary>Adds account XP and returns how many levels it gained.</summary>
         public static int AddAccountXp(int xp)
         {
             if (xp <= 0) return 0;
             int before = AccountLevel;
             Data.accountXp += xp;
+            Data.runsPlayed++;
             SaveNow();
             AccountChanged?.Invoke();
             return AccountLevel - before;
@@ -1496,6 +1555,13 @@ namespace ZombieWar
             MigrateToSingleWeapon(d);
             if (d.passXp < 0) d.passXp = 0;
             if (d.accountXp < 0) d.accountXp = 0;
+            if (string.IsNullOrEmpty(d.playerId)) d.playerId = UnityEngine.Random.Range(10000000, 99999999).ToString();
+            if (string.IsNullOrWhiteSpace(d.displayName)) d.displayName = "Survivor " + d.playerId.Substring(4);
+            if (d.runsPlayed < 0) d.runsPlayed = 0;
+            if (d.totalKills < 0) d.totalKills = 0;
+            if (d.bossesDefeated < 0) d.bossesDefeated = 0;
+            if (d.peakThreat < 0) d.peakThreat = 0;
+            if (float.IsNaN(d.totalSeconds) || d.totalSeconds < 0f) d.totalSeconds = 0f;
             d.bodyColor ??= "";
             d.bodyEar ??= "";
 

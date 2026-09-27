@@ -61,6 +61,7 @@ namespace ZombieWar
             run.Payout(CoinFractionFor(summary.Outcome));
 
             bool record = PlayerProfile.RecordSurvival(summary.Duration);
+            PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
             int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills);
             int levels = PlayerProfile.AddAccountXp(xp);
             return new Result(true, summary, run.BankedCoin, record, xp, levels);

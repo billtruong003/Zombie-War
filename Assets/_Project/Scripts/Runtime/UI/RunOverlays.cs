@@ -98,13 +98,13 @@ namespace ZombieWar
             }
             if (musicSlider != null)
             {
-                musicSlider.SetValueWithoutNotify(Bill.Audio != null ? Bill.Audio.GetVolume(AudioChannel.Music) : 1f);
-                musicSlider.onValueChanged.AddListener(v => Bill.Audio?.SetVolume(AudioChannel.Music, v));
+                musicSlider.SetValueWithoutNotify(GameSettings.Music);
+                musicSlider.onValueChanged.AddListener(v => GameSettings.Music = v);
             }
             if (sfxSlider != null)
             {
-                sfxSlider.SetValueWithoutNotify(Bill.Audio != null ? Bill.Audio.GetVolume(AudioChannel.SFX) : 1f);
-                sfxSlider.onValueChanged.AddListener(v => Bill.Audio?.SetVolume(AudioChannel.SFX, v));
+                sfxSlider.SetValueWithoutNotify(GameSettings.Sfx);
+                sfxSlider.onValueChanged.AddListener(v => GameSettings.Sfx = v);
             }
             if (hapticToggle != null)
             {

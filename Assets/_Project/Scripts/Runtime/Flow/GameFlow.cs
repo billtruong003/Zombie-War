@@ -28,7 +28,7 @@ namespace ZombieWar
             else
             {
                 SetMenuActive(true);
-                UIManager.Instance?.Replace<HubScreen>();   // same as a fresh load: Hub alone, refreshed
+                UIManager.Instance?.Replace<HomeScreen>();   // same as a fresh load: Home alone, refreshed (M10)
                 LoadingScreen.Complete();
             }
         }

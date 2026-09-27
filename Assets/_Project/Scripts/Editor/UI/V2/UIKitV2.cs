@@ -33,7 +33,7 @@ namespace ZombieWar.EditorTools.V2
         public const string IconDir = "Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/ResourcesData/Sprites/Components/Icon_ItemIcons/128/";
 
         public static readonly Color Ground = Hex("262a36"), Card = Hex("2f3544"), Deep = Hex("1f2330"), Edge = Hex("3a4152"),
-            Ink = Hex("f4f1ea"), Dim = Hex("9aa1b0"), Outline = Hex("1b1e27"),
+            Ink = Hex("f4f1ea"), Dim = Hex("9aa1b0"), OutlineInk = Hex("1b1e27"),
             Yellow = Hex("ffc93c"), YellowLip = Hex("e0a21c"), OnYellow = Hex("2a1d00"),
             Gem = Hex("b77cff"), GemLip = Hex("8f52e6"), OnGem = Hex("1f1030"),
             Green = Hex("5bd68a"), GreenLip = Hex("34a865"), OnGreen = Hex("10331d"),
@@ -50,6 +50,23 @@ namespace ZombieWar.EditorTools.V2
         public static float Px(float mockupPx) => mockupPx * K;
 
         public static Sprite Spr(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(SpriteDir + name + ".png");
+        public const string PictoDir = "Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/ResourcesData/Sprites/Components/Icon_PictoIcons/128/";
+
+        /// <summary>White line glyph (lock, gear, arrow, hand...), tinted by the caller.</summary>
+        public static Sprite PictoSprite(string name)
+        {
+            var s = AssetDatabase.LoadAssetAtPath<Sprite>(PictoDir + "PictoIcon_" + name + ".Png");
+            return s != null ? s : AssetDatabase.LoadAssetAtPath<Sprite>(PictoDir + "PictoIcon_" + name + ".png");
+        }
+
+        public static Image Picto(RectTransform rt, string name, Color? tint = null)
+        {
+            var img = rt.GetComponent<Image>() ?? rt.gameObject.AddComponent<Image>();
+            img.sprite = PictoSprite(name); img.preserveAspect = true; img.raycastTarget = false;
+            img.color = tint ?? Ink;
+            return img;
+        }
+
         public static Sprite Icon(string name)
         {
             var s = AssetDatabase.LoadAssetAtPath<Sprite>(IconDir + "ItemIcon_" + name + ".Png");
@@ -255,7 +272,7 @@ namespace ZombieWar.EditorTools.V2
             // Width follows the text through the parent layout group (no fitter: a fitter inside a
             // layout group fights it).
             var hl = rt.gameObject.AddComponent<HorizontalLayoutGroup>();
-            hl.padding = new RectOffset((int)Px(6), (int)Px(6), 0, 0); hl.childControlWidth = true; hl.childControlHeight = true; hl.childForceExpandHeight = true;
+            hl.padding = new RectOffset((int)Px(6), (int)Px(6), 0, 0); hl.childControlWidth = true; hl.childControlHeight = true; hl.childForceExpandHeight = true; hl.childForceExpandWidth = false;
             Size(rt, -1, h);
             return rt;
         }
@@ -331,11 +348,51 @@ namespace ZombieWar.EditorTools.V2
         {
             var rt = Box(Node(parent, "Back"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 0, 0, 38, 38);
             Surface(rt, Card, 11f, true);
-            var arrow = Fill(Node(rt, "Arrow"), 0, 0, 0, 0);
-            Title(arrow, "<", 20f, Ink, TextAlignmentOptions.Center);
+            Picto(Fill(Node(rt, "Arrow"), 9, 9, 9, 9), "Arrow_Left_1");
             var b = rt.gameObject.AddComponent<Button>();
             rt.gameObject.AddComponent<UIPressFeel>();
             return b;
+        }
+
+        /// <summary>Pushed-screen header (mockup: padding 14, back 38, title 24). Returns the back
+        /// button; the right side ("Right") is a right-aligned row for pills.</summary>
+        public static Button Header(RectTransform safe, string title, out RectTransform right)
+        {
+            var bar = TopBand(Node(safe, "Header"), 14, 38, 14, 14);
+            var back = BackButton(bar);
+            Title(Box(Node(bar, "Title"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 46, 0, 200, 38), title, 24f);
+            right = Box(Node(bar, "Right"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), 0, 0, 190, 30);
+            var row = Row(right, 6, TextAnchor.MiddleRight); row.childForceExpandHeight = true;
+            return back;
+        }
+
+        /// <summary>Vertical page body under a header: children stack with their preferred
+        /// heights, so rows hidden at runtime close their gap.</summary>
+        public static RectTransform Page(RectTransform safe, float top, float bottom = 0)
+        {
+            var page = Fill(Node(safe, "Page"), 14, top, 14, bottom);
+            var col = Column(page, 0);
+            col.childForceExpandWidth = true;
+            return page;
+        }
+
+        /// <summary>Dim caps section label with the mockup's 12 px above and 6 px below.</summary>
+        public static TextMeshProUGUI SectionLabel(RectTransform page, string text, string name = null)
+        {
+            var rt = Node(page, name ?? ("Label_" + text));
+            Size(rt, -1, 33);
+            return Label(Fill(Node(rt, "T"), 0, 12, 0, 6), text);
+        }
+
+        /// <summary>Card surface that sizes to its stacked children (optional padding in px).</summary>
+        public static RectTransform CardColumn(RectTransform page, string name, float pad = 0, float gap = 0)
+        {
+            var rt = Node(page, name);
+            Surface(rt, Card, RCard);
+            var col = Column(rt, gap);
+            int p = Mathf.RoundToInt(Px(pad));
+            col.padding = new RectOffset(p, p, p, p);
+            return rt;
         }
 
         /// <summary>Wires a serialized field on a component by name.</summary>

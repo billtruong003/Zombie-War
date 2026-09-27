@@ -55,7 +55,11 @@ namespace ZombieWar
         private void OnStationCompleted(StationCompletedEvent e)
         {
             Report(MissionMetric.CompleteStation, 1);
-            if (e.Kind == StationKind.BossBeacon) Report(MissionMetric.DefeatBoss, 1);
+            if (e.Kind == StationKind.BossBeacon)
+            {
+                Report(MissionMetric.DefeatBoss, 1);
+                PlayerProfile.RecordBossDefeated();
+            }
         }
 
         private void OnRunFinished(RunFinishedEvent e)
