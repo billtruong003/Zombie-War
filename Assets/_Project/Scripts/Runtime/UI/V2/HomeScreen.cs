@@ -196,7 +196,7 @@ namespace ZombieWar.UI
             RailState(daily, true, dailyCount, "", "");
             RailState(events, AccountProgress.IsUnlocked(AccountProgress.Feature.Events), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Events));
             RailState(gacha, AccountProgress.IsUnlocked(AccountProgress.Feature.Gacha), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Gacha));
-            RailState(pass, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass), claimable, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Pass));
+            RailState(pass, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass), claimable + PassRewards.ClaimableCount(), "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Pass));
             RailState(starter, true, 0, "OFFER", "");
 
             RefreshGun();
@@ -208,10 +208,10 @@ namespace ZombieWar.UI
             bool firstRun = PlayerProfile.RunsPlayed == 0;
             if (playHint != null) playHint.SetActive(firstRun);
             Set(playSub, best > 0 ? $"Beat your best {HudController.FormatClock(best)}" : "Survive as long as you can");
-            if (nav != null) nav.SetDot(4, claimable > 0 && AccountProgress.IsUnlocked(AccountProgress.Feature.Pass));
+            if (nav != null) nav.SetDot(4, claimable + PassRewards.ClaimableCount() > 0 && AccountProgress.IsUnlocked(AccountProgress.Feature.Pass));
         }
 
-        static int PassLevel() => 1 + PlayerProfile.PassXp / 500;
+        static int PassLevel() => PassRewards.Level;
 
         static void RailState(Rail r, bool unlocked, int count, string sub, string lockedSub)
         {

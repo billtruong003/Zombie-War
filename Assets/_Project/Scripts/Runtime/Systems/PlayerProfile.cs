@@ -103,6 +103,12 @@ namespace ZombieWar
             public int stampCount;
             public int stampLastDay;
             public int stampMakeUps;
+            // M10 Pass v2 and gun skins.
+            public List<string> ownedSkins = new List<string>();
+            public int passSeason;
+            public int passSeasonStart;
+            public bool passPremium;
+            public List<string> passClaimed = new List<string>();
         }
 
         [Serializable]
@@ -241,6 +247,18 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(id) || Data.ownedFrames.Contains(id)) return;
             Data.ownedFrames.Add(id); SaveNow(); AccountChanged?.Invoke();
         }
+
+        /// <summary>Owned gun skin sets (ids from WeaponSkins.Season1).</summary>
+        public static IReadOnlyList<string> OwnedSkins => Data.ownedSkins;
+        public static bool IsSkinOwned(string id) => Data.ownedSkins.Contains(id);
+        public static void AddSkin(string id)
+        {
+            if (string.IsNullOrEmpty(id) || Data.ownedSkins.Contains(id)) return;
+            Data.ownedSkins.Add(id); SaveNow(); LoadoutChanged?.Invoke();
+        }
+
+        /// <summary>Pass season XP. Only <see cref="PassRewards"/> resets it at a season change.</summary>
+        internal static void ResetPassXp() { Data.passXp = 0; }
 
         /// <summary>Daily state lives in the profile save; <see cref="DailyRewards"/> owns the rules.</summary>
         internal static ProfileData DailyData => Data;
@@ -1584,6 +1602,8 @@ namespace ZombieWar
             d.gachaPity ??= new List<GachaPityEntry>();
             d.unseenItems = DedupeNonEmpty(d.unseenItems);
             d.ownedFrames = DedupeNonEmpty(d.ownedFrames);
+            d.ownedSkins = DedupeNonEmpty(d.ownedSkins);
+            d.passClaimed = DedupeNonEmpty(d.passClaimed);
             if (d.tickets < 0) d.tickets = 0;
             if (float.IsNaN(d.bestSurvivalSeconds) || d.bestSurvivalSeconds < 0f) d.bestSurvivalSeconds = 0f;
             d.missionProgress ??= new List<MissionProgressEntry>();

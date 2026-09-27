@@ -83,6 +83,7 @@ namespace ZombieWar.EditorTools.V2
             Step("Profile", V2ProfileBuilder.Build);
             Step("Settings", V2SettingsBuilder.Build);
             Step("Daily", V2DailyBuilder.Build);
+            Step("Pass", V2PassBuilder.Build);
             try { log.Add("Toast: " + BuildToast()); } catch (Exception e) { log.Add("Toast: FAILED " + e.Message); }
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);
