@@ -64,6 +64,25 @@ namespace ZombieWar.UI
         public static readonly Color M8RedLip   = Hex("#9E2A2E");
         public static readonly Color M8CardLip  = Hex("#1F2330");
 
+        // ---- M8 corner radii (canvas units). A shape inside another is never rounder than its
+        //      parent allows: inner radius = outer radius - inset. UiAudit checks nested pairs. ----
+        public const float M8RadiusPanel = 32f;
+        public const float M8RadiusCard = 24f;
+        public const float M8RadiusTile = 14f;   // tiles and chips inside a card
+        public const float M8RadiusButton = 24f;
+
+        /// <summary>Corner radius (sprite pixels) drawn inside each of the UI sprites.</summary>
+        public static float SpriteCornerPx(string spriteName) => spriteName switch
+        {
+            "rounded_24" or "frame_24" => 24f,
+            "rounded_32" or "frame_32" or "pill" => 31f,
+            _ => 0f,
+        };
+
+        /// <summary>pixelsPerUnitMultiplier that draws <paramref name="spriteName"/> with a corner radius of <paramref name="radius"/>.</summary>
+        public static float MultiplierFor(string spriteName, float radius) =>
+            radius <= 0f ? 1f : Mathf.Max(0.05f, SpriteCornerPx(spriteName) / radius);
+
         // ---- Currency accents ----
         public static readonly Color Coin = Gold;   // vàng UI
         public static readonly Color Gem  = Cyan;

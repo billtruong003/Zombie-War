@@ -22,7 +22,6 @@ namespace ZombieWar.Editor.UI
         const int Capture = 1024;
         const int IconSize = 512;
         const int Outline = 9;
-        const int Margin = 24;          // outline + breathing room inside the icon
         static readonly Color32 OutlineColor = new Color32(0x1F, 0x23, 0x30, 0xFF);
 
         [MenuItem("ZombieWar/UI/Authoring/Generate Weapon Icons (M8 owned + locked)")]
@@ -59,8 +58,9 @@ namespace ZombieWar.Editor.UI
             try
             {
                 var pale = Color.Lerp(wd.TierColor, Color.white, 0.72f);
-                WriteIcon(owned, baseName + ".png", null);
-                WriteIcon(locked, baseName + "_locked.png", pale);
+                float width = WidthShare(wd.weaponClass);
+                WriteIcon(owned, baseName + ".png", null, width);
+                WriteIcon(locked, baseName + "_locked.png", pale, width);
             }
             finally { Object.DestroyImmediate(owned); Object.DestroyImmediate(locked); }
 
@@ -154,7 +154,22 @@ namespace ZombieWar.Editor.UI
 
         /// Crops to the gun, fits it into the icon (2x2 supersampled), optionally recolours it to one
         /// flat tint, and writes the PNG; the outline is drawn after.
-        static void WriteIcon(Texture2D src, string path, Color? tint)
+        /// <summary>
+        /// M8-A (owner: icons should scale sensibly): each gun is cropped to itself, then drawn at a
+        /// share of the icon width by class, so a pistol reads smaller than a rifle but never tiny.
+        /// </summary>
+        public static float WidthShare(WeaponClass c) => c switch
+        {
+            WeaponClass.Sidearm => 0.8f,
+            WeaponClass.SMG => 0.9f,
+            WeaponClass.LMG or WeaponClass.Marksman or WeaponClass.Railgun or WeaponClass.Rocket => 1f,
+            _ => 0.96f,
+        };
+
+        /// Padding around the drawn area (share of the icon), leaving room for the outline.
+        const float Padding = 0.08f;
+
+        static void WriteIcon(Texture2D src, string path, Color? tint, float widthShare)
         {
             var px = src.GetPixels32();
             int w = src.width, h = src.height, minX = w, minY = h, maxX = -1, maxY = -1;
@@ -163,8 +178,8 @@ namespace ZombieWar.Editor.UI
                     if (px[y * w + x].a > 8) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
             if (maxX < 0) { minX = minY = 0; maxX = w - 1; maxY = h - 1; }
             float cw = maxX - minX + 1, ch = maxY - minY + 1;
-            float fit = IconSize - 2 * Margin;
-            float scale = Mathf.Min(fit / cw, fit / ch);
+            float inner = IconSize * (1f - 2f * Padding);
+            float scale = Mathf.Min(inner * widthShare / cw, inner / ch);
             float dw = cw * scale, dh = ch * scale;
             float ox = (IconSize - dw) * 0.5f, oy = (IconSize - dh) * 0.5f;
 

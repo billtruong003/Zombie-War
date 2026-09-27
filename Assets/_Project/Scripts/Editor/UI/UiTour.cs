@@ -133,8 +133,18 @@ namespace ZombieWar.EditorTools
                 if (UiAudit.MisSliced(img, out var why))
                     bad.Add($"    {UiAudit.PathOf(img.transform, null)} [{img.sprite.name}] {why}");
             }
-            Log.AppendLine($"{name}: misSliced={bad.Count}");
+            var nested = new List<string>();
+            var dark = new List<string>();
+            foreach (var canvas in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                if (!canvas.isRootCanvas || !canvas.isActiveAndEnabled) continue;
+                nested.AddRange(UiAudit.NestedRadiusIssues(canvas.transform));
+                dark.AddRange(UiAudit.DarkOutlineText(canvas.transform));
+            }
+            Log.AppendLine($"{name}: misSliced={bad.Count} nestedRadius={nested.Distinct().Count()} darkOutlineText={dark.Distinct().Count()}");
             foreach (var l in bad.Distinct()) Log.AppendLine(l);
+            foreach (var l in nested.Distinct()) Log.AppendLine("  [radius]" + l);
+            foreach (var l in dark.Distinct()) Log.AppendLine("  [text]" + l);
         }
     }
 }

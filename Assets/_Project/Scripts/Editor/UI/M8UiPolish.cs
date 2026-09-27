@@ -24,8 +24,12 @@ namespace ZombieWar.EditorTools
         const string SpriteDir = "Assets/_Project/UI/Sprites/";
         const string DisplayFontPath = "Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/ResourcesData/Fonts/Cairo_Line_Black SDF_Light.asset";
         const float Lip = 14f;
-        const float ButtonRadius = 0.6f;   // rounded_24 at 0.6 → ~40 px corners, the mockup's 14-16 css px
-        const float CardRadius = 0.75f;    // rounded_32 at 0.75 → ~43 px corners
+        // M8-A (owner: radii disagreed, tiles rounder than their cards): every radius comes from the
+        // UITheme tokens, converted to the sprite's multiplier.
+        static float ButtonRadius => UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusButton);
+        static float CardRadius => UITheme.MultiplierFor("rounded_32", UITheme.M8RadiusPanel);
+        static float TileRadius => UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusTile);
+        static float CardRadius24 => UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusCard);
 
         [MenuItem("ZombieWar/UI/M8/Polish All Screens (visual pass)")]
         public static void PolishAll()
@@ -48,6 +52,8 @@ namespace ZombieWar.EditorTools
                     case "UI_ShopScreen": PolishShop(root, log); break;
                 }
                 log.Add($"press-feel {AddPressFeel(root)}");
+                log.Add($"outline-text {WhiteOnOutline(root)}");
+                if (System.IO.Path.GetFileNameWithoutExtension(path) == "UI_HubScreen") PolishHub(root, log);
                 log.Add($"slice-fit +{UiKitApply.AddSliceFit(root)}");
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
@@ -149,6 +155,43 @@ namespace ZombieWar.EditorTools
         {
             var rt = t as RectTransform; if (rt == null) return;
             rt.anchorMin = aMin; rt.anchorMax = aMax; rt.pivot = pivot; rt.anchoredPosition = pos; rt.sizeDelta = size;
+        }
+
+        static void SetMultiplier(Transform t, float m)
+        {
+            var img = t != null ? t.GetComponent<Image>() : null;
+            if (img == null) return;
+            img.pixelsPerUnitMultiplier = m;
+            var fit = t.GetComponent<UISliceFit>() ?? t.gameObject.AddComponent<UISliceFit>();
+            fit.BaseMultiplier = m;
+        }
+
+        /// <summary>
+        /// Owner rule (M8-A): the display font has a black outline, so its text is always light. A
+        /// dark label on it (RESUME, PLAY AGAIN, BUY) turned into a black blob. Returns labels fixed.
+        /// </summary>
+        public static int WhiteOnOutline(GameObject root)
+        {
+            int n = 0;
+            foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (!UiAudit.IsOutlineFont(t) || !UiAudit.IsDark(t.color)) continue;
+                var c = UITheme.M8Ink; c.a = t.color.a;
+                t.color = c;
+                n++;
+            }
+            return n;
+        }
+
+        /// Hub: the weapon plate's tile sits 16 px inside a 32 px plate, so it gets the tile radius.
+        static void PolishHub(GameObject root, List<string> log)
+        {
+            var plate = root.transform.Find("Safe/Podium/WeaponPlate");
+            if (plate == null) return;
+            SetMultiplier(plate, UITheme.MultiplierFor("rounded_32", UITheme.M8RadiusPanel));
+            SetMultiplier(plate.Find("Tile"), UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusTile));
+            SetMultiplier(plate.Find("ChangeBtn"), UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusTile));
+            log.Add("hub plate radii");
         }
 
         /// Every button and toggle answers a tap: sound by role, lip buttons sink while held.
@@ -262,7 +305,7 @@ namespace ZombieWar.EditorTools
                 var perk = lu.Find("Perk" + i);
                 if (perk == null) continue;
                 Card(perk.Find("Bg"));
-                Rounded(perk.Find("Icon"), "rounded_24", UITheme.M8Deep, ButtonRadius);
+                Rounded(perk.Find("Icon"), "rounded_24", UITheme.M8Deep, TileRadius);
                 Style(perk.Find("Desc")?.GetComponent<TMP_Text>(), 30, Hex("D9DDE6"));
                 foreach (Transform pip in perk.Find("Pips")) pip.GetComponent<Image>().color = UITheme.M8Deep;
             }
@@ -306,7 +349,7 @@ namespace ZombieWar.EditorTools
             if (items == null) return;
             foreach (Transform it in items)
             {
-                Rounded(it, "rounded_24", UITheme.M8Card, ButtonRadius);
+                Rounded(it, "rounded_24", UITheme.M8Card, TileRadius);
                 var rank = it.Find("Rank");
                 if (withRank && rank != null)
                     SetRect(rank, new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(8, -8), new Vector2(40, 30));
@@ -373,7 +416,7 @@ namespace ZombieWar.EditorTools
             var trt = (RectTransform)tileT;
             trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.pivot = new Vector2(0.5f, 0.5f);
             trt.offsetMin = new Vector2(14, bottomReserve); trt.offsetMax = new Vector2(-14, -14);
-            var ti = Rounded(tileT, "rounded_24", UITheme.M8Deep, ButtonRadius);
+            var ti = Rounded(tileT, "rounded_24", UITheme.M8Deep, TileRadius);
             ti.raycastTarget = false;
             card.tile = ti;
 
@@ -383,8 +426,13 @@ namespace ZombieWar.EditorTools
             card.icon.preserveAspect = true;
             card.icon.raycastTarget = false;
 
-            var bg = card.transform.Find("Bg")?.GetComponent<Image>();
-            if (bg != null) { bg.color = UITheme.M8Card; }
+            var bg = card.transform.Find("Bg");
+            if (bg != null) Rounded(bg, "rounded_24", UITheme.M8Card, CardRadius24);
+            var frame = card.transform.Find("Border");
+            if (frame != null) SetMultiplier(frame, UITheme.MultiplierFor("frame_24", UITheme.M8RadiusCard));
+            // The owned badge sits 14 px inside the card corner: a full pill there was rounder than the card.
+            var badge = card.ownedBadge != null ? card.ownedBadge.GetComponent<Image>() : null;
+            if (badge != null) Rounded(badge.transform, "rounded_24", badge.color, TileRadius);
             var lockOv = card.lockOverlay != null ? card.lockOverlay.GetComponent<Image>() : null;
             if (lockOv != null) lockOv.color = new Color(0.047f, 0.055f, 0.078f, 0.35f);   // the silhouette already says "locked"
             // The padlock sits on the tile's corner instead of over the gun.
@@ -404,11 +452,11 @@ namespace ZombieWar.EditorTools
             var border = info.Find("Border")?.GetComponent<Image>();
             if (border != null) border.color = UITheme.M8Edge;
             info.Find("Glow")?.gameObject.SetActive(false);
-            Rounded(info.Find("HeroBackdrop"), "rounded_32", UITheme.M8Deep, CardRadius);
+            Rounded(info.Find("HeroBackdrop"), "rounded_24", UITheme.M8Deep, TileRadius);
             var heroIcon = info.Find("HeroBackdrop/HeroWeaponIcon") as RectTransform;
             if (heroIcon != null) { heroIcon.offsetMin = new Vector2(16, 16); heroIcon.offsetMax = new Vector2(-16, -16); }
             foreach (Transform chip in info.Find("Signatures/Row"))
-                Rounded(chip, "rounded_24", Hex("3A2F22"), ButtonRadius);
+                Rounded(chip, "rounded_24", Hex("3A2F22"), TileRadius);
 
             // ARSENAL heading sits above the grid instead of on the details card's edge.
             var kho = safe.Find("KhoArea");
@@ -450,7 +498,7 @@ namespace ZombieWar.EditorTools
                 tileT.SetSiblingIndex(icon.GetSiblingIndex());
                 icon.SetSiblingIndex(tileT.GetSiblingIndex() + 1);
                 SetRect(tileT, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(420, 300));
-                Rounded(tileT, "rounded_32", UITheme.M8Deep, CardRadius).raycastTarget = false;
+                Rounded(tileT, "rounded_24", UITheme.M8Deep, TileRadius).raycastTarget = false;
                 SetRect(icon, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(380, 260));
                 var iconImg = icon.GetComponent<Image>(); iconImg.preserveAspect = true; iconImg.raycastTarget = false;
                 Style(panel.Find("Title")?.GetComponent<TMP_Text>(), 56, UITheme.M8Ink);

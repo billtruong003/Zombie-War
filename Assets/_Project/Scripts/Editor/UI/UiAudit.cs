@@ -46,6 +46,68 @@ namespace ZombieWar.EditorTools
             return false;
         }
 
+        public static bool IsOutlineFont(TMP_Text t) => t.font != null && t.font.name.Contains("_Line_");
+
+        public static bool IsDark(Color c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b < 0.45f;
+
+        /// Drawn corner radius (canvas units) of a sliced UI image, or 0 when the sprite is not a rounded shape.
+        public static float DrawnRadius(Image img)
+        {
+            if (img == null || img.sprite == null || img.type != Image.Type.Sliced) return 0f;
+            float px = ZombieWar.UI.UITheme.SpriteCornerPx(img.sprite.name);
+            if (px <= 0f) return 0f;
+            float r = px / Mathf.Max(0.01f, img.pixelsPerUnitMultiplier);
+            var size = ((RectTransform)img.transform).rect.size;
+            return Mathf.Min(r, Mathf.Min(size.x, size.y) * 0.5f);
+        }
+
+        /// <summary>
+        /// Rounded shapes drawn inside another rounded shape but rounder than the inset allows
+        /// (inner radius should be about outer radius minus the inset). Returns human-readable lines.
+        /// </summary>
+        public static List<string> NestedRadiusIssues(Transform scope)
+        {
+            var list = new List<string>();
+            var imgs = scope.GetComponentsInChildren<Image>(false).Where(i => DrawnRadius(i) > 0f).ToArray();
+            var corners = new Vector3[4];
+            foreach (var outer in imgs)
+            {
+                var ort = (RectTransform)outer.transform;
+                ort.GetWorldCorners(corners);
+                var oMin = corners[0]; var oMax = corners[2];
+                float scale = ort.lossyScale.x;
+                float rOut = DrawnRadius(outer);
+                foreach (var inner in imgs)
+                {
+                    if (inner == outer || !inner.transform.IsChildOf(outer.transform.parent)) continue;
+                    var irt = (RectTransform)inner.transform;
+                    irt.GetWorldCorners(corners);
+                    var iMin = corners[0]; var iMax = corners[2];
+                    if (iMin.x < oMin.x - 0.5f || iMin.y < oMin.y - 0.5f || iMax.x > oMax.x + 0.5f || iMax.y > oMax.y + 0.5f) continue;
+                    float inset = Mathf.Min(Mathf.Min(iMin.x - oMin.x, oMax.x - iMax.x), Mathf.Min(iMin.y - oMin.y, oMax.y - iMax.y)) / Mathf.Max(0.0001f, scale);
+                    if (inset < 4f) continue;                       // same-size layers (bg + border) are not nested
+                    // Only the inner shape sitting near the outer corner matters.
+                    if (inset > rOut) continue;
+                    // Close to the corner the inner shape follows the outer curve (r - inset); further in
+                    // it only has to stay clearly less round than its parent.
+                    float allowed = (inset < rOut * 0.5f ? Mathf.Max(4f, rOut - inset) : rOut * 0.75f) + 2f;
+                    float rIn = DrawnRadius(inner);
+                    if (rIn > allowed)
+                        list.Add($"    {PathOf(inner.transform, null)} r={rIn:0} inside {outer.name} r={rOut:0} inset={inset:0} (max {allowed:0})");
+                }
+            }
+            return list;
+        }
+
+        public static List<string> DarkOutlineText(Transform scope)
+        {
+            var list = new List<string>();
+            foreach (var t in scope.GetComponentsInChildren<TMP_Text>(false))
+                if (IsOutlineFont(t) && IsDark(t.color) && t.color.a > 0.2f && !string.IsNullOrWhiteSpace(t.text))
+                    list.Add($"    {PathOf(t.transform, null)} '{t.text}' #{ColorUtility.ToHtmlStringRGB(t.color)}");
+            return list;
+        }
+
         public static string PathOf(Transform t, Transform root)
         {
             var parts = new List<string>();
