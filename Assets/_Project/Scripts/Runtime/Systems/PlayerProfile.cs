@@ -100,6 +100,8 @@ namespace ZombieWar
             // M10 Daily: gacha tickets, avatar frames, the 7-day welcome check-in, the 28-day stamp card.
             public long tickets;
             public List<string> ownedFrames = new List<string>();
+            public string avatarId;   // AvatarCatalog id; empty = the live character
+            public string frameId;    // AvatarCatalog frame id; empty = classic
             public int welcomeClaims;
             public int welcomeLastDay;
             public int stampCycleStart;
@@ -257,6 +259,12 @@ namespace ZombieWar
         }
         /// <summary>Owned avatar frames besides the default one.</summary>
         public static IReadOnlyList<string> OwnedFrames => Data.ownedFrames;
+        /// <summary>Selected profile picture and frame (AvatarCatalog ids).</summary>
+        public static string AvatarId => string.IsNullOrEmpty(Data.avatarId) ? AvatarCatalog.LiveAvatar : Data.avatarId;
+        public static string FrameId => string.IsNullOrEmpty(Data.frameId) ? AvatarCatalog.DefaultFrame : Data.frameId;
+        public static void SetAvatar(string id) { if (Data.avatarId == id) return; Data.avatarId = id; SaveNow(); AccountChanged?.Invoke(); }
+        public static void SetFrame(string id) { if (Data.frameId == id) return; Data.frameId = id; SaveNow(); AccountChanged?.Invoke(); }
+
         public static void AddFrame(string id)
         {
             if (string.IsNullOrEmpty(id) || Data.ownedFrames.Contains(id)) return;

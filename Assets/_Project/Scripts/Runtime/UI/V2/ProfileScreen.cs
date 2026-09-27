@@ -42,12 +42,18 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text gunMeta;
         [SerializeField] private UIPrototypeCatalog catalog;
 
+        [Header("Picture + frame")]
+        [SerializeField] private Button avatarButton;
+        [SerializeField] private Button framesButton;
+        [SerializeField] private TMP_Text framesLabel;
+        [SerializeField] private AvatarPicker picker;
+
         [Header("Badges")]
         [SerializeField] private TMP_Text badgesHeader;
         [SerializeField] private Image[] badgeTiles = new Image[Badges.Length];
 
-        /// Owned frames come with the 28-day stamp card (M10 Daily); only the default exists today.
-        public const int FrameCount = 12;
+        /// Frames and avatars live in AvatarCatalog (owner 2026-09-27).
+        public static int FrameCount => AvatarCatalog.Frames.Length;
 
         struct Badge
         {
@@ -73,6 +79,8 @@ namespace ZombieWar.UI
 
         protected override void Awake()
         {
+            if (avatarButton != null) avatarButton.onClick.AddListener(() => picker?.Open(false));
+            if (framesButton != null) framesButton.onClick.AddListener(() => picker?.Open(true));
             base.Awake();
             if (backButton != null) backButton.onClick.AddListener(Back);
             if (editNameButton != null) editNameButton.onClick.AddListener(BeginEditName);
@@ -88,6 +96,12 @@ namespace ZombieWar.UI
         private void OnEnable() => PlayerProfile.AccountChanged += Refresh;
         private void OnDisable() => PlayerProfile.AccountChanged -= Refresh;
         protected override void OnShow() => Refresh();
+
+        public override bool OnEscape()
+        {
+            if (picker != null && picker.IsOpen) { picker.Close(); return true; }
+            return false;
+        }
         protected override void OnFocus() => Refresh();
 
         void Back() { UIFeedback.Back(); UIManager.Instance?.Pop(); }
@@ -150,7 +164,12 @@ namespace ZombieWar.UI
                 }
             SetCollection(1, partOwned, partTotal);
             SetCollection(2, 0, Skins.WeaponSkins.Season1.Length);   // skins are sold from M10 Arsenal/Shop
-            SetCollection(3, 1 + PlayerProfile.OwnedFrames.Count, FrameCount);
+            // Every badge earned: the Legend frame.
+            bool allBadges = true; foreach (var bd in Badges) if (!bd.earned()) { allBadges = false; break; }
+            if (allBadges) PlayerProfile.AddFrame("frame.legend");
+            int frames = AvatarCatalog.UnlockedFrameCount;
+            SetCollection(3, frames, AvatarCatalog.Frames.Length);
+            if (framesLabel != null) framesLabel.text = $"{frames} / {AvatarCatalog.Frames.Length} FRAMES";
 
             RefreshGun(guns);
 

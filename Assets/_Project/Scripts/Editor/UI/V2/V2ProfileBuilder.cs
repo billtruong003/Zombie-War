@@ -40,7 +40,7 @@ namespace ZombieWar.EditorTools.V2
                 Identity(page, s);
                 Stats(page, s);
                 Collection(page, s);
-                Frames(page);
+                Frames(page, s);
                 Gun(page, s);
                 Badges(page, s);
 
@@ -49,6 +49,7 @@ namespace ZombieWar.EditorTools.V2
                 if (costumes == null) costumes = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>("Assets/_Project/Data/Character/ModularCostumeCatalog.asset");
                 Wire(s, "costumes", costumes);
 
+                Picker(r, s);
                 var go = PrefabUtility.SaveAsPrefabAsset(r.gameObject, Path);
                 return AssetDatabase.GetAssetPath(go);
             }
@@ -61,16 +62,14 @@ namespace ZombieWar.EditorTools.V2
             var card = Node(page, "Identity"); Size(card, -1, 98);
             Surface(card, Card, RCard);
 
-            var frame = Box(Node(card, "Avatar"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 12, 0, 74, 74);
-            Surface(frame, Yellow, RPanel);
-            var inner = Fill(Node(frame, "Inner"), 4, 4, 4, 4);
-            Surface(inner, Blue, 12f);
-            inner.gameObject.AddComponent<RectMask2D>();
-            var raw = Fill(Node(inner, "Character"), -8, -4, -8, -30).gameObject.AddComponent<RawImage>();
-            raw.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(PreviewRT); raw.raycastTarget = false;
-            var fit = raw.gameObject.AddComponent<AspectRatioFitter>();
-            var prt = raw.texture as RenderTexture;
-            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = prt != null ? prt.width / (float)prt.height : 0.8f;
+            // Profile picture (avatar + frame); tap to change (AvatarPicker).
+            var av = Box(Node(card, "Avatar"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 4, 0, 90, 90);
+            AvatarBox(av, true);
+            var avHit = av.gameObject.AddComponent<Image>(); avHit.color = new Color(0, 0, 0, 0);
+            Wire(s, "avatarButton", av.gameObject.AddComponent<Button>());
+            var pen = Box(Node(av, "Edit"), new Vector2(1, 0), new Vector2(1, 0), -6, 6, 22, 22);
+            Surface(pen, Yellow, 11f);
+            Picto(Fill(Node(pen, "P"), 4, 4, 4, 4), "Pencil", OnYellow);
 
             var info = Fill(Node(card, "Info"), 98, 12, 12, 12);
             // name row (y 0, h 28)
@@ -162,24 +161,92 @@ namespace ZombieWar.EditorTools.V2
         }
 
         // avatar frames: 46 px tiles, only the default is owned until the stamp card ships
-        static void Frames(RectTransform page)
+        // avatar + frame: the current pair, the count, tap to open the picker on the frame tab
+        static void Frames(RectTransform page, ProfileScreen s)
         {
-            SectionLabel(page, "AVATAR FRAME");
-            var row = Node(page, "Frames"); Size(row, -1, 46);
-            var h = Row(row, 8, TextAnchor.MiddleLeft); h.childForceExpandHeight = false;
-            Color[] rims = { Yellow, Hex("b9dcf2"), Red, Edge };
-            for (int i = 0; i < 4; i++)
+            SectionLabel(page, "PICTURE + FRAME");
+            var row = Node(page, "Frames"); Size(row, -1, 64);
+            Surface(row, Card, RCard, true);
+            Wire(s, "framesButton", row.gameObject.AddComponent<Button>());
+            var av = Box(Node(row, "Current"), new Vector2(0, 0.5f), new Vector2(0, 0.5f), 4, 0, 62, 62);
+            AvatarBox(av, true);
+            Wire(s, "framesLabel", Body(Box(Node(row, "Count"), new Vector2(0, 0.5f), new Vector2(0, 0), 72, 1, 220, 20), "1 / 12 FRAMES", 14f));
+            var hint = Node(row, "Hint"); hint.anchorMin = new Vector2(0, 0.5f); hint.anchorMax = new Vector2(1, 0.5f); hint.pivot = new Vector2(0, 1);
+            hint.offsetMin = new Vector2(Px(72), -Px(15)); hint.offsetMax = new Vector2(-Px(36), -Px(1));
+            Shrink(Label(hint, "WIN FRAMES FROM LEVELS, STAMPS, PASS, GACHA"), 0.6f);
+            Picto(Box(Node(row, "Go"), new Vector2(1, 0.5f), new Vector2(1, 0.5f), -12, 0, 18, 18), "Arrow_Right_1");
+        }
+
+        // picture sheet: preview, AVATAR/FRAME tabs, 4x3 grid, equip
+        static void Picker(RectTransform root, ProfileScreen s)
+        {
+            var p = Fill(Node(root, "AvatarPicker"), 0, 0, 0, 0);
+            UIKitV2.NoTheme = true;
+            try { Flat(p, new Color(0.047f, 0.055f, 0.078f, 0.7f), true); } finally { UIKitV2.NoTheme = false; }
+            var picker = p.gameObject.AddComponent<AvatarPicker>();
+            var sheet = BottomBand(Node(p, "Sheet"), 0, 600);
+            Surface(sheet, Ground, 22f, true);
+            var safe = Fill(Node(sheet, "Safe"), 0, 0, 0, 0); safe.gameObject.AddComponent<SafeArea>();
+            Title(TopBand(Node(safe, "Title"), 16, 28, 18, 60), "PROFILE PICTURE", 22f);
+            var close = Box(Node(safe, "Close"), new Vector2(1, 1), new Vector2(1, 1), -14, -12, 36, 36);
+            Surface(close, Card, 18f, true);
+            Title(Fill(Node(close, "X"), 0, 0, 0, 2), "X", 18f, Ink, TextAlignmentOptions.Center);
+            Wire(picker, "closeButton", close.gameObject.AddComponent<Button>());
+
+            var pv = Box(Node(safe, "Preview"), new Vector2(0, 1), new Vector2(0, 1), 10, -50, 112, 112);
+            Wire(picker, "preview", AvatarBox(pv, false));
+            Wire(picker, "previewName", Title(TopBand(Node(safe, "Name"), 70, 28, 128, 16), "YOU", 22f));
+            var un = Body(TopBand(Node(safe, "Unlock"), 100, 36, 128, 16), "AVATAR · UNLOCKED", 12f, Dim);
+            un.enableWordWrapping = true;
+            Wire(picker, "previewUnlock", un);
+
+            var tabs = TopBand(Node(safe, "Tabs"), 172, 34, 16, 16);
+            Row(tabs, 8, TextAnchor.MiddleLeft, true);
+            string[] tn = { "AVATAR", "FRAME" };
+            var tb = new Button[2];
+            for (int i = 0; i < 2; i++)
             {
-                var f = Node(row, "Frame" + i); Size(f, 46, 46);
-                if (i == 0) { Surface(f, Ink, 12f); f = Fill(Node(f, "Rim"), 2, 2, 2, 2); }
-                Surface(f, rims[i], 11f);
-                var inner = Fill(Node(f, "Inner"), 3, 3, 3, 3); Surface(inner, Blue, 9f);
-                Picto(Fill(Node(inner, "Face"), 6, 6, 6, 6), i == 0 ? "User" : "Lock_1", i == 0 ? Ink : new Color(1, 1, 1, 0.8f));
-                if (i > 0) f.gameObject.AddComponent<CanvasGroup>().alpha = 0.45f;
+                var t = Node(tabs, tn[i]);
+                var img = Surface(t, i == 0 ? Ink : Card, 17f, true);
+                Title(Fill(Node(t, "T"), 0, 0, 0, 0), tn[i], 15f, Ink, TextAlignmentOptions.Center);
+                tb[i] = t.gameObject.AddComponent<Button>(); tb[i].targetGraphic = img; tb[i].transition = Selectable.Transition.None;
             }
-            var note = Node(row, "Note"); Size(note, -1, 46, 1);
-            var t = Body(note, "Stamp card day 28 gives a new frame", 11f, Dim);
-            t.enableWordWrapping = true;
+            Wire(picker, "avatarTab", tb[0]); Wire(picker, "frameTab", tb[1]);
+
+            var grid = TopBand(Node(safe, "Grid"), 216, 300, 16, 16);
+            UIKitV2.Grid(grid, 4, 96, 8);
+            var so = new SerializedObject(picker);
+            var arr = so.FindProperty("cells"); arr.arraySize = 12;
+            for (int i = 0; i < 12; i++)
+            {
+                var c = Node(grid, "Cell" + i);
+                var bg = Surface(c, Card, RTile, true);
+                var box = Box(Node(c, "Avatar"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -2, 72, 72);
+                var view = AvatarBox(box, false);
+                var lb = Shrink(Body(BottomBand(Node(c, "Name"), 4, 16, 3, 3), "Classic", 10f, Ink, TextAlignmentOptions.Center));
+                var lk = Box(Node(c, "Lock"), new Vector2(1, 1), new Vector2(1, 1), -4, -4, 20, 20);
+                Surface(lk, Ground, 10f);
+                Picto(Fill(Node(lk, "I"), 4, 4, 4, 4), "Lock_1");
+                var sel = Fill(Node(c, "Selected"), 0, 0, 0, 0);
+                var sm = sel.gameObject.AddComponent<Image>(); sm.sprite = Spr("frame_24"); sm.type = Image.Type.Sliced; sm.color = Yellow; sm.raycastTarget = false;
+                sm.pixelsPerUnitMultiplier = UITheme.MultiplierFor("frame_24", Px(RTile));
+                sel.gameObject.SetActive(false);
+                var b = c.gameObject.AddComponent<Button>(); b.targetGraphic = bg; b.transition = Selectable.Transition.None;
+                var e = arr.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("button").objectReferenceValue = b;
+                e.FindPropertyRelative("view").objectReferenceValue = view;
+                e.FindPropertyRelative("locked").objectReferenceValue = lk.gameObject;
+                e.FindPropertyRelative("label").objectReferenceValue = lb;
+                e.FindPropertyRelative("selected").objectReferenceValue = sel.gameObject;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var eq = BottomBand(Node(safe, "Equip"), 18, 56, 16, 16);
+            Wire(picker, "equipButton", Button(eq, "EQUIP", Role.Primary, 22f));
+            Wire(picker, "equipLabel", eq.Find("Face/Label").GetComponent<TextMeshProUGUI>());
+            Wire(picker, "root", p.gameObject);
+            Wire(s, "picker", picker);
+            p.gameObject.SetActive(false);
         }
 
         // main gun card: tile 66x44, name + meta

@@ -457,6 +457,60 @@ namespace ZombieWar.EditorTools.V2
         }
 
         const string BannerMat = "Assets/_Project/Art/Materials/UI/BannerFx.mat";
+        const string FrameMat = "Assets/_Project/Art/Materials/UI/AvatarFrame.mat";
+        const string CharacterPreviewRT = "Assets/_Project/UI/RenderTextures/MenuCharacterPreview.renderTexture";
+        static readonly string[] AvatarStyleIcons = { null, "Heart_Red", "Badge_Crown", "Skull", "Gear_Sword", "Star_Gold" };
+
+        /// <summary>
+        /// Profile picture (AvatarView): a rounded face inside the rect's glow margin (live head,
+        /// drawn art or a style placeholder) under a shader frame covering the whole rect.
+        /// </summary>
+        public static AvatarView AvatarBox(RectTransform rt, bool followProfile)
+        {
+            float m = AvatarFrameView.MarginShare + 0.03f;   // keep the face under the ring
+            var face = Node(rt, "Face");
+            face.anchorMin = new Vector2(m, m); face.anchorMax = new Vector2(1 - m, 1 - m); face.offsetMin = face.offsetMax = Vector2.zero;
+            var fi = face.gameObject.AddComponent<Image>(); fi.sprite = Spr("rounded_24"); fi.type = Image.Type.Sliced; fi.color = Blue; fi.raycastTarget = false;
+            face.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+
+            var live = Fill(Node(face, "Live"), 0, 0, 0, 0).gameObject.AddComponent<RawImage>();
+            live.texture = AssetDatabase.LoadAssetAtPath<RenderTexture>(CharacterPreviewRT);
+            live.uvRect = new Rect(0.22f, 0.5f, 0.56f, 0.45f);   // head and shoulders of the 720x900 preview
+            live.raycastTarget = false;
+            var art = Fill(Node(face, "Art"), 0, 0, 0, 0).gameObject.AddComponent<Image>();
+            art.preserveAspect = true; art.raycastTarget = false; art.gameObject.SetActive(false);
+
+            var ph = Fill(Node(face, "Placeholder"), 0, 0, 0, 0);
+            var phBg = ph.gameObject.AddComponent<Image>(); phBg.sprite = Spr("bg_diagonal"); phBg.color = new Color(1, 1, 1, 0.18f); phBg.raycastTarget = false;
+            var icon = Box(Node(ph, "Icon"), new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.5f), 0, 0, 0, 0);
+            icon.anchorMin = new Vector2(0.22f, 0.3f); icon.anchorMax = new Vector2(0.78f, 0.86f); icon.offsetMin = icon.offsetMax = Vector2.zero;
+            var ii = icon.gameObject.AddComponent<Image>(); ii.preserveAspect = true; ii.raycastTarget = false;
+            var lab = Node(ph, "Label"); lab.anchorMin = new Vector2(0, 0.04f); lab.anchorMax = new Vector2(1, 0.28f); lab.offsetMin = lab.offsetMax = Vector2.zero;
+            var lt = Body(lab, "ART SOON", 8f, Color.white, TextAlignmentOptions.Center);
+            lt.enableAutoSizing = true; lt.fontSizeMin = 4f; lt.fontSizeMax = Px(9);
+            ph.gameObject.SetActive(false);
+
+            var fr = Fill(Node(rt, "Frame"), 0, 0, 0, 0);
+            var frImg = fr.gameObject.AddComponent<Image>(); frImg.raycastTarget = false;
+            var fv = fr.gameObject.AddComponent<AvatarFrameView>();
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(FrameMat);
+            if (mat == null) { mat = new Material(Shader.Find("ZombieWar/UI/AvatarFrame")) { name = "AvatarFrame" }; AssetDatabase.CreateAsset(mat, FrameMat); }
+            fv.BaseMaterial = mat;
+
+            var view = rt.gameObject.AddComponent<AvatarView>();
+            var so = new SerializedObject(view);
+            so.FindProperty("followProfile").boolValue = followProfile;
+            so.FindProperty("live").objectReferenceValue = live;
+            so.FindProperty("art").objectReferenceValue = art;
+            so.FindProperty("placeholder").objectReferenceValue = ph.gameObject;
+            so.FindProperty("placeholderIcon").objectReferenceValue = ii;
+            so.FindProperty("placeholderLabel").objectReferenceValue = lt;
+            so.FindProperty("frame").objectReferenceValue = fv;
+            var icons = so.FindProperty("styleIcons"); icons.arraySize = AvatarStyleIcons.Length;
+            for (int i = 0; i < AvatarStyleIcons.Length; i++) icons.GetArrayElementAtIndex(i).objectReferenceValue = AvatarStyleIcons[i] != null ? Icon(AvatarStyleIcons[i]) : null;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return view;
+        }
 
         /// <summary>
         /// Premium banner background (BannerFx shader) on a rounded surface: fixed colours in every

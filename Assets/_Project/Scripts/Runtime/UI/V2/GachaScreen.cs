@@ -136,6 +136,9 @@ namespace ZombieWar.UI
             var results = GachaBanners.Pull(B, count, pay, today, economy, guns, _rng);
             if (results == null) { UIFeedback.Error(); Toast.Show("This banner is empty right now"); return; }
             UIFeedback.Purchase();
+            // Frames won in the Gacha: Neon for a x10 on an event banner, Royal for a Legendary.
+            if (count >= 10 && B.kind == GachaBanners.Kind.Event) PlayerProfile.AddFrame("frame.neon");
+            foreach (var res in results) if (res.tier >= WeaponTier.Legendary) { PlayerProfile.AddFrame("frame.royal"); break; }
             ShowResults(results);
             Refresh();
         }

@@ -66,9 +66,9 @@ namespace ZombieWar.EditorTools.V2
             ringImg.sprite = Spr("rounded_24"); ringImg.type = Image.Type.Filled; ringImg.fillMethod = Image.FillMethod.Radial360;
             ringImg.fillOrigin = (int)Image.Origin360.Top; ringImg.color = Yellow; ringImg.fillAmount = 0.6f; ringImg.raycastTarget = false;
             Wire(home, "xpRing", ringImg);
-            var avatar = Fill(Node(ringBg, "Avatar"), 3, 3, 3, 3);
-            Surface(avatar, Blue, 9f);
-            Picto(Fill(Node(avatar, "Face"), 6, 5, 6, 5), "User", Ink);
+            // The player's picture + frame (AvatarCatalog), inside the XP ring.
+            var avatar = Fill(Node(ringBg, "Avatar"), -2, -2, -2, -2);
+            AvatarBox(avatar, true);
             var lvl = Box(Node(ringBg, "Level"), new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), 0, 0, 22, 16);
             Surface(lvl, Ground, 5f);
             Wire(home, "levelLabel", Title(Fill(Node(lvl, "T"), 0, 0, 0, 0), "12", 12f, Ink, TextAlignmentOptions.Center));
