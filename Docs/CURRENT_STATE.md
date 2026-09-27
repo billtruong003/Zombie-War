@@ -1,5 +1,17 @@
 # Zombie War — trạng thái thật của project
 
+> **2026-09-27 — M10 Meta v2 (commits `daa3e94f`..`3735a2dc`, chờ owner duyệt trước M11).**
+> - Menu mở vào **Home v2** (`Runtime/UI/V2/HomeScreen.cs`; `GameFlow.EnterMenu` → `Replace<HomeScreen>`).
+>   Màn v2: Home, Profile, Settings, Daily, Pass (`PassScreenV2`), Arsenal, Shop (`ShopScreenV2`), Gacha,
+>   Studio; Revive + Result v2 nằm trong `UI_Hud.prefab` (`RunEndV2`). Màn M8 cũ còn trong Menu.unity
+>   (ẩn) tới bước dọn dẹp.
+> - Dựng lại bằng `HordeCall/UI v2/Build All + Shots` rồi `Install Into Menu` (`Editor/UI/V2/*Builder.cs`);
+>   `Build Run End (into UI_Hud)`. Ảnh kiểm tra 4 tỉ lệ màn (16:9, 19.5:9, 20:9, tablet) ở `Review/V2/shots/*_sheet.png`.
+> - Luật: `DailyRewards`, `PassRewards` (30 cấp × 750 XP, XP chỉ từ nhiệm vụ), `ShopOffers`, `GachaBanners`,
+>   `ReviveRules`, `GameSettings`; skin cộng sát thương (`WeaponSkins.DamageBonus`, áp trong `Weapon.ApplyHit`).
+> - Tiền thật và quảng cáo mới là hook (`Purchases`, `RewardedAds`): bản Dev giả lập thành công, bản Release
+>   báo "chưa mở" — SDK thật ở M11. Gold = Coin: nâng sao trừ Coin.
+
 > **2026-09-27 — M9 (HordeCall).** Điều gì dưới đây mâu thuẫn với khối này thì khối này thắng.
 > - **Tên game: HordeCall** (store: "HordeCall: Zombie Shooter"). Tên hiển thị đã đổi ở splash và bảng cheat;
 >   `productName`, bundle id và namespace `ZombieWar.*` giữ nguyên tới lúc phát hành.
