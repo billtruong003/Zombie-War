@@ -14,12 +14,12 @@ namespace ZombieWar
     /// </summary>
     public static class RunClosure
     {
-        /// <summary>GDD §20: a death banks a quarter of the run's Coin.</summary>
-        public const float DiedCoinFraction = 0.25f;
+        /// <summary>Owner, M8 (2026-09-27): every ending banks the whole run's Coin. The run is endless,
+        /// so living longer already pays more; a cut on death only added friction.</summary>
+        public const float DiedCoinFraction = 1f;
 
-        /// <summary>GDD §20: walking away banks nothing. Anything else makes quitting the instant
-        /// danger appears the optimal play, and the endless pressure stops meaning anything.</summary>
-        public const float AbandonedCoinFraction = 0f;
+        /// <summary>Walking away also banks everything (same owner call).</summary>
+        public const float AbandonedCoinFraction = 1f;
 
         public static float CoinFractionFor(RunOutcome outcome) =>
             outcome == RunOutcome.Died ? DiedCoinFraction : AbandonedCoinFraction;

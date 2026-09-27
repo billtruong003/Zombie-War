@@ -68,7 +68,7 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void Death_BanksAQuarterOfTheCoin()
+        public void Death_BanksAllTheCoin()
         {
             long before = PlayerProfile.Coin;
             var run = BeginRunWorth(40);
@@ -77,12 +77,12 @@ namespace ZombieWar.Tests
 
             Assert.IsTrue(result.Closed);
             Assert.AreEqual(RunOutcome.Died, result.Summary.Outcome);
-            Assert.AreEqual(10, result.BankedCoin);
-            Assert.AreEqual(before + 10, PlayerProfile.Coin);
+            Assert.AreEqual(40, result.BankedCoin);
+            Assert.AreEqual(before + 40, PlayerProfile.Coin);
         }
 
         [Test]
-        public void WalkingAway_BanksNoCoin()
+        public void WalkingAway_BanksAllTheCoin()
         {
             long before = PlayerProfile.Coin;
             var run = BeginRunWorth(40);
@@ -91,8 +91,8 @@ namespace ZombieWar.Tests
 
             Assert.IsTrue(result.Closed);
             Assert.AreEqual(RunOutcome.Abandoned, result.Summary.Outcome);
-            Assert.AreEqual(0, result.BankedCoin);
-            Assert.AreEqual(before, PlayerProfile.Coin, "quitting before danger must never pay");
+            Assert.AreEqual(40, result.BankedCoin);
+            Assert.AreEqual(before + 40, PlayerProfile.Coin, "owner M8: walking away keeps every coin");
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace ZombieWar.Tests
             Assert.IsTrue(died.Closed);
             Assert.IsFalse(walked.Closed, "a second ending in the same frame must be a no-op");
             Assert.AreEqual(RunOutcome.Died, run.Outcome);
-            Assert.AreEqual(before + 10, PlayerProfile.Coin);
+            Assert.AreEqual(before + 40, PlayerProfile.Coin, "paid once, not twice");
         }
 
         [Test]

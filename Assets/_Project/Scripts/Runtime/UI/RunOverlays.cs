@@ -185,14 +185,11 @@ namespace ZombieWar
             SetText("Stats/Stat2/Value/Label", $"{s.PeakThreatTier}");
             SetText("PayoutCard/Row0L", "Coins collected");
             SetText("PayoutCard/Row0V", $"+{s.Coin:N0}");
-            SetText("PayoutCard/Row1L", died
-                ? $"You keep {RunClosure.DiedCoinFraction:P0} on death"
-                : "Walked away: coins lost");
-            // Walking away keeps nothing: show what was lost, not the (zero) amount kept.
-            long lostCoin = s.Coin - result.BankedCoin;
-            SetText("PayoutCard/Row1V", died ? $"+{result.BankedCoin:N0}" : lostCoin > 0 ? $"-{lostCoin:N0}" : "0");
-            var lost = resultRoot.transform.Find("PayoutCard/Row1V")?.GetComponent<TMP_Text>();
-            if (lost != null) lost.color = died || s.Coin == 0 ? UITheme.M8Yellow : UITheme.M8Red;
+            // M8: every ending keeps every coin, so this row says so instead of showing a cut.
+            SetText("PayoutCard/Row1L", "You keep every coin");
+            SetText("PayoutCard/Row1V", "100%");
+            var kept = resultRoot.transform.Find("PayoutCard/Row1V")?.GetComponent<TMP_Text>();
+            if (kept != null) kept.color = UITheme.M8Yellow;
             SetText("PayoutCard/Row2L", "Gems (always kept)");
             SetText("PayoutCard/Row2V", $"+{s.Gem}");
             SetText("PayoutCard/TotalL", "Banked");

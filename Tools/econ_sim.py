@@ -1,7 +1,6 @@
 """Zombie War economy simulation (M8 step D).
 
-Answers one question for the owner: with payout option B (extraction points bank 100% of the
-coins carried so far), how many runs / days does each price tier cost a free player?
+Answers one question for the owner: with full payout (every run banks 100% of the coins carried), how many runs / days does each price tier cost a free player?
 
 Inputs are measured, not guessed, where the game can tell us:
   KILLS_CUM  cumulative kills per minute, from the 2026-09-27 editor probe (invulnerable player,
@@ -28,9 +27,8 @@ PICKUP_RATE = 0.75             # share of dropped coin actually collected
 RUN_LENGTH = {"day1": (2.0, 4.0, 8.0), "week1": (3.0, 6.5, 12.0), "month1": (5.0, 9.0, 15.0)}
 RUNS_PER_DAY = {"day1": 6, "week1": 5, "month1": 4}
 
-# Option B payout: surviving past an extraction point banks everything carried so far.
-EXTRACTION_MIN = [3, 6, 9, 12, 15]
-DEATH_KEEP = 0.25              # current RunClosure.DiedCoinFraction for the unbanked part
+# Payout (owner, 2026-09-27): every run banks 100% of the coins carried, death or walk-away.
+DEATH_KEEP = 1.0
 AD_DOUBLE_RATE = 0.35          # ASSUME share of results where the player watches "2x coins"
 
 PRICE_TIERS = {                 # proposed coin prices (step D table)
@@ -56,10 +54,7 @@ def coins_at(minute: float) -> float:
 
 
 def run_payout(length: float) -> float:
-    banked_at = max([m for m in EXTRACTION_MIN if m <= length], default=0)
-    banked = coins_at(banked_at)
-    unbanked = coins_at(length) - banked
-    return banked + unbanked * DEATH_KEEP
+    return coins_at(length) * DEATH_KEEP
 
 
 def simulate(stage: str, runs: int = 20000, seed: int = 7) -> float:
