@@ -146,7 +146,12 @@ namespace ZombieWar.UI
             PlayerProfile.AccountChanged -= Refresh;
         }
 
-        protected override void OnShow() => Refresh();
+        protected override void OnShow()
+        {
+            Refresh();
+            // The run result's Shop link lands here first, then goes on to the Shop.
+            if (MenuIntent.Take() == MenuIntent.Shop && shopScreen != null) UIManager.Instance?.Push(shopScreen);
+        }
         protected override void OnFocus() => Refresh();
         public override bool OnEscape() => true;   // root screen
 

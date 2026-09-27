@@ -28,9 +28,19 @@ namespace ZombieWar
             _isPlayer = GetComponent<PlayerMovement>() != null;
         }
 
+        /// <summary>
+        /// M10 revive: asked once when a hit would kill the player. Returning true holds the player
+        /// at the edge of death (the revive offer is on screen); the offer then calls
+        /// <see cref="Revive"/> or <see cref="ConfirmDeath"/>. Null or false = die as before.
+        /// </summary>
+        public Func<bool> ReviveGate;
+        public bool IsHeld { get; private set; }
+        float _invulnerableUntil;
+
         public void TakeDamage(float amount)
         {
-            if (IsDead || amount <= 0f) return;
+            if (IsDead || amount <= 0f || IsHeld) return;
+            if (_isPlayer && Time.time < _invulnerableUntil) return;
 
             // M7.2b — Kinetic Shield. PLAYER ONLY: an enemy must never spend the player's charge, so
             // this is gated on the owner actually being the player rather than on "any Health".
@@ -47,9 +57,35 @@ namespace ZombieWar
             }
 
             _current = Mathf.Max(0f, _current - amount);
+            if (_current <= 0f && _isPlayer && ReviveGate != null && ReviveGate())
+            {
+                _current = 0.01f;   // alive but held; nothing hits during the offer (time is frozen)
+                IsHeld = true;
+                OnDamaged?.Invoke(amount);
+                return;
+            }
             OnDamaged?.Invoke(amount);
 
             if (_current <= 0f) OnDeath?.Invoke();
+        }
+
+        /// <summary>Ends a held death by getting back up: full health and a short grace period.</summary>
+        public void Revive(float graceSeconds = 2.5f)
+        {
+            if (!IsHeld) return;
+            IsHeld = false;
+            _current = maxHealth;
+            _invulnerableUntil = Time.time + graceSeconds;
+            OnHealed?.Invoke(maxHealth);
+        }
+
+        /// <summary>Ends a held death by dying (offer declined or timed out).</summary>
+        public void ConfirmDeath()
+        {
+            if (!IsHeld) return;
+            IsHeld = false;
+            _current = 0f;
+            OnDeath?.Invoke();
         }
 
         public void ResetHealth()

@@ -49,6 +49,8 @@ namespace ZombieWar
         [Header("Result")]
         [FormerlySerializedAs("gameOverRoot")]
         [SerializeField] private GameObject resultRoot;
+        [Tooltip("M10: the v2 revive + result panels. When set, the result shows there instead.")]
+        [SerializeField] private ZombieWar.UI.RunEndV2 endV2;
         [SerializeField] private Button replayButton;
         [SerializeField] private Button homeButton;
 
@@ -160,6 +162,12 @@ namespace ZombieWar
             Show(ftueRoot, false);
             if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
 
+            if (endV2 != null)
+            {
+                Show(resultRoot, false);
+                endV2.ShowResult(result);
+                return;
+            }
             Show(resultRoot, true);
             BindResult(result);
             UIFx.PopIn(resultRoot.transform.Find("Time"), 0f, 0.7f, 0.35f);

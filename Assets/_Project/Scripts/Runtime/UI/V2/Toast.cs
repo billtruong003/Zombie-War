@@ -28,7 +28,8 @@ namespace ZombieWar.UI
 
         public static void Show(string message, float seconds = 1.8f)
         {
-            if (_instance == null) { Debug.Log("[Toast] " + message); return; }
+            // The toast lives in the Menu scene, which is switched off during a run.
+            if (_instance == null || !_instance.isActiveAndEnabled) { Debug.Log("[Toast] " + message); return; }
             _instance.Play(message, seconds);
         }
 
