@@ -22,6 +22,15 @@ namespace ZombieWar.EditorTools
             EditorApplication.EnterPlaymode();
         }
 
+        /// Gun-skin review: the sandbox with the skin turntable (angles, gun and set pickers).
+        [MenuItem("ZombieWar/Dev/Play Skin Viewer")]
+        public static void PlaySkinViewer()
+        {
+            if (EditorApplication.isPlaying) return;
+            SessionState.SetBool("zw.skinviewer", true);
+            Play();
+        }
+
         /// (Re)creates the sandbox from the current world scene. Map_Level1 itself is not touched.
         [MenuItem("ZombieWar/Dev/Rebuild Skill Sandbox Scene")]
         public static void Build()

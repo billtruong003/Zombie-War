@@ -38,7 +38,18 @@ namespace ZombieWar.Dev
 
         public static SkillSandbox Instance { get; private set; }
 
-        private void Awake() => Instance = this;
+        private void Awake()
+        {
+            Instance = this;
+#if UNITY_EDITOR
+            // ZombieWar/Dev/Play Skin Viewer: the same bench, with the gun-skin turntable on top.
+            if (UnityEditor.SessionState.GetBool("zw.skinviewer", false))
+            {
+                UnityEditor.SessionState.SetBool("zw.skinviewer", false);
+                gameObject.AddComponent<WeaponSkinViewer>();
+            }
+#endif
+        }
         private void OnDestroy() { if (Instance == this) Instance = null; Time.timeScale = 1f; }
 
         private IEnumerator Start()
