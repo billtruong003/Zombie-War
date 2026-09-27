@@ -150,7 +150,7 @@ namespace ZombieWar.UI
                 }
             SetCollection(1, partOwned, partTotal);
             SetCollection(2, 0, Skins.WeaponSkins.Season1.Length);   // skins are sold from M10 Arsenal/Shop
-            SetCollection(3, 1, FrameCount);
+            SetCollection(3, 1 + PlayerProfile.OwnedFrames.Count, FrameCount);
 
             RefreshGun(guns);
 

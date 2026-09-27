@@ -191,7 +191,9 @@ namespace ZombieWar.UI
             Set(gemLabel, Short(PlayerProfile.Gem));
 
             int claimable = ClaimableMissions();
-            RailState(daily, true, 0, "", "");
+            int today = DailyRewards.Today;
+            int dailyCount = DailyRewards.ClaimableCount(today);
+            RailState(daily, true, dailyCount, "", "");
             RailState(events, AccountProgress.IsUnlocked(AccountProgress.Feature.Events), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Events));
             RailState(gacha, AccountProgress.IsUnlocked(AccountProgress.Feature.Gacha), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Gacha));
             RailState(pass, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass), claimable, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Pass));
@@ -200,7 +202,7 @@ namespace ZombieWar.UI
             RefreshGun();
             RefreshMissions(claimable);
             RefreshNextBuy();
-            Set(stripDailyText, "Check in today");
+            Set(stripDailyText, DailyRewards.CanStamp(today) ? $"Stamp day {DailyRewards.Stamps + 1}" : DailyRewards.Stamps >= DailyRewards.CardDays ? "Card complete" : "Back tomorrow");
             Set(stripPassText, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass) ? $"PASS LV {PassLevel()}" : "LV 2 UNLOCKS");
 
             bool firstRun = PlayerProfile.RunsPlayed == 0;

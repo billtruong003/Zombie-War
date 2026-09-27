@@ -76,12 +76,13 @@ namespace ZombieWar.EditorTools.V2
             var log = new List<string>();
             void Step(string name, Func<string> build)
             {
-                try { var path = build(); log.Add($"{name}: {path} -> {UiShot.Render(path, name, 1080, 2337)}"); }
+                try { var path = build(); log.Add($"{name}: {path} -> {UiShot.RenderAll(path, name)}"); }
                 catch (Exception e) { log.Add($"{name}: FAILED {e.Message}"); Debug.LogException(e); }
             }
             Step("Home", V2HomeBuilder.Build);
             Step("Profile", V2ProfileBuilder.Build);
             Step("Settings", V2SettingsBuilder.Build);
+            Step("Daily", V2DailyBuilder.Build);
             try { log.Add("Toast: " + BuildToast()); } catch (Exception e) { log.Add("Toast: FAILED " + e.Message); }
             AssetDatabase.SaveAssets();
             return string.Join("\n", log);

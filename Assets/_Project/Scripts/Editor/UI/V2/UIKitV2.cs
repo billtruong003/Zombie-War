@@ -368,12 +368,25 @@ namespace ZombieWar.EditorTools.V2
 
         /// <summary>Vertical page body under a header: children stack with their preferred
         /// heights, so rows hidden at runtime close their gap.</summary>
+        /// Scrolls vertically: the mockups are 390x844 (19.5:9) and a 16:9 phone is shorter, so a
+        /// tall page must scroll rather than clip. Returns the content column.
         public static RectTransform Page(RectTransform safe, float top, float bottom = 0)
         {
-            var page = Fill(Node(safe, "Page"), 14, top, 14, bottom);
-            var col = Column(page, 0);
+            var view = Fill(Node(safe, "Page"), 0, top, 0, bottom);
+            Flat(view, new Color(0, 0, 0, 0), true);
+            view.gameObject.AddComponent<RectMask2D>();
+            var content = Node(view, "Content");
+            content.anchorMin = new Vector2(0, 1); content.anchorMax = new Vector2(1, 1); content.pivot = new Vector2(0.5f, 1);
+            content.offsetMin = content.offsetMax = Vector2.zero;
+            var col = Column(content, 0);
             col.childForceExpandWidth = true;
-            return page;
+            int side = Mathf.RoundToInt(Px(14));
+            col.padding = new RectOffset(side, side, 0, side);
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var sr = view.gameObject.AddComponent<ScrollRect>();
+            sr.content = content; sr.viewport = view; sr.horizontal = false; sr.vertical = true;
+            sr.movementType = ScrollRect.MovementType.Elastic; sr.scrollSensitivity = 30f;
+            return content;
         }
 
         /// <summary>Dim caps section label with the mockup's 12 px above and 6 px below.</summary>

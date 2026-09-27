@@ -94,6 +94,15 @@ namespace ZombieWar
             public int peakThreat;
             public float totalSeconds;
             public int bossesDefeated;
+            // M10 Daily: gacha tickets, avatar frames, the 7-day welcome check-in, the 28-day stamp card.
+            public long tickets;
+            public List<string> ownedFrames = new List<string>();
+            public int welcomeClaims;
+            public int welcomeLastDay;
+            public int stampCycleStart;
+            public int stampCount;
+            public int stampLastDay;
+            public int stampMakeUps;
         }
 
         [Serializable]
@@ -211,6 +220,31 @@ namespace ZombieWar
         public static int PeakThreat => Data.peakThreat;
         public static float TotalSeconds => Data.totalSeconds;
         public static int BossesDefeated => Data.bossesDefeated;
+
+        // ===== M10 tickets and frames =====
+        public static long Tickets => Data.tickets;
+        public static void AddTickets(long n)
+        {
+            if (n <= 0) return;
+            Data.tickets += n; SaveNow(); WalletChanged?.Invoke();
+        }
+        public static bool TrySpendTickets(long n)
+        {
+            if (n < 0 || Data.tickets < n) return false;
+            Data.tickets -= n; SaveNow(); WalletChanged?.Invoke();
+            return true;
+        }
+        /// <summary>Owned avatar frames besides the default one.</summary>
+        public static IReadOnlyList<string> OwnedFrames => Data.ownedFrames;
+        public static void AddFrame(string id)
+        {
+            if (string.IsNullOrEmpty(id) || Data.ownedFrames.Contains(id)) return;
+            Data.ownedFrames.Add(id); SaveNow(); AccountChanged?.Invoke();
+        }
+
+        /// <summary>Daily state lives in the profile save; <see cref="DailyRewards"/> owns the rules.</summary>
+        internal static ProfileData DailyData => Data;
+        internal static void SaveDaily() { SaveNow(); AccountChanged?.Invoke(); }
 
         public static void RecordBossDefeated()
         {
@@ -1549,6 +1583,8 @@ namespace ZombieWar
             d.ownedBodyEars = DedupeNonEmpty(d.ownedBodyEars);
             d.gachaPity ??= new List<GachaPityEntry>();
             d.unseenItems = DedupeNonEmpty(d.unseenItems);
+            d.ownedFrames = DedupeNonEmpty(d.ownedFrames);
+            if (d.tickets < 0) d.tickets = 0;
             if (float.IsNaN(d.bestSurvivalSeconds) || d.bestSurvivalSeconds < 0f) d.bestSurvivalSeconds = 0f;
             d.missionProgress ??= new List<MissionProgressEntry>();
             d.claimedMissionIds = DedupeNonEmpty(d.claimedMissionIds);

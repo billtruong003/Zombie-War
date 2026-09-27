@@ -13,6 +13,20 @@ namespace ZombieWar.EditorTools.V2
     {
         public const string OutDir = "Review/V2/shots";
 
+        /// <summary>Device shapes the v2 screens must hold up on (owner: responsive, not one size).</summary>
+        public static readonly (string tag, int w, int h)[] Devices =
+        {
+            ("16x9", 1080, 1920), ("19x9", 1080, 2337), ("20x9", 1080, 2400), ("tablet", 1536, 2048),
+        };
+
+        /// <summary>Renders a prefab once per <see cref="Devices"/> entry.</summary>
+        public static string RenderAll(string prefabPath, string outName)
+        {
+            var list = new System.Collections.Generic.List<string>();
+            foreach (var d in Devices) list.Add(Render(prefabPath, outName + "_" + d.tag, d.w, d.h));
+            return string.Join(", ", list);
+        }
+
         public static string Render(string prefabPath, string outName = null, int w = 1080, int h = 1920)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -40,7 +54,9 @@ namespace ZombieWar.EditorTools.V2
                 var scaler = canvasGo.AddComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1080, 1920);
-                scaler.matchWidthOrHeight = 0.5f;
+                // Same as UIRoot in Menu.unity: Expand keeps 1080x1920 visible and grows the canvas
+                // on taller phones and wider tablets.
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
                 var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab, canvasGo.transform);
                 inst.SetActive(true);
