@@ -1,121 +1,327 @@
-# Zombie War — skill icon prompts for ChatGPT (35 icons)
+# HordeCall: prompt vẽ icon skill bằng ChatGPT (35 icon)
 
-Owner request 2026-09-26: minimal toon style, **transparent background**. One icon per card in
-`SkillCatalogDefs` (23 originals + 6 powers + 6 evolutions). File names match the card ids so they
-drop straight into the game.
+Mỗi thẻ skill trong `SkillCatalogDefs` có một icon. Hiện game đang hiện chữ viết tắt thay icon ("CL", "MS"…), xem `icon_style/levelup_context.png`.
+Tên file đúng bằng id thẻ, thả vào game là tự nhận.
 
-## How to generate (read once)
+Prompt viết bằng tiếng Anh để ChatGPT vẽ ổn định. Phần hướng dẫn viết tiếng Việt.
+Cột "Skill làm gì" lấy từ mô tả trong game (`SkillDescriptions.cs`), để hình vẽ đúng cơ chế.
 
-1. Open ONE ChatGPT chat and keep every icon in it, so the style stays consistent.
-2. First message: paste the **STYLE BLOCK** below, then the first icon line. Generate, and repeat
-   until you like it. That icon becomes the style anchor.
-3. For every next icon: "Same style as the approved icon. " + the icon line. Attach the approved
-   anchor image again every ~8 icons if the style starts drifting.
-4. **Transparent check:** the downloaded PNG must show the checkerboard in an image viewer. If
-   ChatGPT returns a white or coloured square, reply: *"Regenerate with a fully transparent
-   background (alpha 0). No backdrop, no frame, no square, no shadow on the ground."*
-5. Save as `<id>.png` (for example `auto.orbit.png`), 1024 × 1024. The game shrinks them to
-   46–64 px, so if a detail disappears at thumbnail size, ask for "bolder, fewer details".
+---
 
-## STYLE BLOCK (paste first, English works best)
+## 1. Kích thước và cách game hiển thị
 
-> Game UI skill icon for a cute cartoon zombie-survival mobile game. Minimal toon style: one bold
-> central object, thick dark outline (#1F2330, about 6% of the icon width), flat colours with ONE
-> soft cel-shade band and ONE small white highlight, no gradients, no texture, no text, no
-> letters, no numbers. Chunky rounded shapes that read clearly at 48 × 48 pixels. The object fills
-> about 80% of the canvas, centred, slight 3/4 view. **Fully transparent background (PNG with
-> alpha), no backdrop circle, no square tile, no frame, no drop shadow on a floor.** Square
-> 1024 × 1024. Main colour for this icon: {COLOUR}.
+| Mục | Giá trị |
+|---|---|
+| Kích thước xin ChatGPT vẽ | **1024 × 1024**, vuông, **nền trong suốt** |
+| Kích thước trong game | Tự thu còn tối đa 256 px khi import |
+| Kích thước thật trên màn hình | **46–64 px**: ô bên trái thẻ level-up, thanh skill trên HUD, bảng build cuối trận |
+| Nền phía sau icon | Ô vuông bo góc **tối** (#2F3544), viền thẻ theo màu tầng skill |
 
-Replace `{COLOUR}` with the layer colour of the icon (the card border in game uses the same one):
+Quy tắc đọc ở 48 px:
+- Một vật thể duy nhất, to, chiếm ~80% khung.
+- Viền tối dày.
+- Màu phẳng, 1 dải bóng và 1 điểm sáng.
+- Không chữ, không số.
 
-| Layer | Colour | Hex |
+Nền trong suốt là bắt buộc, vì icon đặt lên ô tối.
+
+---
+
+## 2. Cách làm (đọc một lần)
+
+1. **Mở MỘT cuộc chat ChatGPT** và làm cả 35 icon trong đó để style đồng đều.
+2. **Tin nhắn đầu tiên:**
+   - Đính kèm 3 ảnh mẫu trong `icon_style/` (`sample_auto.drone.png`, `sample_stat.maxhealth.png`, `sample_evo.carpetbomb.png`) và `icon_style/levelup_context.png`.
+   - Dán **STYLE BLOCK** ở mục 3, rồi dán prompt của icon đầu tiên (`auto.drone`).
+   - Vẽ lại đến khi ưng. Icon đó thành **icon chuẩn** (anchor).
+3. **Các icon sau:** dán nguyên khối prompt của icon đó. Mỗi khối đã mở đầu bằng "Same style as the approved icon".
+   - Nếu style bắt đầu lệch, cứ ~8 icon đính kèm lại icon chuẩn một lần.
+4. **Kiểm tra nền trong suốt:** mở PNG phải thấy nền caro. Nếu ra nền trắng hay ô màu, trả lời:
+   *"Regenerate with a fully transparent background (alpha 0). No backdrop, no circle, no square tile, no frame, no floor shadow."*
+5. **Lưu file** tên `<id>.png`, ví dụ `auto.orbit.png`.
+
+---
+
+## 3. STYLE BLOCK (dán ở tin nhắn đầu)
+
+```
+You are drawing skill icons for HordeCall, a cute cartoon zombie-survival mobile shooter
+(auto-aim, level-up cards). I will ask for 35 icons one by one; keep them one consistent set.
+
+Style rules for EVERY icon:
+- Minimal toon icon: ONE bold central object, chunky rounded shapes, slight 3/4 view.
+- Thick dark outline #1F2330, about 6% of the icon width, on the whole silhouette.
+- Flat colours: one base colour, ONE soft cel-shade band, ONE small white highlight.
+  No gradients, no texture, no noise, no realistic rendering.
+- The object fills about 80% of the square canvas, centred, nothing touching the edges.
+- Must read clearly at 48 x 48 pixels on a dark tile (#2F3544): high contrast, few details.
+- Fully transparent background (PNG with alpha). No backdrop, no circle, no square tile,
+  no frame, no floor shadow.
+- No text, no letters, no numbers, no logos.
+- Friendly and cute, not gory: no blood.
+- Square 1024 x 1024.
+The attached samples show the rules only (outline, flat colour, one shade band, one highlight,
+transparent); draw more polished and cuter than them, do not copy them.
+The attached level-up screenshot shows where the icon sits (the small square on the left of each card).
+```
+
+**Màu chủ đạo theo tầng skill** (trùng màu viền thẻ trong game, đã ghi sẵn trong từng prompt):
+
+| Tầng | Màu | Hex |
 |---|---|---|
-| Stat | steel grey-blue | #9EA8B8 |
-| Signature (weapon family) | warm orange | #FF9E3D |
-| Autonomous power | violet | #A86CFF |
-| Universal | teal | #42D1C2 |
-| Evolution | gold, with a small sparkle burst behind the object | #FFCC33 |
+| Stat | xám xanh thép | #9EA8B8 |
+| Signature (theo loại súng) | cam ấm | #FF9E3D |
+| Universal | xanh ngọc | #42D1C2 |
+| Autonomous power | tím | #A86CFF |
+| Evolution | vàng kim + chùm sáng lấp lánh phía sau | #FFCC33 |
 
-## Icon list
+---
 
-### Stat (#9EA8B8)
-| File | Subject line |
-|---|---|
-| `stat.damage.png` | A chunky upward-pointing bullet with a small burst star at its tip |
-| `stat.firerate.png` | Three bullets flying side by side with short speed lines |
-| `stat.movespeed.png` | A cartoon sneaker with a winged heel and speed lines |
-| `stat.maxhealth.png` | A plump heart with a small plus sign cut into it |
-| `stat.coingain.png` | A stack of three round coins with a magnet hovering above |
+## 4. Prompt từng icon
 
-### Signature (#FF9E3D)
-| File | Subject line |
-|---|---|
-| `sidearm.rungun.png` | A pistol with motion lines behind it, as if drawn while running |
-| `sidearm.quickstep.png` | A pistol bullet trailing footprints behind it |
-| `smg.static.png` | A small SMG crackling with a blue electric spark |
-| `smg.bullethose.png` | A spray of many bullets fanning out from a round muzzle |
-| `ar.focusfire.png` | A crosshair locked onto a small target, tightening rings |
-| `ar.breach.png` | A long rifle bullet punching through a cracked wooden plank |
-| `shotgun.pointblank.png` | A shotgun muzzle blast, wide and very close, big flash |
-| `shotgun.concussion.png` | A shotgun shell with dizzy stars circling it |
-| `lmg.heavypressure.png` | A heavy ammo belt coiled like a snake, glowing hot |
-| `lmg.shockwave.png` | A cone-shaped shockwave blast pushing outward |
-| `marksman.longshot.png` | A sniper scope with a tiny distant target inside |
-| `marksman.hunters.png` | A target reticle with a small skull mark in the centre |
+Mỗi khối là một tin nhắn: copy nguyên khối, dán vào chat.
 
-### Universal (#42D1C2)
-| File | Subject line |
-|---|---|
-| `uni.execution.png` | A bullet above a cracked, almost empty health bar |
-| `uni.kinetic.png` | A round bubble shield with a footprint inside it |
+### 4.1 Stat (#9EA8B8)
 
-### Autonomous power (#A86CFF)
-| File | Subject line |
-|---|---|
-| `auto.chainlightning.png` | A zig-zag lightning bolt linking three small dots |
-| `auto.ordnance.png` | A round artillery shell falling onto a target circle |
-| `auto.soulburst.png` | A cute little ghost bursting out in a ring of light |
-| `auto.emergency.png` | A red panic button with a small explosion around it |
-| `auto.orbit.png` | Three spinning saw blades arranged in a ring |
-| `auto.drone.png` | A cute round little drone with one eye and tiny propellers |
-| `auto.frostnova.png` | A big snowflake inside an expanding icy ring |
-| `auto.firetrail.png` | Three small flames in a row, like footprints on fire |
-| `auto.boomerang.png` | A curved boomerang with a swoosh arc showing it returns |
-| `auto.airstrike.png` | A missile pointing down at a red target marker |
+**`stat.damage`**: Damage Up. Skill làm gì: toàn bộ sát thương +%.
+```
+Same style as the approved icon. Icon "stat.damage": a chunky bullet pointing up with a small
+burst star at its tip and two short upward arrows beside it. Main colour steel grey-blue #9EA8B8,
+the burst star pale yellow.
+```
 
-### Evolution (#FFCC33, sparkle burst behind)
-| File | Subject line |
-|---|---|
-| `evo.thunderstorm.png` | A storm cloud shooting a big lightning bolt downward |
-| `evo.carpetbomb.png` | Three shells falling in a row onto the ground |
-| `evo.buzzsaw.png` | One big glowing buzzsaw ring with many teeth |
-| `evo.absolutezero.png` | A cute zombie head frozen inside an ice cube |
-| `evo.squadron.png` | Three small drones flying in a V formation |
-| `evo.reaper.png` | A small cute grim-reaper scythe with a ghost wisp |
+**`stat.firerate`**: Fire Rate Up. Skill làm gì: tốc độ bắn +%.
+```
+Same style as the approved icon. Icon "stat.firerate": three bullets flying side by side to the
+right with short speed lines behind them. Main colour steel grey-blue #9EA8B8.
+```
 
-## Style anchor (made for this project)
+**`stat.movespeed`**: Move Speed Up. Skill làm gì: tốc độ chạy +%.
+```
+Same style as the approved icon. Icon "stat.movespeed": a chunky cartoon sneaker with a small
+wing on the heel and speed lines behind it. Main colour steel grey-blue #9EA8B8, white sole.
+```
 
-`icon_style/sample_auto.drone.png`, `sample_stat.maxhealth.png`, `sample_evo.carpetbomb.png` —
-rough programmer art that shows the RULES (thick dark outline, flat colour, one cel-shade band,
-one highlight, layer colour, transparent background). You may attach them to the first ChatGPT
-message with: *"Follow the rules these show, but draw it polished and cuter — they are only a
-rough guide."* Do not ask it to copy them.
+**`stat.maxhealth`**: Max Health Up. Skill làm gì: máu tối đa +%.
+```
+Same style as the approved icon. Icon "stat.maxhealth": a plump heart with a white plus sign
+on it. Main colour steel grey-blue #9EA8B8 with a soft pink shade band.
+```
 
-## Style references (look, don't copy)
+**`stat.coingain`**: Coin Gain Up. Skill làm gì: coin nhận từ quái +%.
+```
+Same style as the approved icon. Icon "stat.coingain": a stack of three round gold coins with a
+horseshoe magnet hovering above, pulling. Main colour steel grey-blue #9EA8B8 for the magnet,
+gold coins.
+```
 
-Packs with the minimal, thick-outline, transparent look we want. Use them only as a mood
-reference for yourself; do not upload them to ChatGPT as images to copy.
+### 4.2 Signature: theo loại súng (#FF9E3D)
 
-- [Cartoon UI and Icon pack — Asep Bagus](https://asep-bagus.itch.io/cartoon-ui-and-icon-pack): flat cartoon, friendly colours
-- [120+ Casual Game Icons — Zhaohui Li](https://lizhaohui12138gmailcom.itch.io/120-casual-game-icons-pack): flat cartoon with a black outline, transparent PNG
-- [600 Minimal Game Icons — SunGraphica](https://sungraphica.itch.io/minimal-game-icons-pack): minimal, one object per icon
-- The Level Up and HUD artboards in the M8 mockup canvas show where and how big the icons sit.
+**`sidearm.rungun`**: Run & Gun (súng lục). Skill làm gì: vừa chạy vừa bắn nhanh hơn.
+```
+Same style as the approved icon. Icon "sidearm.rungun": a chunky pistol tilted forward with
+motion lines behind it and a small running-dust puff under it. Main colour warm orange #FF9E3D.
+```
 
-The existing `Assets/Icons/skills` set (74 px, opaque grey tile, military two-tone) does not fit
-the cute toon look and is not transparent — do not use it as the reference.
+**`sidearm.quickstep`**: Quickstep Round (súng lục). Skill làm gì: cứ đi đủ quãng đường, phát bắn kế tiếp gây x2.5.
+```
+Same style as the approved icon. Icon "sidearm.quickstep": a glowing pistol bullet with a trail
+of three small footprints behind it. Main colour warm orange #FF9E3D.
+```
 
-## When they are ready
+**`smg.static`**: Static Build-up (SMG). Skill làm gì: cứ vài phát trúng, tia sét nhảy sang quái khác.
+```
+Same style as the approved icon. Icon "smg.static": a compact SMG crackling with a small blue
+electric spark jumping off the muzzle. Main colour warm orange #FF9E3D, electric blue spark.
+```
 
-Drop the 35 PNGs into `Assets/_Project/UI/Icons/Skills/` with the names above. The game will map
-them by card id (`SkillCatalogDefs.ById`); a missing file falls back to the coloured layer badge.
+**`smg.bullethose`**: Bullet Hose (SMG). Skill làm gì: giữ bắn liên tục thì tốc độ bắn tăng dần.
+```
+Same style as the approved icon. Icon "smg.bullethose": a spray of many small bullets fanning out
+from a round muzzle, getting denser. Main colour warm orange #FF9E3D.
+```
+
+**`ar.focusfire`**: Focus Fire (rifle). Skill làm gì: bắn trúng cùng một con liên tục thì sát thương tăng.
+```
+Same style as the approved icon. Icon "ar.focusfire": a crosshair locked onto a small target,
+with three rings tightening inward. Main colour warm orange #FF9E3D.
+```
+
+**`ar.breach`**: Breach Round (rifle). Skill làm gì: vài phát một lần, đạn xuyên nhiều quái và làm chúng dễ bị đánh.
+```
+Same style as the approved icon. Icon "ar.breach": a long rifle bullet punching through a cracked
+wooden plank, splinters flying. Main colour warm orange #FF9E3D, light brown plank.
+```
+
+**`shotgun.pointblank`**: Point Blank (shotgun). Skill làm gì: bắn càng gần sát thương càng cao.
+```
+Same style as the approved icon. Icon "shotgun.pointblank": a shotgun muzzle seen close up with a
+big round muzzle flash bursting out of it. Main colour warm orange #FF9E3D, yellow flash.
+```
+
+**`shotgun.concussion`**: Concussion (shotgun). Skill làm gì: bắn trúng làm quái chạy chậm lại.
+```
+Same style as the approved icon. Icon "shotgun.concussion": a chunky red shotgun shell with small
+dizzy stars circling above it. Main colour warm orange #FF9E3D, pale yellow stars.
+```
+
+**`lmg.heavypressure`**: Heavy Pressure (LMG). Skill làm gì: bắn càng lâu sát thương càng tăng.
+```
+Same style as the approved icon. Icon "lmg.heavypressure": a heavy ammo belt coiled in a loop,
+the bullets glowing hot at one end with small heat waves. Main colour warm orange #FF9E3D.
+```
+
+**`lmg.shockwave`**: Shockwave Belt (LMG). Skill làm gì: vài phát một lần, bắn ra một làn sóng xung kích hình nón.
+```
+Same style as the approved icon. Icon "lmg.shockwave": a cone-shaped shockwave of three curved
+arcs blasting outward to the right from a small point. Main colour warm orange #FF9E3D.
+```
+
+**`marksman.longshot`**: Longshot (sniper). Skill làm gì: bắn càng xa sát thương càng cao.
+```
+Same style as the approved icon. Icon "marksman.longshot": a round sniper scope lens with a tiny
+distant target and a thin crosshair inside it. Main colour warm orange #FF9E3D, pale blue lens.
+```
+
+**`marksman.hunters`**: Hunter's Mark (sniper). Skill làm gì: phát đầu tiên vào mỗi mục tiêu mới gây thêm sát thương.
+```
+Same style as the approved icon. Icon "marksman.hunters": a target reticle with a small cute
+cartoon skull mark in its centre. Main colour warm orange #FF9E3D, white skull.
+```
+
+### 4.3 Universal (#42D1C2)
+
+**`uni.execution`**: Execution Round. Skill làm gì: thêm sát thương lên quái sắp chết (máu thấp).
+```
+Same style as the approved icon. Icon "uni.execution": a bullet diving down onto a short, almost
+empty, cracked health bar. Main colour teal #42D1C2, the bar red.
+```
+
+**`uni.kinetic`**: Kinetic Shield. Skill làm gì: cứ đi đủ quãng đường, được một khiên đỡ một đòn.
+```
+Same style as the approved icon. Icon "uni.kinetic": a round bubble shield with a small footprint
+inside it and a glossy highlight. Main colour teal #42D1C2.
+```
+
+### 4.4 Autonomous power: tự kích hoạt (#A86CFF)
+
+**`auto.chainlightning`**: Chain Lightning. Skill làm gì: định kỳ, tia sét nối qua nhiều quái.
+```
+Same style as the approved icon. Icon "auto.chainlightning": a zig-zag lightning bolt linking
+three small round dots in a chain. Main colour violet #A86CFF, bright white-yellow bolt core.
+```
+
+**`auto.ordnance`**: Ordnance Core. Skill làm gì: định kỳ, một quả pháo rơi vào chỗ đông quái nhất.
+```
+Same style as the approved icon. Icon "auto.ordnance": a round artillery shell falling onto a
+target circle on the ground. Main colour violet #A86CFF, red target circle.
+```
+
+**`auto.soulburst`**: Soul Burst. Skill làm gì: cứ 12 lần giết, một vụ nổ tỏa quanh người chơi.
+```
+Same style as the approved icon. Icon "auto.soulburst": a cute little ghost bursting out of a
+ring of light, arms up. Main colour violet #A86CFF, white ghost.
+```
+
+**`auto.emergency`**: Emergency Detonation. Skill làm gì: máu dưới 30% thì nổ đẩy quái ra xa.
+```
+Same style as the approved icon. Icon "auto.emergency": a cracked heart at the centre of a round
+blast ring pushing outward. Main colour violet #A86CFF, the heart red.
+```
+
+**`auto.orbit`**: Orbit Blades. Skill làm gì: lưỡi cưa quay vòng quanh người chơi.
+```
+Same style as the approved icon. Icon "auto.orbit": three spinning saw blades arranged in a
+circle around an empty centre, with a curved motion arc. Main colour violet #A86CFF, silver blades.
+```
+
+**`auto.drone`**: Drone Buddy. Skill làm gì: một drone bắn con quái gần nhất.
+```
+Icon "auto.drone" (this is the first icon: it becomes the style anchor): a cute round little
+drone with one big eye and two tiny propellers on top. Main colour violet #A86CFF.
+```
+
+**`auto.frostnova`**: Frost Nova. Skill làm gì: định kỳ, vòng băng làm chậm quái xung quanh.
+```
+Same style as the approved icon. Icon "auto.frostnova": a big chunky snowflake inside an
+expanding icy ring. Main colour violet #A86CFF, ice blue snowflake.
+```
+
+**`auto.firetrail`**: Fire Trail. Skill làm gì: đi đến đâu để lại lửa đốt quái đến đó.
+```
+Same style as the approved icon. Icon "auto.firetrail": three small flames in a row shaped like
+footprints. Main colour violet #A86CFF outline accents, orange-yellow flames.
+```
+
+**`auto.boomerang`**: Boomerang. Skill làm gì: boomerang bay ra rồi quay về, cắt qua mọi quái.
+```
+Same style as the approved icon. Icon "auto.boomerang": a chunky curved boomerang with a swoosh
+arc showing it flies out and returns. Main colour violet #A86CFF.
+```
+
+**`auto.airstrike`**: Airstrike. Skill làm gì: định kỳ, bom rơi xuống quái trên màn hình.
+```
+Same style as the approved icon. Icon "auto.airstrike": a missile pointing down at a red target
+marker on the ground. Main colour violet #A86CFF, red marker.
+```
+
+### 4.5 Evolution: tiến hoá (#FFCC33, chùm sáng lấp lánh phía sau)
+
+**`evo.thunderstorm`**: Thunderstorm (tiến hoá từ Chain Lightning). Skill làm gì: sét 2 giây một lần qua 6 quái, mạnh hơn.
+```
+Same style as the approved icon. Icon "evo.thunderstorm": a chubby storm cloud shooting a big
+lightning bolt downward, with a small sparkle burst behind the cloud. Main colour gold #FFCC33,
+dark blue-grey cloud.
+```
+
+**`evo.carpetbomb`**: Carpet Bomb (tiến hoá từ Ordnance). Skill làm gì: pháo rơi thành một hàng 3 quả.
+```
+Same style as the approved icon. Icon "evo.carpetbomb": three shells falling in a diagonal row
+onto the ground, a small sparkle burst behind. Main colour gold #FFCC33.
+```
+
+**`evo.buzzsaw`**: Buzzsaw Halo (tiến hoá từ Orbit Blades). Skill làm gì: 6 lưỡi cưa to hơn, quay nhanh hơn.
+```
+Same style as the approved icon. Icon "evo.buzzsaw": one big glowing buzzsaw ring with many
+teeth, spinning, a small sparkle burst behind. Main colour gold #FFCC33.
+```
+
+**`evo.absolutezero`**: Absolute Zero (tiến hoá từ Frost Nova). Skill làm gì: đóng băng quái, quái bị đóng băng nhận thêm 50% sát thương.
+```
+Same style as the approved icon. Icon "evo.absolutezero": a cute cartoon zombie head frozen
+inside a clear ice cube, a small sparkle burst behind. Main colour gold #FFCC33 sparkles, ice
+blue cube, green zombie.
+```
+
+**`evo.squadron`**: Drone Squadron (tiến hoá từ Drone Buddy). Skill làm gì: 3 drone, giết quái có thể rơi coin.
+```
+Same style as the approved icon. Icon "evo.squadron": three small round drones flying in a V
+formation, a small sparkle burst behind. Main colour gold #FFCC33.
+```
+
+**`evo.reaper`**: Reaper (tiến hoá từ Soul Burst). Skill làm gì: giết quái có thể giải phóng vụ nổ linh hồn.
+```
+Same style as the approved icon. Icon "evo.reaper": a small cute grim-reaper scythe with a ghost
+wisp curling around the blade, a small sparkle burst behind. Main colour gold #FFCC33.
+```
+
+---
+
+## 5. Câu sửa nhanh
+
+- Rối ở cỡ nhỏ → `Bolder and simpler: fewer details, thicker outline, bigger shapes, readable at 48 px.`
+- Lệch style so với icon chuẩn → `Match the approved icon exactly: same outline width, same flat colours, one shade band, one highlight.`
+- Có nền → `Fully transparent background, alpha 0, no backdrop or tile.`
+- Có chữ hoặc số → `Remove all text, letters and numbers.`
+- Quá nhỏ trong khung → `Make the object fill 80% of the canvas, centred.`
+
+---
+
+## 6. Đưa icon vào game
+
+1. Chép 35 file PNG vào **`Assets/_Project/UI/Icons/Skills/`**, tên đúng id (ví dụ `auto.orbit.png`).
+2. Trong Unity bấm menu **`ZombieWar/UI/Authoring/Refresh Skill Icons`**.
+   - Lệnh tự đặt import: Sprite, nền trong suốt, tối đa 256 px.
+   - Rồi ghép icon theo id thẻ.
+   - Thẻ nào chưa có file vẫn hiện chữ viết tắt như bây giờ.
+3. Kiểm tra: vào trận, dùng tab **SKILLS** trong bảng cheat QA để lấy thẻ, rồi xem thẻ level-up, thanh skill HUD và bảng build cuối trận.
