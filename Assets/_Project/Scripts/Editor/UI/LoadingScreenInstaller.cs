@@ -93,17 +93,23 @@ namespace ZombieWar.EditorTools
                 if (status != null)
                 {
                     status.font = font; status.fontSharedMaterial = font.material; status.fontStyle = FontStyles.Normal;
-                    status.fontSize = 36; status.color = Color.white; status.enableWordWrapping = true;
-                    status.alignment = TextAlignmentOptions.Center;
-                    var srt = (RectTransform)status.transform; srt.sizeDelta = new Vector2(860, 120); srt.anchoredPosition = new Vector2(0, -300);
+                    // One quiet unit under the logo (owner 2026-09-29, "mind the proportions"): the tip
+                    // is narrower than the logo, the bar shorter still and tucked under the tip.
+                    status.fontSize = 30; status.color = new Color(1f, 1f, 1f, 0.94f); status.enableWordWrapping = true;
+                    status.characterSpacing = 1f;
+                    // Anchored by its bottom edge a fixed 20 px above the bar, growing upward, so a one- or
+                    // two-line tip keeps the same gap to the bar; lines sit tight.
+                    var srt = (RectTransform)status.transform;
+                    status.alignment = TextAlignmentOptions.Bottom; status.lineSpacing = -22f;
+                    srt.pivot = new Vector2(0.5f, 0f); srt.sizeDelta = new Vector2(700, 90); srt.anchoredPosition = new Vector2(0, -339);
                 }
 
                 var slider = root.GetComponentInChildren<Slider>(true);
                 if (slider != null)
                 {
-                    var srt = (RectTransform)slider.transform; srt.sizeDelta = new Vector2(640, 22); srt.anchoredPosition = new Vector2(0, -400);
+                    var srt = (RectTransform)slider.transform; srt.sizeDelta = new Vector2(520, 14); srt.anchoredPosition = new Vector2(0, -366);
                     var track = slider.transform.Find("Track")?.GetComponent<Image>();
-                    if (track != null) track.color = UITheme.M8Deep;
+                    if (track != null) track.color = new Color(0.06f, 0.08f, 0.13f, 0.6f);   // a see-through track sits lighter on the art
                     if (slider.fillRect != null)
                     {
                         UiKitApply.ConvertBar(canvas, slider.fillRect.gameObject);
@@ -118,7 +124,7 @@ namespace ZombieWar.EditorTools
                 scrim.SetParent(root, false);
                 scrim.SetSiblingIndex(bg != null ? bg.transform.GetSiblingIndex() + 1 : 0);
                 var srt2 = (RectTransform)scrim; srt2.anchorMin = srt2.anchorMax = new Vector2(0.5f, 0.5f);
-                srt2.sizeDelta = new Vector2(1400, 330); srt2.anchoredPosition = new Vector2(0, -345);
+                srt2.sizeDelta = new Vector2(1400, 260); srt2.anchoredPosition = new Vector2(0, -325);
                 var si = scrim.GetComponent<Image>(); si.sprite = Sprite("scrim", 256); si.raycastTarget = false; si.color = Color.white;
 
                 var ls = canvas.GetComponent<LoadingScreen>() ?? canvas.AddComponent<LoadingScreen>();
