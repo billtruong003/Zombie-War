@@ -18,6 +18,9 @@ namespace ZombieWar.UI
         [SerializeField] private CanvasGroup group;
         [SerializeField] private Slider progress;
         [SerializeField] private TMP_Text status;
+        [Tooltip("Key art behind the logo. The first shows at boot; later loads rotate through all.")]
+        [SerializeField] private Image background;
+        [SerializeField] private Sprite[] backgrounds;
 
         [Tooltip("One is picked at random for each load.")]
         [SerializeField, TextArea] private string[] tips =
@@ -35,7 +38,20 @@ namespace ZombieWar.UI
         private bool _loading;
         private Coroutine _routine;
 
-        private void Awake() => Instance = this;
+        private int _art;
+
+        private void Awake()
+        {
+            Instance = this;
+            ShowArt(0);
+        }
+
+        private void ShowArt(int index)
+        {
+            if (background == null || backgrounds == null || backgrounds.Length == 0) return;
+            _art = ((index % backgrounds.Length) + backgrounds.Length) % backgrounds.Length;
+            if (backgrounds[_art] != null) background.sprite = backgrounds[_art];
+        }
         private void OnDestroy() { if (Instance == this) Instance = null; }
 
         /// Covers the screen at once (no fade in: the frame after PLAY must already be the loader).
@@ -48,6 +64,7 @@ namespace ZombieWar.UI
             s._loading = true;
             s._target = 0.9f;
             s._shown = 0f;
+            s.ShowArt(s._art + 1);   // a different key art each load
             if (s.progress != null) { s.progress.gameObject.SetActive(true); s.progress.value = 0f; }
             if (s.status != null && s.tips != null && s.tips.Length > 0) s.status.text = s.tips[Random.Range(0, s.tips.Length)];
             if (s.group != null) { s.group.alpha = 1f; s.group.blocksRaycasts = true; s.group.interactable = true; }
