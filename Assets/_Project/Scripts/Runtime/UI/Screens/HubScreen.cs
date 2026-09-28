@@ -148,6 +148,7 @@ namespace ZombieWar.UI
             WeaponClass.Shotgun => "SHOTGUN",
             WeaponClass.Marksman => "SNIPER",
             WeaponClass.LMG => "LMG",
+            WeaponClass.Rocket => "LAUNCHER",
             _ => c.ToString().ToUpperInvariant(),
         };
 

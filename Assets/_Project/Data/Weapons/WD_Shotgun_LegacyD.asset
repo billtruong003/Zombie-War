@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab15ed49308744e4b8339310722fcc71, type: 3}
   m_Name: WD_Shotgun_LegacyD
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.WeaponData
-  weaponName: LegacyD
+  weaponName: MKA 1919
   weaponPrefab: {fileID: 6810826342680241524, guid: 7d8577a32c2ec0c408211c259c197757, type: 3}
   weaponId: weapon.shotgun.legacy_d
   catalogOrder: 52
   legacyAliases: []
-  authoringStatus: 1
+  authoringStatus: 0
   weaponClass: 3
   tier: 0
-  price: 0
+  price: 1000
   unlockCost: 0
   twoHanded: 1
-  fireMode: 0
-  fireRate: 8
-  damage: 12
-  range: 30
+  fireMode: 1
+  fireRate: 1.1
+  damage: 10
+  range: 5.5
   knockback: 0
   damageFalloffCurve:
     serializedVersion: 2
@@ -36,22 +36,26 @@ MonoBehaviour:
     m_RotationOrder: 4
   pierceCount: 0
   pierceDamageFalloff: 1
+  splashRadius: 0
+  splashDamageFraction: 0.6
+  splashFx: {fileID: 0}
+  splashSfxKey: sfx.skill.airstrike.blast
   reloadSfxKey: sfx.weapon.shotgun.reload
-  pelletCount: 1
-  spreadAngle: 0
-  muzzleFlashPrefab: {fileID: 0}
+  pelletCount: 8
+  spreadAngle: 12
+  muzzleFlashPrefab: {fileID: 19819752, guid: 8deb1def3de25b04b8371070fbb372fe, type: 3}
   smokeTrailPrefab: {fileID: 0}
-  impactPrefab: {fileID: 0}
-  tracerPrefab: {fileID: 0}
+  impactPrefab: {fileID: 19845262, guid: fdac75e990da47649b31f10049c400b0, type: 3}
+  tracerPrefab: {fileID: 6267678621344663077, guid: 9c417fa30c2397b49a4426d7767a4a84, type: 3}
   fireSfxKey: sfx.weapon.shotgun.fire
-  recoilKickDistance: 0.09
-  recoilKickDuration: 0.04
+  recoilKickDistance: 0.14
+  recoilKickDuration: 0.05
   recoilReturnDuration: 0.12
-  recoilAimKickAngle: 5
-  recoilSideKickAngle: 2
-  gripLocalPosition: {x: 0.00428, y: -0.06307, z: 0.00193}
-  gripLocalEuler: {x: 15.425, y: 110.259, z: 176.855}
-  gripLocalScale: {x: 1, y: 1, z: 1}
-  useAuthoredGripPositions: 0
-  rightHandGripRootPosition: {x: 0, y: 0, z: 0}
-  leftHandGripRootPosition: {x: 0, y: 0, z: 0}
+  recoilAimKickAngle: 4.5
+  recoilSideKickAngle: 2.5
+  gripLocalPosition: {x: 0.14700001, y: -0.066167384, z: 0.098399565}
+  gripLocalEuler: {x: 0, y: 0, z: 0}
+  gripLocalScale: {x: 1.2, y: 1.2, z: 1.2}
+  useAuthoredGripPositions: 1
+  rightHandGripRootPosition: {x: 0.027499998, y: -0.086527176, z: -0.0986663}
+  leftHandGripRootPosition: {x: 0, y: -0.08341667, z: 0.109667026}

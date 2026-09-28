@@ -564,6 +564,8 @@ namespace ZombieWar
                 hitPoint = hit.point;
                 ApplyHit(data, hit.collider.GetComponentInParent<IDamageable>(), hit, rayOrigin, 1f);
             }
+            if (data.splashRadius > 0f)
+                Splash(data, hitPoint, didHit ? hit.collider.GetComponentInParent<ZombieBase>() : null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EmitRay(data, rayOrigin, direction, hitPoint,
@@ -572,6 +574,23 @@ namespace ZombieWar
 
             SpawnTracer(data, muzzlePosition, hitPoint);
             SpawnSmokeTrail(data, muzzlePosition, hitPoint);
+        }
+
+        // Launcher blast: every other living enemy within splashRadius of where the shot landed takes
+        // a share of the shot's damage (the direct hit already took the full hit in ApplyHit).
+        private void Splash(WeaponData data, Vector3 at, ZombieBase direct)
+        {
+            float damage = WeaponUpgradeMath.EffectiveDamage(data, _starLevel) * data.splashDamageFraction * (1f + _skinBonus);
+            int found = ZombieWar.Skills.TargetQuery.GatherEnemies(at, data.splashRadius, hitMask);
+            for (int i = 0; i < found; i++)
+            {
+                var enemy = ZombieWar.Skills.TargetQuery.CandidateEnemy(i);
+                if (enemy != null && enemy != direct) enemy.TakeDamage(damage);
+            }
+            if (data.splashFx != null)
+                FxPool.Play(data.splashFx, at + Vector3.up * 0.1f, Quaternion.identity, Mathf.Min(data.splashRadius / 2f, 1.3f));
+            if (!string.IsNullOrEmpty(data.splashSfxKey)) Bill.Audio?.Play(data.splashSfxKey, at, 0.8f);
+            ShakeCamera(0.2f);
         }
 
         // Áp damage (range falloff + dmgMult) + impact FX + knockback cho 1 hit.

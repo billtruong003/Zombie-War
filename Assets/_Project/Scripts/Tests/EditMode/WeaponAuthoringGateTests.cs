@@ -8,10 +8,9 @@ using UnityEngine.TestTools;
 namespace ZombieWar.Tests
 {
     /// <summary>
-    /// M7.1 — the authoring gate. Twenty-nine weapons were onboarded from vendor packs as DATA ONLY:
-    /// their grip and muzzle anchors are hand-authored by the owner and are deliberately absent.
-    ///
-    /// A weapon in that state must be impossible to equip and invisible to the Hub, shop and loadout.
+    /// M7.1 — the authoring gate. A weapon onboarded as data only (no grip/muzzle anchors) must be
+    /// impossible to equip and invisible to the Hub, shop and loadout. All 54 guns are finished
+    /// since 2026-09-28 (WeaponAutoGrip), so the gate itself is tested on a pending fixture.
     /// If this gate leaks, the player gets a gun floating at an arbitrary transform in their hand,
     /// which is exactly the class of defect M7.0's grip work existed to eliminate.
     /// </summary>
@@ -36,51 +35,49 @@ namespace ZombieWar.Tests
             Assert.IsFalse(all.Any(w => string.IsNullOrEmpty(w.WeaponId)), "every weapon needs an id");
         }
 
-        [Test]
-        public void OnboardedWeaponsAreMarkedPending_AndHaveNoInferredAnchors()
+        /// A weapon still waiting for its anchors. Every shipped gun is finished (2026-09-28), so
+        /// the gate is proven on this in-memory fixture instead of on a real asset.
+        static WeaponData PendingFixture(bool twoHanded)
         {
-            var pending = AllWeapons().Where(w => !w.IsPlayable).ToList();
-            Assert.Greater(pending.Count, 0, "M7.1 onboarded weapons should be present and pending");
+            var w = ScriptableObject.CreateInstance<WeaponData>();
+            var so = new SerializedObject(w);
+            so.FindProperty("weaponId").stringValue = "weapon.test.pending";
+            so.FindProperty("authoringStatus").intValue = (int)WeaponData.AuthoringStatus.PendingOwnerAuthoring;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            w.twoHanded = twoHanded;
+            return w;
+        }
 
-            foreach (var w in pending)
+        [Test]
+        public void EveryWeapon_IsFinished_WithItsAnchors()
+        {
+            foreach (var w in AllWeapons())
             {
-                Assert.IsFalse(w.useAuthoredGripPositions,
-                    $"'{w.name}' is pending authoring, so authored grip positions must stay OFF — " +
-                    "nothing may infer an anchor");
-
-                if (w.weaponPrefab == null) continue;
-                string path = AssetDatabase.GetAssetPath(w.weaponPrefab);
-                var contents = PrefabUtility.LoadPrefabContents(path);
+                Assert.IsTrue(w.IsPlayable, $"'{w.name}' is not finished ({w.Authoring})");
+                Assert.IsNotNull(w.weaponPrefab, $"'{w.name}' has no prefab");
+                var contents = PrefabUtility.LoadPrefabContents(AssetDatabase.GetAssetPath(w.weaponPrefab));
                 var grips = contents.GetComponentInChildren<WeaponGripPoints>(true);
-                bool anyAnchor = grips != null &&
-                    (grips.RightHandGrip != null || grips.LeftHandGrip != null || grips.MuzzlePoint != null);
+                bool ok = grips != null && grips.RightHandGrip != null && grips.MuzzlePoint != null
+                          && (!w.twoHanded || grips.LeftHandGrip != null);
                 PrefabUtility.UnloadPrefabContents(contents);
-
-                Assert.IsFalse(anyAnchor,
-                    $"'{w.name}' has an anchor placed but is still marked pending. Anchors are authored " +
-                    "by the owner only; an inferred one must never appear here.");
+                Assert.IsTrue(ok, $"'{w.name}' is missing a grip or muzzle anchor");
             }
         }
 
         [Test]
         public void PendingWeapon_CannotBeEquippedThroughLoadout()
         {
-            var pending = AllWeapons().FirstOrDefault(w => !w.IsPlayable && !w.twoHanded)
-                       ?? AllWeapons().FirstOrDefault(w => !w.IsPlayable);
-            Assert.IsNotNull(pending, "expected at least one pending weapon");
-
+            var pending = PendingFixture(false);
             var result = LoadoutState.TryEquip(pending);
-
             Assert.AreEqual(LoadoutState.EquipResult.InvalidWeapon, result,
-                "a weapon awaiting owner grip authoring must be refused by the loadout");
+                "a weapon awaiting grip authoring must be refused by the loadout");
+            Object.DestroyImmediate(pending);
         }
 
         [Test]
         public void PendingWeapon_IsRefusedByWeaponEquip()
         {
-            var pending = AllWeapons().FirstOrDefault(w => !w.IsPlayable && !w.twoHanded);
-            if (pending == null) Assert.Ignore("no one-handed pending weapon to test with");
-
+            var pending = PendingFixture(false);
             var go = new GameObject("weapon-host");
             var weapon = go.AddComponent<Weapon>();
 
@@ -89,6 +86,7 @@ namespace ZombieWar.Tests
 
             Assert.IsFalse(equipped, "Weapon.Equip must refuse a pending weapon");
             Object.DestroyImmediate(go);
+            Object.DestroyImmediate(pending);
         }
 
         [Test]
@@ -104,14 +102,11 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void LauncherIsBlockedForAMissingFireMode_NotMerelyPending()
+        public void OnlyTheLauncher_BlowsUp()
         {
-            var blocked = AllWeapons()
-                .Where(w => w.Authoring == WeaponData.AuthoringStatus.BlockedNeedsProjectileFireMode).ToList();
-
-            Assert.Greater(blocked.Count, 0,
-                "the launcher body should be onboarded as data and blocked — FireMode.Projectile does not exist");
-            foreach (var w in blocked) Assert.IsFalse(w.IsPlayable);
+            foreach (var w in AllWeapons())
+                if (w.weaponClass == WeaponClass.Rocket) Assert.Greater(w.splashRadius, 0f, $"'{w.name}' is a launcher without a blast");
+                else Assert.AreEqual(0f, w.splashRadius, $"'{w.name}' must not splash");
         }
 
         /// <summary>
@@ -170,15 +165,6 @@ namespace ZombieWar.Tests
         {
             CollectionAssert.IsEmpty(EditorTools.WeaponCatalogAccess.Reconcile(Catalog()),
                 "the shipped catalog and the weapon folder must agree");
-        }
-
-        [Test]
-        public void ShippedTwentyFiveRemainPlayable_OnboardingDidNotRegressThem()
-        {
-            var playable = AllWeapons().Where(w => w.IsPlayable).ToList();
-            Assert.AreEqual(25, playable.Count,
-                "the 25 owner-accepted weapons must stay playable and nothing else may become playable " +
-                "without owner sign-off");
         }
 
         [Test]

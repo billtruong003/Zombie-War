@@ -116,6 +116,15 @@ namespace ZombieWar
         [Tooltip("Nhân damage sau mỗi lần xuyên (1 = không giảm, 0.85 = giảm 15%/con). §3.")]
         [Range(0f, 1f)] public float pierceDamageFalloff = 1f;
 
+        // ── Splash (launcher): the shot blows up where it lands and hurts everyone around it.
+        [Header("Splash (launcher)")]
+        [Tooltip("Blast radius (m) where the shot lands. 0 = no blast (every gun but the launcher).")]
+        public float splashRadius = 0f;
+        [Tooltip("Share of the shot's damage dealt to every OTHER enemy in the blast.")]
+        [Range(0f, 1f)] public float splashDamageFraction = 0.6f;
+        public ParticleSystem splashFx;
+        public string splashSfxKey = "sfx.skill.airstrike.blast";
+
         // M4: `magazineSize` and `reloadDuration` are GONE. Weapons no longer have a magazine and
         // never reload - while a valid target is in range the weapon fires continuously at its
         // effective fire rate, and weapon identity comes from cadence and per-weapon behaviour
