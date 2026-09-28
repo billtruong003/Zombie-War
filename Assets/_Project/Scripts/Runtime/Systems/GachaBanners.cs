@@ -60,13 +60,18 @@ namespace ZombieWar
 
         public const int FeaturedDupeTickets = 5, OutfitDupeTickets = 1, OffRateFallbackTickets = 10;
 
+        /// <summary>What a prize is, so the reveal can show the item's own icon (owner 2026-09-28).</summary>
+        public enum Prize { Other, Skin, Costume, CostumeSet, Gun, Ticket, Coin }
+
         public readonly struct Result
         {
             public readonly string label, icon; public readonly WeaponTier tier; public readonly bool isNew, bonus, offRate;
             public readonly int tickets;
-            public Result(string l, WeaponTier t, bool n, int tk, string i = null, bool b = false, bool off = false)
-            { label = l; tier = t; isNew = n; tickets = tk; icon = i; bonus = b; offRate = off; }
-            public Result AsBonus() => new(label, tier, isNew, tickets, icon, true, offRate);
+            /// <summary>Item behind the prize: skin id, costume itemId, costume setId or WeaponId.</summary>
+            public readonly string id; public readonly Prize prize;
+            public Result(string l, WeaponTier t, bool n, int tk, string i = null, bool b = false, bool off = false, Prize p = Prize.Other, string itemId = null)
+            { label = l; tier = t; isNew = n; tickets = tk; icon = i; bonus = b; offRate = off; prize = p; id = itemId; }
+            public Result AsBonus() => new(label, tier, isNew, tickets, icon, true, offRate, prize, id);
         }
 
         static PlayerProfile.ProfileData D => PlayerProfile.DailyData;
@@ -170,10 +175,10 @@ namespace ZombieWar
             if (PlayerProfile.IsSkinOwned(b.featuredSkin))
             {
                 PlayerProfile.AddTickets(FeaturedDupeTickets);
-                return new Result(name, WeaponTier.Legendary, false, FeaturedDupeTickets, "Gear_Sword");
+                return new Result(name, WeaponTier.Legendary, false, FeaturedDupeTickets, "Gear_Sword", p: Prize.Skin, itemId: b.featuredSkin);
             }
             PlayerProfile.AddSkin(b.featuredSkin);
-            return new Result(name, WeaponTier.Legendary, true, 0, "Gear_Sword");
+            return new Result(name, WeaponTier.Legendary, true, 0, "Gear_Sword", p: Prize.Skin, itemId: b.featuredSkin);
         }
 
         /// <summary>Lost 50/50: a gacha-only Legendary outfit piece, or tickets once all are owned.</summary>
@@ -185,10 +190,10 @@ namespace ZombieWar
             {
                 var p = pieces[rng.Range(pieces.Count)];
                 PlayerProfile.GrantCostumeInMemory(p.itemId);
-                return new Result(p.displayName, WeaponTier.Legendary, true, 0, "Gear_Armor_Top", false, true);
+                return new Result(p.displayName, WeaponTier.Legendary, true, 0, "Gear_Armor_Top", false, true, Prize.Costume, p.itemId);
             }
             PlayerProfile.AddTickets(OffRateFallbackTickets);
-            return new Result($"{OffRateFallbackTickets} tickets", WeaponTier.Legendary, true, 0, "Ticket_Gold", false, true);
+            return new Result($"{OffRateFallbackTickets} tickets", WeaponTier.Legendary, true, 0, "Ticket_Gold", false, true, Prize.Ticket);
         }
 
         static Result Grant(Banner b, int pick, EconomyConfig econ, IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
@@ -204,26 +209,26 @@ namespace ZombieWar
                     {
                         var piece = only[rng.Range(only.Count)];
                         PlayerProfile.GrantCostumeInMemory(piece.itemId);
-                        return new Result(piece.displayName, rate.tier, true, 0, rate.icon);
+                        return new Result(piece.displayName, rate.tier, true, 0, rate.icon, p: Prize.Costume, itemId: piece.itemId);
                     }
                     var sets = econ?.costumeSets?.Where(s => s != null && s.rarity >= WeaponTier.Epic && s.itemIds != null && s.itemIds.Count > 0).ToList();
-                    if (sets == null || sets.Count == 0) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result("Gacha ticket", rate.tier, false, OutfitDupeTickets, "Ticket_Gold"); }
+                    if (sets == null || sets.Count == 0) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result("Gacha ticket", rate.tier, false, OutfitDupeTickets, "Ticket_Gold", p: Prize.Ticket); }
                     var set = sets[rng.Range(sets.Count)];
-                    if (PlayerProfile.IsCostumeSetOwned(set)) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result(set.displayName, rate.tier, false, OutfitDupeTickets, rate.icon); }
+                    if (PlayerProfile.IsCostumeSetOwned(set)) { PlayerProfile.AddTickets(OutfitDupeTickets); return new Result(set.displayName, rate.tier, false, OutfitDupeTickets, rate.icon, p: Prize.CostumeSet, itemId: set.setId); }
                     foreach (var id in set.itemIds) PlayerProfile.GrantCostumeInMemory(id);
-                    return new Result(set.displayName, rate.tier, true, 0, rate.icon);
+                    return new Result(set.displayName, rate.tier, true, 0, rate.icon, p: Prize.CostumeSet, itemId: set.setId);
                 case 2:
                     var owned = guns?.Where(g => g != null && PlayerProfile.IsWeaponOwned(g.WeaponId)).ToList();
-                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 600); return new Result("600 coins", rate.tier, true, 0, "Money_Coin"); }
+                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 600); return new Result("600 coins", rate.tier, true, 0, "Money_Coin", p: Prize.Coin); }
                     var gun = owned[rng.Range(owned.Count)];
                     PlayerProfile.AddWeaponShards(gun.WeaponId, 10);
-                    return new Result($"{gun.weaponName} shards ×10", rate.tier, true, 0, rate.icon);
+                    return new Result($"{gun.weaponName} shards ×10", rate.tier, true, 0, rate.icon, p: Prize.Gun, itemId: gun.WeaponId);
                 case 3:
                     PlayerProfile.AddTickets(1);
-                    return new Result(rate.label, rate.tier, true, 0, rate.icon);
+                    return new Result(rate.label, rate.tier, true, 0, rate.icon, p: Prize.Ticket);
                 default:
                     PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 300);
-                    return new Result(rate.label, rate.tier, true, 0, rate.icon);
+                    return new Result(rate.label, rate.tier, true, 0, rate.icon, p: Prize.Coin);
             }
         }
 
@@ -250,7 +255,9 @@ namespace ZombieWar
                 int tickets = 0;
                 if (!r.isNew && !r.isWeapon) { tickets = OutfitDupeTickets; PlayerProfile.AddTickets(tickets); }
                 string label = r.isWeapon && !r.isNew ? $"{r.displayName} shards ×{r.weaponShards}" : r.displayName;
-                var res = new Result(label, r.rarity, r.isNew, tickets, r.isWeapon ? "Gear_Sword" : "Gear_Armor_Top");
+                bool isSet = !r.isWeapon && econ?.costumeSets != null && econ.costumeSets.Exists(s => s != null && s.setId == r.id);
+                var res = new Result(label, r.rarity, r.isNew, tickets, r.isWeapon ? "Gear_Sword" : "Gear_Armor_Top", false, false,
+                                     r.isWeapon ? Prize.Gun : isSet ? Prize.CostumeSet : Prize.Costume, r.id);
                 list.Add(i == MultiPaid ? res.AsBonus() : res);
             }
             return list;

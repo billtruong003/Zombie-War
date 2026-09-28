@@ -161,7 +161,7 @@ namespace ZombieWar.EditorTools.V2
             {
                 var t = Node(row, "Rate" + i);
                 var bg = Surface(t, Card, RTile);
-                IconImage(Box(Node(t, "I"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -6, 26, 26), icons[i]);
+                var rateIcon = IconImage(Box(Node(t, "I"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -6, 26, 26), icons[i]);
                 var pct = Body(BottomBand(Node(t, "P"), 18, 13), "12%", 9f, Ink, TextAlignmentOptions.Center);
                 var what = Shrink(Body(BottomBand(Node(t, "W"), 3, 15, 2, 2), "item", 8f, Dim, TextAlignmentOptions.Center), 0.7f);
                 what.enableWordWrapping = true;
@@ -170,6 +170,7 @@ namespace ZombieWar.EditorTools.V2
                 e.FindPropertyRelative("bg").objectReferenceValue = bg;
                 e.FindPropertyRelative("label").objectReferenceValue = pct;
                 e.FindPropertyRelative("note").objectReferenceValue = what;
+                e.FindPropertyRelative("icon").objectReferenceValue = rateIcon;   // real item icons at runtime
             }
             so.ApplyModifiedPropertiesWithoutUndo();
             var card = BottomBand(Node(info, "Note"), 0, 36);
@@ -184,7 +185,7 @@ namespace ZombieWar.EditorTools.V2
         static void Results(RectTransform root, GachaScreen s)
         {
             var sheet = Fill(Node(root, "Results"), 0, 0, 0, 0);
-            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.98f), true);   // linear space: 0.94 still showed the banner through
+            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 1f), true);   // opaque: in linear space even 2% of the bright banner reads as a see-through sheet
             var skip = Fill(Node(sheet, "Skip"), 0, 0, 0, 0);
             var si = skip.gameObject.AddComponent<Image>(); si.color = new Color(0, 0, 0, 0);
             Wire(s, "resultsSkip", skip.gameObject.AddComponent<Button>());
@@ -227,17 +228,80 @@ namespace ZombieWar.EditorTools.V2
                 e.FindPropertyRelative("sprite").objectReferenceValue = Icon(prizes[i]);
             }
             so.ApplyModifiedPropertiesWithoutUndo();
+            Wire(s, "weaponIcons", AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>("Assets/_Project/UI/Data/UIPrototypeCatalog.asset"));
+            Wire(s, "costumes", AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>("Assets/_Project/Data/Character/CasualCostumeCatalog.asset"));
 
             var ok = Box(Node(sheet, "Ok"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, -215, 200, 50);
             Wire(s, "resultsOk", Button(ok, "OK", Role.Primary, 18f));
             Wire(s, "resultsSheet", sheet.gameObject);
+            Spotlight(sheet, s);
             sheet.gameObject.SetActive(false);
+        }
+
+        const string FxDir = "Assets/_Project/UI/Sprites/Fx/";
+        static Sprite Fx(string n) => AssetDatabase.LoadAssetAtPath<Sprite>(FxDir + n + ".png");
+
+        /// The chest show (GachaSpotlight): rays, beam, glow, chest, prize card, shock rings,
+        /// particles, flash and a tap area, over the results sheet. Particles for the x10 grid too.
+        static void Spotlight(RectTransform sheet, GachaScreen s)
+        {
+            var sp = s.gameObject.GetComponent<GachaSpotlight>() ?? s.gameObject.AddComponent<GachaSpotlight>();
+            Wire(s, "spotlight", sp);
+            var gridFx = Fill(Node(sheet, "GridFx"), 0, 0, 0, 0);
+            Wire(sp, "gridParticles", gridFx.gameObject.AddComponent<UIParticleBurst>());
+
+            var st = Fill(Node(sheet, "Spotlight"), 0, 0, 0, 0);
+            Wire(sp, "root", st.gameObject);
+            var dim = st.gameObject.AddComponent<Image>(); dim.color = new Color(0.02f, 0.02f, 0.05f, 0.985f);   // linear space: 0.92 let the sheet show through
+            var stage = Fill(Node(st, "Stage"), 0, 0, 0, 0);
+            Wire(sp, "shakeTarget", stage);
+            Image Layer(string name, string sprite, float w, float h, float y)
+            {
+                var rt = Box(Node(stage, name), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, y, w, h);
+                var img = rt.gameObject.AddComponent<Image>(); img.sprite = sprite != null ? Fx(sprite) : null; img.raycastTarget = false;
+                img.color = new Color(1, 1, 1, 0);
+                return img;
+            }
+            Wire(sp, "rays", Layer("Rays", "fx_rays", 640, 640, 20));
+            Wire(sp, "beam", Layer("Beam", "fx_beam", 200, 720, 300));
+            var glow = Layer("Glow", null, 380, 380, 10); glow.sprite = Spr("glow_soft"); Wire(sp, "glow", glow);
+            var chest = Box(Node(stage, "Chest"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 190, 190).gameObject.AddComponent<Image>();
+            chest.preserveAspect = true; chest.raycastTarget = false; chest.sprite = Icon("Chest_Premium");
+            Wire(sp, "chest", chest);
+
+            var card = Box(Node(stage, "Card"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 10, 220, 280);
+            var cbg = Surface(card, Hex("2f3544"), 18f);
+            Wire(sp, "card", card); Wire(sp, "cardBg", cbg);
+            Wire(sp, "cardTier", Label(TopBand(Node(card, "Tier"), 14, 16), "LEGENDARY", Yellow));
+            ((TextMeshProUGUI)card.Find("Tier").GetComponent<TextMeshProUGUI>()).alignment = TextAlignmentOptions.Center;
+            var icon = Box(Node(card, "Icon"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -38, 150, 150).gameObject.AddComponent<Image>();
+            icon.preserveAspect = true; icon.raycastTarget = false;
+            Wire(sp, "cardIcon", icon);
+            Wire(sp, "cardName", Shrink(Title(BottomBand(Node(card, "Name"), 36, 34, 10, 10), "Neon Circuit set", 20f, Ink, TextAlignmentOptions.Center)));
+            Wire(sp, "cardNote", Shrink(Body(BottomBand(Node(card, "Note"), 14, 18, 10, 10), "NEW", 12f, Green, TextAlignmentOptions.Center)));
+            card.gameObject.SetActive(false);
+
+            var rings = new Image[2];
+            for (int i = 0; i < 2; i++) rings[i] = Layer("Ring" + i, "fx_ring", 240, 240, 0);
+            WireArray(sp, "rings", rings);
+            var fx = Fill(Node(stage, "Particles"), 0, 0, 0, 0);
+            Wire(sp, "particles", fx.gameObject.AddComponent<UIParticleBurst>());
+            var flash = Fill(Node(st, "Flash"), 0, 0, 0, 0).gameObject.AddComponent<Image>(); flash.color = new Color(1, 1, 1, 0); flash.raycastTarget = false;
+            Wire(sp, "flash", flash);
+            var tap = Fill(Node(st, "Tap"), 0, 0, 0, 0);
+            var ti = tap.gameObject.AddComponent<Image>(); ti.color = new Color(0, 0, 0, 0);
+            Wire(sp, "tapArea", tap.gameObject.AddComponent<Button>());
+            var hint = Label(Box(Node(st, "Hint"), new Vector2(0.5f, 0), new Vector2(0.5f, 0), 0, 110, 260, 18), "TAP TO CONTINUE", Hex("c9cfdb"));
+            hint.alignment = TextAlignmentOptions.Center;
+            Wire(sp, "hint", hint);
+            Wire(sp, "spark", Fx("fx_spark")); Wire(sp, "star", Fx("fx_star")); Wire(sp, "confetti", Fx("fx_confetti")); Wire(sp, "dust", Fx("fx_dust"));
+            st.gameObject.SetActive(false);
         }
 
         static void Rates(RectTransform root, GachaScreen s)
         {
             var sheet = Fill(Node(root, "RatesSheet"), 0, 0, 0, 0);
-            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 0.98f), true);   // linear space: 0.94 still showed the banner through
+            Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 1f), true);   // opaque: in linear space even 2% of the bright banner reads as a see-through sheet
             var panel = Box(Node(sheet, "Panel"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 340, 330);
             Surface(panel, Card, RPanel);
             Title(TopBand(Node(panel, "T"), 16, 28, 16, 16), "DROP RATES", 22f);

@@ -32,6 +32,8 @@ namespace ZombieWar.UI
         [Header("Banner")]
         [SerializeField] private Image bannerBg;
         [SerializeField] private BannerFx bannerFx;
+        [Tooltip("The chest show: one chest in the spotlight, and the pops of the x10 grid.")]
+        [SerializeField] private GachaSpotlight spotlight;
         [SerializeField] private TMP_Text bannerTimer;
         [SerializeField] private TMP_Text bannerTitle;
         [SerializeField] private GunTurntable turntable;
@@ -66,6 +68,9 @@ namespace ZombieWar.UI
         [SerializeField] private Button ratesOk;
 
         [SerializeField] private EconomyConfig economy;
+        [Tooltip("Prize icons: gun icons (UIPrototypeCatalog) and costume piece icons (casual catalog).")]
+        [SerializeField] private UIPrototypeCatalog weaponIcons;
+        [SerializeField] private ModularCostumeCatalog costumes;
         [SerializeField] private NavBarV2 nav;
 
         static readonly Color[] TierColor =
@@ -121,6 +126,8 @@ namespace ZombieWar.UI
 
         void Update()
         {
+            // Rate-row icons once the banner's gun has rendered (the skin prize is a still of it).
+            if (!_rateIcons && (_rateIconsAt -= Time.unscaledDeltaTime) <= 0f) { _rateIcons = true; RateIcons(); }
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
             if (freeLabel == null) return;
@@ -177,17 +184,32 @@ namespace ZombieWar.UI
             }
             yield return Wait(0.35f + results.Count * 0.035f);
 
-            float gap = results.Count > 1 ? 0.12f : 0.3f;
+            // The best box is kept for last and opened in the spotlight (a single pull is just that).
+            int best = 0;
+            for (int i = 1; i < results.Count && i < resultTiles.Length; i++) if (results[i].tier >= results[best].tier) best = i;
+            float gap = 0.1f;
             for (int i = 0; i < results.Count && i < resultTiles.Length; i++)
             {
+                if (i == best && spotlight != null) continue;
                 var t = resultTiles[i]; var r = results[i];
+                int tier = Mathf.Clamp((int)r.tier, 0, 4);
+                if (!_skip) yield return Shake(t.chest != null ? t.chest.transform : t.root.transform, 0.14f + tier * 0.06f, 5f + tier * 4f);
+                Open(t, r);
+                if (!_skip && spotlight != null) spotlight.MiniBurst((RectTransform)t.root.transform, tier);
+                if (!_skip) yield return Wait(gap + (r.tier >= WeaponTier.Epic ? 0.2f : 0f));
+            }
+            if (spotlight != null && best < results.Count && best < resultTiles.Length)
+            {
+                var r = results[best];
                 if (!_skip)
                 {
                     int tier = Mathf.Clamp((int)r.tier, 0, 4);
-                    yield return Shake(t.chest != null ? t.chest.transform : t.root.transform, 0.18f + tier * 0.08f, 5f + tier * 4f);
+                    var chestSprite = chests != null && tier < chests.Length ? chests[tier] : null;
+                    var prize = PrizeSprite(r);
+                    yield return spotlight.Play(tier, chestSprite, prize, r.label, NoteFor(r), () => _skip);
                 }
-                Open(t, r);
-                if (!_skip) yield return Wait(gap + (r.tier >= WeaponTier.Epic ? 0.25f : 0f));
+                Open(resultTiles[best], r);
+                if (!_skip) spotlight.MiniBurst((RectTransform)resultTiles[best].root.transform, (int)r.tier);
             }
             if (resultsTitle != null) resultsTitle.text = results.Count > 1 ? "10 + 1 BONUS" : "RESULT";
             if (resultsSkip != null) resultsSkip.gameObject.SetActive(false);
@@ -219,19 +241,136 @@ namespace ZombieWar.UI
             ItemTileFx.On(t.bg, tier);
             if (t.icon != null)
             {
-                var sp = rewardIcons?.FirstOrDefault(n => n.name == r.icon)?.sprite;
-                t.icon.sprite = sp; t.icon.enabled = sp != null; t.icon.gameObject.SetActive(true);
+                var sp = PrizeSprite(r);
+                t.icon.sprite = sp; t.icon.preserveAspect = true; t.icon.enabled = sp != null; t.icon.gameObject.SetActive(true);
                 if (!_skip) UIFx.PopIn(t.icon.transform, 0f, 0.3f, 0.3f);
             }
             if (t.label != null) t.label.text = r.label;
-            string note = r.tickets > 0 ? $"DUPE +{r.tickets} TICKET{(r.tickets > 1 ? "S" : "")}" : r.offRate ? "50/50 LOST · NEXT IS FEATURED" : r.isNew ? "NEW" : "";
-            if (r.bonus) note = string.IsNullOrEmpty(note) ? "BONUS" : "BONUS · " + note;
-            if (t.note != null) t.note.text = note;
+            if (t.note != null) t.note.text = NoteFor(r);
             if (!_skip)
             {
                 if (tier >= (int)WeaponTier.Epic) { UIFx.Punch(t.root.transform); UIFeedback.LevelUp(); }
                 else UIFeedback.Card();
             }
+        }
+
+        Sprite _skinShot;
+        string _skinShotId;
+        bool _rateIcons;
+        float _rateIconsAt;
+
+        /// "In this banner" shows real items too: the skin on the banner gun, an outfit piece or a
+        /// gun of each rarity, the ticket, the coins.
+        void RateIcons()
+        {
+            var rates = GachaBanners.RatesFor(B, economy);
+            bool waiting = false;
+            for (int i = 0; i < rateTiles.Length && i < rates.Length; i++)
+            {
+                var t = rateTiles[i]; if (t?.icon == null) continue;
+                var sp = RateSprite(rates[i], i);
+                // The skin still needs the turntable to have drawn the gun: show the gun meanwhile, try again.
+                if (sp == null && B.kind == GachaBanners.Kind.Event && i == 0) { waiting = true; sp = MainGunIcon() ?? Named(rates[i].icon); }
+                if (sp != null) { t.icon.sprite = sp; t.icon.preserveAspect = true; t.icon.enabled = true; }
+            }
+            if (waiting && ++_rateTries < 10) { _rateIcons = false; _rateIconsAt = 0.4f; }
+        }
+
+        int _rateTries;
+
+        Sprite MainGunIcon()
+        {
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var main = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
+            return main != null && weaponIcons != null ? weaponIcons.GetWeaponIcon(main, true) : null;
+        }
+
+        Sprite RateSprite(GachaBanners.Rate rate, int index)
+        {
+            var bn = B;
+            if (bn.kind == GachaBanners.Kind.Event)
+            {
+                switch (index)
+                {
+                    case 0: return SkinShot(bn.featuredSkin);
+                    case 1: return CostumeOfTier(WeaponTier.Epic, true);
+                    case 2: return MainGunIcon() ?? Named(rate.icon);
+                    default: return Named(rate.icon);
+                }
+            }
+            if (bn.kind == GachaBanners.Kind.Outfits) return CostumeOfTier(rate.tier, false) ?? Named(rate.icon);
+            var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
+            var gun = guns?.FirstOrDefault(w => w != null && w.tier == rate.tier);
+            return gun != null && weaponIcons != null ? weaponIcons.GetWeaponIcon(gun, true) : Named(rate.icon);
+        }
+
+        Sprite CostumeOfTier(WeaponTier tier, bool gachaOnly)
+        {
+            if (economy?.costumeItems == null || costumes == null) return null;
+            foreach (var c in economy.costumeItems)
+                if (c.rarity == tier && (!gachaOnly || c.source == AcquireSource.Gacha) && !string.IsNullOrEmpty(c.itemId)
+                    && costumes.TryFindByItemId(c.itemId, out _, out var part) && part.icon != null) return part.icon;
+            return null;
+        }
+
+        /// <summary>The prize's own icon: the gun, the outfit piece, the set, the skin on the
+        /// banner's gun (a snapshot of the turntable), tickets or coins.</summary>
+        Sprite PrizeSprite(GachaBanners.Result r)
+        {
+            switch (r.prize)
+            {
+                case GachaBanners.Prize.Gun:
+                    var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+                    WeaponData d = null;
+                    if (all != null) foreach (var w in all) if (w != null && w.WeaponId == r.id) { d = w; break; }
+                    var gi = d != null && weaponIcons != null ? weaponIcons.GetWeaponIcon(d, true) : null;
+                    if (gi != null) return gi;
+                    break;
+                case GachaBanners.Prize.Costume:
+                    if (costumes != null && costumes.TryFindByItemId(r.id, out _, out var part) && part.icon != null) return part.icon;
+                    break;
+                case GachaBanners.Prize.CostumeSet:
+                    var set = economy != null ? economy.costumeSets.Find(s => s != null && s.setId == r.id) : null;
+                    if (set?.icon != null) return set.icon;
+                    break;
+                case GachaBanners.Prize.Skin:
+                    var shot = SkinShot(r.id) ?? MainGunIcon();
+                    if (shot != null) return shot;
+                    break;
+                case GachaBanners.Prize.Ticket: return Named("Ticket_Gold") ?? Named(r.icon);
+                case GachaBanners.Prize.Coin: return Named("Money_Coin") ?? Named(r.icon);
+            }
+            return Named(r.icon);
+        }
+
+        Sprite Named(string n) => string.IsNullOrEmpty(n) ? null : rewardIcons?.FirstOrDefault(x => x.name == n)?.sprite;
+
+        /// A still of the banner's turning gun in its skin, kept while the banner is the same.
+        Sprite SkinShot(string skinId)
+        {
+            if (_skinShot != null && _skinShotId == skinId) return _skinShot;
+            var tex = turntable != null ? turntable.Texture : null;
+            if (tex == null) return null;
+            var prev = RenderTexture.active; RenderTexture.active = tex;
+            var t2 = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, false);
+            t2.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0); t2.Apply();
+            RenderTexture.active = prev;
+            // Nothing drawn yet (the gun loads a moment after the screen opens): no blank icon, no cache.
+            bool drawn = false;
+            var px = t2.GetPixels32();
+            for (int i = 0; i < px.Length; i += 7) if (px[i].a > 20) { drawn = true; break; }
+            if (!drawn) { Destroy(t2); return null; }
+            if (_skinShot != null) { Destroy(_skinShot.texture); Destroy(_skinShot); }
+            _skinShot = Sprite.Create(t2, new Rect(0, 0, t2.width, t2.height), new Vector2(0.5f, 0.5f));
+            _skinShotId = skinId;
+            return _skinShot;
+        }
+
+        static string NoteFor(GachaBanners.Result r)
+        {
+            string note = r.tickets > 0 ? $"DUPE +{r.tickets} TICKET{(r.tickets > 1 ? "S" : "")}" : r.offRate ? "50/50 LOST · NEXT IS FEATURED" : r.isNew ? "NEW" : "";
+            if (r.bonus) note = string.IsNullOrEmpty(note) ? "BONUS" : "BONUS · " + note;
+            return note;
         }
 
         IEnumerator Wait(float seconds)
@@ -328,6 +467,7 @@ namespace ZombieWar.UI
                 if (t.label != null) t.label.text = $"{rates[i].percent:0.#}%";
                 if (t.note != null) t.note.text = rates[i].label;
             }
+            _rateIcons = false; _rateIconsAt = 0.5f; _rateTries = 0; _skinShotId = null;
             if (note != null) note.text = evt ? "Duplicates turn into tickets. Pity carries over to the next Neon banner."
                                               : "Duplicate outfits turn into tickets, duplicate guns into shards.";
             _tick = 0f; Update();
