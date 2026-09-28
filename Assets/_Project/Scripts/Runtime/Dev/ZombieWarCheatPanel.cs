@@ -8,6 +8,11 @@ namespace ZombieWar
     /// <summary>
     /// Project QA controls hosted by the persistent Bootstrap scene.
     /// In release builds the component stays serializable but creates no UI and performs no work.
+    ///
+    /// M8 (owner 2026-09-29, "upgrade the cheats for the new features"): a live readout of the
+    /// numbers QA keeps checking, and eight tabs — wallet and tickets, guns (own/equip any gun,
+    /// shards, max stars, skins), gacha (pity on the edge, free pull again, a rate simulation),
+    /// meta (pass XP, new day, missions, outfits), run, every skill card, time/flow and profile.
     /// </summary>
     public sealed class ZombieWarCheatPanel : MonoBehaviour
     {
@@ -16,18 +21,23 @@ namespace ZombieWar
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
         private const int OverlaySortOrder = 10000;
-        private static readonly Color PanelColor = new(0.035f, 0.045f, 0.06f, 0.98f);
+        private static readonly Color PanelColor = new(0.035f, 0.045f, 0.06f, 1f);   // opaque: 0.98 reads see-through in linear space
         private static readonly Color ButtonColor = new(0.12f, 0.15f, 0.20f, 1f);
         private static readonly Color AccentColor = new(0.20f, 0.72f, 0.43f, 1f);
         private static readonly Color DangerColor = new(0.72f, 0.18f, 0.20f, 1f);
 
+        private static readonly string[] TabNames = { "WALLET", "GUNS", "GACHA", "META", "RUN", "SKILLS", "FLOW", "PROFILE" };
+
         private GameObject _panel;
-        private Text _status;
+        private Text _status, _info;
         private bool _commandsRegistered;
         private bool _godMode;
-        private float _resetArmedUntil;
+        private float _resetArmedUntil, _infoTick;
         private Font _font;
         private Health _godHealth;
+        private readonly Image[] _tabButtons = new Image[TabNames.Length];
+        private RectTransform _content, _row;
+        private ScrollRect _scroll;
 
         private void Awake()
         {
@@ -39,6 +49,7 @@ namespace ZombieWar
         {
             if (!_commandsRegistered && Bill.IsReady)
                 RegisterCommands();
+            if (_panel != null && _panel.activeSelf && (_infoTick -= Time.unscaledDeltaTime) <= 0f) { _infoTick = 0.5f; RefreshInfo(); }
 
             if (!_godMode) return;
             var player = PlayerMovement.Instance;
@@ -60,6 +71,9 @@ namespace ZombieWar
 
             cheat.Register("zw.coin", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 100000), "Add 100,000 Coin");
             cheat.Register("zw.gem", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 1000), "Add 1,000 Gem");
+            cheat.Register("zw.tickets", () => AddTickets(10), "Add 10 gacha tickets");
+            cheat.Register("zw.pity.edge", () => SetPityEdge(1), "Every banner one pull from its guarantee");
+            cheat.Register("zw.newday", ResetDaily, "Free pull, stamp, welcome and missions fresh again");
             cheat.Register("zw.unlock.weapons", UnlockWeapons, "Unlock every authored weapon");
             cheat.Register("zw.unlock.costumes", UnlockCostumes, "Unlock every authored costume");
             cheat.Register("zw.heal", HealPlayer, "Restore player HP");
@@ -102,11 +116,28 @@ namespace ZombieWar
 
             var header = CreateText(_panel.transform, "Header", "HORDECALL — QA CHEATS", 42,
                 FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
-            SetAnchored(header.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -32f), new Vector2(760f, 72f));
+            SetAnchored(header.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -28f), new Vector2(760f, 72f));
 
             var close = CreateButton(_panel.transform, "Close", "CLOSE", DangerColor, 28);
-            SetAnchored((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(-32f, -32f), new Vector2(190f, 72f));
+            SetAnchored((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(-32f, -28f), new Vector2(190f, 72f));
             close.onClick.AddListener(() => SetPanelVisible(false));
+
+            _info = CreateText(_panel.transform, "Info", "", 24, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.85f, 0.9f, 1f));
+            SetAnchored(_info.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -108f), new Vector2(1000f, 72f));
+
+            // Tabs: two rows of four.
+            var tabs = CreateRect(_panel.transform, "Tabs", new Color(0, 0, 0, 0));
+            SetAnchored(tabs, new Vector2(0.5f, 1f), new Vector2(0f, -188f), new Vector2(1016f, 144f));
+            var grid = tabs.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(248f, 66f); grid.spacing = new Vector2(8f, 8f);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; grid.constraintCount = 4;
+            for (int i = 0; i < TabNames.Length; i++)
+            {
+                int idx = i;
+                var b = CreateButton(tabs, "Tab" + TabNames[i], TabNames[i], ButtonColor, 26);
+                _tabButtons[i] = b.GetComponent<Image>();
+                b.onClick.AddListener(() => ShowTab(idx));
+            }
 
             _status = CreateText(_panel.transform, "Status", "Ready", 25, FontStyle.Normal,
                 TextAnchor.MiddleLeft, new Color(0.72f, 0.82f, 0.76f));
@@ -114,82 +145,172 @@ namespace ZombieWar
             statusRt.anchorMin = new Vector2(0f, 0f);
             statusRt.anchorMax = new Vector2(1f, 0f);
             statusRt.pivot = new Vector2(0.5f, 0f);
-            statusRt.offsetMin = new Vector2(40f, 24f);
-            statusRt.offsetMax = new Vector2(-40f, 78f);
+            statusRt.offsetMin = new Vector2(40f, 20f);
+            statusRt.offsetMax = new Vector2(-40f, 90f);
 
             var viewport = CreateRect(_panel.transform, "Viewport", new Color(0f, 0f, 0f, 0.12f));
             viewport.gameObject.AddComponent<Mask>().showMaskGraphic = false;
             viewport.anchorMin = new Vector2(0f, 0f);
             viewport.anchorMax = new Vector2(1f, 1f);
-            viewport.offsetMin = new Vector2(32f, 96f);
-            viewport.offsetMax = new Vector2(-32f, -126f);
+            viewport.offsetMin = new Vector2(32f, 100f);
+            viewport.offsetMax = new Vector2(-32f, -344f);
 
-            var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup),
+            _content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup),
                 typeof(ContentSizeFitter)).GetComponent<RectTransform>();
-            content.SetParent(viewport, false);
-            content.anchorMin = new Vector2(0f, 1f);
-            content.anchorMax = new Vector2(1f, 1f);
-            content.pivot = new Vector2(0.5f, 1f);
-            content.offsetMin = Vector2.zero;
-            content.offsetMax = Vector2.zero;
+            _content.SetParent(viewport, false);
+            _content.anchorMin = new Vector2(0f, 1f);
+            _content.anchorMax = new Vector2(1f, 1f);
+            _content.pivot = new Vector2(0.5f, 1f);
+            _content.offsetMin = Vector2.zero;
+            _content.offsetMax = Vector2.zero;
 
-            var layout = content.GetComponent<VerticalLayoutGroup>();
+            var layout = _content.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(18, 18, 16, 24);
-            layout.spacing = 12f;
+            layout.spacing = 10f;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = true;
-            content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            _content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 42f;
+            _scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            _scroll.viewport = viewport;
+            _scroll.content = _content;
+            _scroll.horizontal = false;
+            _scroll.vertical = true;
+            _scroll.movementType = ScrollRect.MovementType.Clamped;
+            _scroll.scrollSensitivity = 42f;
 
-            AddSection(content, "PROFILE / DATA");
-            AddAction(content, "+100K COIN", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 100000));
-            AddAction(content, "+1K GEM", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 1000));
-            AddAction(content, "UNLOCK ALL WEAPONS", UnlockWeapons);
-            AddAction(content, "UNLOCK ALL COSTUMES", UnlockCostumes);
-            AddAction(content, "RESET PROFILE — PRESS TWICE", ResetProfile, true);
-
-            AddSection(content, "CURRENT RUN");
-            AddAction(content, "HEAL FULL", HealPlayer);
-            AddAction(content, "TOGGLE GOD MODE", ToggleGodMode);
-            AddAction(content, "+1,000 XP", AddRunXp);
-            AddAction(content, "+1,000 RUN COIN", AddRunCoin);
-            AddAction(content, "KILL ALL ZOMBIES", KillAllZombies);
-            AddAction(content, "THREAT +1 TIER", RaiseThreat);
-            AddAction(content, "END RUN (WALK AWAY)", EndRun);
-
-            AddSection(content, "FLOW / DEBUG");
-            AddAction(content, "TIME ×0.5", () => SetTimeScale(0.5f));
-            AddAction(content, "TIME ×1", () => SetTimeScale(1f));
-            AddAction(content, "TIME ×2", () => SetTimeScale(2f));
-            AddAction(content, "TIME ×4", () => SetTimeScale(4f));
-            AddAction(content, "RESTART STAGE", RestartRun);
-            AddAction(content, "BACK TO MAP", ReturnToMap);
-            AddAction(content, "OPEN BILL CONSOLE", OpenConsole);
-
+            ShowTab(0);
             SetPanelVisible(false);
+        }
+
+        // ------------------------------------------------------------------ tabs
+
+        private void ShowTab(int tab)
+        {
+            for (int i = 0; i < _tabButtons.Length; i++)
+                if (_tabButtons[i] != null) _tabButtons[i].color = i == tab ? AccentColor : ButtonColor;
+            for (int i = _content.childCount - 1; i >= 0; i--) Destroy(_content.GetChild(i).gameObject);
+            _row = null;
+            switch (tab)
+            {
+                case 0:
+                    AddSection(_content, "CURRENCY");
+                    AddAction(_content, "+100K COIN", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 100000));
+                    AddAction(_content, "+1M COIN", () => AddWallet(PlayerProfile.CurrencyKind.Coin, 1000000));
+                    AddAction(_content, "+1K GEM", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 1000));
+                    AddAction(_content, "+10K GEM", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 10000));
+                    AddAction(_content, "+10 TICKETS", () => AddTickets(10));
+                    AddAction(_content, "+100 TICKETS", () => AddTickets(100));
+                    AddAction(_content, "ZERO COIN + GEM", ZeroWallet, true);
+                    AddAction(_content, "ZERO TICKETS", ZeroTickets, true);
+                    break;
+                case 1:
+                    AddSection(_content, "EQUIPPED GUN");
+                    AddAction(_content, "UNLOCK ALL WEAPONS", UnlockWeapons);
+                    AddAction(_content, "+100 SHARDS", () => AddShards(100));
+                    AddAction(_content, "MAX STARS", MaxStarsEquipped);
+                    AddAction(_content, "UNLOCK ALL GUN SKINS", () => SetStatus($"Skins unlocked: +{PlayerProfile.DevUnlockAllSkins()}"));
+                    AddSection(_content, "TAP A GUN TO OWN AND EQUIP IT");
+                    AddGunList();
+                    break;
+                case 2:
+                    AddSection(_content, "PITY / PULLS");
+                    AddAction(_content, "NEXT PULL IS LEGENDARY", () => SetPityEdge(1));
+                    AddAction(_content, "10 PULLS FROM LEGENDARY", () => SetPityEdge(10));
+                    AddAction(_content, "RESET ALL PITY", () => SetPityEdge(-1));
+                    AddAction(_content, "FREE PULL AGAIN TODAY", ResetDaily);
+                    AddAction(_content, "+10 TICKETS", () => AddTickets(10));
+                    AddAction(_content, "+2,700 GEM (10 × x10)", () => AddWallet(PlayerProfile.CurrencyKind.Gem, 2700));
+                    AddSection(_content, "SIMULATE (NOTHING IS GRANTED)");
+                    AddAction(_content, "EVENT RATES OVER 10,000 PULLS", SimulateRates);
+                    break;
+                case 3:
+                    AddSection(_content, "PASS / DAILY / MISSIONS");
+                    AddAction(_content, "+500 PASS XP", () => AddPassXp(500));
+                    AddAction(_content, "+5,000 PASS XP", () => AddPassXp(5000));
+                    AddAction(_content, "NEW DAY", ResetDaily);
+                    AddAction(_content, "COMPLETE MISSIONS", CompleteMissions);
+                    AddSection(_content, "OUTFITS");
+                    AddAction(_content, "UNLOCK ALL COSTUMES", UnlockCostumes);
+                    break;
+                case 4:
+                    AddSection(_content, "CURRENT RUN");
+                    AddAction(_content, "HEAL FULL", HealPlayer);
+                    AddAction(_content, "TOGGLE GOD MODE", ToggleGodMode);
+                    AddAction(_content, "+1,000 XP", AddRunXp);
+                    AddAction(_content, "+1,000 RUN COIN", AddRunCoin);
+                    AddAction(_content, "KILL ALL ZOMBIES", KillAllZombies);
+                    AddAction(_content, "THREAT +1 TIER", RaiseThreat);
+                    AddAction(_content, "END RUN (WALK AWAY)", EndRun);
+                    AddAction(_content, "RESTART RUN", RestartRun);
+                    break;
+                case 5:
+                    AddSection(_content, "TAP: +1 RANK (IN A RUN)");
+                    foreach (var def in ZombieWar.Skills.SkillCatalogDefs.All)
+                    {
+                        var d = def;
+                        AddAction(_content, d.displayName.ToUpperInvariant(), () => GrantSkill(d.id), false, 22);
+                    }
+                    break;
+                case 6:
+                    AddSection(_content, "TIME");
+                    AddAction(_content, "TIME ×0.5", () => SetTimeScale(0.5f));
+                    AddAction(_content, "TIME ×1", () => SetTimeScale(1f));
+                    AddAction(_content, "TIME ×2", () => SetTimeScale(2f));
+                    AddAction(_content, "TIME ×4", () => SetTimeScale(4f));
+                    AddSection(_content, "FLOW");
+                    AddAction(_content, "BACK TO MENU", ReturnToMap);
+                    AddAction(_content, "OPEN BILL CONSOLE", OpenConsole);
+                    break;
+                case 7:
+                    AddSection(_content, "ACCOUNT");
+                    AddAction(_content, "+5,000 ACCOUNT XP", AddAccountXp);
+                    AddAction(_content, "UNLOCK ALL FRAMES", () => SetStatus($"Frames unlocked: +{PlayerProfile.DevUnlockAllFrames()}"));
+                    AddSection(_content, "DANGER");
+                    AddAction(_content, "RESET PROFILE — PRESS TWICE", ResetProfile, true);
+                    break;
+            }
+            if (_scroll != null) _scroll.verticalNormalizedPosition = 1f;
+            RefreshInfo();
+        }
+
+        /// The numbers QA keeps checking, refreshed twice a second while the panel is open.
+        private void RefreshInfo()
+        {
+            if (_info == null) return;
+            var gun = EquippedGun();
+            var ev = GachaBanners.All.Length > 0 ? GachaBanners.All[0] : null;
+            _info.text = $"Coin {PlayerProfile.Coin:N0} · Gem {PlayerProfile.Gem:N0} · Tickets {PlayerProfile.Tickets:N0} · Pass XP {PlayerProfile.PassXp:N0} · Lv {PlayerProfile.AccountLevel}\n" +
+                         (gun != null ? $"{gun.weaponName} ({gun.tier}) ★{PlayerProfile.GetWeaponLevel(gun.WeaponId)} · {PlayerProfile.GetWeaponShards(gun.WeaponId)} shards" : "No gun") +
+                         (ev != null ? $" · Event pity {PlayerProfile.GetPity(ev.pityKey)}/{ev.hardPity}" : "") +
+                         (RunState.Current != null ? $" · Run Lv {RunState.Current.Level}" : "");
         }
 
         private void AddSection(Transform parent, string label)
         {
+            _row = null;
             var text = CreateText(parent, label.Replace(" ", "_"), label, 28, FontStyle.Bold,
                 TextAnchor.MiddleLeft, AccentColor);
             text.gameObject.AddComponent<LayoutElement>().preferredHeight = 58f;
         }
 
-        private void AddAction(Transform parent, string label, Action action, bool danger = false)
+        /// Buttons sit two to a row.
+        private void AddAction(Transform parent, string label, Action action, bool danger = false, int fontSize = 25)
         {
-            var button = CreateButton(parent, label.Replace(" ", "_"), label, danger ? DangerColor : ButtonColor, 28);
-            button.gameObject.AddComponent<LayoutElement>().preferredHeight = 82f;
-            button.onClick.AddListener(() => Safe(label, action));
+            if (_row == null || _row.childCount >= 2)
+            {
+                _row = new GameObject("Row", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
+                _row.SetParent(parent, false);
+                var h = _row.GetComponent<HorizontalLayoutGroup>();
+                h.spacing = 10f; h.childControlWidth = true; h.childControlHeight = true;
+                h.childForceExpandWidth = true; h.childForceExpandHeight = true;
+                _row.gameObject.AddComponent<LayoutElement>().preferredHeight = 78f;
+            }
+            var button = CreateButton(_row, label.Replace(" ", "_"), label, danger ? DangerColor : ButtonColor, fontSize);
+            button.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            button.onClick.AddListener(() => { Safe(label, action); RefreshInfo(); });
         }
 
         private void Safe(string label, Action action)
@@ -206,11 +327,34 @@ namespace ZombieWar
             }
         }
 
+        // ------------------------------------------------------------------ wallet
+
         private void AddWallet(PlayerProfile.CurrencyKind kind, long amount)
         {
             PlayerProfile.Add(kind, amount);
             SetStatus($"{kind}: {PlayerProfile.GetBalance(kind):N0}");
         }
+
+        private void AddTickets(long n)
+        {
+            PlayerProfile.AddTickets(n);
+            SetStatus($"Tickets: {PlayerProfile.Tickets:N0}");
+        }
+
+        private void ZeroTickets()
+        {
+            PlayerProfile.TrySpendTickets(PlayerProfile.Tickets);
+            SetStatus("Tickets: 0");
+        }
+
+        private void ZeroWallet()
+        {
+            PlayerProfile.SetBalanceForDev(PlayerProfile.CurrencyKind.Coin, 0);
+            PlayerProfile.SetBalanceForDev(PlayerProfile.CurrencyKind.Gem, 0);
+            SetStatus("Coin and Gem set to 0");
+        }
+
+        // ------------------------------------------------------------------ guns
 
         private void UnlockWeapons()
         {
@@ -224,6 +368,118 @@ namespace ZombieWar
                     : (System.Collections.Generic.IReadOnlyList<WeaponData>)System.Array.Empty<WeaponData>());
             int count = PlayerProfile.UnlockAllWeaponsForDev(source);
             SetStatus($"Weapons unlocked: +{count} ({PlayerProfile.OwnedWeaponIds.Count} owned)");
+        }
+
+        private static WeaponData EquippedGun()
+        {
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            return LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
+        }
+
+        private static EconomyConfig Economy()
+        {
+            var found = Resources.FindObjectsOfTypeAll<EconomyConfig>();
+            return found.Length > 0 ? found[0] : null;
+        }
+
+        private void AddShards(int n)
+        {
+            var gun = EquippedGun() ?? throw new InvalidOperationException("No equipped gun.");
+            PlayerProfile.AddWeaponShards(gun.WeaponId, n);
+            SetStatus($"{gun.weaponName}: {PlayerProfile.GetWeaponShards(gun.WeaponId)} shards");
+        }
+
+        /// Pays for every star with granted shards and gold until the gun cannot go higher.
+        private void MaxStarsEquipped()
+        {
+            var gun = EquippedGun() ?? throw new InvalidOperationException("No equipped gun.");
+            var economy = Economy();
+            for (int i = 0; i < 20; i++)
+            {
+                PlayerProfile.AddWeaponShards(gun.WeaponId, 500);
+                PlayerProfile.Add(PlayerProfile.CurrencyKind.Gold, 100000);
+                PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 200000);
+                if (PlayerProfile.TryUpgradeWeapon(gun, economy) != PlayerProfile.WeaponUpgradeResult.Upgraded) break;
+            }
+            SetStatus($"{gun.weaponName}: ★{PlayerProfile.GetWeaponLevel(gun.WeaponId)}");
+        }
+
+        private void AddGunList()
+        {
+            var cat = WeaponCatalog.Active;
+            if (cat == null) return;
+            foreach (var d in cat.DisplayData())
+            {
+                var gun = d;
+                AddAction(_content, $"{gun.weaponName} · {gun.tier}".ToUpperInvariant(), () =>
+                {
+                    PlayerProfile.AddOwnedWeapon(gun.WeaponId);
+                    PlayerProfile.SetEquippedWeapon(gun.WeaponId);
+                    SetStatus($"Equipped {gun.weaponName}");
+                }, false, 21);
+            }
+        }
+
+        // ------------------------------------------------------------------ gacha / meta
+
+        /// Puts every banner that many pulls from its guarantee (-1 resets pity to 0).
+        private void SetPityEdge(int pullsLeft)
+        {
+            var economy = Economy();
+            foreach (var b in GachaBanners.All)
+            {
+                var pool = GachaBanners.PoolFor(b, economy);
+                int hard = b.kind == GachaBanners.Kind.Event ? b.hardPity : Mathf.Max(1, pool != null ? pool.pityThreshold : 30);
+                PlayerProfile.DevSetPity(b.pityKey, pullsLeft < 0 ? 0 : Mathf.Max(0, hard - pullsLeft));
+            }
+            SetStatus(pullsLeft < 0 ? "Pity reset on every banner" : $"Every banner is {pullsLeft} pull(s) from its guarantee");
+        }
+
+        private void ResetDaily()
+        {
+            PlayerProfile.DevResetDailyClocks();
+            SetStatus("New day: free pull, stamp, welcome reward and missions are fresh");
+        }
+
+        private void AddPassXp(int xp)
+        {
+            PlayerProfile.DevAddPassXp(xp);
+            SetStatus($"Pass XP: {PlayerProfile.PassXp:N0}");
+        }
+
+        private void AddAccountXp()
+        {
+            PlayerProfile.AddAccountXp(5000);
+            SetStatus($"Account level {PlayerProfile.AccountLevel}");
+        }
+
+        private void CompleteMissions()
+        {
+            int n = 0;
+            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
+            {
+                PlayerProfile.AddMissionProgress(m.id, m.target);
+                n++;
+            }
+            SetStatus($"{n} mission(s) complete: claim them on the Pass screen");
+        }
+
+        /// Rolls the event banner's rarity 10,000 times without granting anything, to compare the
+        /// outcome against the published rates.
+        private void SimulateRates()
+        {
+            var rates = GachaBanners.RatesFor(GachaBanners.All[0], Economy());
+            var counts = new int[rates.Length];
+            float total = 0f;
+            foreach (var r in rates) total += r.percent;
+            for (int i = 0; i < 10000; i++)
+            {
+                float roll = UnityEngine.Random.value * total, acc = 0f;
+                for (int k = 0; k < rates.Length; k++) { acc += rates[k].percent; if (roll <= acc) { counts[k]++; break; } }
+            }
+            var sb = new System.Text.StringBuilder("10,000 rolls: ");
+            for (int k = 0; k < rates.Length; k++) sb.Append($"{rates[k].tier} {counts[k] / 100f:0.#}% (pub {rates[k].percent:0.#}%)  ");
+            SetStatus(sb.ToString());
         }
 
         private void UnlockCostumes()
@@ -246,6 +502,8 @@ namespace ZombieWar
             PlayerProfile.ResetForDev();
             SetStatus("Profile reset. Reopen screens to refresh all data.");
         }
+
+        // ------------------------------------------------------------------ run
 
         private void HealPlayer()
         {
@@ -373,9 +631,12 @@ namespace ZombieWar
             SetStatus($"Time scale: {value:0.0}×");
         }
 
+        // ------------------------------------------------------------------ ui helpers
+
         private void SetPanelVisible(bool visible)
         {
             if (_panel != null) _panel.SetActive(visible);
+            if (visible) RefreshInfo();
         }
 
         private void SetStatus(string message)
@@ -389,8 +650,9 @@ namespace ZombieWar
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = rect.GetComponent<Image>();
             var text = CreateText(rect, "Label", label, fontSize, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-            Stretch(text.rectTransform, 12f);
+            Stretch(text.rectTransform, 10f);
             text.raycastTarget = false;
+            text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = fontSize;
             return button;
         }
 

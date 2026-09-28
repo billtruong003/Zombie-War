@@ -1665,6 +1665,48 @@ namespace ZombieWar
 #endif
         }
 
+        // ===== Dev (QA cheat panel) =====
+        // Shortcuts the QA panel needs to reach states that normally take days of play: pity on
+        // the edge, today's free pull and stamp again, pass XP, every skin and frame.
+
+        public static void DevSetPity(string poolId, int count)
+        {
+            if (string.IsNullOrEmpty(poolId)) return;
+            SetPityInMemory(poolId, Math.Max(0, count));
+            SaveNow(); WalletChanged?.Invoke();
+        }
+
+        /// Today's free pull, daily stamp, welcome reward and the mission window, all fresh again.
+        public static void DevResetDailyClocks()
+        {
+            Data.gachaFreeDay = -1; Data.stampLastDay = -1; Data.welcomeLastDay = -1; Data.missionDayKey = 0;
+            SaveNow(); WalletChanged?.Invoke(); MissionsChanged?.Invoke();
+        }
+
+        public static void DevAddPassXp(int xp)
+        {
+            Data.passXp = Math.Max(0, Data.passXp + xp);
+            SaveNow(); MissionsChanged?.Invoke();
+        }
+
+        public static int DevUnlockAllSkins()
+        {
+            int n = 0;
+            foreach (var s in ZombieWar.Skins.WeaponSkins.Season1)
+                if (s != null && !Data.ownedSkins.Contains(s.id)) { Data.ownedSkins.Add(s.id); n++; }
+            SaveNow(); LoadoutChanged?.Invoke();
+            return n;
+        }
+
+        public static int DevUnlockAllFrames()
+        {
+            int n = 0;
+            foreach (var f in AvatarCatalog.Frames)
+                if (f != null && !Data.ownedFrames.Contains(f.id)) { Data.ownedFrames.Add(f.id); n++; }
+            SaveNow(); AccountChanged?.Invoke();
+            return n;
+        }
+
         // ===== Load/normalize/migration =====
 
         /// Sua du lieu load ve trang thai an toan: list null -> rong, owned trung lap -> bo,

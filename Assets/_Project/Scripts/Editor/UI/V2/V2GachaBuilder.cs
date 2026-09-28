@@ -28,11 +28,12 @@ namespace ZombieWar.EditorTools.V2
                 r.gameObject.AddComponent<CanvasGroup>();
                 ScreenBackground(r);
                 var s = r.gameObject.AddComponent<GachaScreen>();
-                var turn = r.gameObject.AddComponent<GunTurntable>(); turn.Framing = 0.72f;   // big banner art: show the gun larger
+                var turn = r.gameObject.AddComponent<GunTurntable>(); turn.Framing = 0.55f;   // big banner art: show the gun larger
                 Wire(s, "turntable", turn);
                 var safe = Fill(Node(r, "Safe"), 0, 0, 0, 0);
                 safe.gameObject.AddComponent<SafeArea>();
                 V2PassBuilder.TabHeader(safe, s, "GACHA");
+                Tickets(safe, s);
 
                 Tabs(safe, s);
                 Banner(safe, s);
@@ -51,6 +52,15 @@ namespace ZombieWar.EditorTools.V2
                 return AssetDatabase.GetAssetPath(go);
             }
             finally { Object.DestroyImmediate(r.gameObject); }
+        }
+
+        /// Tickets owned, as a third wallet pill before coins and gems.
+        static void Tickets(RectTransform safe, GachaScreen s)
+        {
+            var right = (RectTransform)safe.Find("Header/Right");
+            right.sizeDelta = new Vector2(Px(250), right.sizeDelta.y);
+            var ticket = Node(right, "Ticket"); Size(ticket, 60, 30); ticket.SetAsFirstSibling();
+            Wire(s, "ticketLabel", Pill(ticket, "Ticket_Gold", "3", out var tp)); tp.gameObject.SetActive(false);
         }
 
         static void Tabs(RectTransform safe, GachaScreen s)
@@ -89,9 +99,9 @@ namespace ZombieWar.EditorTools.V2
             Wire(s, "bannerFx", UIKitV2.Banner(bg, Hex("3a1636"), Hex("a0336e"), Hex("ff9ad6"), new Vector2(0.5f, 0.55f), 0.6f, 1f, 0.6f));
             b.gameObject.AddComponent<RectMask2D>();
 
-            // The art lives between the title (top 104) and the featured block (bottom 110), square,
-            // so it never sits on the text whatever the banner height is.
-            var artArea = Fill(Node(b, "ArtArea"), 20, 104, 20, 110);
+            // The art fills the right of the banner, behind the text (owner 2026-09-29: the gun was
+            // squeezed between title and tag and read tiny). Text keeps its outline over it.
+            var artArea = Fill(Node(b, "ArtArea"), 96, 26, -24, 40);
             var gun = Node(artArea, "GunArt").gameObject.AddComponent<RawImage>();
             var gfit = gun.gameObject.AddComponent<AspectRatioFitter>();
             gfit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; gfit.aspectRatio = 1f;
@@ -161,7 +171,7 @@ namespace ZombieWar.EditorTools.V2
             {
                 var t = Node(row, "Rate" + i);
                 var bg = Surface(t, Card, RTile);
-                var rateIcon = IconImage(Box(Node(t, "I"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -6, 26, 26), icons[i]);
+                var rateIcon = IconImage(Box(Node(t, "I"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -4, 34, 30), icons[i]);
                 var pct = Body(BottomBand(Node(t, "P"), 18, 13), "12%", 9f, Ink, TextAlignmentOptions.Center);
                 var what = Shrink(Body(BottomBand(Node(t, "W"), 3, 15, 2, 2), "item", 8f, Dim, TextAlignmentOptions.Center), 0.7f);
                 what.enableWordWrapping = true;
@@ -302,11 +312,12 @@ namespace ZombieWar.EditorTools.V2
         {
             var sheet = Fill(Node(root, "RatesSheet"), 0, 0, 0, 0);
             Flat(sheet, new Color(0.05f, 0.06f, 0.08f, 1f), true);   // opaque: in linear space even 2% of the bright banner reads as a see-through sheet
-            var panel = Box(Node(sheet, "Panel"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 340, 330);
+            var panel = Box(Node(sheet, "Panel"), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), 0, 0, 340, 440);
             Surface(panel, Card, RPanel);
             Title(TopBand(Node(panel, "T"), 16, 28, 16, 16), "DROP RATES", 22f);
             var t = Body(Fill(Node(panel, "Text"), 16, 52, 16, 70), "0.8%  Neon Circuit skin set", 12f, Ink, TextAlignmentOptions.TopLeft, false);
-            t.enableWordWrapping = true;
+            t.enableWordWrapping = true; t.lineSpacing = -12f;
+            Shrink(t, 0.7f);   // long banner notes wrap: shrink rather than run under the OK button
             Wire(s, "ratesText", t);
             var ok = BottomBand(Node(panel, "Ok"), 14, 46, 16, 16);
             Wire(s, "ratesOk", Button(ok, "OK", Role.Quiet, 17f));

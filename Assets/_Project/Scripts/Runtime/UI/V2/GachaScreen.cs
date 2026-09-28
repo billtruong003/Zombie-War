@@ -27,6 +27,7 @@ namespace ZombieWar.UI
 
         [SerializeField] private TMP_Text coinLabel;
         [SerializeField] private TMP_Text gemLabel;
+        [SerializeField] private TMP_Text ticketLabel;
         [SerializeField] private Tab[] tabs = new Tab[3];
 
         [Header("Banner")]
@@ -79,12 +80,14 @@ namespace ZombieWar.UI
         };
         /// Rate tiles on the screen follow the theme; the results sheet is a dark overlay in every theme.
         static readonly ThemeRole[] TierRoles = { ThemeRole.Card, ThemeRole.ClaimTint, ThemeRole.InfoTint, ThemeRole.GemTint, ThemeRole.LegendTint };
-        /// Living banner colours: event (magenta night), outfits (teal street), shards (navy gold).
+        /// Living banner colours: event (magenta night), outfits (teal street), shards (royal blue,
+        /// electric cyan glow; the old navy + gold rays read muddy, owner 2026-09-29). The glow also
+        /// tints the eyebrow, the sub line and the pity bar so each banner is one colour family.
         static readonly (Color a, Color b, Color glow)[] BannerPalette =
         {
             (new Color(0.227f, 0.086f, 0.212f), new Color(0.627f, 0.2f, 0.431f), new Color(1f, 0.604f, 0.839f)),
             (new Color(0.086f, 0.2f, 0.243f), new Color(0.165f, 0.478f, 0.549f), new Color(0.624f, 0.941f, 1f)),
-            (new Color(0.122f, 0.18f, 0.314f), new Color(0.231f, 0.357f, 0.69f), new Color(1f, 0.824f, 0.478f)),
+            (new Color(0.055f, 0.086f, 0.259f), new Color(0.169f, 0.333f, 0.847f), new Color(0.49f, 0.886f, 1f)),
         };
 
         static readonly Color[] BannerColor = { new(0.29f, 0.12f, 0.25f), new(0.16f, 0.2f, 0.3f), new(0.12f, 0.19f, 0.31f) };
@@ -402,11 +405,24 @@ namespace ZombieWar.UI
             if (ratesSheet != null) ratesSheet.SetActive(true);
         }
 
+        /// The rate tile only has room for the item: "Legendary: Neon Circuit skin set (50%)" reads
+        /// "Neon Circuit skin set", "Rare gun (dupes give shards)" reads "Rare gun". The full line
+        /// stays in the Rates sheet.
+        static string TileNote(string label)
+        {
+            if (string.IsNullOrEmpty(label)) return label;
+            int cut = label.IndexOf(" (", System.StringComparison.Ordinal);
+            if (cut > 0) label = label.Substring(0, cut);
+            int colon = label.IndexOf(": ", System.StringComparison.Ordinal);
+            return colon > 0 ? label.Substring(colon + 2) : label;
+        }
+
         public void Refresh()
         {
             int today = DailyRewards.Today;
             if (coinLabel != null) coinLabel.text = HomeScreen.Short(PlayerProfile.Coin);
             if (gemLabel != null) gemLabel.text = HomeScreen.Short(PlayerProfile.Gem);
+            if (ticketLabel != null) ticketLabel.text = PlayerProfile.Tickets.ToString();
             for (int i = 0; i < tabs.Length && i < GachaBanners.All.Length; i++)
             {
                 var t = tabs[i]; var b = GachaBanners.All[i]; if (t == null) continue;
@@ -419,6 +435,11 @@ namespace ZombieWar.UI
             int bi = Mathf.Clamp(_banner, 0, BannerPalette.Length - 1);
             if (bannerFx != null) bannerFx.SetPalette(BannerPalette[bi].a, BannerPalette[bi].b, BannerPalette[bi].glow);
             else if (bannerBg != null) bannerBg.color = BannerColor[Mathf.Clamp(_banner, 0, BannerColor.Length - 1)];
+            var glow = BannerPalette[bi].glow; var soft = Color.Lerp(glow, Color.white, 0.6f);
+            if (bannerTimer != null) bannerTimer.color = glow;
+            if (featuredSub != null) featuredSub.color = soft;
+            if (pityLabel != null) pityLabel.color = soft;
+            if (pityBar != null && pityBar.TryGetComponent<Image>(out var pityFill)) pityFill.color = glow;
             int daysLeft = GachaBanners.DaysLeft(bn, today);
             if (bannerTimer != null) bannerTimer.text = evt ? $"EVENT BANNER · ENDS IN {daysLeft}D" : daysLeft < 0 ? "PERMANENT BANNER" : $"OUTFIT BANNER · ENDS IN {daysLeft}D";
             if (bannerTitle != null) bannerTitle.text = evt ? bn.title : bn.kind == GachaBanners.Kind.Shards ? "GUN\nSHARDS" : "STREET\nSTYLE";
@@ -465,7 +486,7 @@ namespace ZombieWar.UI
                 if (!has) continue;
                 ThemeTint.Set(t.bg, TierRoles[Mathf.Clamp((int)rates[i].tier, 0, 4)]);
                 if (t.label != null) t.label.text = $"{rates[i].percent:0.#}%";
-                if (t.note != null) t.note.text = rates[i].label;
+                if (t.note != null) t.note.text = TileNote(rates[i].label);
             }
             _rateIcons = false; _rateIconsAt = 0.5f; _rateTries = 0; _skinShotId = null;
             if (note != null) note.text = evt ? "Duplicates turn into tickets. Pity carries over to the next Neon banner."

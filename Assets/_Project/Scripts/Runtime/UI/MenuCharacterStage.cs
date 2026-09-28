@@ -36,6 +36,8 @@ namespace ZombieWar.UI
                 previewCamera.targetTexture = previewTexture;
             modularApplier.EnsureBoneMap(true);
             modularApplier.ApplySavedParts();
+            if (animator != null)
+                (GetComponent<MenuGunShowcase>() ?? gameObject.AddComponent<MenuGunShowcase>()).Init(animator, characterRoot, previewCamera);
         }
 
         // Stage là CHỦ SỞ HỮU duy nhất của preview sync: mọi thay đổi costume (equip từng món,
