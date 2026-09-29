@@ -145,6 +145,16 @@ namespace ZombieWar.Skills
         public const string AutoTurret = "auto.turret";
         public const string AutoMeteor = "auto.meteor";
 
+        // ── A6 powers (owner-approved 2026-09-29, proposal v3) ──
+        public const string AutoStormCloud = "auto.stormcloud";
+        public const string AutoIceShards = "auto.iceshards";
+        public const string AutoFlameBurst = "auto.flameburst";
+        public const string AutoLandmine = "auto.landmine";
+        public const string AutoAxe = "auto.axe";
+        public const string AutoWarDog = "auto.wardog";
+        public const string AutoStomp = "auto.stomp";
+        public const string AutoTimeWarp = "auto.timewarp";
+
         // ── M8 evolutions: power at max rank + partner card owned ──
         public const string EvoThunderstorm = "evo.thunderstorm";
         public const string EvoCarpetBomb = "evo.carpetbomb";
@@ -286,6 +296,24 @@ namespace ZombieWar.Skills
                 tables: Power(("cd", R(12f, 11.5f, 11f, 10.5f, 10f)))),
             new(AutoMeteor,  "Meteor",        SkillLayer.Autonomous, null, R(3f, 3.2f, 3.4f, 3.6f, 3.8f), "MUST", 25,      // impact radius m
                 tables: Power(("cd", R(15f, 14f, 13f, 12f, 11f)))),
+
+            // ── A6 AUTONOMOUS (8) ──────────────────────────────────────────────────────
+            new(AutoStormCloud, "Storm Cloud",   SkillLayer.Autonomous, null, R(0.8f, 0.75f, 0.7f, 0.65f, 0.6f), "MUST", 18,  // seconds between strikes
+                tables: Power()),
+            new(AutoIceShards,  "Ice Shards",    SkillLayer.Autonomous, null, R(6f, 6f, 8f, 8f, 10f), "MUST", 16,            // shards
+                tables: Power(("cd", R(4f, 3.75f, 3.5f, 3.25f, 3f)))),
+            new(AutoFlameBurst, "Flame Burst",   SkillLayer.Autonomous, null, R(5f, 5.3f, 5.6f, 5.9f, 6.2f), "MUST", 22,       // cone reach m
+                tables: Power(("cd", R(5f, 4.75f, 4.5f, 4.25f, 4f)))),
+            new(AutoLandmine,   "Landmines",     SkillLayer.Autonomous, null, R(3f, 2.8f, 2.6f, 2.4f, 2.2f), "MUST", 28,       // metres walked per mine
+                tables: Power()),
+            new(AutoAxe,        "Spinning Axe",  SkillLayer.Autonomous, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 30,               // axes
+                tables: Power(("cd", R(3f, 2.8f, 2.6f, 2.4f, 2.2f)))),
+            new(AutoWarDog,     "War Dog",       SkillLayer.Autonomous, null, R(1.2f, 1.35f, 1.5f, 1.65f, 1.8f), "MUST", 33,   // bites a second
+                tables: Power()),
+            new(AutoStomp,      "Ground Stomp",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 24,       // radius m
+                tables: Power(("cd", R(6f, 5.5f, 5f, 4.5f, 4f)))),
+            new(AutoTimeWarp,   "Time Warp",     SkillLayer.Autonomous, null, R(3f, 3.25f, 3.5f, 3.75f, 4f), "MUST", 32,       // seconds of slow time
+                tables: Power(("cd", R(20f, 19f, 18f, 17f, 16f)))),
 
             // ── M8 EVOLUTIONS (6) — one rank, offered once the power is maxed and the partner owned ─
             new(EvoThunderstorm, "Thunderstorm",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoChainLightning, StatFireRate),

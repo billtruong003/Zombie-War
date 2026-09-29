@@ -56,5 +56,13 @@ namespace ZombieWar.Skills.Powers
         public ThornAuraPower.Assets thorns = new();
         public SentryTurretPower.Assets turret = new();
         public MeteorPower.Assets meteor = new();
+        public StormCloudPower.Assets stormCloud = new();
+        public IceShardsPower.Assets iceShards = new();
+        public FlameBurstPower.Assets flameBurst = new();
+        public LandminePower.Assets landmine = new();
+        public SpinningAxePower.Assets axe = new();
+        public WarDogPower.Assets warDog = new();
+        public GroundStompPower.Assets stomp = new();
+        public TimeWarpPower.Assets timeWarp = new();
     }
 }

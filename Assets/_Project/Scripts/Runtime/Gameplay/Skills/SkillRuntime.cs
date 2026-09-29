@@ -67,6 +67,11 @@ namespace ZombieWar.Skills
             new(Every(SkillCatalogDefs.AutoGravity, 9f), _ => 1, r => r.Value(SkillCatalogDefs.AutoGravity) * r.AreaMultiplier),
             new(Every(SkillCatalogDefs.AutoTurret, 12f), r => r.TurretCount, _ => 0f),
             new(Every(SkillCatalogDefs.AutoMeteor, 15f), _ => 1, r => r.Value(SkillCatalogDefs.AutoMeteor) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoIceShards, 4f), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoIceShards)), _ => 0f),
+            new(Every(SkillCatalogDefs.AutoFlameBurst, 5f), _ => 1, r => r.Value(SkillCatalogDefs.AutoFlameBurst) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoAxe, 3f), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoAxe)), _ => 0f),
+            new(Every(SkillCatalogDefs.AutoStomp, 6f), _ => 0, r => r.Value(SkillCatalogDefs.AutoStomp) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoTimeWarp, 20f), _ => 0, _ => 0f),
         };
 
         ProcPower ProcOf(string id)
@@ -208,6 +213,13 @@ namespace ZombieWar.Skills
         public float TurretShotsPerSecond => Value(SkillCatalogDefs.AutoTurret);
         public float ThornDps => Value(SkillCatalogDefs.AutoThorns);
         public float ThornAuraRadius => Has(SkillCatalogDefs.AutoThorns) ? ThornRadius * AreaMultiplier : 0f;
+
+        // ── A6 powers
+        public float StormCloudInterval => Value(SkillCatalogDefs.AutoStormCloud);
+        public float LandmineSpacing => Value(SkillCatalogDefs.AutoLandmine);
+        public int WarDogCount => !Has(SkillCatalogDefs.AutoWarDog) ? 0 : RankOf(SkillCatalogDefs.AutoWarDog) >= 5 ? 2 : 1;
+        public float WarDogBitesPerSecond => Value(SkillCatalogDefs.AutoWarDog);
+        public float TimeWarpSeconds => Value(SkillCatalogDefs.AutoTimeWarp);
         public int AirstrikeBlasts => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoAirstrike));
         public int ChainTargets => IsEvolved(SkillCatalogDefs.AutoChainLightning) ? TargetQuery.MaxChain
             : Mathf.Min(TargetQuery.MaxChain, Mathf.RoundToInt(Value(SkillCatalogDefs.AutoChainLightning)));

@@ -30,8 +30,8 @@ namespace ZombieWar.Tests
         public void TheOwnerApprovedCardList_NothingMoreNothingLess()
         {
             var all = SkillCatalogDefs.All;
-            Assert.AreEqual(57, all.Count,
-                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3) + 5 stats (A4) + 5 powers (A5, owner 2026-09-29)");
+            Assert.AreEqual(65, all.Count,
+                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3) + 5 stats (A4) + 5 powers (A5) + 8 powers (A6, owner 2026-09-29)");
 
             var expected = new[]
             {
@@ -48,6 +48,7 @@ namespace ZombieWar.Tests
                 "Cluster Charge", "Napalm Shell",
                 "Cooldown", "Area", "Pickup Range", "Regeneration", "Luck",
                 "Toxic Cloud", "Gravity Well", "Thorn Aura", "Sentry Turret", "Meteor",
+                "Storm Cloud", "Ice Shards", "Flame Burst", "Landmines", "Spinning Axe", "War Dog", "Ground Stomp", "Time Warp",
             };
             CollectionAssert.AreEquivalent(expected, all.Select(d => d.displayName).ToArray(),
                 "no card may be added, removed or renamed without the owner");

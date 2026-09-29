@@ -96,6 +96,17 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.AutoTurret:
                     return $"Every {Cd(def, rank)}s, drop {(rank >= 5 ? "2 turrets" : "a turret")} that fire{(rank >= 5 ? "" : "s")} {v:0.#} shots a second for 6s";
                 case SkillCatalogDefs.AutoMeteor: return $"Every {Cd(def, rank)}s, a meteor ({v:0.#} m) crushes the biggest crowd and leaves fire";
+                case SkillCatalogDefs.AutoStormCloud: return $"A storm cloud follows you and strikes an enemy every {v:0.##}s";
+                case SkillCatalogDefs.AutoIceShards: return $"Every {Cd(def, rank)}s, {v:0} ice shards burst out, piercing and slowing";
+                case SkillCatalogDefs.AutoFlameBurst: return $"Every {Cd(def, rank)}s, a fire cone ({v:0.#} m) burns the nearest crowd";
+                case SkillCatalogDefs.AutoLandmine: return $"Every {v:0.#} m walked, drop a mine that blows up under enemies";
+                case SkillCatalogDefs.AutoAxe:
+                    return v <= 1f ? $"Every {Cd(def, rank)}s, hurl a spinning axe through the crowd"
+                                   : $"Every {Cd(def, rank)}s, hurl {v:0} spinning axes through the crowd";
+                case SkillCatalogDefs.AutoWarDog:
+                    return $"{(rank >= 5 ? "Two war dogs bite" : "A war dog bites")} the nearest enemy {v:0.##} times a second";
+                case SkillCatalogDefs.AutoStomp: return $"Every {Cd(def, rank)}s, a stomp throws back every enemy within {v:0.#} m";
+                case SkillCatalogDefs.AutoTimeWarp: return $"Every {Cd(def, rank)}s, every enemy moves at half speed for {v:0.##}s";
 
                 // ── evolutions ──
                 case SkillCatalogDefs.EvoThunderstorm: return "Chain Lightning every 2s through 6 enemies, harder";

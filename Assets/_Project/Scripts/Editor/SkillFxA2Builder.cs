@@ -127,6 +127,38 @@ namespace ZombieWar.EditorTools
             return "A5 FX bound";
         }
 
+        /// <summary>Phase A6: effects and models for the eight v3 powers.</summary>
+        [MenuItem("HordeCall/Skills/Build A6 FX (v3 powers)")]
+        public static string BuildA6()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            const string P = "Assets/_Project/Prefabs/Skills/";
+            lib.stormCloud.model = AssetDatabase.LoadAssetAtPath<GameObject>(P + "SK_StormCloud.prefab");
+            lib.stormCloud.strikeFx = lib.chain.skyStrikeFx;
+            lib.stormCloud.modelScale = 1.1f;   // at 2.2 it hid a third of the screen from the top-down camera
+            lib.stormCloud.height = 3.4f;
+            lib.iceShards.shardFx = AssetDatabase.LoadAssetAtPath<GameObject>(P + "SK_IceShard.prefab")?.GetComponent<ParticleSystem>();
+            lib.iceShards.hitFx = Fx("Combat/Explosions/SnowExplosion/SnowExplosion");
+            lib.iceShards.castFx = Fx("Combat/Explosions/FrostExplosion/FrostExplosion");
+            lib.flameBurst.jetFx = Fx("Combat/Flamethrower/Cartoon/FlamethrowerToonyFire");
+            lib.flameBurst.jetNativeRange = 2.2f;
+            lib.flameBurst.burnFx = Fx("Combat/Explosions/SmallExplosion/SmallExplosionFire");
+            lib.axe.apex = 2f;
+            lib.landmine.model = AssetDatabase.LoadAssetAtPath<GameObject>(P + "SK_Mine.prefab");
+            lib.landmine.blastFx = Fx("Combat/Explosions/FireballSharpExplosion/ExplosionFireballSharpFire");
+            lib.axe.model = AssetDatabase.LoadAssetAtPath<GameObject>(P + "SK_Axe.prefab");
+            lib.axe.hitFx = Fx("Combat/Sword/Hit/SwordHit/SwordHitYellow");
+            lib.warDog.body = AssetDatabase.LoadAssetAtPath<GameObject>(P + "SK_WarDogBody.prefab");
+            lib.warDog.biteFx = Fx("Combat/Brawling/RoundHit/RoundHitRed");
+            lib.stomp.dustFx = Fx("Environment/Dust/DustDirtyPoof");
+            lib.stomp.crackFx = Fx("Combat/Explosions (Misc)/HitDustExplosion");
+            lib.timeWarp.circleFx = Fx("Combat/Magic/Circle/MagicCircleBlue");
+            EditorUtility.SetDirty(lib);
+            AssetDatabase.SaveAssets();
+            return "A6 FX bound";
+        }
+
         /// A prefab variant lying flat (the pack's novas are authored upright) with the named children
         /// switched off.
         static ParticleSystem Variant(string source, string path, params string[] hide)

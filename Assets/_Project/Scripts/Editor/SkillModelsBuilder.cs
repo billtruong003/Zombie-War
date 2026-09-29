@@ -153,6 +153,85 @@ namespace ZombieWar.EditorTools
             return $"built {turret.name}, {rock.name}, {fall.name}";
         }
 
+        /// <summary>Phase A6: mine, axe and storm cloud (skill_models.blend), the ice shard (the pack's
+        /// frost missile without its projectile script) and the War Dog (the DogPup's VAT body, recoloured
+        /// steel blue so it never reads as an enemy pup).</summary>
+        [MenuItem("HordeCall/Skills/Build A6 Models (mine, axe, cloud, shard, dog)")]
+        public static string BuildA6()
+        {
+            foreach (var n in new[] { "SK_Mine", "SK_Axe", "SK_StormCloud" })
+                if (AssetImporter.GetAtPath(ModelDir + n + ".fbx") is ModelImporter m)
+                {
+                    m.materialImportMode = ModelImporterMaterialImportMode.None;
+                    m.importNormals = ModelImporterNormals.Import;
+                    m.importAnimation = false; m.animationType = ModelImporterAnimationType.None;
+                    m.isReadable = n == "SK_Axe";   // the tip trail reads the axe's vertices
+                    m.SaveAndReimport();
+                }
+            var pal = AssetDatabase.LoadAssetAtPath<Material>(MatDir + "M_SK_Palette.mat");
+            if (pal == null) return "run Build Skill Models first (palette material)";
+            MakePrefab("SK_Mine", new[] { pal });
+            MakePrefab("SK_Axe", new[] { pal });
+            MakePrefab("SK_StormCloud", new[] { pal });
+
+            // Ice shard: the frost missile, stripped of its own movement.
+            const string frost = "Assets/ThirdParty/Epic Toon FX/Prefabs/Combat/Missiles/Frost/FrostMissile.prefab";
+            var fgo = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(frost));
+            try
+            {
+                fgo.name = "SK_IceShard";
+                foreach (var mb in fgo.GetComponentsInChildren<MonoBehaviour>(true)) Object.DestroyImmediate(mb);
+                foreach (var col in fgo.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(col);
+                foreach (var rb in fgo.GetComponentsInChildren<Rigidbody>(true)) Object.DestroyImmediate(rb);
+                PrefabUtility.SaveAsPrefabAsset(fgo, PrefabDir + "SK_IceShard.prefab");
+            }
+            finally { Object.DestroyImmediate(fgo); }
+
+            // War Dog: the pup's VAT Visual with a steel-blue coat.
+            var pup = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Enemies/ENM_DogPup_VAT.prefab");
+            var visual = pup != null ? pup.transform.Find("Visual") : null;
+            if (visual == null) return "missing DogPup Visual";
+            var srcMat = visual.GetComponent<MeshRenderer>().sharedMaterial;
+            var coat = RecolourCoat((Texture2D)srcMat.GetTexture("_MainTex"), "Assets/_Project/Art/Textures/T_WarDog.png");
+            var dogMat = LoadOrCreate(MatDir + "M_WarDog.mat", () => new Material(srcMat));
+            dogMat.CopyPropertiesFromMaterial(srcMat);
+            dogMat.SetTexture("_MainTex", coat);
+            EditorUtility.SetDirty(dogMat);
+            var dog = Object.Instantiate(visual.gameObject);
+            try
+            {
+                dog.name = "SK_WarDogBody";
+                dog.GetComponent<MeshRenderer>().sharedMaterial = dogMat;
+                PrefabUtility.SaveAsPrefabAsset(dog, PrefabDir + "SK_WarDogBody.prefab");
+            }
+            finally { Object.DestroyImmediate(dog); }
+            AssetDatabase.SaveAssets();
+            return "built SK_Mine, SK_Axe, SK_StormCloud, SK_IceShard, SK_WarDogBody";
+        }
+
+        /// The pup's warm coat turned steel blue: hue rotated, saturation eased, value kept.
+        static Texture2D RecolourCoat(Texture2D src, string path)
+        {
+            var rt = RenderTexture.GetTemporary(src.width, src.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Graphics.Blit(src, rt);
+            var prev = RenderTexture.active; RenderTexture.active = rt;
+            var tex = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0);
+            RenderTexture.active = prev; RenderTexture.ReleaseTemporary(rt);
+            var px = tex.GetPixels();
+            for (int i = 0; i < px.Length; i++)
+            {
+                Color.RGBToHSV(px[i], out float h, out float s, out float v);
+                if (s > 0.12f) { h = Mathf.Repeat(h + 0.5f, 1f); s *= 0.65f; }
+                var c = Color.HSVToRGB(h, s, v); c.a = px[i].a; px[i] = c;
+            }
+            tex.SetPixels(px);
+            System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
         static Material LoadOrCreate(string path, System.Func<Material> make)
         {
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);

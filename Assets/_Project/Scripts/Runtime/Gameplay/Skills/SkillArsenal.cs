@@ -81,6 +81,14 @@ namespace ZombieWar.Skills
             Register(new ThornAuraPower());
             Register(new SentryTurretPower());
             Register(new MeteorPower());
+            Register(new StormCloudPower());
+            Register(new IceShardsPower());
+            Register(new FlameBurstPower());
+            Register(new LandminePower());
+            Register(new SpinningAxePower());
+            Register(new WarDogPower());
+            Register(new GroundStompPower());
+            Register(new TimeWarpPower());
         }
 
         void Register(PowerModule m)
