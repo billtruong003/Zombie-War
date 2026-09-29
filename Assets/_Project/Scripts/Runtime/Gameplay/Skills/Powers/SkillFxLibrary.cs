@@ -64,5 +64,7 @@ namespace ZombieWar.Skills.Powers
         public WarDogPower.Assets warDog = new();
         public GroundStompPower.Assets stomp = new();
         public TimeWarpPower.Assets timeWarp = new();
+        [Tooltip("Phase A8: what the Magnet, Bomb and Freeze Clock items play when taken.")]
+        public ZombieWar.MechanicItems.Assets items = new();
     }
 }

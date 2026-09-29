@@ -199,6 +199,86 @@ namespace ZombieWar.EditorTools
             return "A7 chest pickup + Fortress rocket bound";
         }
 
+        /// <summary>Phase A8: the Magnet, Bomb and Freeze Clock items (models from
+        /// Review/M8/skill_models.blend on the shared palette, in the pack's item glow and sparkle),
+        /// and what each plays when it is taken.</summary>
+        [MenuItem("HordeCall/Skills/Build A8 (mechanic items)")]
+        public static string BuildA8()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            var pal = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Skills/M_SK_Palette.mat");
+            if (pal == null) return "missing M_SK_Palette (run Build Skill Models)";
+
+            lib.items.magnetFx = Fx("Interactive/Loot/ItemSparkleBurst/ItemSparkleBurstPink");
+            lib.items.bombFx = Fx("Combat/Explosions/FireballSharpExplosion/ExplosionFireballSharpFire");
+            lib.items.bombHitFx = Fx("Combat/Explosions/SmallExplosion/SmallExplosionFire");
+            lib.items.freezeFx = Fx("Combat/Explosions/FrostExplosion/FrostExplosion");
+            lib.items.freezeHitFx = Fx("Combat/Explosions/SnowExplosion/SnowExplosion");
+            EditorUtility.SetDirty(lib);
+
+            string built = "";
+            // Magnet and clock are upright shapes: from the top-down camera they read as a bar, so
+            // they lean back 60 degrees and keep their face to the sky while they spin.
+            foreach (var (model, key, effect, colour, tilt) in new[]
+            {
+                ("PK_Magnet", "pickup_magnet", ZombieWar.PickupEffect.Magnet, "Pink", -60f),
+                ("PK_Bomb", "pickup_bomb", ZombieWar.PickupEffect.Bomb, "Yellow", 0f),
+                ("PK_Stopwatch", "pickup_freeze", ZombieWar.PickupEffect.Freeze, "Blue", -60f),
+            })
+            {
+                string fbx = "Assets/_Project/Art/Models/Pickups/" + model + ".fbx";
+                if (AssetImporter.GetAtPath(fbx) is ModelImporter mi)
+                {
+                    mi.materialImportMode = ModelImporterMaterialImportMode.None;
+                    mi.importNormals = ModelImporterNormals.Import;
+                    mi.importAnimation = false; mi.animationType = ModelImporterAnimationType.None;
+                    mi.SaveAndReimport();
+                }
+                var src = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
+                if (src == null) return "missing " + fbx;
+
+                var root = new GameObject(key);
+                try
+                {
+                    var pickup = root.AddComponent<ZombieWar.Pickup>();
+                    var so = new SerializedObject(pickup);
+                    so.FindProperty("effect").intValue = (int)effect;
+                    so.FindProperty("spinSpeed").floatValue = 90f;
+                    so.FindProperty("bobHeight").floatValue = 0.15f;
+                    so.FindProperty("bobSpeed").floatValue = 2.4f;
+                    so.FindProperty("settleTime").floatValue = 0.4f;
+                    so.FindProperty("lifetime").floatValue = 45f;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+
+                    var m = (GameObject)PrefabUtility.InstantiatePrefab(src, root.transform);
+                    PrefabUtility.UnpackPrefabInstance(m, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                    m.name = "Model";
+                    // Models sit on their base: tilt about the model's centre (not its base), so the
+                    // spin does not swing it round in a circle.
+                    const float scale = 1.7f;
+                    var tiltRot = Quaternion.Euler(tilt, 0f, 0f);
+                    float centre = src.GetComponentInChildren<MeshFilter>().sharedMesh.bounds.center.y * scale;
+                    m.transform.localRotation = tiltRot;
+                    m.transform.localPosition = tilt != 0f ? new Vector3(0f, 0.55f, 0f) - tiltRot * new Vector3(0f, centre, 0f)
+                                                           : new Vector3(0f, 0.15f, 0f);
+                    m.transform.localScale = Vector3.one * scale;   // ~0.9 m: an item, clearly smaller than the chest
+                    foreach (var r in m.GetComponentsInChildren<Renderer>(true))
+                    {
+                        r.sharedMaterials = new[] { pal };
+                        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    }
+                    Child(root, Fx("Interactive/Loot/GlowOrb/GlowOrb" + colour), "Glow", 1f, true);
+                    Child(root, Fx("Interactive/Loot/ItemSparkle/ItemSparkle" + colour), "Sparkle", 0.8f, true);
+                    PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Project/Resources/Pools/" + key + ".prefab");
+                    built += key + " ";
+                }
+                finally { Object.DestroyImmediate(root); }
+            }
+            AssetDatabase.SaveAssets();
+            return "A8 built " + built;
+        }
+
         static void Child(GameObject root, ParticleSystem fx, string name, float scale, bool playOnEnable)
         {
             var go = (GameObject)PrefabUtility.InstantiatePrefab(fx.gameObject, root.transform);

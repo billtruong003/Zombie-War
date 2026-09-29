@@ -140,6 +140,19 @@ namespace ZombieWar.Dev
                 PickupManager.Instance?.SpawnChest(PlayerMovement.Instance.transform.position + PlayerMovement.Instance.transform.forward * 2.5f);
             if (GUILayout.Button("+1 level")) RunState.Current?.AddXp(RunState.Current.XpForNextLevel);
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            // A8 mechanic items, dropped ahead of the player (one on the map at a time).
+            if (GUILayout.Button("Magnet")) DropItem(PickupEffect.Magnet);
+            if (GUILayout.Button("Bomb")) DropItem(PickupEffect.Bomb);
+            if (GUILayout.Button("Freeze")) DropItem(PickupEffect.Freeze);
+            GUILayout.EndHorizontal();
+        }
+
+        public static bool DropItem(PickupEffect item)
+        {
+            var p = PlayerMovement.Instance;
+            if (p == null || PickupManager.Instance == null) return false;
+            return PickupManager.Instance.SpawnMechanic(item, p.transform.position + p.transform.forward * 2.5f);
         }
 
         private void DrawDps(float w)

@@ -104,12 +104,33 @@ namespace ZombieWar
         private static float _magnetSweepUntil;
         private static bool _magnetRegistered;
 
-        [Header("Magnet pickup (TUNING)")]
-        [Tooltip("How long the sweep keeps pulling. Long enough for distant coins to arrive.")]
-        [SerializeField] private float magnetSweepSeconds = 2.5f;
-        [Tooltip("Chance an elite/boss kill drops a magnet.")]
-        [SerializeField, Range(0f, 1f)] private float magnetDropChance = 0.12f;
+        [Header("Mechanic items (A8) — TUNING")]
+        [Tooltip("Chance an elite kill drops a mechanic item (Magnet, Bomb or Freeze Clock), before Luck.")]
+        [SerializeField, Range(0f, 1f)] private float mechanicDropChance = 0.15f;
         [SerializeField] private string magnetPoolKey = "pickup_magnet";
+        [SerializeField] private string bombPoolKey = "pickup_bomb";
+        [SerializeField] private string freezePoolKey = "pickup_freeze";
+
+        /// <summary>A mechanic item is on the map (the one-at-a-time rule).</summary>
+        public static bool MechanicOnMap
+        {
+            get
+            {
+                for (int i = 0; i < Live.Count; i++)
+                    if (Live[i] != null && Live[i].IsMechanic && !Live[i].Collected) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Drops a Magnet, Bomb or Freeze Clock, unless one is already on the map.</summary>
+        public bool SpawnMechanic(PickupEffect item, Vector3 at)
+        {
+            if (!MechanicItems.IsMechanic(item) || MechanicOnMap) return false;
+            string key = item == PickupEffect.Bomb ? bombPoolKey : item == PickupEffect.Freeze ? freezePoolKey : magnetPoolKey;
+            at.y = 0f;
+            Spawn(PlayerProfile.CurrencyKind.Coin, 0, key, at);
+            return MechanicOnMap;
+        }
 
         /// <summary>
         /// Pulls EVERY pickup on the ground to the player for a short window. Global rather than a
@@ -177,15 +198,15 @@ namespace ZombieWar
                 }
             }
 
-            // M7.3b — the magnet drop. Elites and bosses only, so it stays an event rather than
-            // background noise, and so the player associates it with a fight they chose.
+            // A8 — the mechanic item drop (Magnet, Bomb, Freeze Clock). Elites only, so it stays an
+            // event rather than background noise, and only while none is on the map.
             //
             // FALLBACK, and it matters more than the magnet: a player who never sees one loses
             // nothing. Coins sit on the ground indefinitely and are collected by walking over them,
             // exactly as before. The magnet is a convenience reward, never the only route to loot.
             float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;   // A4 Luck: items, not coins
-            if (data.isElite && Random.value < magnetDropChance * luck)
-                Spawn(PlayerProfile.CurrencyKind.Coin, 0, magnetPoolKey, origin);
+            if (data.isElite && Random.value < mechanicDropChance * luck)
+                SpawnMechanic(MechanicItems.Pick(Random.value), origin);
 
             // A7: elites can drop a chest; Luck raises the chance (the beacon boss drops its own).
             if (data.isElite && Random.value < eliteChestChance * luck)

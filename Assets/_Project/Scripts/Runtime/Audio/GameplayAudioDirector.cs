@@ -312,6 +312,8 @@ namespace ZombieWar.Audio
             if (e.Effect == PickupEffect.Health) { Bill.Audio?.PlayCue("sfx.pickup.health", SfxPriority.Medium, 0.55f); return; }
             if (e.Kind == PlayerProfile.CurrencyKind.Gem) { Bill.Audio?.PlayCue("sfx.pickup.gem", SfxPriority.Medium, 0.55f); return; }
             if (e.Effect == PickupEffect.Magnet) { Bill.Audio?.PlayPitched("sfx.pickup.gem", 0.8f, 0.7f); return; }
+            // A chest, bomb and freeze clock play their own moment; never the coin blip.
+            if (e.Effect != PickupEffect.Currency) return;
 
             float now = Time.unscaledTime;
             if (now > _coinComboUntil) _coinCombo = 0;

@@ -26,8 +26,9 @@ namespace ZombieWar
     /// player. Blanket auto-collect on wave clear stays removed: loot is walked to by default, and the
     /// magnet is the reward that makes a big sweep feel earned rather than automatic.
     /// </summary>
-    // Values are serialized in pickup prefabs: never renumber (2 was the retired bomb pickup).
-    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3, Chest = 4 }
+    // Values are serialized in pickup prefabs: never renumber (2 was the retired bomb pickup;
+    // the A8 Bomb item is a new value on purpose, so an old prefab can never turn into it).
+    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3, Chest = 4, Bomb = 5, Freeze = 6 }
 
     public class Pickup : MonoBehaviour
     {
@@ -44,6 +45,14 @@ namespace ZombieWar
         [SerializeField] private float spinSpeed = 120f;
         [SerializeField] private float bobHeight = 0.12f;
         [SerializeField] private float bobSpeed = 3f;
+        [Tooltip("Seconds before an uncollected pickup leaves (0 = never). Mechanic items expire so " +
+                 "one the player ignores does not block the next (only one is ever on the map).")]
+        [SerializeField] private float lifetime = 0f;
+        [Tooltip("It blinks for this long before it leaves.")]
+        [SerializeField] private float blinkSeconds = 5f;
+
+        private Renderer[] _renderers;
+        private bool _hidden;
 
         private PlayerProfile.CurrencyKind _kind;
         private int _amount;
@@ -57,6 +66,9 @@ namespace ZombieWar
         public PlayerProfile.CurrencyKind Kind => _kind;
         public bool Collected => _collected;
         public int Amount => _amount;
+        public PickupEffect Effect => effect;
+        /// <summary>Magnet, Bomb or Freeze Clock (A8): one on the map at a time, never swept by a magnet.</summary>
+        public bool IsMechanic => MechanicItems.IsMechanic(effect);
 
         /// <summary>
         /// Folds another drop's value into this one instead of spawning a new object. Only a resting
@@ -84,6 +96,24 @@ namespace ZombieWar
             _age = 0f;
             _groundPos = position;
             transform.position = position;
+            SetHidden(false);
+        }
+
+        private void SetHidden(bool hidden)
+        {
+            if (_hidden == hidden && _renderers != null) return;
+            _hidden = hidden;
+            _renderers ??= GetComponentsInChildren<Renderer>(true);
+            foreach (var r in _renderers) if (r != null) r.enabled = !hidden;
+        }
+
+        /// <summary>Leaves without paying anything (an ignored item timing out).</summary>
+        private void Expire()
+        {
+            _collected = true;
+            SetHidden(false);   // the pool hands it out visible
+            if (!string.IsNullOrEmpty(_poolKey) && Bill.Pool != null) Bill.Pool.Return(gameObject);
+            else gameObject.SetActive(false);
         }
 
         const float ChestReach = 1.4f;
@@ -106,6 +136,14 @@ namespace ZombieWar
                 transform.position = new Vector3(_groundPos.x, y, _groundPos.z);
                 transform.Rotate(Vector3.up, spinSpeed * dt, Space.World);
 
+                if (lifetime > 0f)
+                {
+                    if (_age >= lifetime) { Expire(); return; }
+                    float left = lifetime - _age;
+                    // Blink faster as it runs out, so "it is leaving" reads without a timer.
+                    SetHidden(left < blinkSeconds && Mathf.Repeat(_age, left < 2f ? 0.16f : 0.3f) < (left < 2f ? 0.07f : 0.1f));
+                }
+
                 if (_age < settleTime) return;
                 float sqr = (playerPos - transform.position).sqrMagnitude;
                 // A7: a chest is walked to, never pulled — no magnet, no sweep. Opening it is a choice
@@ -116,9 +154,13 @@ namespace ZombieWar
                     if (d.sqrMagnitude <= ChestReach * ChestReach) Collect();
                     return;
                 }
-                if (!forceCollect && sqr > magnetRadius * magnetRadius) return;
+                // A8: a magnet sweep brings loot, never a mechanic item (a bomb must go off where the
+                // player chose to walk, and a magnet must not collect the next magnet).
+                bool swept = forceCollect && !IsMechanic;
+                if (!swept && sqr > magnetRadius * magnetRadius) return;
 
                 _flying = true;
+                SetHidden(false);
                 _speed = magnetSpeed * 0.35f;
             }
 
@@ -150,7 +192,15 @@ namespace ZombieWar
                 case PickupEffect.Magnet:
                     // A travelling pull, not an instant credit: the coins visibly fly in, which is
                     // the entire point of the pickup.
-                    PickupManager.BeginMagnetSweep();
+                    MechanicItems.Magnet(transform.position);
+                    break;
+
+                case PickupEffect.Bomb:
+                    MechanicItems.Bomb(transform.position);
+                    break;
+
+                case PickupEffect.Freeze:
+                    MechanicItems.Freeze(transform.position);
                     break;
 
                 case PickupEffect.Chest:
