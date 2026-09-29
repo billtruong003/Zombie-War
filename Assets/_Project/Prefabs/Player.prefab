@@ -342,25 +342,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1befbfc4bdca86e4ca4346ef94b5b9e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillCombatDriver
-  chainArcFx: {fileID: 19884342, guid: 5e8a137808d7d374487f34e236c723db, type: 3}
-  explosionFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
-  ordnanceMarkerFx: {fileID: 198756107662936000, guid: 6bea1543e5b3fca40a6c415bb1ecabe3, type: 3}
-  soulBurstFx: {fileID: 19899408, guid: be4058b04abc8fe4ca81c721c18ecb4f, type: 3}
-  emergencyFx: {fileID: 198807330505795946, guid: d9e3deb54a0d566438734cb2731448ea, type: 3}
-  shieldBreakFx: {fileID: 198825297873863668, guid: 6e3db7afa59301e48bc3999ec41f1410, type: 3}
-  explosionNativeRadius: 2
-  soulBurstNativeRadius: 1.6
-  emergencyNativeRadius: 1.5
-  ordnanceMarkerNativeRadius: 1.2
-  ordnanceDelay: 0.45
-  chainDamage: 22
-  blastDamage: 55
-  chainJumpRange: 9
-  chainFirstReach: 12
-  scanRadius: 22
-  enemyMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!114 &2043023434753208999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -472,65 +453,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b536aa760d8ccc349a10b349e6247762, type: 3}
   m_Name: 
   m_EditorClassIdentifier: _Project.Runtime::ZombieWar.Skills.SkillArsenal
-  enemyMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  bladeModel: {fileID: 8163591277018178320, guid: e59e1f3029d130f4b9ca3dc49a2187b3, type: 3}
-  bladeMaterial: {fileID: 2100000, guid: cc0348986c7777b4eb8bdac2929b603d, type: 2}
-  trailMaterial: {fileID: 2100000, guid: 60b06d5001e39a544b1628e8757cb4df, type: 2}
-  bladeHitFx: {fileID: 19818802, guid: 7f45705f5f30d8a45af0fc2eb8c8998a, type: 3}
-  orbitBaseDamage: 9
-  orbitHitInterval: 0.4
-  bladeScale: 0.9
-  orbitTrailColor: {r: 0.75, g: 0.95, b: 1, a: 0.9}
-  droneModel: {fileID: 8401680610445417701, guid: d799ba157c3fb114b9f7a8cf8c472737, type: 3}
-  droneModelScale: 1.9
-  droneBodyFx: {fileID: 19882774, guid: f6322404d6e3b914aa01ac044fb9415e, type: 3}
-  droneTracer: {fileID: 6267678621344663077, guid: 9c417fa30c2397b49a4426d7767a4a84, type: 3}
-  droneMuzzleFx: {fileID: 198497614769362178, guid: 71052c1e9d47774439ae2a30c4489596, type: 3}
-  droneHitFx: {fileID: 19818802, guid: 7f45705f5f30d8a45af0fc2eb8c8998a, type: 3}
-  droneBaseDamage: 7
-  droneRange: 11
-  droneBodyScale: 0.6
-  frostNovaFx: {fileID: 6757106154474216507, guid: cc2ba20b198127a4cbdda5c176eaf245, type: 3}
-  frostNovaNativeRadius: 4
-  frostBaseDamage: 16
-  frostTint: {r: 0.45, g: 0.8, b: 1, a: 0.6}
-  frozenTint: {r: 0.7, g: 0.95, b: 1, a: 0.85}
-  firePatchFx: {fileID: 198392393371232998, guid: 0fc50fd3faa65944ea9ebd10b28a67ed, type: 3}
-  firePatchNativeRadius: 0.75
-  firePatchRadius: 1.1
-  firePatchSeconds: 2.2
-  burnTint: {r: 1, g: 0.55, b: 0.15, a: 0.45}
-  boomerangHitFx: {fileID: 19873388, guid: 185035e4680c4b344b62bf5ace4674b8, type: 3}
-  boomerangBaseDamage: 14
-  boomerangRange: 9
-  boomerangOutSeconds: 0.5
-  boomerangModel: {fileID: 9217606001974512720, guid: 1f2b4adb262043e4eb10eed6533f2363, type: 3}
-  boomerangScale: 1.6
-  boomerangTint: {r: 1, g: 0.72, b: 0.3, a: 1}
-  boomerangTrailColor: {r: 1, g: 0.7, b: 0.25, a: 0.9}
-  strikeMarkerFx: {fileID: 198579860418196166, guid: c211cd63eef717741a0578bda14552a9, type: 3}
-  strikeMarkerNativeRadius: 1.2
-  strikeMissileFx: {fileID: 198505395039527838, guid: 32563c1c7ddb94746889e29751f49ec9, type: 3}
-  strikeBlastFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
-  strikeBlastNativeRadius: 2
-  strikeDecalFx: {fileID: 198129106043806410, guid: 628d050c815a3a3448ce1dcdf0578f21, type: 3}
-  airstrikeBaseDamage: 45
-  airstrikeDelay: 0.75
-  missileFallSeconds: 0.55
-  soulWispFx: {fileID: 19833602, guid: 9cf1127ebf4098946b3c2dbba00c0917, type: 3}
-  freezeBurstFx: {fileID: 198820429938409348, guid: d24d32ae7abae424080a26044bf04ea0, type: 3}
-  pathMaterial: {fileID: 2100000, guid: 75db7821e0853ea4da2061355eb06b75, type: 2}
-  showOrbitPath: 0
-  discMaterial: {fileID: 2100000, guid: c8caf20a245844c46a984b394b36b25b, type: 2}
-  shieldMaterial: {fileID: 2100000, guid: d01318361ec40dc48bdfdbc1f9397a1e, type: 2}
-  bombFallHeight: 14
-  bombDrift: 5
-  thunderStrikeFx: {fileID: 19828376, guid: 16f393fea92971c4f9d155ff0adab5a5, type: 3}
-  reaperFx: {fileID: 19879788, guid: 625165fb93553b14f8ed057807ed752a, type: 3}
-  shieldAuraFx: {fileID: 19874298, guid: 831c85159903ac84399ac3c3e1d5c5ad, type: 3}
-  evolveFx: {fileID: 19848580, guid: 9e4fad450282ac64daeb20efbc2b9dfb, type: 3}
+  library: {fileID: 11400000, guid: d4e08bf238c22264e8975909f54ef5ec, type: 2}
 --- !u!1 &1610907586400478597
 GameObject:
   m_ObjectHideFlags: 0

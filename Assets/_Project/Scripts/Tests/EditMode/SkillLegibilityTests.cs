@@ -15,17 +15,21 @@ namespace ZombieWar.Tests
     /// </summary>
     public class SkillLegibilityTests
     {
-        const string DriverSrc = "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs";
+        const string ChainSrc = "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/ChainPower.cs";
+        const string OrdnanceSrc = "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/OrdnancePower.cs";
+        const string ArsenalSrc = "/_Project/Scripts/Runtime/Gameplay/Skills/SkillArsenal.cs";
         const string Player = "Assets/_Project/Prefabs/Player.prefab";
 
         static string Read(string rel) => System.IO.File.ReadAllText(Application.dataPath + rel);
+        static ZombieWar.Skills.Powers.SkillFxLibrary Lib() =>
+            AssetDatabase.LoadAssetAtPath<ZombieWar.Skills.Powers.SkillFxLibrary>("Assets/_Project/Data/Skills/SkillFxLibrary.asset");
 
         // ─────────────────────────────────────────── chain arc
 
         [Test]
         public void ChainDrawsABoltBetweenSuccessiveTargets_NotJustAFlashOnEach()
         {
-            string src = Read(DriverSrc);
+            string src = Read(ChainSrc);
             StringAssert.Contains("DrawArc", src,
                 "a chain must connect its targets — Epic Toon FX has no beam prefab, so the arc is drawn");
             StringAssert.Contains("from = point", src,
@@ -56,24 +60,22 @@ namespace ZombieWar.Tests
         [Test]
         public void EachAutonomousPowerHasItsOwnBoundEffect()
         {
-            var player = AssetDatabase.LoadAssetAtPath<GameObject>(Player);
-            var driver = player.GetComponent<SkillCombatDriver>();
-            Assert.IsNotNull(driver);
-
-            var so = new SerializedObject(driver);
-            foreach (var field in new[] { "chainArcFx", "explosionFx", "ordnanceMarkerFx",
-                                          "soulBurstFx", "emergencyFx", "shieldBreakFx" })
-                Assert.IsNotNull(so.FindProperty(field).objectReferenceValue, $"{field} is unbound");
+            var lib = Lib();
+            Assert.IsNotNull(lib, "the FX library is missing");
+            Assert.IsNotNull(lib.chain.sparkFx, "chain spark unbound");
+            Assert.IsNotNull(lib.ordnance.blastFx, "ordnance blast unbound");
+            Assert.IsNotNull(lib.shared.bombFx, "the falling bomb unbound");
+            Assert.IsNotNull(lib.selfBurst.soulBurstFx, "soul burst unbound");
+            Assert.IsNotNull(lib.selfBurst.emergencyFx, "emergency unbound");
+            Assert.IsNotNull(lib.shield.breakFx, "shield break unbound");
         }
 
         [Test]
         public void SoulBurstAndEmergencyDetonationUseDifferentEffects()
         {
-            var player = AssetDatabase.LoadAssetAtPath<GameObject>(Player);
-            var so = new SerializedObject(player.GetComponent<SkillCombatDriver>());
-
-            var soul = so.FindProperty("soulBurstFx").objectReferenceValue;
-            var emergency = so.FindProperty("emergencyFx").objectReferenceValue;
+            var lib = Lib();
+            var soul = lib.selfBurst.soulBurstFx;
+            var emergency = lib.selfBurst.emergencyFx;
 
             Assert.IsNotNull(soul);
             Assert.IsNotNull(emergency);
@@ -84,9 +86,13 @@ namespace ZombieWar.Tests
         [Test]
         public void OrdnanceMarksItsClusterBeforeDetonating()
         {
-            string src = Read(DriverSrc);
-            StringAssert.Contains("ordnanceMarkerFx", src,
+            // M8: the marker became the shadow of the falling bomb plus a ring closing on the cluster.
+            string src = Read(OrdnanceSrc);
+            StringAssert.Contains("bomb = Lib.shared.bombFx", src,
                 "the player must read WHICH group was chosen, not just that something exploded");
+            StringAssert.Contains("delay = a.delay", src, "the shell must land after a beat, not at once");
+            string host = Read(ArsenalSrc);
+            StringAssert.Contains("Converge(", host, "a delayed blast must telegraph where it lands");
         }
 
         // ─────────────────────────────────────────── shield legibility

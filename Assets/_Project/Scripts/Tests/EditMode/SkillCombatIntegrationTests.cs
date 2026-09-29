@@ -110,15 +110,29 @@ namespace ZombieWar.Tests
                 Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
 
             StringAssert.Contains("PollPowers", src, "something must poll the powers each frame");
+            StringAssert.Contains("Dispatch", src, "every proc must reach the module that owns it");
 
-            // The driver switches on the SkillCatalogDefs CONSTANTS, so assert the constant names.
-            // (An earlier version of this test searched for the lowercase id strings, which the
-            // source never contains — the test was wrong, not the driver.)
-            foreach (var constant in new[] { "AutoChainLightning", "AutoOrdnance",
-                                             "AutoSoulBurst", "AutoEmergency", "SmgStatic" })
-                StringAssert.Contains(constant, src, $"the driver must handle {constant}");
+            // Phase A2: every card that procs is claimed by exactly one power module.
+            var claimed = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (var t in typeof(ZombieWar.Skills.Powers.PowerModule).Assembly.GetTypes())
+            {
+                if (t.IsAbstract || !typeof(ZombieWar.Skills.Powers.PowerModule).IsAssignableFrom(t)) continue;
+                var m = (ZombieWar.Skills.Powers.PowerModule)System.Activator.CreateInstance(t);
+                foreach (var id in m.ProcIds)
+                {
+                    if (claimed.TryGetValue(id, out var other)) Assert.Fail($"{id} is claimed by {other} and {t.Name}");
+                    claimed[id] = t.Name;
+                }
+            }
+            foreach (var id in new[] { SkillCatalogDefs.AutoChainLightning, SkillCatalogDefs.AutoOrdnance,
+                                       SkillCatalogDefs.AutoSoulBurst, SkillCatalogDefs.AutoEmergency,
+                                       SkillCatalogDefs.AutoFrostNova, SkillCatalogDefs.AutoBoomerang,
+                                       SkillCatalogDefs.AutoAirstrike, SkillCatalogDefs.SmgStatic })
+                Assert.IsTrue(claimed.ContainsKey(id), $"no power module handles {id}");
 
-            StringAssert.Contains("TakeDamage", src, "a power proc must actually damage something");
+            StringAssert.Contains("TakeDamage", System.IO.File.ReadAllText(
+                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs"),
+                "a power proc must actually damage something");
         }
 
         [Test]
@@ -129,11 +143,14 @@ namespace ZombieWar.Tests
 
             var driver = player.GetComponent<SkillCombatDriver>();
             Assert.IsNotNull(driver, "the power driver must live on the player, or no power can ever fire");
+            var arsenal = player.GetComponent<SkillArsenal>();
+            Assert.IsNotNull(arsenal, "the power host must live on the player");
 
-            var so = new SerializedObject(driver);
-            Assert.IsNotNull(so.FindProperty("chainArcFx").objectReferenceValue, "chain FX unbound");
-            Assert.IsNotNull(so.FindProperty("explosionFx").objectReferenceValue, "explosion FX unbound");
-            Assert.IsNotNull(so.FindProperty("shieldBreakFx").objectReferenceValue, "shield-break FX unbound");
+            var lib = new SerializedObject(arsenal).FindProperty("library").objectReferenceValue as ZombieWar.Skills.Powers.SkillFxLibrary;
+            Assert.IsNotNull(lib, "the player's SkillArsenal must reference the FX library");
+            Assert.IsNotNull(lib.chain.sparkFx, "chain FX unbound");
+            Assert.IsNotNull(lib.ordnance.blastFx, "explosion FX unbound");
+            Assert.IsNotNull(lib.shield.breakFx, "shield-break FX unbound");
 
             Assert.IsNotNull(player.GetComponent<Health>(), "the driver needs the player's Health for HP triggers");
             Assert.IsNotNull(player.GetComponent<PlayerMovement>(), "the shield gate resolves off PlayerMovement");
@@ -202,11 +219,14 @@ namespace ZombieWar.Tests
         public void PowerApplicationIsBoundedToTwoConcurrentExplosions()
         {
             string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
-            StringAssert.Contains("_explosionsThisFrame >= 2", src,
+                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/SelfBurstPower.cs");
+            StringAssert.Contains("_burstsThisFrame >= 2", src,
                 "the damage cost of blasts must be bounded, not only the visual");
-            StringAssert.Contains("FxPool.Play", src, "FX must go through the pool, never Instantiate");
-            Assert.IsFalse(src.Contains("Object.Instantiate"), "no ad-hoc instantiation in the driver");
+            StringAssert.Contains("PowerKit.PlaySized", src, "FX must go through the pool, never Instantiate");
+            Assert.IsFalse(src.Contains("Instantiate"), "no ad-hoc instantiation in a proc");
+            string driver = System.IO.File.ReadAllText(
+                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+            Assert.IsFalse(driver.Contains("Instantiate"), "no ad-hoc instantiation in the driver");
         }
 
         /// <summary>
@@ -219,7 +239,7 @@ namespace ZombieWar.Tests
         public void PowerDamageResolvesEnemiesOnly_NeverThePlayer()
         {
             string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs");
 
             StringAssert.Contains("GetComponentInParent<ZombieBase>()", src,
                 "power damage must resolve the ENEMY type, not any IDamageable");
@@ -230,10 +250,23 @@ namespace ZombieWar.Tests
         [Test]
         public void PowerProcUsesExactlyOneSpatialQuery()
         {
-            string src = System.IO.File.ReadAllText(
+            // One query per proc, in each module's OnProc (Self Burst has two procs: its burst and the
+            // Reaper's, one query each). The driver itself queries nothing.
+            var expected = new System.Collections.Generic.Dictionary<string, int>
+            {
+                { "ChainPower", 1 }, { "OrdnancePower", 1 }, { "FrostNovaPower", 1 },
+                { "AirstrikePower", 1 }, { "SelfBurstPower", 2 },
+            };
+            foreach (var kv in expected)
+            {
+                string src = System.IO.File.ReadAllText(
+                    Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/" + kv.Key + ".cs");
+                int gathers = src.Split(new[] { "TargetQuery.Gather" }, System.StringSplitOptions.None).Length - 1;
+                Assert.AreEqual(kv.Value, gathers, $"{kv.Key}: one Gather per proc keeps the one-query-per-proc guarantee");
+            }
+            string driver = System.IO.File.ReadAllText(
                 Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
-            int gathers = src.Split(new[] { "TargetQuery.Gather" }, System.StringSplitOptions.None).Length - 1;
-            Assert.AreEqual(1, gathers, "exactly one Gather call site keeps the one-query-per-proc guarantee");
+            Assert.IsFalse(driver.Contains("TargetQuery.Gather"), "the driver itself queries nothing");
         }
     }
 }

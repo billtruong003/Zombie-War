@@ -69,19 +69,15 @@ namespace ZombieWar.EditorTools
             var boom = MakePrefab("SK_Boomerang", new[] { pal });
             AssetDatabase.SaveAssets();
 
-            var player = PrefabUtility.LoadPrefabContents(PlayerPrefab);
-            try
-            {
-                var arsenal = player.GetComponentInChildren<ZombieWar.Skills.SkillArsenal>(true);
-                var so = new SerializedObject(arsenal);
-                so.FindProperty("droneModel").objectReferenceValue = drone;
-                so.FindProperty("bladeModel").objectReferenceValue = saw;
-                so.FindProperty("boomerangModel").objectReferenceValue = boom;
-                so.FindProperty("trailMaterial").objectReferenceValue = trail;
-                so.ApplyModifiedPropertiesWithoutUndo();
-                PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
-            }
-            finally { PrefabUtility.UnloadPrefabContents(player); }
+            // Phase A2: power assets live in the FX library, not on the player prefab.
+            var lib = AssetDatabase.LoadAssetAtPath<ZombieWar.Skills.Powers.SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing " + SkillFxLibraryMigration.LibraryPath;
+            lib.drone.model = drone;
+            lib.orbit.bladeModel = saw;
+            lib.boomerang.model = boom;
+            lib.shared.trailMaterial = trail;
+            EditorUtility.SetDirty(lib);
+            AssetDatabase.SaveAssets();
             return "built SK_Drone, SK_SawBlade, SK_Boomerang";
         }
 

@@ -29,16 +29,47 @@ namespace ZombieWar.Skills
         readonly RampAccumulator _staticCharge = new(0f, 0f);
         readonly RampAccumulator _runGunMoving = new(4f, 4f);
 
-        readonly AutonomousPower _chain = new(SkillCatalogDefs.AutoChainLightning, AutonomousPower.TriggerKind.Interval, 6f);
-        readonly AutonomousPower _ordnance = new(SkillCatalogDefs.AutoOrdnance, AutonomousPower.TriggerKind.Interval, 7f);
-        readonly AutonomousPower _soulBurst = new(SkillCatalogDefs.AutoSoulBurst, AutonomousPower.TriggerKind.KillCount, 0.5f, killsRequired: 12);
-        readonly AutonomousPower _emergency = new(SkillCatalogDefs.AutoEmergency, AutonomousPower.TriggerKind.HealthThreshold, 30f, healthFraction: 0.3f);
+        /// <summary>
+        /// A power that fires in procs (continuous powers — Orbit Blades, Drone Buddy, Fire Trail —
+        /// read their magnitudes every frame instead). Its trigger, and how one proc is sized; the
+        /// power module that owns the id turns the proc into damage. A new burst power is one line in
+        /// <see cref="_procPowers"/>.
+        /// </summary>
+        sealed class ProcPower
+        {
+            public readonly AutonomousPower timer;
+            public readonly System.Func<SkillRuntime, int> targets;
+            public readonly System.Func<SkillRuntime, float> radius;
+            /// Cooldown follows the card's "cd" table (kill- and health-triggered powers have none).
+            public readonly bool timed;
 
-        // M8 burst powers. Orbit Blades, Drone Buddy and Fire Trail are continuous: SkillArsenal reads
-        // their magnitudes every frame instead of polling a proc.
-        readonly AutonomousPower _frost = new(SkillCatalogDefs.AutoFrostNova, AutonomousPower.TriggerKind.Interval, 5f);
-        readonly AutonomousPower _boomerang = new(SkillCatalogDefs.AutoBoomerang, AutonomousPower.TriggerKind.Interval, 2.5f);
-        readonly AutonomousPower _airstrike = new(SkillCatalogDefs.AutoAirstrike, AutonomousPower.TriggerKind.Interval, 8f);
+            public ProcPower(AutonomousPower timer, System.Func<SkillRuntime, int> targets,
+                             System.Func<SkillRuntime, float> radius, bool timed = true)
+            {
+                this.timer = timer; this.targets = targets; this.radius = radius; this.timed = timed;
+            }
+        }
+
+        static AutonomousPower Every(string id, float cooldown) => new(id, AutonomousPower.TriggerKind.Interval, cooldown);
+
+        readonly ProcPower[] _procPowers =
+        {
+            new(Every(SkillCatalogDefs.AutoChainLightning, 6f), r => r.ChainTargets, _ => 8f),
+            new(Every(SkillCatalogDefs.AutoOrdnance, 7f), _ => 1, r => r.Value(SkillCatalogDefs.AutoOrdnance)),
+            new(new AutonomousPower(SkillCatalogDefs.AutoSoulBurst, AutonomousPower.TriggerKind.KillCount, 0.5f, killsRequired: 12),
+                _ => 0, r => r.Value(SkillCatalogDefs.AutoSoulBurst), timed: false),
+            new(new AutonomousPower(SkillCatalogDefs.AutoEmergency, AutonomousPower.TriggerKind.HealthThreshold, 30f, healthFraction: 0.3f),
+                _ => 0, r => r.Value(SkillCatalogDefs.AutoEmergency)),
+            new(Every(SkillCatalogDefs.AutoFrostNova, 5f), _ => 0, r => r.FrostRadius),
+            new(Every(SkillCatalogDefs.AutoBoomerang, 2.5f), r => r.BoomerangCount, _ => 9f),
+            new(Every(SkillCatalogDefs.AutoAirstrike, 8f), r => r.AirstrikeBlasts, _ => 2.6f),
+        };
+
+        ProcPower ProcOf(string id)
+        {
+            for (int i = 0; i < _procPowers.Length; i++) if (_procPowers[i].timer.id == id) return _procPowers[i];
+            return null;
+        }
         readonly DistanceAccumulator _trailDistance = new();
         int _trailDropsPending;
         uint _reaperRng = 0x9E3779B9u;
@@ -240,17 +271,11 @@ namespace ZombieWar.Skills
 
         void SyncAutonomousCooldowns()
         {
-            Sync(_chain, SkillCatalogDefs.AutoChainLightning);
-            Sync(_ordnance, SkillCatalogDefs.AutoOrdnance);
-            Sync(_emergency, SkillCatalogDefs.AutoEmergency);
-            Sync(_frost, SkillCatalogDefs.AutoFrostNova);
-            Sync(_boomerang, SkillCatalogDefs.AutoBoomerang);
-            Sync(_airstrike, SkillCatalogDefs.AutoAirstrike);
-        }
-
-        void Sync(AutonomousPower power, string id)
-        {
-            if (Has(id)) power.Cooldown = CooldownAt(id, RankOf(id), IsEvolved(id));
+            foreach (var p in _procPowers)
+            {
+                string id = p.timer.id;
+                if (p.timed && Has(id)) p.timer.Cooldown = CooldownAt(id, RankOf(id), IsEvolved(id));
+            }
         }
 
         // ══════════════════════════════════════════════════════════ STAT (P8 soft caps)
@@ -313,7 +338,7 @@ namespace ZombieWar.Skills
             _heavyPressure.Tick(isFiring, dt);
 
             // P2 — health-threshold power re-arms once the player recovers
-            _emergency.NotifyHealthFraction(playerHealthFraction);
+            ProcOf(SkillCatalogDefs.AutoEmergency).timer.NotifyHealthFraction(playerHealthFraction);
         }
 
         // ══════════════════════════════════════════════════════════ SHOT / HIT / KILL
@@ -494,7 +519,7 @@ namespace ZombieWar.Skills
 
         public void OnKill()
         {
-            _soulBurst.NotifyKill();
+            ProcOf(SkillCatalogDefs.AutoSoulBurst).timer.NotifyKill();
         }
 
         /// <summary>M8: Hunter's Mark is in play (card held, marksman rifle in hand) — drives its lock-on mark.</summary>
@@ -548,33 +573,12 @@ namespace ZombieWar.Skills
         {
             ProcBuffer.Clear();
 
-            if (Has(SkillCatalogDefs.AutoChainLightning) && _chain.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoChainLightning,
-                    targets = ChainTargets, radius = 8f });
-
-            if (Has(SkillCatalogDefs.AutoOrdnance) && _ordnance.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoOrdnance,
-                    targets = 1, radius = Value(SkillCatalogDefs.AutoOrdnance) });
-
-            if (Has(SkillCatalogDefs.AutoSoulBurst) && _soulBurst.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoSoulBurst,
-                    targets = 0, radius = Value(SkillCatalogDefs.AutoSoulBurst) });
-
-            if (Has(SkillCatalogDefs.AutoEmergency) && _emergency.TryProc(now, playerHealthFraction))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoEmergency,
-                    targets = 0, radius = Value(SkillCatalogDefs.AutoEmergency) });
-
-            if (Has(SkillCatalogDefs.AutoFrostNova) && _frost.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoFrostNova,
-                    targets = 0, radius = FrostRadius });
-
-            if (Has(SkillCatalogDefs.AutoBoomerang) && _boomerang.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoBoomerang,
-                    targets = BoomerangCount, radius = 9f });
-
-            if (Has(SkillCatalogDefs.AutoAirstrike) && _airstrike.TryProc(now))
-                ProcBuffer.Add(new PowerProc { skillId = SkillCatalogDefs.AutoAirstrike,
-                    targets = AirstrikeBlasts, radius = 2.6f });
+            foreach (var p in _procPowers)
+            {
+                string id = p.timer.id;
+                if (Has(id) && p.timer.TryProc(now, playerHealthFraction))
+                    ProcBuffer.Add(new PowerProc { skillId = id, targets = p.targets(this), radius = p.radius(this) });
+            }
 
             // SMG Static Build-up is charge-driven rather than timer-driven, but it shares the chain
             // selection primitive with Chain Lightning.
@@ -593,24 +597,12 @@ namespace ZombieWar.Skills
         /// firing at a crowd 8-12 m away drew no bolt and still waited its full cooldown.</summary>
         public void Refund(string skillId)
         {
-            switch (skillId)
-            {
-                case SkillCatalogDefs.AutoChainLightning: _chain.Refund(Time.time); break;
-                case SkillCatalogDefs.AutoOrdnance: _ordnance.Refund(Time.time); break;
-            }
+            // Only interval powers wait for a target; a kill or health trigger is not re-armed here.
+            var p = ProcOf(skillId);
+            if (p != null && p.timer.trigger == AutonomousPower.TriggerKind.Interval) p.timer.Refund(Time.time);
         }
 
-        public float ReadinessOf(string skillId) => skillId switch
-        {
-            SkillCatalogDefs.AutoChainLightning => _chain.Readiness(Time.time),
-            SkillCatalogDefs.AutoOrdnance => _ordnance.Readiness(Time.time),
-            SkillCatalogDefs.AutoSoulBurst => _soulBurst.Readiness(Time.time),
-            SkillCatalogDefs.AutoEmergency => _emergency.Readiness(Time.time),
-            SkillCatalogDefs.AutoFrostNova => _frost.Readiness(Time.time),
-            SkillCatalogDefs.AutoBoomerang => _boomerang.Readiness(Time.time),
-            SkillCatalogDefs.AutoAirstrike => _airstrike.Readiness(Time.time),
-            _ => 1f,
-        };
+        public float ReadinessOf(string skillId) => ProcOf(skillId)?.timer.Readiness(Time.time) ?? 1f;
 
         public void Reset()
         {

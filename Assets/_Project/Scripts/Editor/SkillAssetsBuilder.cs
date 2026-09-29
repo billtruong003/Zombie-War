@@ -95,19 +95,18 @@ namespace ZombieWar.EditorTools
             var root = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                var ars = new SerializedObject(root.GetComponent<ZombieWar.Skills.SkillArsenal>());
-                ars.FindProperty("droneModel").objectReferenceValue = drone;
-                ars.FindProperty("droneModelScale").floatValue = 1.9f;
-                ars.FindProperty("soulWispFx").objectReferenceValue = Fx("Combat/Missiles/Soul/SoulMissileGreen");
-                ars.FindProperty("freezeBurstFx").objectReferenceValue = Fx("Combat/Explosions/SnowExplosion/SnowExplosion");
-                ars.FindProperty("reaperFx").objectReferenceValue = Fx("Combat/Explosions/SoulExplosion/SoulExplosionPurple");
-                ars.FindProperty("pathMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(MatDir + "M_SkillLineAlpha.mat");
-                ars.FindProperty("boomerangScale").floatValue = 1.6f;
-                ars.ApplyModifiedPropertiesWithoutUndo();
-
-                var drv = new SerializedObject(root.GetComponent<ZombieWar.Skills.SkillCombatDriver>());
-                drv.FindProperty("soulBurstFx").objectReferenceValue = Fx("Combat/Explosions/SoulExplosion/SoulExplosionGreen");
-                drv.ApplyModifiedPropertiesWithoutUndo();
+                // Phase A2: power assets live in the FX library, not on the player prefab.
+                var lib = AssetDatabase.LoadAssetAtPath<ZombieWar.Skills.Powers.SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+                if (lib == null) throw new System.Exception("missing " + SkillFxLibraryMigration.LibraryPath);
+                lib.drone.model = drone;
+                lib.drone.modelScale = 1.9f;
+                lib.shared.soulWispFx = Fx("Combat/Missiles/Soul/SoulMissileGreen");
+                lib.frost.freezeBurstFx = Fx("Combat/Explosions/SnowExplosion/SnowExplosion");
+                lib.selfBurst.reaperFx = Fx("Combat/Explosions/SoulExplosion/SoulExplosionPurple");
+                lib.orbit.pathMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatDir + "M_SkillLineAlpha.mat");
+                lib.boomerang.scale = 1.6f;
+                lib.selfBurst.soulBurstFx = Fx("Combat/Explosions/SoulExplosion/SoulExplosionGreen");
+                EditorUtility.SetDirty(lib);
 
                 var fx = new SerializedObject(root.GetComponent<ZombieWar.Skills.SkillFxDirector>());
                 fx.FindProperty("markSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Textures/FX/tex_skill_reticle.png");
