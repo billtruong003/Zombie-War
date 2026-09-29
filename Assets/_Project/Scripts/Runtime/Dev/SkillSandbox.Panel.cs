@@ -135,6 +135,8 @@ namespace ZombieWar.Dev
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(God ? "God ✓" : "God")) SetGod(!God);
             if (GUILayout.Button(Walk ? "Walk ✓" : "Walk")) { if (Walk) StopWalk(); else Walk = true; }
+            if (GUILayout.Button(AllowLevelUp ? "Level-up ✓" : "Level-up")) AllowLevelUp = !AllowLevelUp;
+            if (GUILayout.Button("+1 level")) RunState.Current?.AddXp(RunState.Current.XpForNextLevel);
             GUILayout.EndHorizontal();
         }
 

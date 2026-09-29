@@ -33,6 +33,7 @@ namespace ZombieWar.EditorTools.V2
                 UIKitV2.NoTheme = true;   // the revive overlay stays dark in every theme
                 try { Revive(root, end); } finally { UIKitV2.NoTheme = false; }
                 Result(root, end);
+                Unlock(root, end);
 
                 // Same scaling as the menu (Expand @1080x1920): taller phones get more room and a
                 // tablet no longer pushes the revive and result buttons off the bottom.
@@ -60,16 +61,20 @@ namespace ZombieWar.EditorTools.V2
             try
             {
                 var end = r.gameObject.AddComponent<RunEndV2>();
-                UIKitV2.NoTheme = true; try { Revive(r, end); } finally { UIKitV2.NoTheme = false; } Result(r, end);
+                UIKitV2.NoTheme = true; try { Revive(r, end); } finally { UIKitV2.NoTheme = false; } Result(r, end); Unlock(r, end);
                 r.Find("Revive").gameObject.SetActive(true);
                 var p1 = PrefabUtility.SaveAsPrefabAsset(r.gameObject, "Assets/_Project/UI/Prefabs/V2/Review_Revive.prefab");
                 r.Find("Revive").gameObject.SetActive(false); r.Find("Result").gameObject.SetActive(true);
                 var p2 = PrefabUtility.SaveAsPrefabAsset(r.gameObject, "Assets/_Project/UI/Prefabs/V2/Review_Result.prefab");
+                r.Find("Result").gameObject.SetActive(false); r.Find("Unlock").gameObject.SetActive(true);
+                var p3 = PrefabUtility.SaveAsPrefabAsset(r.gameObject, "Assets/_Project/UI/Prefabs/V2/Review_Unlock.prefab");
                 var a = UiShot.RenderAll(AssetDatabase.GetAssetPath(p1), "Revive");
                 var b = UiShot.RenderAll(AssetDatabase.GetAssetPath(p2), "Result");
+                var c = UiShot.RenderAll(AssetDatabase.GetAssetPath(p3), "Unlock");
                 AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(p1));
                 AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(p2));
-                return a + " | " + b;
+                AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(p3));
+                return a + " | " + b + " | " + c;
             }
             finally { Object.DestroyImmediate(r.gameObject); }
         }
@@ -246,6 +251,57 @@ namespace ZombieWar.EditorTools.V2
             var again = BottomBand(Node(safe, "Again"), 16 + 46 + 8, 62, 14, 14);
             Wire(e, "playAgain", Button(again, "PLAY AGAIN", Role.Primary, 26f));
             Wire(e, "resultRoot", p.gameObject);
+            p.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Phase A1 (owner-approved mockup SK_UnlockPopup, 2026-09-29): after a run that raised the
+        /// account level, each card that level unlocks is shown over the result, one at a time — the
+        /// card, the evolution it opens, the collection count — with Try it now (a new run) and Next.
+        /// </summary>
+        static void Unlock(RectTransform root, RunEndV2 e)
+        {
+            var p = Fill(Node(root, "Unlock"), 0, 0, 0, 0);
+            ScreenBackground(p);
+            var safe = Fill(Node(p, "Safe"), 0, 0, 0, 0); safe.gameObject.AddComponent<SafeArea>();
+            var col = Fill(Node(safe, "Col"), 18, 0, 18, 0);
+            Wire(e, "unlockLevel", Title(TopBand(Node(col, "Level"), 40, 36), "ACCOUNT LEVEL 7", 28f, Ink, TextAlignmentOptions.Center));
+            Body(TopBand(Node(col, "Sub"), 80, 20), "New skill unlocked!", 15f, Yellow, TextAlignmentOptions.Center);
+
+            var card = TopBand(Node(col, "Card"), 116, 300);
+            Surface(card, Card, RCard);
+            var tagBox = Box(Node(card, "Tag"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -16, 120, 22);
+            Wire(e, "unlockTagBg", Surface(tagBox, Gem, RTag));
+            Wire(e, "unlockTag", Body(Fill(Node(tagBox, "T"), 4, 0, 4, 0), "POWER", 11f, OnGem, TextAlignmentOptions.Center));
+            var iconBox = Box(Node(card, "Icon"), new Vector2(0.5f, 1), new Vector2(0.5f, 1), 0, -50, 104, 104);
+            Wire(e, "unlockFrame", Surface(iconBox, Deep, RCard));
+            var art = Fill(Node(iconBox, "Art"), 8, 8, 8, 8).gameObject.AddComponent<Image>();
+            art.preserveAspect = true; art.raycastTarget = false;
+            Wire(e, "unlockIcon", art);
+            Wire(e, "unlockBadge", Title(Fill(Node(iconBox, "Badge"), 0, 0, 0, 0), "TC", 32f, Ink, TextAlignmentOptions.Center));
+            Wire(e, "unlockName", Shrink(Title(TopBand(Node(card, "Name"), 164, 34, 12, 12), "Toxic Cloud", 26f, Ink, TextAlignmentOptions.Center)));
+            Wire(e, "unlockDesc", Body(TopBand(Node(card, "Desc"), 202, 44, 16, 16), "A poison cloud lands on the biggest crowd", 14f, Ink, TextAlignmentOptions.Center, false));
+            Wire(e, "unlockHint", Body(TopBand(Node(card, "Hint"), 252, 36, 16, 16), "Also opens an evolution", 12f, GoldText, TextAlignmentOptions.Center));
+
+            var coll = TopBand(Node(col, "Collection"), 432, 58);
+            Surface(coll, Card, RCard);
+            Label(TopBand(Node(coll, "L"), 10, 14, 12, 120), "SKILL COLLECTION");
+            var cnt = Label(TopBand(Node(coll, "N"), 10, 14, 150, 12), "20 / 47", Ink);
+            cnt.alignment = TextAlignmentOptions.MidlineRight;
+            Wire(e, "unlockCount", cnt);
+            var bar = TopBand(Node(coll, "Bar"), 32, 12, 12, 12);
+            Surface(bar, Deep, 6f);
+            var fr = Fill(Node(bar, "Fill"), 0, 0, 0, 0);
+            var fill = Surface(fr, Gem, 6f); fr.anchorMax = new Vector2(0.43f, 1f);
+            Wire(e, "unlockFill", fill);
+
+            var next = BottomBand(Node(col, "Next"), 16, 46);
+            Wire(e, "unlockNext", Button(next, "NEXT", Role.Quiet, 16f));
+            Wire(e, "unlockNextLabel", next.Find("Face/Label").GetComponent<TextMeshProUGUI>());
+            var tryIt = BottomBand(Node(col, "Try"), 16 + 46 + 8, 62);
+            Wire(e, "unlockTry", Button(tryIt, "TRY IT NOW", Role.Claim, 24f));
+            Wire(e, "skillIcons", SkillIconSetBuilder.Refresh());
+            Wire(e, "unlockRoot", p.gameObject);
             p.gameObject.SetActive(false);
         }
 

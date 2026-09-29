@@ -804,12 +804,14 @@ namespace ZombieWar
             return IsWeaponOwned(weaponId) ? 1 : 0;
         }
 
-        public enum WeaponUpgradeResult { Upgraded, MaxLevel, NotOwned, InsufficientShards, InsufficientGold, InvalidData, SaveFailed }
+        public enum WeaponUpgradeResult { Upgraded, MaxLevel, NotOwned, InsufficientShards, InsufficientGold, InvalidData, SaveFailed, Locked }
 
         public static WeaponUpgradeResult TryUpgradeWeapon(WeaponData weapon, EconomyConfig economy)
         {
             if (weapon == null || economy == null || string.IsNullOrEmpty(weapon.WeaponId)) return WeaponUpgradeResult.InvalidData;
             if (!IsWeaponOwned(weapon.WeaponId)) return WeaponUpgradeResult.NotOwned;
+            // Gun stars open at account level 5 (AccountProgress). Until 2026-09-29 only a test knew.
+            if (!AccountProgress.IsUnlocked(AccountProgress.Feature.GunStars, AccountLevel)) return WeaponUpgradeResult.Locked;
             int level = GetWeaponLevel(weapon.WeaponId);
             if (level >= 3) return WeaponUpgradeResult.MaxLevel;
             int tier = Mathf.Clamp((int)weapon.tier, 0, 4);

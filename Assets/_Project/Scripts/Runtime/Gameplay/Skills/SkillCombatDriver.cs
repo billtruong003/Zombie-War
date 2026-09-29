@@ -161,6 +161,25 @@ namespace ZombieWar.Skills
             _explosionsThisFrame = 0;
             var procs = run.PollPowers(Time.time, healthFraction);
             for (int i = 0; i < procs.Count; i++) Apply(run, procs[i], pos);
+
+            ApplyOverflow(run, pos);
+        }
+
+        /// <summary>
+        /// Overflow cards taken this frame (from a level-up, and later a chest or a station) act here,
+        /// whatever screen handed them out.
+        /// </summary>
+        void ApplyOverflow(SkillRuntime run, Vector3 pos)
+        {
+            float heal = run.ConsumeHealFraction();
+            if (heal > 0f && _health != null)
+            {
+                _health.Heal(_health.Max * heal);
+                SkillFxDirector.Instance?.Pulse(pos, 1.8f, new Color(0.35f, 1f, 0.5f, 0.9f), 0.45f, 0.25f);
+            }
+            int coin = run.ConsumeCoin();
+            if (coin > 0) RunState.Current?.AddCurrency(PlayerProfile.CurrencyKind.Coin, coin);
+            if (run.ConsumeMagnet()) PickupManager.BeginMagnetSweep();
         }
 
         /// <summary>Called by the weapon when it actually fires, so ramp cards see real trigger fire.</summary>
@@ -359,6 +378,11 @@ namespace ZombieWar.Skills
 
         public static SkillCombatDriver Instance { get; private set; }
         void OnDestroy() { if (Instance == this) Instance = null; }
-        void Start() { Instance = this; }
+        void Start()
+        {
+            Instance = this;
+            // Cards above the player's account level are not offered this run (the sandbox lifts this).
+            if (SkillRuntime.Active != null) SkillRuntime.Active.UnlockLevel = PlayerProfile.AccountLevel;
+        }
     }
 }

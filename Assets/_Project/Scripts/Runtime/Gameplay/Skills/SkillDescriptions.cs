@@ -32,20 +32,20 @@ namespace ZombieWar.Skills
                 // ── signatures ──
                 case SkillCatalogDefs.SidearmRunGun: return $"Fire up to {pct} faster while moving";
                 case SkillCatalogDefs.SidearmQuickstep: return $"Every {v:0.#} m walked, the next shot deals x2.5";
-                case SkillCatalogDefs.SmgStatic: return $"Every {6 - rank} hits, lightning jumps to {v:0} enemies";
+                case SkillCatalogDefs.SmgStatic: return $"Every {def.At("every", rank, 5f):0} hits, lightning jumps to {v:0} enemies";
                 case SkillCatalogDefs.SmgBulletHose: return $"Holding fire ramps fire rate up to +{pct}";
                 case SkillCatalogDefs.ArFocusFire: return $"Each hit on the same enemy +{pct} damage";
-                case SkillCatalogDefs.ArBreach: return $"Every {Mathf.Max(2, 6 - rank)} shots pierce {v:0} enemies and expose them";
+                case SkillCatalogDefs.ArBreach: return $"Every {def.At("every", rank, 5f):0} shots pierce {v:0} enemies and expose them";
                 case SkillCatalogDefs.ShotgunPointBlank: return $"Up to +{pct} damage up close";
                 case SkillCatalogDefs.ShotgunConcussion: return $"Hits slow enemies by {pct}";
                 case SkillCatalogDefs.LmgHeavyPressure: return $"Sustained fire ramps damage up to +{pct}";
-                case SkillCatalogDefs.LmgShockwave: return $"Every {Mathf.Max(4, 12 - 2 * rank)} shots, a shockwave cone";
+                case SkillCatalogDefs.LmgShockwave: return $"Every {def.At("every", rank, 10f):0} shots, a shockwave cone";
                 case SkillCatalogDefs.MarksmanLongshot: return $"Up to +{v * 500f:0}% damage at long range";
                 case SkillCatalogDefs.MarksmanHunters: return $"First hit on each new target +{pct}";
 
                 // ── universals ──
                 case SkillCatalogDefs.UniExecution:
-                    return $"+{pct} damage to enemies under {20 + 5 * (rank - 1)}% health";
+                    return $"+{pct} damage to enemies under {def.At("threshold", rank, 0.2f) * 100f:0.#}% health";
                 case SkillCatalogDefs.UniKinetic: return $"Every {v:0} m walked, a shield blocks one hit";
 
                 // ── original powers ──
@@ -61,7 +61,7 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.AutoOrbit: return $"{v:0} blades spin around you, cutting what they touch";
                 case SkillCatalogDefs.AutoDrone: return $"A drone shoots the nearest enemy {v:0.#} times a second";
                 case SkillCatalogDefs.AutoFrostNova:
-                    return $"Every {Cd(def, rank)}s, a frost ring ({v:0.#} m) slows enemies {35 + 10 * (rank - 1)}%";
+                    return $"Every {Cd(def, rank)}s, a frost ring ({v:0.#} m) slows enemies {def.At("slow", rank, 0.35f) * 100f:0}%";
                 case SkillCatalogDefs.AutoFireTrail: return $"Walking leaves fire that burns {v:0} damage a second";
                 case SkillCatalogDefs.AutoBoomerang:
                     return v <= 1f ? "A boomerang cuts out and back through every enemy"
@@ -75,6 +75,12 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.EvoAbsoluteZero: return "Frost Nova freezes enemies solid; frozen take +50%";
                 case SkillCatalogDefs.EvoSquadron: return "3 drones; their kills can drop coins";
                 case SkillCatalogDefs.EvoReaper: return "Kills can release a soul burst";
+
+                // ── overflow ──
+                case SkillCatalogDefs.OverHeal: return $"Heal {pct} of your max health now";
+                case SkillCatalogDefs.OverMagnet: return "Pull every coin and gem on the map to you";
+                case SkillCatalogDefs.OverCoin: return $"+{v:0} Coin now";
+                case SkillCatalogDefs.OverMight: return $"All damage +{pct} (stacks)";
             }
             return def.displayName;
         }
@@ -84,6 +90,7 @@ namespace ZombieWar.Skills
         {
             if (def == null) return string.Empty;
             if (def.IsEvolution) return "EVOLUTION";
+            if (def.IsOverflow) return "BONUS";
             return rank <= 1 ? "NEW" : $"LV {rank}";
         }
 
@@ -95,6 +102,7 @@ namespace ZombieWar.Skills
             SkillLayer.Autonomous => new Color(0.66f, 0.45f, 1.00f),
             SkillLayer.Universal => new Color(0.26f, 0.82f, 0.76f),
             SkillLayer.Evolution => new Color(1.00f, 0.80f, 0.20f),
+            SkillLayer.Overflow => new Color(0.36f, 0.86f, 0.52f),
             _ => Color.white,
         };
 

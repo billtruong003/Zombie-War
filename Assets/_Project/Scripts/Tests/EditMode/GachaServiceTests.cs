@@ -279,6 +279,7 @@ namespace ZombieWar.Tests
             PlayerProfile.AddOwnedWeapon(weapon.WeaponId);
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 100);
             PlayerProfile.Add(PlayerProfile.CurrencyKind.Gold, 100);
+            PlayerProfile.AddAccountXp(1000);   // gun stars open at account level 5
             var items = GachaService.BuildPool(pool, econ, new[] { weapon }, new HashSet<string>());
 
             var result = GachaService.Pull(econ, pool, items, 1, new GachaService.SystemRng(7));

@@ -66,6 +66,24 @@ namespace ZombieWar.UI
         [SerializeField] private Button playAgain;
         [SerializeField] private Button home;
 
+        [Header("Unlock (after a run that raised the account level)")]
+        [SerializeField] private GameObject unlockRoot;
+        [SerializeField] private TMP_Text unlockLevel;
+        [SerializeField] private Image unlockTagBg;
+        [SerializeField] private TMP_Text unlockTag;
+        [SerializeField] private Image unlockFrame;
+        [SerializeField] private Image unlockIcon;
+        [SerializeField] private TMP_Text unlockBadge;
+        [SerializeField] private TMP_Text unlockName;
+        [SerializeField] private TMP_Text unlockDesc;
+        [SerializeField] private TMP_Text unlockHint;
+        [SerializeField] private TMP_Text unlockCount;
+        [SerializeField] private Image unlockFill;
+        [SerializeField] private Button unlockNext;
+        [SerializeField] private TMP_Text unlockNextLabel;
+        [SerializeField] private Button unlockTry;
+        [SerializeField] private SkillIconSet skillIcons;
+
         Health _player;
         Coroutine _count;
         long _banked;
@@ -87,6 +105,9 @@ namespace ZombieWar.UI
             On(shopLink, () => { MenuIntent.Next = MenuIntent.Shop; Leave(GameFlow.ReturnToMenu); });
             On(playAgain, () => Leave(GameFlow.RestartGameplay));
             On(home, () => Leave(GameFlow.ReturnToMenu));
+            On(unlockNext, ShowNextUnlock);
+            On(unlockTry, () => Leave(GameFlow.RestartGameplay));
+            if (unlockRoot != null) unlockRoot.SetActive(false);
         }
 
         void Start() => HookPlayer();
@@ -292,6 +313,69 @@ namespace ZombieWar.UI
             if (next != null) SetRow(progressRows.Length - 1, $"{next.weaponName} now affordable", "");
             if (progressCard != null) progressCard.SetActive(done.Count > 0 || next != null);
             Time.timeScale = 0f;
+            QueueUnlocks(result.AccountLevelsGained);
+        }
+
+        // ------------------------------------------------------------ unlocks
+        readonly System.Collections.Generic.List<(int level, ZombieWar.Skills.SkillDef def)> _unlocks = new();
+
+        /// Cards the levels just reached unlocked, shown one at a time over the result.
+        void QueueUnlocks(int levelsGained)
+        {
+            _unlocks.Clear();
+            if (unlockRoot == null || levelsGained <= 0) return;
+            int now = PlayerProfile.AccountLevel;
+            var at = new System.Collections.Generic.List<ZombieWar.Skills.SkillDef>();
+            for (int lv = now - levelsGained + 1; lv <= now; lv++)
+            {
+                ZombieWar.Skills.SkillCatalogDefs.UnlockedAt(lv, at);
+                foreach (var d in at) _unlocks.Add((lv, d));
+            }
+            ShowNextUnlock();
+        }
+
+        void ShowNextUnlock()
+        {
+            if (_unlocks.Count == 0) { if (unlockRoot != null) unlockRoot.SetActive(false); return; }
+            var (lv, def) = _unlocks[0];
+            _unlocks.RemoveAt(0);
+            unlockRoot.SetActive(true);
+            unlockRoot.transform.SetAsLastSibling();
+
+            Set(unlockLevel, $"ACCOUNT LEVEL {lv}");
+            var color = ZombieWar.Skills.SkillDescriptions.LayerColor(def);
+            Set(unlockTag, def.layer switch
+            {
+                ZombieWar.Skills.SkillLayer.Stat => "STAT",
+                ZombieWar.Skills.SkillLayer.Universal => "UNIVERSAL",
+                _ => "POWER",
+            });
+            if (unlockTagBg != null) unlockTagBg.color = color;
+            if (unlockFrame != null) unlockFrame.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), color, 0.35f);
+            var sprite = skillIcons != null ? skillIcons.For(def.id) : null;
+            if (unlockIcon != null) { unlockIcon.enabled = sprite != null; unlockIcon.sprite = sprite; }
+            if (unlockBadge != null) { unlockBadge.enabled = sprite == null; unlockBadge.text = SkillIconSet.Abbreviation(def.displayName); }
+            Set(unlockName, def.displayName);
+            Set(unlockDesc, ZombieWar.Skills.SkillDescriptions.Describe(def, 1));
+
+            // The evolution this card completes at this level, if any.
+            string hint = "";
+            foreach (var evo in ZombieWar.Skills.SkillCatalogDefs.All)
+                if (evo.IsEvolution && ZombieWar.Skills.SkillCatalogDefs.IsUnlocked(evo, lv) && !ZombieWar.Skills.SkillCatalogDefs.IsUnlocked(evo, lv - 1))
+                    hint = $"Also opens the evolution {evo.displayName}";
+            Set(unlockHint, hint);
+
+            int total = 0, owned = 0;
+            foreach (var d in ZombieWar.Skills.SkillCatalogDefs.All)
+            {
+                if (d.IsEvolution || d.layer == ZombieWar.Skills.SkillLayer.Signature) continue;
+                total++;
+                if (d.unlockLevel <= lv) owned++;
+            }
+            Set(unlockCount, $"{owned} / {total}");
+            if (unlockFill != null) unlockFill.rectTransform.anchorMax = new Vector2(total > 0 ? owned / (float)total : 0f, 1f);
+            Set(unlockNextLabel, _unlocks.Count > 0 ? "NEXT" : "CONTINUE");
+            UIFeedback.LevelUp();
         }
 
         void SetRow(int i, string text, string tag)

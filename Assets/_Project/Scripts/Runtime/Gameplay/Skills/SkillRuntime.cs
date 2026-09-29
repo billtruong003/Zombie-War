@@ -60,13 +60,47 @@ namespace ZombieWar.Skills
             return def != null && RankOf(skillId) >= def.maxRank;
         }
 
-        /// <summary>Takes a card, or ranks it up. False when it is already at max rank, or when it is
-        /// an evolution whose requirements are not met.</summary>
+        // ══════════════════════════════════════════════════════════ SLOTS AND UNLOCKS
+
+        /// <summary>
+        /// Account level the build may draw from (cards above it are not offered). int.MaxValue =
+        /// everything, which is what tests and the sandbox get; the driver sets the real level when a
+        /// run starts.
+        /// </summary>
+        public int UnlockLevel { get; set; } = int.MaxValue;
+
+        public bool IsUnlocked(SkillDef def) => SkillCatalogDefs.IsUnlocked(def, UnlockLevel);
+
+        public int SlotsUsed(SkillSlot slot)
+        {
+            int n = 0;
+            foreach (var kv in _ranks)
+            {
+                var def = SkillCatalogDefs.ById(kv.Key);
+                if (def != null && kv.Value > 0 && def.Slot == slot) n++;
+            }
+            return n;
+        }
+
+        public static int SlotCapacity(SkillSlot slot) => slot switch
+        {
+            SkillSlot.Skill => SkillCatalogDefs.MaxSkillSlots,
+            SkillSlot.Stat => SkillCatalogDefs.MaxStatSlots,
+            _ => int.MaxValue,
+        };
+
+        /// <summary>True when the card is owned, or its slot group still has room for a new card.</summary>
+        public bool HasRoomFor(SkillDef def) =>
+            def != null && (Has(def.id) || def.Slot == SkillSlot.None || SlotsUsed(def.Slot) < SlotCapacity(def.Slot));
+
+        /// <summary>Takes a card, or ranks it up. False when it is already at max rank, when it is an
+        /// evolution whose requirements are not met, or when it is new and its slot group is full.</summary>
         public bool Take(string skillId)
         {
             var def = SkillCatalogDefs.ById(skillId);
             if (def == null) return false;
             if (def.IsEvolution && !CanEvolve(def)) return false;
+            if (!HasRoomFor(def)) return false;
             int current = RankOf(skillId);
             if (current >= def.maxRank) return false;
             _ranks[skillId] = current + 1;
@@ -77,8 +111,9 @@ namespace ZombieWar.Skills
         void OnTaken(SkillDef def, int rank)
         {
             // Max Health Up is the one card that must act at pick time rather than continuously.
-            if (def.id == SkillCatalogDefs.StatMaxHealth) PendingMaxHealthBonus += def.perRank == 0f ? def.baseValue : (rank == 1 ? def.baseValue : def.perRank);
+            if (def.id == SkillCatalogDefs.StatMaxHealth) PendingMaxHealthBonus += def.ValueAt(rank) - def.ValueAt(rank - 1);
             if (def.layer == SkillLayer.Autonomous || def.IsEvolution) SyncAutonomousCooldowns();
+            if (def.IsOverflow) TakeOverflow(def);
         }
 
         // ══════════════════════════════════════════════════════════ EVOLUTIONS
@@ -108,7 +143,8 @@ namespace ZombieWar.Skills
         {
             int rank = Mathf.Max(1, RankOf(powerId));
             float evolved = IsEvolved(powerId) ? 1.5f : 1f;
-            return baseDamage * (1f + 0.3f * (rank - 1)) * DamageMultiplier
+            float scale = SkillCatalogDefs.ById(powerId)?.At("dmg", rank, 1f) ?? 1f;
+            return baseDamage * scale * DamageMultiplier
                    * Threat.ThreatDirector.EnemyStatMultiplier * evolved;
         }
 
@@ -121,7 +157,7 @@ namespace ZombieWar.Skills
         public float DroneShotsPerSecond => Value(SkillCatalogDefs.AutoDrone);
 
         public float FrostRadius => Value(SkillCatalogDefs.AutoFrostNova) + (IsEvolved(SkillCatalogDefs.AutoFrostNova) ? 1f : 0f);
-        public float FrostSlow => 0.35f + 0.1f * (RankOf(SkillCatalogDefs.AutoFrostNova) - 1);
+        public float FrostSlow => Table(SkillCatalogDefs.AutoFrostNova, "slow", 0.35f);
         /// <summary>Absolute Zero freezes instead of slowing.</summary>
         public bool FrostFreezes => IsEvolved(SkillCatalogDefs.AutoFrostNova);
 
@@ -137,16 +173,13 @@ namespace ZombieWar.Skills
         public static float CooldownAt(string powerId, int rank, bool evolved)
         {
             rank = Mathf.Max(1, rank);
-            return powerId switch
+            if (evolved)
             {
-                SkillCatalogDefs.AutoChainLightning => evolved ? 2f : 6f - (rank - 1),
-                SkillCatalogDefs.AutoOrdnance => 7f - (rank - 1),
-                SkillCatalogDefs.AutoEmergency => 30f - 5f * (rank - 1),
-                SkillCatalogDefs.AutoFrostNova => evolved ? 4f : 5f,
-                SkillCatalogDefs.AutoBoomerang => 2.5f,
-                SkillCatalogDefs.AutoAirstrike => 8f,
-                _ => 0f,
-            };
+                // Evolutions set their own rhythm.
+                if (powerId == SkillCatalogDefs.AutoChainLightning) return 2f;   // Thunderstorm
+                if (powerId == SkillCatalogDefs.AutoFrostNova) return 4f;        // Absolute Zero
+            }
+            return SkillCatalogDefs.ById(powerId)?.At("cd", rank, 0f) ?? 0f;
         }
 
         /// <summary>
@@ -168,11 +201,42 @@ namespace ZombieWar.Skills
             return n;
         }
 
+        // ══════════════════════════════════════════════════════════ OVERFLOW
+        //
+        // Offered once every owned card is maxed and every slot is full, so a level-up always means
+        // something. Effects that touch other systems wait here for the driver, like the max-health
+        // bonus does, so the runtime stays free of scene references.
+
+        public const float MightPerStack = 0.03f;
+        public int MightStacks { get; private set; }
+        public float PendingHealFraction { get; private set; }
+        public int PendingCoin { get; private set; }
+        public bool PendingMagnet { get; private set; }
+
+        void TakeOverflow(SkillDef def)
+        {
+            switch (def.id)
+            {
+                case SkillCatalogDefs.OverHeal: PendingHealFraction += def.ValueAt(1); break;
+                case SkillCatalogDefs.OverMagnet: PendingMagnet = true; break;
+                case SkillCatalogDefs.OverCoin: PendingCoin += Mathf.RoundToInt(def.ValueAt(1)); break;
+                case SkillCatalogDefs.OverMight: MightStacks++; break;
+            }
+        }
+
+        public float ConsumeHealFraction() { float v = PendingHealFraction; PendingHealFraction = 0f; return v; }
+        public int ConsumeCoin() { int v = PendingCoin; PendingCoin = 0; return v; }
+        public bool ConsumeMagnet() { bool v = PendingMagnet; PendingMagnet = false; return v; }
+
         /// <summary>Health granted by rank-ups that the player component has not yet consumed.</summary>
         public float PendingMaxHealthBonus { get; private set; }
         public float ConsumeMaxHealthBonus() { float v = PendingMaxHealthBonus; PendingMaxHealthBonus = 0f; return v; }
 
         float Value(string id) => SkillCatalogDefs.ById(id)?.ValueAt(RankOf(id)) ?? 0f;
+
+        /// <summary>A card's named per-rank number at its current rank.</summary>
+        float Table(string id, string table, float fallback) =>
+            SkillCatalogDefs.ById(id)?.At(table, Mathf.Max(1, RankOf(id)), fallback) ?? fallback;
 
         void SyncAutonomousCooldowns()
         {
@@ -192,7 +256,7 @@ namespace ZombieWar.Skills
         // ══════════════════════════════════════════════════════════ STAT (P8 soft caps)
 
         /// <summary>Damage Up. Plain multiplier — the only stat with no cap, by design.</summary>
-        public float DamageMultiplier => 1f + Value(SkillCatalogDefs.StatDamage);
+        public float DamageMultiplier => (1f + Value(SkillCatalogDefs.StatDamage)) * (1f + MightStacks * MightPerStack);
 
         /// <summary>Fire Rate Up + Run &amp; Gun + Bullet Hose, then P8's 2.2/2.5 soft cap.</summary>
         public float FireRateMultiplier
@@ -268,7 +332,7 @@ namespace ZombieWar.Skills
 
             if (Has(SkillCatalogDefs.ArBreach) && EquippedFamily == WeaponClass.AssaultRifle)
             {
-                int every = Mathf.Max(2, 6 - RankOf(SkillCatalogDefs.ArBreach));
+                int every = Mathf.Max(2, Mathf.RoundToInt(Table(SkillCatalogDefs.ArBreach, "every", 5f)));
                 if (++_shotsSinceBreach >= every)
                 {
                     _shotsSinceBreach = 0;
@@ -278,7 +342,7 @@ namespace ZombieWar.Skills
 
             if (Has(SkillCatalogDefs.LmgShockwave) && EquippedFamily == WeaponClass.LMG)
             {
-                int every = Mathf.Max(4, 12 - 2 * RankOf(SkillCatalogDefs.LmgShockwave));
+                int every = Mathf.Max(4, Mathf.RoundToInt(Table(SkillCatalogDefs.LmgShockwave, "every", 10f)));
                 if (++_shotsSinceShockwave >= every)
                 {
                     _shotsSinceShockwave = 0;
@@ -298,8 +362,7 @@ namespace ZombieWar.Skills
             // Universal — Execution Round (P6 threshold read)
             if (Has(SkillCatalogDefs.UniExecution))
             {
-                float threshold = 0.20f + 0.05f * (RankOf(SkillCatalogDefs.UniExecution) - 1);
-                if (targetHealthFraction <= threshold) damage *= 1f + Value(SkillCatalogDefs.UniExecution);
+                if (targetHealthFraction <= ExecutionThreshold) damage *= 1f + Value(SkillCatalogDefs.UniExecution);
             }
 
             // Shotgun — Point Blank (P7 curve)
@@ -425,7 +488,7 @@ namespace ZombieWar.Skills
             // Static Build-up: every Nth SMG hit discharges a chain. The charge result IS the trigger;
             // it used to be discarded, so the card never fired once.
             if (Has(SkillCatalogDefs.SmgStatic) && EquippedFamily == WeaponClass.SMG &&
-                _staticCharge.AddCharge(1f, 6f - RankOf(SkillCatalogDefs.SmgStatic)))
+                _staticCharge.AddCharge(1f, Table(SkillCatalogDefs.SmgStatic, "every", 5f)))
                 _staticFired = true;
         }
 
@@ -449,8 +512,9 @@ namespace ZombieWar.Skills
 
         /// <summary>M8: true when Execution Round's bonus applies to a target at this health (for its mark).</summary>
         public bool IsExecutionTarget(float targetHealthFraction) =>
-            Has(SkillCatalogDefs.UniExecution) &&
-            targetHealthFraction <= 0.20f + 0.05f * (RankOf(SkillCatalogDefs.UniExecution) - 1);
+            Has(SkillCatalogDefs.UniExecution) && targetHealthFraction <= ExecutionThreshold;
+
+        public float ExecutionThreshold => Table(SkillCatalogDefs.UniExecution, "threshold", 0.2f);
 
         /// <summary>M8: 0..1 progress toward the next Kinetic Shield charge (1 while charged), for the ground ring.</summary>
         public float KineticChargeFraction => !Has(SkillCatalogDefs.UniKinetic) ? 0f
@@ -557,6 +621,10 @@ namespace ZombieWar.Skills
             _quickstepArmed = _kineticCharged = _staticFired = _shotWasQuickstep = false;
             _shotsSinceBreach = _shotsSinceShockwave = 0;
             PendingMaxHealthBonus = 0f;
+            PendingHealFraction = 0f;
+            PendingCoin = 0;
+            PendingMagnet = false;
+            MightStacks = 0;
             AutonomousPower.ResetGlobalBudget();
         }
     }

@@ -242,6 +242,46 @@ namespace ZombieWar.EditorTools
             }
         }
 
+        /// <summary>
+        /// Phase A1 (owner-approved mockup SK_LevelUp, 2026-09-29): the build strip under the cards
+        /// becomes the 6 skill slots and 4 stat slots — a gap between the groups, a rank number on
+        /// every slot. Run after Apply Level Up Layout; idempotent.
+        /// </summary>
+        [MenuItem("ZombieWar/UI/M8/Apply Level Up Slots")]
+        public static void ApplyLevelUpSlots()
+        {
+            string path = ScreensDir + "UI_Hud.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var items = root.transform.Find("Overlays/LevelUpOverlay/Build/Items") as RectTransform;
+                if (items == null) throw new System.Exception("Build/Items missing: run Apply Level Up Layout first");
+                for (int k = 0; k < 10; k++)
+                {
+                    var it = items.Find("Item" + k) as RectTransform;
+                    if (it == null) continue;
+                    var rank = Rect(it, "Rank", new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-4, 2), new Vector2(40, 30));
+                    var t = Label(rank, "Label", "5", 24, Color.white);
+                    t.alignment = TextAlignmentOptions.BottomRight;
+                    t.fontStyle = FontStyles.Bold;
+                }
+                // A spacer between slot 6 (last skill) and slot 7 (first stat) keeps the groups apart.
+                var gap = items.Find("Gap") as RectTransform ?? Rect(items, "Gap", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(18, 80));
+                gap.sizeDelta = new Vector2(18, 80);
+                var sixth = items.Find("Item5");
+                if (sixth != null) gap.SetSiblingIndex(sixth.GetSiblingIndex() + 1);
+                var hl = items.GetComponent<HorizontalLayoutGroup>();
+                if (hl != null) hl.spacing = 10;
+
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log("[M8 UI] Level Up slots applied.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         // ═════════════════════════════════════════════════════════════ Result
 
         [MenuItem("ZombieWar/UI/M8/Apply Result Layout")]

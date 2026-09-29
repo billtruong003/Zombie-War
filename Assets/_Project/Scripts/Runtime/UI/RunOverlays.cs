@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using BillGameCore;
 using TMPro;
 using UnityEngine;
@@ -497,7 +498,7 @@ namespace ZombieWar
             var pips = card.Find("Pips");
             if (pips != null)
             {
-                bool showPips = !def.IsEvolution && def.maxRank > 1;
+                bool showPips = !def.IsEvolution && !def.IsOverflow && def.maxRank > 1;
                 pips.gameObject.SetActive(showPips);
                 for (int k = 0; k < pips.childCount; k++)
                 {
@@ -527,27 +528,61 @@ namespace ZombieWar
             }
         }
 
-        // The build so far under the cards: powers first, then everything else, one tile each.
+        // Owner 2026-09-29: the strip is the build's slots — Item0-5 the 6 skill slots, Item6-9 the 4
+        // stat slots — filled in pick order, empty ones shown as open "+" slots.
+        private static readonly List<ZombieWar.Skills.SkillDef> SlotScratch = new(8);
+
         private void BindBuildStrip(ZombieWar.Skills.SkillRuntime skills)
         {
-            var items = levelUpRoot.transform.Find("Build/Items");
-            if (items == null || skills == null) return;
-            int k = 0;
-            for (int pass = 0; pass < 2; pass++)
-                foreach (var kv in skills.Ranks)
-                {
-                    var def = ZombieWar.Skills.SkillCatalogDefs.ById(kv.Key);
-                    if (def == null || def.IsEvolution || kv.Value <= 0) continue;
-                    bool power = def.layer == ZombieWar.Skills.SkillLayer.Autonomous;
-                    if ((pass == 0) != power) continue;
-                    if (k >= items.childCount) break;
-                    var it = items.GetChild(k++);
-                    it.gameObject.SetActive(true);
-                    BindIcon(it, def, 1f);
-                }
-            for (; k < items.childCount; k++) items.GetChild(k).gameObject.SetActive(false);
             var build = levelUpRoot.transform.Find("Build");
-            if (build != null) build.gameObject.SetActive(skills.Ranks.Count > 0);
+            var items = build != null ? build.Find("Items") : null;
+            if (items == null || skills == null) return;
+            build.gameObject.SetActive(true);
+
+            int usedSkills = BindSlotGroup(skills, items, ZombieWar.Skills.SkillSlot.Skill, 0, ZombieWar.Skills.SkillCatalogDefs.MaxSkillSlots);
+            int usedStats = BindSlotGroup(skills, items, ZombieWar.Skills.SkillSlot.Stat, ZombieWar.Skills.SkillCatalogDefs.MaxSkillSlots,
+                                          ZombieWar.Skills.SkillCatalogDefs.MaxStatSlots);
+            var caption = build.Find("Caption/Label")?.GetComponent<TMP_Text>();
+            if (caption != null)
+                caption.text = $"SKILLS {usedSkills}/{ZombieWar.Skills.SkillCatalogDefs.MaxSkillSlots}   ·   STATS {usedStats}/{ZombieWar.Skills.SkillCatalogDefs.MaxStatSlots}";
+        }
+
+        private int BindSlotGroup(ZombieWar.Skills.SkillRuntime skills, Transform items, ZombieWar.Skills.SkillSlot slot, int first, int count)
+        {
+            SlotScratch.Clear();
+            foreach (var kv in skills.Ranks)
+            {
+                var def = ZombieWar.Skills.SkillCatalogDefs.ById(kv.Key);
+                if (def != null && kv.Value > 0 && def.Slot == slot) SlotScratch.Add(def);
+            }
+            for (int k = 0; k < count; k++)
+            {
+                var it = items.Find("Item" + (first + k));
+                if (it == null) continue;
+                it.gameObject.SetActive(true);
+                var rank = it.Find("Rank/Label")?.GetComponent<TMP_Text>();
+                var frame = it.GetComponent<Image>();
+                if (k < SlotScratch.Count)
+                {
+                    var def = SlotScratch[k];
+                    var evo = ZombieWar.Skills.SkillCatalogDefs.EvolutionOf(def.id);
+                    bool evolved = evo != null && skills.Has(evo.id);
+                    BindIcon(it, evolved ? evo : def, 1f);
+                    if (frame != null) frame.color = evolved ? EvolutionBg : Color.Lerp(CardBg, ZombieWar.Skills.SkillDescriptions.LayerColor(def), 0.3f);
+                    if (rank != null) rank.text = evolved ? "EVO" : skills.RankOf(def.id) >= def.maxRank ? "MAX" : skills.RankOf(def.id).ToString();
+                }
+                else
+                {
+                    // An open slot: no art, a quiet "+", a dim frame.
+                    var art = it.Find("Art")?.GetComponent<Image>();
+                    if (art != null) art.enabled = false;
+                    var badge = it.Find("Badge")?.GetComponent<TMP_Text>();
+                    if (badge != null) { badge.enabled = true; badge.text = "+"; badge.color = new Color(1f, 1f, 1f, 0.35f); }
+                    if (frame != null) frame.color = new Color(CardBg.r, CardBg.g, CardBg.b, 0.45f);
+                    if (rank != null) rank.text = "";
+                }
+            }
+            return SlotScratch.Count;
         }
 
         /// Card title: the name in its layer colour plus a small NEW / Lv N / EVOLUTION tag. Rich text
@@ -555,7 +590,7 @@ namespace ZombieWar
         public static string CardTitle(ZombieWar.Skills.SkillDef def, int rank)
         {
             string hex = ColorUtility.ToHtmlStringRGB(ZombieWar.Skills.SkillDescriptions.LayerColor(def));
-            string tag = def.IsEvolution ? "EVOLUTION" : rank <= 1 ? "NEW" : $"Lv {rank}";
+            string tag = def.IsEvolution ? "EVOLUTION" : def.IsOverflow ? "BONUS" : rank <= 1 ? "NEW" : $"Lv {rank}";
             return $"<color=#{hex}>{def.displayName}</color> <size=70%>{tag}</size>";
         }
 

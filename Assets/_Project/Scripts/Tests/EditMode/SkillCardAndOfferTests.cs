@@ -68,10 +68,44 @@ namespace ZombieWar.Tests
                 Assert.AreEqual(0f, d.ValueAt(0), 1e-4, $"{d.displayName} must be inert at rank 0");
                 Assert.AreNotEqual(0f, d.ValueAt(1), $"{d.displayName} rank 1 must unlock the behaviour");
 
-                // Monotonic in the intended direction: most grow, a few (thresholds/cooldowns) shrink.
-                float r1 = d.ValueAt(1), rMax = d.ValueAt(d.maxRank);
-                if (d.perRank >= 0f) Assert.GreaterOrEqual(rMax, r1, $"{d.displayName} must not weaken with rank");
-                else Assert.LessOrEqual(rMax, r1, $"{d.displayName} threshold must not grow with rank");
+                // Monotonic in one direction: most grow, a few (metres to walk) shrink.
+                bool grows = d.ValueAt(d.maxRank) >= d.ValueAt(1);
+                for (int r = 2; r <= d.maxRank; r++)
+                {
+                    if (grows) Assert.GreaterOrEqual(d.ValueAt(r), d.ValueAt(r - 1), $"{d.displayName} must not weaken at rank {r}");
+                    else Assert.LessOrEqual(d.ValueAt(r), d.ValueAt(r - 1), $"{d.displayName} must keep shrinking at rank {r}");
+                }
+            }
+        }
+
+        [Test]
+        public void EveryCardHasFiveRanks_ExceptEvolutions()
+        {
+            foreach (var d in SkillCatalogDefs.All)
+                Assert.AreEqual(d.IsEvolution ? 1 : 5, d.maxRank, $"{d.displayName}");
+        }
+
+        /// Owner 2026-09-29: five ranks, and no rank may be a dead pick. A rank improves the card when
+        /// its main value, its damage scale, its cooldown, its trigger interval, its threshold or its
+        /// slow moves in the card's favour.
+        [Test]
+        public void EveryRankImprovesSomething()
+        {
+            foreach (var d in SkillCatalogDefs.All)
+            {
+                if (d.IsEvolution) continue;
+                bool grows = d.ValueAt(d.maxRank) >= d.ValueAt(1);
+                for (int r = 2; r <= d.maxRank; r++)
+                {
+                    bool better =
+                        (grows ? d.ValueAt(r) > d.ValueAt(r - 1) : d.ValueAt(r) < d.ValueAt(r - 1)) ||
+                        d.At("dmg", r, 1f) > d.At("dmg", r - 1, 1f) ||
+                        d.At("cd", r, 0f) < d.At("cd", r - 1, 0f) ||
+                        d.At("every", r, 0f) < d.At("every", r - 1, 0f) ||
+                        d.At("threshold", r, 0f) > d.At("threshold", r - 1, 0f) ||
+                        d.At("slow", r, 0f) > d.At("slow", r - 1, 0f);
+                    Assert.IsTrue(better, $"{d.displayName} rank {r} changes nothing");
+                }
             }
         }
 
@@ -383,20 +417,27 @@ namespace ZombieWar.Tests
             foreach (var d in SkillCatalogDefs.All.Where(d => d.IsCompatibleWith(WeaponClass.Sidearm)))
                 for (int i = 0; i < d.maxRank; i++) run.Take(d.id);
 
+            // Owner 2026-09-29: the offer stays at three; what fills the gap is overflow, never a maxed card.
             var offer = SkillOfferBuilder.Build(run, WeaponClass.Sidearm, 99, 20);
-            Assert.IsEmpty(offer, "an exhausted pool must yield an empty offer, not a maxed card");
+            Assert.AreEqual(3, offer.Count);
+            Assert.IsTrue(offer.All(d => d.IsOverflow || run.RankOf(d.id) < d.maxRank), "a maxed card was offered");
         }
 
         [Test]
-        public void ExhaustedPoolIsHandledAndAutoPickReturnsNull()
+        public void ExhaustedPool_OffersOverflow_AndAutoPickTakesOne()
         {
             var run = new SkillRuntime();
             foreach (var d in SkillCatalogDefs.All.Where(d => d.IsCompatibleWith(WeaponClass.LMG)))
                 for (int i = 0; i < d.maxRank; i++) run.Take(d.id);
+            foreach (var d in SkillCatalogDefs.All.Where(d => d.IsEvolution)) run.Take(d.id);
 
             var offer = SkillOfferBuilder.Build(run, WeaponClass.LMG, 1, 30);
-            Assert.IsEmpty(offer);
-            Assert.IsNull(SkillOfferBuilder.AutoPick(offer, run), "nothing to auto-pick is a valid state");
+            Assert.AreEqual(3, offer.Count);
+            Assert.IsTrue(offer.All(d => d.IsOverflow), "only overflow is left once the build cannot grow");
+            var picked = SkillOfferBuilder.AutoPick(offer, run);
+            Assert.IsNotNull(picked);
+            Assert.IsTrue(run.Take(picked.id), "an overflow card is always takeable");
+            Assert.IsNull(SkillOfferBuilder.AutoPick(new List<SkillDef>(), run), "an empty offer still auto-picks nothing");
         }
 
         [Test]
@@ -470,7 +511,7 @@ namespace ZombieWar.Tests
             var evo = SkillCatalogDefs.ById(SkillCatalogDefs.EvoThunderstorm);
             Assert.IsFalse(_run.Take(evo.id), "not available from nothing");
 
-            for (int i = 0; i < 3; i++) _run.Take(SkillCatalogDefs.AutoChainLightning);
+            while (_run.Take(SkillCatalogDefs.AutoChainLightning)) { }
             Assert.IsFalse(_run.CanEvolve(evo), "a maxed power alone is not enough");
             Assert.IsFalse(_run.Take(evo.id));
 
@@ -487,7 +528,7 @@ namespace ZombieWar.Tests
             for (int seed = 0; seed < 50; seed++)
             {
                 var run = new SkillRuntime();
-                for (int i = 0; i < 3; i++) run.Take(SkillCatalogDefs.AutoOrdnance);
+                while (run.Take(SkillCatalogDefs.AutoOrdnance)) { }
                 run.Take(SkillCatalogDefs.StatDamage);
                 var offer = SkillOfferBuilder.Build(run, WeaponClass.Sidearm, seed, 9);
                 Assert.AreEqual(SkillCatalogDefs.EvoCarpetBomb, offer[0].id, $"seed {seed}: the payoff must be offered");
@@ -523,7 +564,7 @@ namespace ZombieWar.Tests
             float r2 = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
             _run.Take(SkillCatalogDefs.StatDamage);
             float withDamageUp = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
-            _run.Take(SkillCatalogDefs.AutoOrbit);
+            while (_run.Take(SkillCatalogDefs.AutoOrbit)) { }
             _run.Take(SkillCatalogDefs.StatMoveSpeed);
             _run.Take(SkillCatalogDefs.EvoBuzzsaw);
             float evolved = _run.PowerDamage(10f, SkillCatalogDefs.AutoOrbit);
@@ -538,10 +579,12 @@ namespace ZombieWar.Tests
         public void OrbitAndDroneCountsFollowRank()
         {
             Assert.AreEqual(0, _run.OrbitBladeCount);
-            _run.Take(SkillCatalogDefs.AutoOrbit);
-            Assert.AreEqual(2, _run.OrbitBladeCount);
-            _run.Take(SkillCatalogDefs.AutoOrbit);
-            Assert.AreEqual(3, _run.OrbitBladeCount);
+            int[] blades = { 2, 2, 3, 3, 4 };                 // rank 1..5
+            for (int r = 1; r <= 5; r++)
+            {
+                _run.Take(SkillCatalogDefs.AutoOrbit);
+                Assert.AreEqual(blades[r - 1], _run.OrbitBladeCount, $"rank {r}");
+            }
 
             Assert.AreEqual(0, _run.DroneCount);
             _run.Take(SkillCatalogDefs.AutoDrone);
@@ -577,7 +620,7 @@ namespace ZombieWar.Tests
         public void ReaperOnlyRollsOnceEvolved_AndAboutAQuarterOfKills()
         {
             Assert.IsFalse(_run.RollReaper());
-            for (int i = 0; i < 3; i++) _run.Take(SkillCatalogDefs.AutoSoulBurst);
+            while (_run.Take(SkillCatalogDefs.AutoSoulBurst)) { }
             _run.Take(SkillCatalogDefs.UniExecution);
             _run.Take(SkillCatalogDefs.EvoReaper);
             int hits = 0;

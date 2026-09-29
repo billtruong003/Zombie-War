@@ -666,8 +666,10 @@ namespace ZombieWar.Skills
         {
             // Kept at or just over 1: brighter values bloom and tone-map to white and lose the hue.
             if (run.IsEvolved(SkillCatalogDefs.AutoDrone)) return new Color(1.15f, 0.2f, 1.0f, 1f);
-            switch (run.RankOf(SkillCatalogDefs.AutoDrone))
+            // Five ranks, three colours: ranks 1-2 cyan, 3-4 green, 5 gold.
+            switch ((run.RankOf(SkillCatalogDefs.AutoDrone) + 1) / 2)
             {
+                case 0:
                 case 1: return new Color(0.15f, 0.8f, 1.1f, 1f);
                 case 2: return new Color(0.3f, 1.1f, 0.3f, 1f);
                 default: return new Color(1.15f, 0.7f, 0.1f, 1f);
@@ -732,7 +734,7 @@ namespace ZombieWar.Skills
             float t = Time.time;
             bool squad = run.IsEvolved(SkillCatalogDefs.AutoDrone);
             Color colour = DroneColour(run);
-            int key = squad ? 9 : run.RankOf(SkillCatalogDefs.AutoDrone);
+            int key = squad ? 9 : (run.RankOf(SkillCatalogDefs.AutoDrone) + 1) / 2;
 
             for (int i = 0; i < MaxDrones; i++)
             {

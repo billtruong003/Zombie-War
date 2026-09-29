@@ -30,7 +30,9 @@ namespace ZombieWar.EditorTools
 
             var entries = new List<SkillIconSet.Entry>();
             int found = 0;
-            foreach (var def in SkillCatalogDefs.All)
+            var defs = new List<SkillDef>(SkillCatalogDefs.All);
+            defs.AddRange(SkillCatalogDefs.Overflow);   // the BONUS cards need art too
+            foreach (var def in defs)
             {
                 string path = $"{IconDir}/{def.id}.png";
                 Sprite sprite = null;
@@ -54,7 +56,7 @@ namespace ZombieWar.EditorTools
             set.SetEntries(entries);
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[SkillIcons] {found}/{SkillCatalogDefs.All.Count} cards have an icon; the rest show their badge.");
+            Debug.Log($"[SkillIcons] {found}/{defs.Count} cards have an icon; the rest show their badge.");
             return set;
         }
     }

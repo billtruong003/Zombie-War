@@ -149,6 +149,10 @@ namespace ZombieWar.UI
             {
                 case PlayerProfile.WeaponUpgradeResult.Upgraded: UIFeedback.LevelUp(); Toast.Show($"{_selected.weaponName} reached {PlayerProfile.GetWeaponLevel(_selected.WeaponId)} stars"); break;
                 case PlayerProfile.WeaponUpgradeResult.MaxLevel: Toast.Show("Max stars"); break;
+                case PlayerProfile.WeaponUpgradeResult.Locked:
+                    UIFeedback.Error();
+                    Toast.Show($"Stars unlock at level {AccountProgress.RequiredLevel(AccountProgress.Feature.GunStars)}");
+                    break;
                 case PlayerProfile.WeaponUpgradeResult.InsufficientShards: UIFeedback.Error(); Toast.Show("Need more shards · Gacha gives shards"); break;
                 case PlayerProfile.WeaponUpgradeResult.InsufficientGold: UIFeedback.Error(); Toast.Show("Not enough coins"); break;
                 default: UIFeedback.Error(); Toast.Show("Could not upgrade"); break;

@@ -37,6 +37,8 @@ namespace ZombieWar.Dev
         /// The player walks a slow circle: for cards that need movement (Fire Trail, Kinetic Shield, Quickstep).
         public bool Walk { get; set; }
         public bool God { get; private set; }
+        /// Let level-ups open their card screen (off: the bench closes it without a pick).
+        public bool AllowLevelUp { get; set; }
 
         private readonly List<SandboxDummy> _dummies = new();
         private readonly List<Vector3> _slots = new();
@@ -92,6 +94,7 @@ namespace ZombieWar.Dev
 
             DamageLedger.Enabled = true;
             DamageLedger.Reset();
+            SkillRuntime.Active.UnlockLevel = int.MaxValue;     // every card, whatever the account level
             SetDummies(dummyCount);
             _status = "ready";
         }
@@ -247,6 +250,7 @@ namespace ZombieWar.Dev
         /// closes it without a pick and keeps the chosen time scale.
         private void SuppressLevelUp()
         {
+            if (AllowLevelUp) return;
             if (Time.timeScale > 0f) _lastScale = Time.timeScale;
             if (_overlays == null) _overlays = FindFirstObjectByType<RunOverlays>(FindObjectsInactive.Include);
             if (_overlays == null) return;

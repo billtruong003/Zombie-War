@@ -23,6 +23,9 @@ namespace ZombieWar.Skills
     /// player built toward, and hiding it behind a roll would feel like a bug.</item>
     /// <item>M8: levels 2 and 3 always offer an autonomous power, so the build visibly changes on
     /// screen within the first half-minute.</item>
+    /// <item>2026-09-29: only cards unlocked at the player's account level; a NEW card only while its
+    /// slot group (6 skills / 4 stats) has room; and always three choices — once the build cannot
+    /// grow, the remaining places are overflow cards (heal, magnet, coin bag, might).</item>
     /// </list>
     /// </summary>
     public static class SkillOfferBuilder
@@ -51,7 +54,7 @@ namespace ZombieWar.Skills
 
         /// <summary>
         /// Every card that could legally be offered right now: compatible with the equipped family,
-        /// and not already at max rank.
+        /// unlocked, not already at max rank, and (when new) with room in its slot group.
         /// </summary>
         public static List<SkillDef> EligiblePool(SkillRuntime run, WeaponClass family, List<SkillDef> into = null)
         {
@@ -62,8 +65,10 @@ namespace ZombieWar.Skills
             {
                 var def = all[i];
                 if (!def.IsCompatibleWith(family)) continue;
+                if (!run.IsUnlocked(def)) continue;
                 if (run.RankOf(def.id) >= def.maxRank) continue;
                 if (def.IsEvolution && !run.CanEvolve(def)) continue;
+                if (!run.HasRoomFor(def)) continue;
                 list.Add(def);
             }
             return list;
@@ -81,9 +86,9 @@ namespace ZombieWar.Skills
             offer.Clear();
 
             EligiblePool(run, family, Eligible);
-            if (Eligible.Count == 0) return offer;
-
             var rng = new Rng(runSeed, level);
+            if (Eligible.Count == 0) { FillWithOverflow(offer, ref rng); return offer; }
+
             bool statTaken = false;
 
             // Early levels want NEW mechanics; later levels want the build to converge.
@@ -107,7 +112,28 @@ namespace ZombieWar.Skills
             pick = PickWeighted(ref rng, run, preferNew, d => !IsStat(d) || !statTaken);
             if (pick != null) { offer.Add(pick); Eligible.Remove(pick); }
 
+            // The one-stat rule can leave a place empty when only stats remain; a full build leaves
+            // them all empty. Either way the player still gets three choices.
+            while (offer.Count < SlotCount && Eligible.Count > 0)
+            {
+                pick = PickWeighted(ref rng, run, preferNew, _ => true);
+                if (pick == null) break;
+                offer.Add(pick); Eligible.Remove(pick);
+            }
+            FillWithOverflow(offer, ref rng);
             return offer;
+        }
+
+        /// <summary>Tops the offer up to three with distinct overflow cards, in a seeded order.</summary>
+        static void FillWithOverflow(List<SkillDef> offer, ref Rng rng)
+        {
+            var pool = SkillCatalogDefs.Overflow;
+            int start = rng.Range(pool.Count);
+            for (int i = 0; i < pool.Count && offer.Count < SlotCount; i++)
+            {
+                var d = pool[(start + i) % pool.Count];
+                if (!offer.Contains(d)) offer.Add(d);
+            }
         }
 
         static bool IsStat(SkillDef d) => d.layer == SkillLayer.Stat;
