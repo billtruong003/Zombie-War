@@ -85,6 +85,7 @@ namespace ZombieWar.Skills.Powers
             if (now < _ringScanAt) return;
             _ringScanAt = now + 0.1f;
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoIceShards) * 0.6f;
+            int fx = 2;   // A10 stress: an unbudgeted burst per touch cost 650 draw calls in a 200-enemy crowd
             int found = TargetQuery.GatherEnemies(p, radius + 1f, Host.EnemyMask);
             for (int c = 0; c < found; c++)
             {
@@ -105,7 +106,7 @@ namespace ZombieWar.Skills.Powers
                 PowerKit.Hit(e, damage, 0.3f, SkillCatalogDefs.EvoBlizzard);
                 StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Frozen, 1f, 1f, now);
                 SkillFxDirector.Instance?.TintEnemy(e, Lib.frost.frozenTint, 1f);
-                FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.35f);
+                if (fx-- > 0) FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.35f);
             }
             if (_ringHit.Count > 96)
             {

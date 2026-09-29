@@ -80,6 +80,7 @@ namespace ZombieWar
 
         private void Update()
         {
+            TrackEvolutionReady();
             var player = PlayerMovement.Instance;
             if (player == null || Live.Count == 0) return;
 
@@ -209,8 +210,12 @@ namespace ZombieWar
                 SpawnMechanic(MechanicItems.Pick(Random.value), origin);
 
             // A7: elites can drop a chest; Luck raises the chance (the beacon boss drops its own).
-            if (data.isElite && Random.value < eliteChestChance * luck)
+            // A10 pity: an evolution waiting too long makes the next elite's chest certain.
+            if (data.isElite && (ChestPity(_evoReadySince, Time.time, evolutionPitySeconds) || Random.value < eliteChestChance * luck))
+            {
                 SpawnChest(origin + new Vector3(0.8f, 0f, 0.4f));
+                if (_evoReadySince >= 0f) _evoReadySince = Time.time;   // one chest per wait, not one per elite
+            }
 
             // Gems stay rare and authored: elites and bosses only.
             if (data.isElite && Random.value < eliteGemChance * luck)
@@ -222,6 +227,25 @@ namespace ZombieWar
         [Tooltip("Chance an elite (not a beacon boss) drops a chest, before Luck.")]
         [SerializeField, Range(0f, 1f)] private float eliteChestChance = 0.04f;
         [SerializeField] private string chestPoolKey = "pickup_chest";
+
+        [Tooltip("A10: once an evolution has been ready this long, the next elite always drops a chest. " +
+                 "Measured: a 14-minute pacing run that never met a beacon got no evolution at all.")]
+        [SerializeField] private float evolutionPitySeconds = 45f;
+        private float _evoReadySince = -1f, _evoCheckAt;
+
+        /// <summary>The pity rule: an evolution ready since <paramref name="readySince"/> (negative:
+        /// none ready) for at least <paramref name="pitySeconds"/>.</summary>
+        public static bool ChestPity(float readySince, float now, float pitySeconds) =>
+            readySince >= 0f && now - readySince >= pitySeconds;
+
+        private void TrackEvolutionReady()
+        {
+            if (Time.time < _evoCheckAt) return;
+            _evoCheckAt = Time.time + 1f;
+            bool ready = ZombieWar.Skills.SkillRuntime.Active?.AnyEvolutionReady ?? false;
+            if (!ready) _evoReadySince = -1f;
+            else if (_evoReadySince < 0f) _evoReadySince = Time.time;
+        }
 
         /// <summary>A chest was walked over. RunOverlays opens it.</summary>
         public static event System.Action<Vector3> ChestCollected;

@@ -69,6 +69,10 @@ namespace ZombieWar
             // from every previous run, including destroyed ones.
             PickupManager.ClearRegistry();
 
+            // ── effects ───────────────────────────────────────────────────────────────────
+            // FxPool's per-effect budget books end times; a new run starts with none alive.
+            FxPool.ResetBudget();
+
             // ── anything registered later ─────────────────────────────────────────────────
             for (int i = 0; i < Extra.Count; i++)
             {

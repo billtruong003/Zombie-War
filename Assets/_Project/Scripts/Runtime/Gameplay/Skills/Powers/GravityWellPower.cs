@@ -62,19 +62,27 @@ namespace ZombieWar.Skills.Powers
         // ── Singularity
         bool _single;
         Vector3 _singlePos;
-        float _singularityRadius = 4.5f, _singleFxAt, _singlePopAt, _singlePullAt;
+        float _singularityRadius = 4.5f, _singleFxAt, _singlePopAt, _singlePullAt, _singleGoalAt;
+        Vector3 _singleGoal;
 
         void TickSingularity(SkillRuntime run, Vector3 player, float dt)
         {
             var a = A;
             float now = Time.time;
-            if (!_single) { _single = true; _singlePos = player + Host.Player.forward * 4f; _singlePos.y = 0f; _singlePopAt = now + 3f; }
-            // Drift toward the densest crowd near the player, slowly.
-            int found = TargetQuery.GatherEnemies(player, 14f, Host.EnemyMask);
-            int best = found > 0 ? TargetQuery.DensestCluster(found, 3f, out _) : -1;
-            Vector3 goal = best >= 0 ? TargetQuery.CandidatePoint(best) : player + Host.Player.forward * 4f;
-            goal.y = 0f;
-            Vector3 to = goal - _singlePos;
+            if (!_single) { _single = true; _singlePos = player + Host.Player.forward * 4f; _singlePos.y = 0f; _singlePopAt = now + 3f; _singleGoal = _singlePos; _singleGoalAt = 0f; }
+            // Drift toward the densest crowd near the player, slowly. The crowd is looked up a few
+            // times a second, not every frame: DensestCluster is quadratic in the candidates, and in
+            // a 200-enemy stress run the per-frame scan tripled the frame time (A10).
+            if (now >= _singleGoalAt)
+            {
+                _singleGoalAt = now + 0.25f;
+                int near = TargetQuery.GatherEnemies(player, 14f, Host.EnemyMask);
+                int best = near > 0 ? TargetQuery.DensestCluster(near, 3f, out _) : -1;
+                _singleGoal = best >= 0 ? TargetQuery.CandidatePoint(best) : player + Host.Player.forward * 4f;
+                _singleGoal.y = 0f;
+            }
+            int found;
+            Vector3 to = _singleGoal - _singlePos;
             if (to.sqrMagnitude > 0.04f) _singlePos += to.normalized * Mathf.Min(to.magnitude, 1.4f * dt);
             float r = _singularityRadius * 0.85f;
             if (now >= _singleFxAt)

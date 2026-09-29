@@ -181,6 +181,17 @@ namespace ZombieWar.Skills
         /// for (the only way to get one); else +1 rank on a card already owned; else a bonus card.
         /// Deterministic for a seed. Always gives something.
         /// </summary>
+        /// <summary>An evolution the build could take right now (its power maxed, its partner owned).</summary>
+        public bool AnyEvolutionReady
+        {
+            get
+            {
+                foreach (var d in SkillCatalogDefs.All)
+                    if (d.IsEvolution && IsUnlocked(d) && CanEvolve(d)) return true;
+                return false;
+            }
+        }
+
         public ChestReward OpenChest(int seed)
         {
             uint s = (uint)(seed * 2654435761u) | 1u;
@@ -234,10 +245,12 @@ namespace ZombieWar.Skills
         public float PowerDamage(float baseDamage, string powerId)
         {
             int rank = Mathf.Max(1, RankOf(powerId));
-            float evolved = IsEvolved(powerId) ? 1.5f : 1f;
+            bool isEvolved = IsEvolved(powerId);
+            float evolved = isEvolved ? 1.5f : 1f;
             float scale = SkillCatalogDefs.ById(powerId)?.At("dmg", rank, 1f) ?? 1f;
             return baseDamage * scale * DamageMultiplier
-                   * Threat.ThreatDirector.EnemyStatMultiplier * evolved;
+                   * Threat.ThreatDirector.EnemyStatMultiplier * evolved
+                   * PowerBudget.Of(powerId, isEvolved);   // A10: every power in one damage budget
         }
 
         public int OrbitBladeCount => !Has(SkillCatalogDefs.AutoOrbit) ? 0

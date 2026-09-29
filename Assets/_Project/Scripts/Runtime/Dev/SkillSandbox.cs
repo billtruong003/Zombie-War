@@ -32,6 +32,8 @@ namespace ZombieWar.Dev
         public ZombieData Enemy { get; private set; }
         /// Horde mode: replace killed enemies so the count stays up (steady DPS readings).
         public bool KeepCount { get; set; } = true;
+        /// Horde enemies refill their health on every hit (the crowd bench).
+        public bool ImmortalHorde { get; set; }
         /// Dummies die (and stand back up 0.8 s later): for cards that need kills (Soul Burst, Reaper, Execution).
         public bool Mortal { get => SandboxDummy.Mortal; set => SandboxDummy.Mortal = value; }
         /// The player walks a slow circle: for cards that need movement (Fire Trail, Kinetic Shield, Quickstep).
@@ -160,6 +162,9 @@ namespace ZombieWar.Dev
             _spawner.EnsureRegistered(data, dummyCount);
             var z = _spawner.Spawn(data);
             if (z == null) { _status = "spawn failed: " + data.name; return false; }
+            // A10 crowd bench: a horde that walks in and swarms the player but never dies (unless
+            // Mortal), so melee-range powers are measured the way a run meets them.
+            if (ImmortalHorde) (z.gameObject.GetComponent<SandboxDummy>() ?? z.gameObject.AddComponent<SandboxDummy>()).Hold();
             _horde.Add(z);
             return true;
         }
@@ -437,9 +442,23 @@ namespace ZombieWar.Dev
         private Quaternion _rot;
         private Health _health;
         private System.Action<float> _refill;
+        private bool _pinned;
+
+        /// Immortal but free to move (the crowd bench's walking horde).
+        public void Hold()
+        {
+            _pinned = false;
+            if (_health == null)
+            {
+                _health = GetComponent<Health>();
+                _refill = _ => { if (!Mortal) _health.ResetHealth(); };
+                if (_health != null) _health.OnDamaged += _refill;
+            }
+        }
 
         public void Pin(Vector3 pos, Vector3 lookAt)
         {
+            _pinned = true;
             _pos = pos;
             var dir = lookAt - pos; dir.y = 0f;
             _rot = dir.sqrMagnitude > 0.01f ? Quaternion.LookRotation(dir) : Quaternion.identity;
@@ -453,7 +472,7 @@ namespace ZombieWar.Dev
             _health?.ResetHealth();
         }
 
-        private void LateUpdate() => transform.SetPositionAndRotation(_pos, _rot);
+        private void LateUpdate() { if (_pinned) transform.SetPositionAndRotation(_pos, _rot); }
 
         // A pooled enemy must not stay immortal once it leaves the sandbox.
         private void OnDestroy()

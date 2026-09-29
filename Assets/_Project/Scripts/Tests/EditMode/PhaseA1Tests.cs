@@ -164,8 +164,10 @@ namespace ZombieWar.Tests
             Assert.AreEqual(4f, run.DroneShotsPerSecond, 1e-4f);
             Assert.AreEqual(0.55f, run.FrostSlow, 1e-4f);
             Assert.AreEqual(4f, SkillRuntime.CooldownAt(SkillCatalogDefs.AutoChainLightning, 5, false), 1e-4f);
+            // The rank curve alone (A10's per-power budget factor divided out).
             Assert.AreEqual(1.6f, run.PowerDamage(1f, SkillCatalogDefs.AutoOrbit) / run.DamageMultiplier
-                                   / Threat.ThreatDirector.EnemyStatMultiplier, 1e-4f);
+                                   / Threat.ThreatDirector.EnemyStatMultiplier
+                                   / PowerBudget.Of(SkillCatalogDefs.AutoOrbit, false), 1e-4f);
         }
     }
 }

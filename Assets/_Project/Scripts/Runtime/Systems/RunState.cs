@@ -72,11 +72,16 @@ namespace ZombieWar
         /// bot, new powers): the old 25 + (L-1)^1.35 x 12 curve spaced cards 30-48 s apart from level 4
         /// on — six cards in a 3.5-minute run, far too few for a build to form. A first ease
         /// (18 + (L-1)^1.2 x 7) still left 25-30 s gaps after level 5 (level 11 at 5:00). This curve
-        /// lands the first card in ~10 s and keeps later gaps around 15-25 s at horde kill rates.</summary>
+        /// lands the first card in ~10 s and keeps later gaps around 15-25 s at horde kill rates.
+        /// A10 pacing run (2026-09-30, Review/M8/bench/0930_061456_a10_pacing.csv: real horde, god mode,
+        /// every offer taken at once): with the powers now pulling their weight, 14 + 5(L-1)^1.05 put a
+        /// card every 6-11 s mid-run and completed the whole build (ten slots at rank 5) at 6:32, then
+        /// eight minutes of bonus cards. 14 + 6.5(L-1)^1.2 keeps the first card where it was, spaces the
+        /// middle to ~15-25 s and lands the complete build around minute 11.</summary>
         public int XpForNextLevel => XpForLevel(Level);
 
         public static int XpForLevel(int level) =>
-            14 + Mathf.RoundToInt(Mathf.Pow(Mathf.Max(0, level - 1), 1.05f) * 5f);
+            14 + Mathf.RoundToInt(Mathf.Pow(Mathf.Max(0, level - 1), 1.2f) * 6.5f);
 
         public static RunState Begin()
         {

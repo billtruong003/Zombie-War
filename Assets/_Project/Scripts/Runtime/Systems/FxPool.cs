@@ -23,17 +23,44 @@ namespace ZombieWar
         public static ParticleSystem Play(ParticleSystem prefab, Vector3 position, Quaternion rotation)
             => Play(prefab, position, rotation, 1f);
 
+        /// <summary>
+        /// A10 (stress: 200 enemies, six evolutions): at most this many copies of one one-shot effect
+        /// alive at once. A hit burst on every enemy a big power touches reached 650 draw calls;
+        /// past a couple of dozen identical bursts the eye cannot count them, a phone can. A skipped
+        /// play returns null (callers already treat null as "no effect").
+        /// </summary>
+        public const int MaxLivePerPrefab = 24;
+
+        static readonly System.Collections.Generic.Dictionary<int, System.Collections.Generic.Queue<float>> Live = new();
+
+        /// <summary>True when another copy of this one-shot may start now (and books it until it ends).</summary>
+        static bool Admit(int prefabId, float ttl, float now)
+        {
+            if (!Live.TryGetValue(prefabId, out var q)) Live[prefabId] = q = new System.Collections.Generic.Queue<float>(MaxLivePerPrefab);
+            while (q.Count > 0 && q.Peek() <= now) q.Dequeue();
+            if (q.Count >= MaxLivePerPrefab) return false;
+            q.Enqueue(now + ttl);
+            return true;
+        }
+
+        /// <summary>Run-scoped reset (RunScope), and a test hook.</summary>
+        public static void ResetBudget() => Live.Clear();
+
+        // Time.time restarts with every play session; with domain reload off the booked end times
+        // would outlive it and block effects in the next session.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnLoad() => Live.Clear();
+
         public static ParticleSystem Play(ParticleSystem prefab, Vector3 position, Quaternion rotation, float scale)
         {
+            if (prefab == null) return null;
+            // Lifetime is measured on the prefab once per play; it is the same for every copy.
+            float ttl = Lifetime(prefab);
+            if (ttl <= 0f) ttl = FallbackLifetime;
+            if (!Admit(prefab.GetInstanceID(), ttl, Time.time)) return null;
+
             var ps = Spawn(prefab, position, rotation, scale, out var go);
             if (go == null) return ps;
-
-            float ttl = FallbackLifetime;
-            if (ps != null)
-            {
-                float measured = Lifetime(ps);
-                if (measured > 0f) ttl = measured;
-            }
             Bill.Pool?.Return(go, ttl);
             return ps;
         }

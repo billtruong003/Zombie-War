@@ -24,14 +24,16 @@ namespace ZombieWar.Dev
         /// Runs <see cref="BenchIds"/> (or <paramref name="ids"/>) at <paramref name="rank"/> for
         /// <paramref name="seconds"/> of game time each, at <paramref name="timeScale"/>.
         public IEnumerator Bench(string label, int rank = 5, float seconds = 20f, float timeScale = 2f,
-                                 int dummies = 8, IEnumerable<string> ids = null)
+                                 int dummies = 8, IEnumerable<string> ids = null, bool crowd = false)
         {
             Benching = true;
             var list = new List<string>(ids ?? BenchIds());
             var csv = new StringBuilder("id,rank,seconds,dps,hits,gun_dps\n");
             float before = Time.timeScale;
             bool walk = Walk, mortal = Mortal;
-            SetMode(EnemyMode.Dummies);
+            // Pinned dummies spread over the screen, or (A10) an immortal horde that swarms the player.
+            ImmortalHorde = crowd;
+            SetMode(crowd ? EnemyMode.Horde : EnemyMode.Dummies);
             SetDummies(dummies);
 
             foreach (var id in list)
@@ -48,7 +50,8 @@ namespace ZombieWar.Dev
                 Mortal = id == SkillCatalogDefs.AutoSoulBurst || id == SkillCatalogDefs.EvoReaper;
                 Rebuild();
                 Time.timeScale = timeScale;
-                yield return new WaitForSeconds(1.5f);            // let the first proc happen off the clock
+                // Let the first proc happen off the clock (a crowd also needs time to arrive).
+                yield return new WaitForSeconds(crowd ? 4f : 1.5f);
 
                 DamageLedger.Reset();
                 float start = Time.time;
@@ -72,6 +75,7 @@ namespace ZombieWar.Dev
             }
 
             ApplyBuild(new Dictionary<string, int>());
+            ImmortalHorde = false;
             if (walk) Walk = true; else StopWalk();
             Mortal = mortal;
             Time.timeScale = before;
