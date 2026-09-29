@@ -71,9 +71,35 @@ namespace ZombieWar
                     if (pip.transform.parent.gameObject.activeSelf != on) pip.transform.parent.gameObject.SetActive(on);
                     if (!on) continue;
                     var def = _passives[i];
-                    pip.text = SkillIconSet.Abbreviation(def.displayName) + run.RankOf(def.id);
+                    var sprite = icons != null ? icons.For(def.id) : null;
+                    var icon = PipIcon(pip, sprite != null);
+                    if (icon != null) icon.sprite = sprite;
+                    // With art the chip shows the icon and the rank; without, the old abbreviation.
+                    pip.text = sprite != null ? run.RankOf(def.id).ToString() : SkillIconSet.Abbreviation(def.displayName) + run.RankOf(def.id);
+                    pip.alignment = sprite != null ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.Center;
                     pip.color = SkillDescriptions.LayerColor(def);
                 }
+        }
+
+        readonly Dictionary<TMP_Text, Image> _pipIcons = new();
+
+        /// A square icon on the left of the pip's chip, made once per chip.
+        Image PipIcon(TMP_Text pip, bool show)
+        {
+            if (!_pipIcons.TryGetValue(pip, out var img) || img == null)
+            {
+                if (!show) return null;
+                var chip = (RectTransform)pip.transform.parent;
+                var rt = new GameObject("Icon", typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
+                rt.SetParent(chip, false);
+                rt.anchorMin = new Vector2(0f, 0.5f); rt.anchorMax = new Vector2(0f, 0.5f); rt.pivot = new Vector2(0f, 0.5f);
+                float h = chip.rect.height * 0.9f;
+                rt.sizeDelta = new Vector2(h, h); rt.anchoredPosition = new Vector2(chip.rect.height * 0.08f, 0f);
+                img = rt.GetComponent<Image>(); img.preserveAspect = true; img.raycastTarget = false;
+                _pipIcons[pip] = img;
+            }
+            img.enabled = show;
+            return img;
         }
     }
 }
