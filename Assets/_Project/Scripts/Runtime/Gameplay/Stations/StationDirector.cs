@@ -142,7 +142,7 @@ namespace ZombieWar.Stations
             _compass?.Point(p, nearest);
         }
 
-        void Spawn(StationAnchors.Anchor a)
+        Station Spawn(StationAnchors.Anchor a)
         {
             var go = new GameObject($"Station_{a.kind}_{a.id}");
             go.transform.position = a.position;
@@ -158,6 +158,11 @@ namespace ZombieWar.Stations
                 StationKind.SupplyCache => cacheBody,
                 _ => beaconBody,
             };
+            // A9: the sci-fi bodies and reward icons (StationArt) replace the old props when present.
+            var art = StationArt.Instance;
+            var artBody = art != null ? art.BodyFor(a.kind) : null;
+            if (artBody != null) bodyPrefab = artBody;
+            else if (a.kind == StationKind.SupplyDrop || a.kind == StationKind.HealZone) bodyPrefab = null;
             if (bodyPrefab != null)
             {
                 var body = Instantiate(bodyPrefab, go.transform);
@@ -166,7 +171,63 @@ namespace ZombieWar.Stations
 
             var station = go.AddComponent<Station>();
             station.Bind(a, signal);
+            if (art != null) signal.SetRewardIcon(art.IconFor(a.kind));
             _live[a.id] = station;
+            return station;
+        }
+
+        static long _debugIds = long.MinValue / 2;
+
+        /// <summary>Sandbox: a station of any type, right here, outside the world's anchor grid.</summary>
+        public Station SpawnDebug(StationKind kind, Vector3 at)
+        {
+            at.y = 0f;
+            return Spawn(new StationAnchors.Anchor(++_debugIds, at, kind));
+        }
+
+        // ───────────────────────────────────────────────────────── A9 rewards and effects
+
+        [Header("Supply Drop (A9, TUNING)")]
+        [SerializeField] private int supplyDropCoin = 45;
+        [Tooltip("Chance a Supply Drop also holds a chest, before Luck.")]
+        [SerializeField, Range(0f, 1f)] private float supplyChestChance = 0.2f;
+
+        /// <summary>A Supply Drop opens: coin, a mechanic item (if none is out), sometimes a chest.</summary>
+        public void GrantSupplyDrop(Vector3 at)
+        {
+            var pickups = PickupManager.Instance;
+            if (pickups == null) return;
+            float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;
+            bool item = pickups.SpawnMechanic(MechanicItems.Pick(Random.value), at + new Vector3(1.4f, 0f, -0.6f));
+            pickups.DropReward(at, item ? supplyDropCoin : supplyDropCoin * 2, 0);
+            if (Random.value < supplyChestChance * luck) pickups.SpawnChest(at + new Vector3(-1.4f, 0f, -0.6f));
+        }
+
+        public void PlayCompleteFx(StationKind kind, Vector3 at)
+        {
+            var art = StationArt.Instance;
+            var fx = art != null ? art.CompleteFxFor(kind) : null;
+            if (fx != null) FxPool.Play(fx, at, fx.transform.localRotation, 1f);
+            ZombieWar.Skills.SkillArsenal.Instance?.Shockwave(at, 0.5f, Station.RadiusFor(kind) * 2.2f, WorldSignal.ColorOf(kind), 0.55f);
+            if (Bill.IsReady) Bill.Audio?.PlayCue(kind == StationKind.HealZone ? "sfx.pickup.health" : "sfx.skill.evolve", at, SfxPriority.High, 0.7f);
+        }
+
+        public void PlayHealField(Vector3 at, float radius, float seconds)
+        {
+            var art = StationArt.Instance;
+            if (art == null || art.healFieldFx == null) return;
+            FxPool.PlayFor(art.healFieldFx, at + Vector3.up * 0.05f, art.healFieldFx.transform.localRotation,
+                           radius / Mathf.Max(0.1f, art.healFieldNativeRadius), seconds);
+        }
+
+        float _healTickFxAt;
+
+        public void PlayHealTick(Vector3 at)
+        {
+            var art = StationArt.Instance;
+            if (art == null || art.healTickFx == null || Time.time < _healTickFxAt) return;
+            _healTickFxAt = Time.time + 0.9f;
+            FxPool.Play(art.healTickFx, at + Vector3.up * 0.9f, art.healTickFx.transform.localRotation, 1f);
         }
 
         void Release(long id)
@@ -297,7 +358,8 @@ namespace ZombieWar.Stations
         /// </summary>
         public static void ReportCompleted(StationKind kind)
         {
-            if (kind != StationKind.SupplyCache) Threat.ThreatDirector.ReportObjectiveCompleted();
+            // A Supply Drop is loot and a Heal Zone is relief: neither is an objective either (A9).
+            if (kind == StationKind.SignalRelay || kind == StationKind.BossBeacon) Threat.ThreatDirector.ReportObjectiveCompleted();
             if (Bill.IsReady) Bill.Events.Fire(new StationCompletedEvent(kind));
         }
     }

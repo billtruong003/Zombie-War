@@ -73,14 +73,20 @@ namespace ZombieWar.Stations
             var pos = new Vector3((cellX + jx) * CellSize, 0f, (cellZ + jz) * CellSize);
 
             // Type mix: Relay is the backbone (it is what teaches the player to travel), Cache is
-            // frequent enough for Coin to matter, Beacon is rare so it stays an event. TUNING.
-            float roll = Unit(worldSeed, cellX, cellZ, 47);
-            StationKind kind = roll < 0.45f ? StationKind.SignalRelay
-                             : roll < 0.80f ? StationKind.SupplyCache
-                             : StationKind.BossBeacon;
+            // frequent enough for Coin to matter, Beacon is rare so it stays an event; A9 adds the
+            // Supply Drop (free loot, one-shot) and the Heal Zone (a place to recover). TUNING.
+            StationKind kind = KindFor(Unit(worldSeed, cellX, cellZ, 47));
 
             return new Anchor(IdFor(cellX, cellZ), pos, kind);
         }
+
+        /// <summary>The station type a roll in [0,1) gives.</summary>
+        public static StationKind KindFor(float roll) =>
+            roll < 0.36f ? StationKind.SignalRelay
+          : roll < 0.62f ? StationKind.SupplyCache
+          : roll < 0.76f ? StationKind.BossBeacon
+          : roll < 0.88f ? StationKind.SupplyDrop
+          : StationKind.HealZone;
 
         /// <summary>Cell coordinate containing a world position.</summary>
         public static void CellOf(Vector3 world, out int cellX, out int cellZ)

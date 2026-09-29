@@ -40,6 +40,15 @@ namespace ZombieWar.Stations
         [SerializeField] private float relayBleedPerSecond = 0.35f;
         [Tooltip("Visible ramp before a Boss Beacon commits, so opting in is a readable decision.")]
         [SerializeField] private float beaconArmSeconds = 2.5f;
+        [Tooltip("A9: seconds standing at a Supply Drop to open it (free, one-shot).")]
+        [SerializeField] private float supplyOpenSeconds = 1.5f;
+        [Tooltip("A9: seconds standing in a Heal Zone before it switches on.")]
+        [SerializeField] private float healChargeSeconds = 1.5f;
+        [Tooltip("A9: how long the heal field runs once on.")]
+        [SerializeField] private float healSeconds = 8f;
+        [Tooltip("A9: share of max health healed per second while standing in the field.")]
+        [SerializeField] private float healPerSecond = 0.05f;
+        [SerializeField] private float healCooldownSeconds = 75f;
 
         public StationAnchors.Anchor Anchor { get; private set; }
         public WorldSignal Signal { get; private set; }
@@ -50,6 +59,8 @@ namespace ZombieWar.Stations
         float _bossRetryAt;
 
         TextMeshPro _priceLabel;
+        float _healUntil, _healTickAt;
+        bool _healing;
 
         public bool Finished => _finished;
 
@@ -63,7 +74,7 @@ namespace ZombieWar.Stations
             _progressSeconds = 0f;
             _finished = false;
 
-            float radius = anchor.kind == StationKind.BossBeacon ? 4.5f : 3.5f;
+            float radius = RadiusFor(anchor.kind);
             signal.Configure(anchor.kind, radius);
             if (anchor.kind == StationKind.SupplyCache) EnsurePriceLabel();
 
@@ -85,19 +96,86 @@ namespace ZombieWar.Stations
             }
         }
 
+        /// <summary>The footprint per type: a beacon's arena is wide, a supply crate is opened up close.</summary>
+        public static float RadiusFor(StationKind kind) => kind switch
+        {
+            StationKind.BossBeacon => 4.5f,
+            StationKind.SupplyDrop => 2.5f,
+            StationKind.HealZone => 3.2f,
+            _ => 3.5f,
+        };
+
+        public bool Healing => _healing;
+
         /// <summary>Driven by the director, not by an Update per station.</summary>
         public void Tick(float dt, Vector3 playerPosition)
         {
-            if (_finished || Signal == null) return;
-
+            if (Signal == null) return;
+            // A9: a repeatable station (Supply Cache, Heal Zone) re-arms in place when its cooldown
+            // ends; it used to wait for the player to leave and stream it back in.
+            if (_finished && Signal.State == SignalState.Cooldown &&
+                StationRegistry.StatusOf(Anchor.id, Time.time) == StationRegistry.Status.Untouched)
+            {
+                _finished = false;
+                _progressSeconds = 0f;
+                Signal.SetState(SignalState.Idle);
+                Signal.SetProgress(0f);
+            }
             bool inside = Signal.Contains(playerPosition);
+            Signal.SetPlayerInside(inside);
+            if (_finished) return;
 
             switch (Anchor.kind)
             {
                 case StationKind.SignalRelay: TickHold(dt, inside, relayHoldSeconds, true); break;
                 case StationKind.SupplyCache: TickCache(dt, inside); break;
                 case StationKind.BossBeacon: TickBeacon(inside); break;
+                case StationKind.SupplyDrop: TickConfirm(dt, inside, supplyOpenSeconds); break;
+                case StationKind.HealZone:
+                    if (_healing) TickHealing(dt, inside);
+                    else TickConfirm(dt, inside, healChargeSeconds);
+                    break;
             }
+        }
+
+        /// A short stand-still confirmation that resets when the player steps out (Supply Drop, and
+        /// the Heal Zone's switch-on), so walking past never triggers it by accident.
+        void TickConfirm(float dt, bool inside, float required)
+        {
+            if (!inside)
+            {
+                _progressSeconds = 0f;
+                Signal.SetProgress(0f);
+                Signal.SetState(SignalState.Idle);
+                return;
+            }
+            _progressSeconds += dt;
+            Signal.SetState(SignalState.Active);
+            Signal.SetProgress(_progressSeconds / required);
+            if (_progressSeconds >= required) Complete();
+        }
+
+        /// The Heal Zone while it runs: heals whoever stands in it, the ring drains as time runs out,
+        /// then the zone goes on cooldown.
+        void TickHealing(float dt, bool inside)
+        {
+            float now = Time.time;
+            Signal.SetProgress((_healUntil - now) / Mathf.Max(0.01f, healSeconds));
+            if (inside && now >= _healTickAt)
+            {
+                _healTickAt = now + 0.5f;
+                var hp = PlayerMovement.Instance != null ? PlayerMovement.Instance.GetComponentInParent<Health>() : null;
+                if (hp != null && hp.Current < hp.Max)
+                {
+                    hp.Heal(hp.Max * healPerSecond * 0.5f);
+                    StationDirector.Instance?.PlayHealTick(PlayerMovement.Instance.transform.position);
+                }
+            }
+            if (now < _healUntil) return;
+            _healing = false;
+            _finished = true;
+            StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Cooldown, now, healCooldownSeconds);
+            Signal.SetState(SignalState.Cooldown);
         }
 
         void TickHold(float dt, bool inside, float required, bool bleeds)
@@ -238,12 +316,30 @@ namespace ZombieWar.Stations
 
         void Complete()
         {
+            StationDirector.Instance?.PlayCompleteFx(Anchor.kind, transform.position);
+            if (Anchor.kind == StationKind.HealZone)
+            {
+                // Switched on: the field runs for a while before the zone is spent (TickHealing).
+                _healing = true;
+                _healUntil = Time.time + healSeconds;
+                _healTickAt = 0f;
+                Signal.SetState(SignalState.Active);
+                StationDirector.Instance?.PlayHealField(transform.position, Signal.RingRadius, healSeconds);
+                StationDirector.ReportCompleted(Anchor.kind);
+                return;
+            }
+
             _finished = true;
             Signal.SetProgress(1f);
             Signal.SetState(SignalState.Completed);
 
             switch (Anchor.kind)
             {
+                case StationKind.SupplyDrop:
+                    StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Completed, Time.time);
+                    StationDirector.Instance?.GrantSupplyDrop(transform.position);
+                    break;
+
                 case StationKind.SignalRelay:
                     StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Completed, Time.time);
                     StationDirector.Instance?.GrantCardOffer();

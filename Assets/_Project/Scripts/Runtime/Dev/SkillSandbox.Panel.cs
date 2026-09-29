@@ -146,6 +146,14 @@ namespace ZombieWar.Dev
             if (GUILayout.Button("Bomb")) DropItem(PickupEffect.Bomb);
             if (GUILayout.Button("Freeze")) DropItem(PickupEffect.Freeze);
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            // A9 stations, placed ahead of the player.
+            if (GUILayout.Button("Relay")) PlaceStation(ZombieWar.Stations.StationKind.SignalRelay);
+            if (GUILayout.Button("Cache")) PlaceStation(ZombieWar.Stations.StationKind.SupplyCache);
+            if (GUILayout.Button("Beacon")) PlaceStation(ZombieWar.Stations.StationKind.BossBeacon);
+            if (GUILayout.Button("Drop")) PlaceStation(ZombieWar.Stations.StationKind.SupplyDrop);
+            if (GUILayout.Button("Heal")) PlaceStation(ZombieWar.Stations.StationKind.HealZone);
+            GUILayout.EndHorizontal();
         }
 
         public static bool DropItem(PickupEffect item)
@@ -153,6 +161,14 @@ namespace ZombieWar.Dev
             var p = PlayerMovement.Instance;
             if (p == null || PickupManager.Instance == null) return false;
             return PickupManager.Instance.SpawnMechanic(item, p.transform.position + p.transform.forward * 2.5f);
+        }
+
+        public static ZombieWar.Stations.Station PlaceStation(ZombieWar.Stations.StationKind kind, float ahead = 7f)
+        {
+            var p = PlayerMovement.Instance;
+            var director = ZombieWar.Stations.StationDirector.Instance;
+            if (p == null || director == null) return null;
+            return director.SpawnDebug(kind, p.transform.position + p.transform.forward * ahead);
         }
 
         private void DrawDps(float w)

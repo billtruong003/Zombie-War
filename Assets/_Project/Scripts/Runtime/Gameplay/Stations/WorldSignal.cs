@@ -3,7 +3,8 @@ using UnityEngine;
 namespace ZombieWar.Stations
 {
     /// <summary>What kind of station this is. Each type owns a colour and keeps it everywhere.</summary>
-    public enum StationKind { SignalRelay = 0, SupplyCache = 1, BossBeacon = 2 }
+    // Appended only: A9 added the Supply Drop and the Heal Zone.
+    public enum StationKind { SignalRelay = 0, SupplyCache = 1, BossBeacon = 2, SupplyDrop = 3, HealZone = 4 }
 
     /// <summary>Idle → Active → Completed, plus Cooldown for repeatable stations.</summary>
     public enum SignalState { Idle, Active, Completed, Cooldown, Failed }
@@ -34,9 +35,11 @@ namespace ZombieWar.Stations
         //    player learns "teal = relay" once and it holds everywhere.
         public static Color ColorOf(StationKind kind) => kind switch
         {
-            StationKind.SignalRelay => new Color(0.20f, 0.95f, 0.85f),   // teal
+            StationKind.SignalRelay => new Color(0.40f, 0.72f, 1.00f),   // sky blue (A9: was teal, too close to the Heal Zone's green)
             StationKind.SupplyCache => new Color(1.00f, 0.72f, 0.20f),   // amber
             StationKind.BossBeacon  => new Color(1.00f, 0.20f, 0.25f),   // crimson
+            StationKind.SupplyDrop  => new Color(0.72f, 0.45f, 1.00f),   // violet, the flare's colour
+            StationKind.HealZone    => new Color(0.35f, 1.00f, 0.45f),   // green
             _ => Color.white,
         };
 
@@ -47,6 +50,8 @@ namespace ZombieWar.Stations
             StationKind.SignalRelay => 3,    // triangle — "transmit"
             StationKind.SupplyCache => 4,    // square    — "crate"
             StationKind.BossBeacon  => 6,    // hexagon   — "warning"
+            StationKind.SupplyDrop  => 5,    // pentagon  — "package"
+            StationKind.HealZone    => 8,    // octagon   — "safe spot"
             _ => 8,
         };
 
@@ -63,6 +68,7 @@ namespace ZombieWar.Stations
         [SerializeField] private float iconRadius = 1.6f;    // was 0.75 — too small to read
 
         LineRenderer _ring, _beam, _progress, _icon;
+        SpriteRenderer _reward;
         StationKind _kind;
         SignalState _state = SignalState.Idle;
         float _progress01;
@@ -128,6 +134,44 @@ namespace ZombieWar.Stations
             SetProgress(0f);
         }
 
+        /// <summary>
+        /// A9: what the station pays, drawn inside the icon frame (a card, a coin, a skull, a gift,
+        /// a heart). The frame's side count still names the type without colour; the picture says
+        /// why it is worth the walk.
+        /// </summary>
+        public void SetRewardIcon(Sprite sprite)
+        {
+            if (sprite == null) { if (_reward != null) _reward.enabled = false; return; }
+            if (_reward == null)
+            {
+                var go = new GameObject("reward");
+                go.transform.SetParent(_icon != null ? _icon.transform : transform, false);
+                go.transform.localPosition = new Vector3(0f, iconHeight, -0.05f);
+                _reward = go.AddComponent<SpriteRenderer>();
+                _reward.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _reward.receiveShadows = false;
+            }
+            _reward.sprite = sprite;
+            _reward.enabled = true;
+            float size = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+            _reward.transform.localScale = Vector3.one * (iconRadius * 1.0f / Mathf.Max(0.01f, size));
+            _reward.enabled = !_near;
+        }
+
+        bool _near;
+
+        /// <summary>
+        /// A9: the floating icon is a "come here" sign. Once the player stands in the ring it has
+        /// done its job, and at 5 m over their head it only hides the fight, so it steps aside.
+        /// </summary>
+        public void SetPlayerInside(bool inside)
+        {
+            if (_near == inside) return;
+            _near = inside;
+            if (_icon != null) _icon.enabled = !inside;
+            if (_reward != null) _reward.enabled = !inside && _reward.sprite != null;
+        }
+
         static void BuildCircle(LineRenderer lr, float radius, float y, int segments)
         {
             for (int i = 0; i <= segments; i++)
@@ -183,6 +227,7 @@ namespace ZombieWar.Stations
             Tint(_ring, c);
             Tint(_beam, c);
             Tint(_icon, c);
+            if (_reward != null) _reward.color = state == SignalState.Cooldown ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
 
             _beam.SetPosition(1, new Vector3(0f, beamHeight * beamScale, 0f));
             _beam.enabled = beamScale > 0.001f;
