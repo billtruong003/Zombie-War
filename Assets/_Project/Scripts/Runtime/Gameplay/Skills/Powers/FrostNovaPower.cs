@@ -31,7 +31,9 @@ namespace ZombieWar.Skills.Powers
             FxPool.Play(a.fx, centre + Vector3.up * 0.1f, PowerKit.Flat(a.fx), radius / Mathf.Max(0.1f, a.nativeRadius));
             // A band of frost racing out to the edge of the chilled area and melting (a filled disc
             // this size read as fog over the whole screen).
-            Host.ShowDisc(centre, radius * 0.3f, radius, new Color(0.7f, 0.93f, 1f, freeze ? 0.55f : 0.45f),
+            // Past 6 m (Area stat) the band covers the screen: thinner, so it stays a wave, not fog.
+            float weight = Mathf.Clamp01(6f / Mathf.Max(0.1f, radius));
+            Host.ShowDisc(centre, radius * 0.3f, radius, new Color(0.7f, 0.93f, 1f, (freeze ? 0.55f : 0.45f) * weight),
                           freeze ? 1.1f : 0.8f, false, 0.14f);
             Host.Sfx("sfx.skill.frost", centre, 0.9f, 0.2f);
             Host.Shake(freeze ? 0.25f : 0.12f);

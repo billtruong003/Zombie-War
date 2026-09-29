@@ -89,6 +89,12 @@ namespace ZombieWar.Skills
         public const string StatMoveSpeed = "stat.movespeed";
         public const string StatMaxHealth = "stat.maxhealth";
         public const string StatCoinGain = "stat.coingain";
+        // ── A4 stats (owner-approved 2026-09-29) ──
+        public const string StatCooldown = "stat.cooldown";
+        public const string StatArea = "stat.area";
+        public const string StatPickup = "stat.pickup";
+        public const string StatRegen = "stat.regen";
+        public const string StatLuck = "stat.luck";
         public const string SidearmRunGun = "sidearm.rungun";
         public const string SidearmQuickstep = "sidearm.quickstep";
         public const string SmgStatic = "smg.static";
@@ -171,6 +177,12 @@ namespace ZombieWar.Skills
             new(StatMoveSpeed, "Move Speed Up", SkillLayer.Stat, null, R(0.10f, 0.17f, 0.24f, 0.31f, 0.38f), "MUST"),
             new(StatMaxHealth, "Max Health Up", SkillLayer.Stat, null, R(0.20f, 0.35f, 0.50f, 0.65f, 0.80f), "MUST"),
             new(StatCoinGain,  "Coin Gain Up",  SkillLayer.Stat, null, R(0.25f, 0.325f, 0.40f, 0.475f, 0.55f), "SHOULD"),
+            // ── A4 STAT (5) — a build now picks 4 of 10 stats ──
+            new(StatCooldown,  "Cooldown",      SkillLayer.Stat, null, R(0.07f, 0.14f, 0.21f, 0.28f, 0.35f), "MUST", 4),   // power recharge time cut
+            new(StatArea,      "Area",          SkillLayer.Stat, null, R(0.08f, 0.16f, 0.24f, 0.32f, 0.40f), "MUST", 8),   // power area size
+            new(StatPickup,    "Pickup Range",  SkillLayer.Stat, null, R(0.25f, 0.50f, 0.75f, 1.00f, 1.25f), "MUST", 13),  // pickup pull radius
+            new(StatRegen,     "Regeneration",  SkillLayer.Stat, null, R(0.004f, 0.008f, 0.012f, 0.016f, 0.020f), "MUST", 21), // max health a second
+            new(StatLuck,      "Luck",          SkillLayer.Stat, null, R(0.10f, 0.20f, 0.30f, 0.40f, 0.50f), "MUST", 29),  // item and chest drop chance
 
             // ── SIGNATURE (12) — two per family, resolved by FAMILY, never by weapon id ──
             new(SidearmRunGun,      "Run & Gun",       SkillLayer.Signature, WeaponClass.Sidearm, R(0.25f, 0.31f, 0.37f, 0.43f, 0.49f), "MUST"),

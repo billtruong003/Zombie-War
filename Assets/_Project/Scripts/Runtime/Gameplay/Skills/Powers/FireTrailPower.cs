@@ -30,14 +30,15 @@ namespace ZombieWar.Skills.Powers
             int drops = run.ConsumeFireTrailDrops();
             if (a == null) return;
             float now = Time.time;
+            float radius = a.radius * run.AreaMultiplier;
             for (int i = 0; i < drops && _patches.Count < MaxPatches; i++)
             {
                 _patches.Add(new Patch { pos = p, until = now + a.seconds });
                 FxPool.PlayFor(a.patchFx, p + Vector3.up * 0.05f, PowerKit.Flat(a.patchFx),
-                               0.75f * a.radius / Mathf.Max(0.1f, a.nativeRadius), a.seconds);
+                               0.75f * radius / Mathf.Max(0.1f, a.nativeRadius), a.seconds);
                 // A glowing burn under the flames. Patches overlap, so the trail reads as one
                 // continuous strip of fire instead of separate candles.
-                Host.ShowDisc(p, a.radius * 1.05f, a.radius * 0.8f, new Color(1f, 0.42f, 0.08f, 0.5f), a.seconds, false);
+                Host.ShowDisc(p, radius * 1.05f, radius * 0.8f, new Color(1f, 0.42f, 0.08f, 0.5f), a.seconds, false);
                 Host.Sfx("sfx.skill.fire", p, 0.25f, 0.9f);
             }
 
@@ -50,9 +51,9 @@ namespace ZombieWar.Skills.Powers
             float reach = 0f;
             for (int i = 0; i < _patches.Count; i++)
                 reach = Mathf.Max(reach, (_patches[i].pos - p).magnitude);
-            int found = TargetQuery.GatherEnemies(p, reach + a.radius + 0.5f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, reach + radius + 0.5f, Host.EnemyMask);
             float damage = run.PowerDamage(run.FireTrailDps, SkillCatalogDefs.AutoFireTrail) * TickSeconds;
-            float r2 = a.radius * a.radius;
+            float r2 = radius * radius;
 
             for (int c = 0; c < found; c++)
             {

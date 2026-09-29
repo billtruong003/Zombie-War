@@ -96,14 +96,17 @@ namespace ZombieWar
 
         private void DropLoot()
         {
+            // A4 Luck raises the item shares (gem, health); coins fill what is left.
+            float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;
+            float gem = gemChance * luck, health = healthChance * luck;
             for (int i = 0; i < dropCount; i++)
             {
                 float roll = Random.value;
-                if (roll < gemChance)
+                if (roll < gem)
                     SpawnPickup(gemPoolKey, PlayerProfile.CurrencyKind.Gem, 1);
-                else if (roll < gemChance + healthChance)
+                else if (roll < gem + health)
                     SpawnPickup(healthPoolKey, PlayerProfile.CurrencyKind.Coin, 0);
-                else if (roll < gemChance + healthChance + coinChance)
+                else if (roll < gem + health + coinChance)
                     SpawnPickup(coinPoolKey, PlayerProfile.CurrencyKind.Coin, coinPerDrop);
             }
         }

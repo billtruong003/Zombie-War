@@ -87,6 +87,19 @@ namespace ZombieWar.Skills
             for (int i = 0; i < procs.Count; i++) Apply(run, procs[i], pos);
 
             ApplyOverflow(run, pos);
+            ApplyRegen(run, dt);
+        }
+
+        float _regenOwed;
+
+        void ApplyRegen(SkillRuntime run, float dt)
+        {
+            float rate = run.RegenPerSecond;
+            if (rate <= 0f || _health == null || _health.IsDead) { _regenOwed = 0f; return; }
+            _regenOwed += rate * dt;
+            if (_regenOwed < rate) return;          // pay once a second's worth has built up
+            if (_health.Current < _health.Max) _health.Heal(_health.Max * _regenOwed);
+            _regenOwed = 0f;
         }
 
         /// <summary>One proc to the module that owns its card (sandbox capture calls this too).</summary>

@@ -28,6 +28,11 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.StatMoveSpeed: return $"Move speed +{pct}";
                 case SkillCatalogDefs.StatMaxHealth: return $"Max health +{pct}";
                 case SkillCatalogDefs.StatCoinGain: return $"Coins from kills +{pct}";
+                case SkillCatalogDefs.StatCooldown: return $"Powers recharge {pct} faster";
+                case SkillCatalogDefs.StatArea: return $"Power areas {pct} bigger";
+                case SkillCatalogDefs.StatPickup: return $"Pickups fly to you from {pct} farther";
+                case SkillCatalogDefs.StatRegen: return $"Heal {v * 100f:0.#}% of max health every second";
+                case SkillCatalogDefs.StatLuck: return $"Items and chests drop {pct} more often";
 
                 // ── signatures ──
                 case SkillCatalogDefs.SidearmRunGun: return $"Fire up to {pct} faster while moving";

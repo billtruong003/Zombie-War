@@ -55,14 +55,14 @@ namespace ZombieWar.Skills
         readonly ProcPower[] _procPowers =
         {
             new(Every(SkillCatalogDefs.AutoChainLightning, 6f), r => r.ChainTargets, _ => 8f),
-            new(Every(SkillCatalogDefs.AutoOrdnance, 7f), _ => 1, r => r.Value(SkillCatalogDefs.AutoOrdnance)),
+            new(Every(SkillCatalogDefs.AutoOrdnance, 7f), _ => 1, r => r.Value(SkillCatalogDefs.AutoOrdnance) * r.AreaMultiplier),
             new(new AutonomousPower(SkillCatalogDefs.AutoSoulBurst, AutonomousPower.TriggerKind.KillCount, 0.5f, killsRequired: 12),
-                _ => 0, r => r.Value(SkillCatalogDefs.AutoSoulBurst), timed: false),
+                _ => 0, r => r.Value(SkillCatalogDefs.AutoSoulBurst) * r.AreaMultiplier, timed: false),
             new(new AutonomousPower(SkillCatalogDefs.AutoEmergency, AutonomousPower.TriggerKind.HealthThreshold, 30f, healthFraction: 0.3f),
-                _ => 0, r => r.Value(SkillCatalogDefs.AutoEmergency)),
+                _ => 0, r => r.Value(SkillCatalogDefs.AutoEmergency) * r.AreaMultiplier),
             new(Every(SkillCatalogDefs.AutoFrostNova, 5f), _ => 0, r => r.FrostRadius),
             new(Every(SkillCatalogDefs.AutoBoomerang, 2.5f), r => r.BoomerangCount, _ => 9f),
-            new(Every(SkillCatalogDefs.AutoAirstrike, 8f), r => r.AirstrikeBlasts, _ => 2.6f),
+            new(Every(SkillCatalogDefs.AutoAirstrike, 8f), r => r.AirstrikeBlasts, r => 2.6f * r.AreaMultiplier),
         };
 
         ProcPower ProcOf(string id)
@@ -143,7 +143,7 @@ namespace ZombieWar.Skills
         {
             // Max Health Up is the one card that must act at pick time rather than continuously.
             if (def.id == SkillCatalogDefs.StatMaxHealth) PendingMaxHealthBonus += def.ValueAt(rank) - def.ValueAt(rank - 1);
-            if (def.layer == SkillLayer.Autonomous || def.IsEvolution) SyncAutonomousCooldowns();
+            if (def.layer == SkillLayer.Autonomous || def.IsEvolution || def.id == SkillCatalogDefs.StatCooldown) SyncAutonomousCooldowns();
             if (def.IsOverflow) TakeOverflow(def);
         }
 
@@ -181,13 +181,13 @@ namespace ZombieWar.Skills
 
         public int OrbitBladeCount => !Has(SkillCatalogDefs.AutoOrbit) ? 0
             : IsEvolved(SkillCatalogDefs.AutoOrbit) ? 6 : Mathf.RoundToInt(Value(SkillCatalogDefs.AutoOrbit));
-        public float OrbitRadius => IsEvolved(SkillCatalogDefs.AutoOrbit) ? 3.2f : 2.3f;
+        public float OrbitRadius => (IsEvolved(SkillCatalogDefs.AutoOrbit) ? 3.2f : 2.3f) * AreaMultiplier;
         public float OrbitDegreesPerSecond => IsEvolved(SkillCatalogDefs.AutoOrbit) ? 300f : 200f;
 
         public int DroneCount => !Has(SkillCatalogDefs.AutoDrone) ? 0 : IsEvolved(SkillCatalogDefs.AutoDrone) ? 3 : 1;
         public float DroneShotsPerSecond => Value(SkillCatalogDefs.AutoDrone);
 
-        public float FrostRadius => Value(SkillCatalogDefs.AutoFrostNova) + (IsEvolved(SkillCatalogDefs.AutoFrostNova) ? 1f : 0f);
+        public float FrostRadius => (Value(SkillCatalogDefs.AutoFrostNova) + (IsEvolved(SkillCatalogDefs.AutoFrostNova) ? 1f : 0f)) * AreaMultiplier;
         public float FrostSlow => Table(SkillCatalogDefs.AutoFrostNova, "slow", 0.35f);
         /// <summary>Absolute Zero freezes instead of slowing.</summary>
         public bool FrostFreezes => IsEvolved(SkillCatalogDefs.AutoFrostNova);
@@ -274,7 +274,7 @@ namespace ZombieWar.Skills
             foreach (var p in _procPowers)
             {
                 string id = p.timer.id;
-                if (p.timed && Has(id)) p.timer.Cooldown = CooldownAt(id, RankOf(id), IsEvolved(id));
+                if (p.timed && Has(id)) p.timer.Cooldown = CooldownAt(id, RankOf(id), IsEvolved(id)) * CooldownMultiplier;
             }
         }
 
@@ -310,6 +310,18 @@ namespace ZombieWar.Skills
         }
 
         public float CoinMultiplier => (1f + Value(SkillCatalogDefs.StatCoinGain)) * (1f + Value(SkillCatalogDefs.UniGreed));
+
+        // ── A4 stats ──
+        /// <summary>Cooldown: every timed power's recharge is multiplied by this.</summary>
+        public float CooldownMultiplier => 1f - Value(SkillCatalogDefs.StatCooldown);
+        /// <summary>Area: every power area (nova, burst, blast, orbit, burning ground) grows by this.</summary>
+        public float AreaMultiplier => 1f + Value(SkillCatalogDefs.StatArea);
+        /// <summary>Pickup Range: the radius pickups start flying to the player from.</summary>
+        public float PickupRangeMultiplier => 1f + Value(SkillCatalogDefs.StatPickup);
+        /// <summary>Regeneration: share of max health healed each second.</summary>
+        public float RegenPerSecond => Value(SkillCatalogDefs.StatRegen);
+        /// <summary>Luck: item and chest drop chances are multiplied by this (coins are not items).</summary>
+        public float LuckMultiplier => 1f + Value(SkillCatalogDefs.StatLuck);
 
         /// <summary>Greed's price: enemies that spawn from now on have this much more health.</summary>
         public float EnemyHealthMultiplier => Has(SkillCatalogDefs.UniGreed) ? 1f + Table(SkillCatalogDefs.UniGreed, "hp", 0f) : 1f;

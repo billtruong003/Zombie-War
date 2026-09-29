@@ -30,8 +30,8 @@ namespace ZombieWar.Tests
         public void TheOwnerApprovedCardList_NothingMoreNothingLess()
         {
             var all = SkillCatalogDefs.All;
-            Assert.AreEqual(47, all.Count,
-                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3, owner 2026-09-29)");
+            Assert.AreEqual(52, all.Count,
+                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3) + 5 stats (A4, owner 2026-09-29)");
 
             var expected = new[]
             {
@@ -46,6 +46,7 @@ namespace ZombieWar.Tests
                 "Piercing Rounds", "Ricochet", "Split Shot", "Critical Rounds", "Blood Siphon",
                 "Acid Rounds", "Explosive Rounds", "Double Tap", "Guardian Angel", "Greed",
                 "Cluster Charge", "Napalm Shell",
+                "Cooldown", "Area", "Pickup Range", "Regeneration", "Luck",
             };
             CollectionAssert.AreEquivalent(expected, all.Select(d => d.displayName).ToArray(),
                 "no card may be added, removed or renamed without the owner");

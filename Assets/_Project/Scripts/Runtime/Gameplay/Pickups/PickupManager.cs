@@ -90,10 +90,12 @@ namespace ZombieWar
             // would otherwise mutate the list mid-loop.
             Scratch.Clear();
             Scratch.AddRange(Live);
+            // A4 Pickup Range grows the pull radius.
+            float pull = magnetRadius * (ZombieWar.Skills.SkillRuntime.Active?.PickupRangeMultiplier ?? 1f);
             for (int i = 0; i < Scratch.Count; i++)
             {
                 var p = Scratch[i];
-                if (p != null) p.Tick(dt, playerPos, magnetRadius, _magnetSweepUntil > Time.time);
+                if (p != null) p.Tick(dt, playerPos, pull, _magnetSweepUntil > Time.time);
             }
         }
 
@@ -181,11 +183,12 @@ namespace ZombieWar
             // FALLBACK, and it matters more than the magnet: a player who never sees one loses
             // nothing. Coins sit on the ground indefinitely and are collected by walking over them,
             // exactly as before. The magnet is a convenience reward, never the only route to loot.
-            if (data.isElite && Random.value < magnetDropChance)
+            float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;   // A4 Luck: items, not coins
+            if (data.isElite && Random.value < magnetDropChance * luck)
                 Spawn(PlayerProfile.CurrencyKind.Coin, 0, magnetPoolKey, origin);
 
             // Gems stay rare and authored: elites and bosses only.
-            if (data.isElite && Random.value < eliteGemChance)
+            if (data.isElite && Random.value < eliteGemChance * luck)
                 Spawn(PlayerProfile.CurrencyKind.Gem, eliteGemAmount, gemPoolKey, origin);
         }
 
