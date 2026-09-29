@@ -208,10 +208,11 @@ namespace ZombieWar.Skills
 
         static ZombieBase EnemyOf(Collider c) => c != null ? c.GetComponentInParent<ZombieBase>() : null;
 
-        static void Hit(ZombieBase enemy, float damage, float push)
+        static void Hit(ZombieBase enemy, float damage, float push, string source)
         {
             if (enemy == null || enemy.IsDead) return;
             enemy.TakeDamage(damage);
+            DamageLedger.Record(source, damage);
             if (push > 0f && !enemy.IsDead) enemy.ApplyPhysicalPush(push);
         }
 
@@ -539,7 +540,7 @@ namespace ZombieWar.Skills
                 if (enemy == null) continue;
                 _orbitNextHit[id] = now + orbitHitInterval;
 
-                Hit(enemy, damage, 0.35f);
+                Hit(enemy, damage, 0.35f, run.Has(SkillCatalogDefs.EvoBuzzsaw) ? SkillCatalogDefs.EvoBuzzsaw : SkillCatalogDefs.AutoOrbit);
                 FxPool.Play(bladeHitFx, Chest(enemy), Flat(bladeHitFx), 0.6f);
                 Sfx("sfx.skill.blade.hit", ep, 0.45f, 0.07f);
             }
@@ -857,7 +858,8 @@ namespace ZombieWar.Skills
             FxPool.Play(droneHitFx, to, Flat(droneHitFx), 0.45f);
             Sfx("sfx.skill.drone", from, 0.3f, 0.05f);
 
-            Hit(enemy, run.PowerDamage(droneBaseDamage, SkillCatalogDefs.AutoDrone), 0.15f);
+            Hit(enemy, run.PowerDamage(droneBaseDamage, SkillCatalogDefs.AutoDrone), 0.15f,
+                run.Has(SkillCatalogDefs.EvoSquadron) ? SkillCatalogDefs.EvoSquadron : SkillCatalogDefs.AutoDrone);
 
             // Drone Squadron: a kill can pay out a coin on the spot.
             if (enemy.IsDead && run.IsEvolved(SkillCatalogDefs.AutoDrone) && Random.value < 0.1f)
@@ -900,7 +902,7 @@ namespace ZombieWar.Skills
                     StatusCarrier.Apply(id, StatusKind.Slow, run.FrostSlow, 2f, now);
                     SkillFxDirector.Instance?.TintEnemy(enemy, frostTint, 2f);
                 }
-                Hit(enemy, damage, 0.6f);
+                Hit(enemy, damage, 0.6f, run.Has(SkillCatalogDefs.EvoAbsoluteZero) ? SkillCatalogDefs.EvoAbsoluteZero : SkillCatalogDefs.AutoFrostNova);
             }
         }
 
@@ -951,7 +953,7 @@ namespace ZombieWar.Skills
                 if (!burning) continue;
                 var enemy = EnemyOf(TargetQuery.Candidate(c));
                 if (enemy == null || enemy.IsDead) continue;
-                Hit(enemy, damage, 0f);
+                Hit(enemy, damage, 0f, SkillCatalogDefs.AutoFireTrail);
                 SkillFxDirector.Instance?.TintEnemy(enemy, burnTint, 0.4f);
             }
         }
@@ -1051,7 +1053,7 @@ namespace ZombieWar.Skills
                     // Once on the way out and once on the way back — the fantasy is "it cuts twice".
                     int key = enemy.GetInstanceID() * 2 + (t <= 1f ? 0 : 1);
                     if (!b.hit.Add(key)) continue;
-                    Hit(enemy, damage, 0.5f);
+                    Hit(enemy, damage, 0.5f, SkillCatalogDefs.AutoBoomerang);
                     FxPool.Play(boomerangHitFx, Chest(enemy), Quaternion.identity, 0.7f);
                     Sfx("sfx.skill.blade.hit", pos, 0.5f, 0.06f);
                 }
@@ -1067,6 +1069,7 @@ namespace ZombieWar.Skills
             public ParticleSystem fx, missile, decal;
             public float fxNativeRadius;
             public string sfx;
+            public string source;
             public ParticleSystem missileInstance;
             public bool missileLaunched;
             public Vector3 dropFrom;
@@ -1082,7 +1085,8 @@ namespace ZombieWar.Skills
                                   ParticleSystem fx, float fxNativeRadius, string sfx,
                                   float shake, float push = 1.2f,
                                   ParticleSystem marker = null, float markerNativeRadius = 1f,
-                                  ParticleSystem missile = null, ParticleSystem decal = null, Vector3? flightDir = null)
+                                  ParticleSystem missile = null, ParticleSystem decal = null, Vector3? flightDir = null,
+                                  string source = null)
         {
             if (_blasts.Count >= 16) return;
             pos.y = 0f;
@@ -1101,6 +1105,7 @@ namespace ZombieWar.Skills
             {
                 pos = pos, radius = radius, damage = damage, landAt = Time.time + delay, push = push,
                 shake = shake, fx = fx, fxNativeRadius = fxNativeRadius, sfx = sfx, missile = missile, decal = decal,
+                source = source,
                 // Falls in at an angle along the flight line, so it reads as dropped from a pass overhead.
                 dropFrom = pos - dir.normalized * bombDrift + Vector3.up * bombFallHeight,
             });
@@ -1150,7 +1155,7 @@ namespace ZombieWar.Skills
             for (int b = 0; b < _runTargets.Count; b++)
                 ScheduleBlast(_runTargets[b], radius, damage, airstrikeDelay + b * 0.14f,
                               strikeBlastFx, strikeBlastNativeRadius, "sfx.skill.airstrike.blast", 0.22f, 1.4f,
-                              null, 1f, strikeMissileFx, strikeDecalFx, flight);
+                              null, 1f, strikeMissileFx, strikeDecalFx, flight, SkillCatalogDefs.AutoAirstrike);
         }
 
         readonly List<Vector3> _runTargets = new(8);
@@ -1191,7 +1196,7 @@ namespace ZombieWar.Skills
                 SkillFxDirector.Instance?.Pulse(b.pos, b.radius, new Color(1f, 0.62f, 0.2f, 0.85f), 0.3f, 0.18f);
 
                 int found = TargetQuery.GatherEnemies(b.pos, b.radius, enemyMask);
-                for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), b.damage, b.push);
+                for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), b.damage, b.push, b.source);
             }
         }
 
@@ -1329,7 +1334,7 @@ namespace ZombieWar.Skills
             SoulWisp(at);
             Sfx("sfx.skill.reaper", at, 0.8f, 0f);
             int found = TargetQuery.GatherEnemies(at, 2.4f, enemyMask);
-            for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), damage, 0.8f);
+            for (int c = 0; c < found; c++) Hit(EnemyOf(TargetQuery.Candidate(c)), damage, 0.8f, SkillCatalogDefs.EvoReaper);
         }
 
         // ── Run & Gun: cyan footprints of speed while the ramp is up

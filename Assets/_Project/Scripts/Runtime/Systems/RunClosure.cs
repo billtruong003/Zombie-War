@@ -58,6 +58,7 @@ namespace ZombieWar
             // Read the outcome back off the snapshot rather than trusting the argument: Finish is
             // first-call-wins, so the snapshot is the only honest record of what the run ended as.
             var summary = run.Finish(outcome);
+            PlayerProfile.FlushIfDirty();
             run.Payout(CoinFractionFor(summary.Outcome));
 
             bool record = PlayerProfile.RecordSurvival(summary.Duration);

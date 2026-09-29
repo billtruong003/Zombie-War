@@ -206,8 +206,13 @@ namespace ZombieWar
             }
         }
 
+        private static bool _saveDirty;
+        private static bool _flushScheduled;
+        private const float DeferredFlushSeconds = 1.5f;
+
         private static void SaveNow()
         {
+            _saveDirty = false;
             var storage = Storage;
             storage.Set(SaveKey, _data);
             storage.Flush();
@@ -544,6 +549,38 @@ namespace ZombieWar
             SetBalance(kind, next);
             SaveNow();
             WalletChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Like <see cref="Add"/>, for currency picked up mid-run: the balance changes at once, the disk
+        /// write is coalesced (one save at most every 1.5 s). Saving the whole profile on every gem
+        /// pickup stalled the frame whenever several gems were collected together.
+        /// </summary>
+        public static void AddDeferred(CurrencyKind kind, long amount)
+        {
+            if (amount <= 0) return;
+            long current = GetBalance(kind);
+            long next = current + amount;
+            if (next < current) next = long.MaxValue;
+            SetBalance(kind, next);
+            _saveDirty = true;
+            WalletChanged?.Invoke();
+            ScheduleFlush();
+        }
+
+        /// <summary>Writes the profile if a deferred change is still waiting.</summary>
+        public static void FlushIfDirty()
+        {
+            if (_saveDirty) SaveNow();
+        }
+
+        private static void ScheduleFlush()
+        {
+            if (_flushScheduled) return;
+            var timer = Bill.IsReady ? Bill.Timer : null;
+            if (timer == null) { SaveNow(); return; }
+            _flushScheduled = true;
+            timer.Delay(DeferredFlushSeconds, () => { _flushScheduled = false; FlushIfDirty(); }, true);
         }
 
         /// Tru tien nguyen tu: false (khong doi gi) neu amount am hoac so du khong du.

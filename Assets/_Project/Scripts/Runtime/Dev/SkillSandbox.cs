@@ -1,42 +1,55 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using BillGameCore;
 using UnityEngine;
 using ZombieWar.Skills;
+using ZombieWar.Stations;
 using ZombieWar.Threat;
 
 namespace ZombieWar.Dev
 {
-    /// Dev-only skill test bench (M8 review, owner request 2026-09-26). Lives in the
-    /// SkillSandbox scene, which is started with ZombieWar/Dev/Play Skill Sandbox.
+    /// Dev-only skill test bench (M8; rebuilt as the phase-A dev bench, 2026-09-29). Lives in the
+    /// SkillSandbox scene, started with ZombieWar/Dev/Play Skill Sandbox.
     ///
-    /// Stops the horde, makes the player immortal, and stands a few immortal dummies in front of
-    /// the player so every skill can be granted, maxed and watched from the same spot. A small
-    /// on-screen panel grants or maxes any card, changes the dummy count (3 / 10 / 30 to see chain
-    /// and airstrike on a crowd) and slows time to study an effect.
-    public sealed class SkillSandbox : MonoBehaviour
+    /// Stops the horde, makes the player immortal, and brings enemies on demand: pinned dummies
+    /// (immortal or mortal) to watch an effect from the same spot, or a live horde of any enemy type
+    /// that walks at the player, refilled to a set count, for DPS and stress tests. Cards are set to
+    /// any rank from the panel, damage is tracked per source (DamageLedger), and the capture tab
+    /// writes frame bursts and contact sheets for review. Panel: SkillSandbox.Panel.cs; capture:
+    /// SkillSandbox.Capture.cs.
+    public sealed partial class SkillSandbox : MonoBehaviour
     {
+        public enum EnemyMode { Dummies, Horde }
+
         [SerializeField] private int dummyCount = 3;
         [SerializeField] private float ringRadius = 6f;
 
-        private readonly List<SandboxDummy> _dummies = new();
-        private ZombieSpawner _spawner;
-        private ZombieData _dummyData;
-        private Vector2 _scroll;
-        private bool _panelOpen = true;
-        private string _status = "starting…";
-        private readonly List<Vector3> _slots = new();
-        private float _walkAngle;
-        private Component _joystick;
-        private System.Reflection.MethodInfo _applyDir;
+        public static SkillSandbox Instance { get; private set; }
 
+        public EnemyMode Mode { get; private set; } = EnemyMode.Dummies;
+        public int Count => dummyCount;
+        /// <summary>Enemy type to bring; null = a mix of the whole roster.</summary>
+        public ZombieData Enemy { get; private set; }
+        /// Horde mode: replace killed enemies so the count stays up (steady DPS readings).
+        public bool KeepCount { get; set; } = true;
         /// Dummies die (and stand back up 0.8 s later): for cards that need kills (Soul Burst, Reaper, Execution).
         public bool Mortal { get => SandboxDummy.Mortal; set => SandboxDummy.Mortal = value; }
         /// The player walks a slow circle: for cards that need movement (Fire Trail, Kinetic Shield, Quickstep).
         public bool Walk { get; set; }
+        public bool God { get; private set; }
 
-        public static SkillSandbox Instance { get; private set; }
+        private readonly List<SandboxDummy> _dummies = new();
+        private readonly List<Vector3> _slots = new();
+        private readonly List<ZombieBase> _horde = new();
+        private readonly List<ZombieData> _roster = new();
+        private ZombieSpawner _spawner;
+        private string _status = "starting…";
+        private float _walkAngle;
+        private Component _joystick;
+        private System.Reflection.MethodInfo _applyDir;
+        private float _respawnAt;
+
+        public IReadOnlyList<ZombieData> Roster => _roster;
 
         private void Awake()
         {
@@ -50,7 +63,13 @@ namespace ZombieWar.Dev
             }
 #endif
         }
-        private void OnDestroy() { if (Instance == this) Instance = null; Time.timeScale = 1f; }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            Time.timeScale = 1f;
+            DamageLedger.Enabled = false;
+        }
 
         private IEnumerator Start()
         {
@@ -60,31 +79,66 @@ namespace ZombieWar.Dev
             yield return null;
 
             ThreatDirector.Instance.enabled = false;             // no horde in the sandbox
-            foreach (var z in FindObjectsByType<ZombieBase>(FindObjectsSortMode.None))
-                if (z.GetComponent<SandboxDummy>() == null) Bill.Pool?.Return(z.gameObject);
-            Bill.Cheat?.Execute("zw.god");
+            ClearEnemies();
+            SetGod(true);
 
             _spawner = FindFirstObjectByType<ZombieSpawner>();
-            _dummyData = ThreatDirector.Instance.PickFor(0);
+            _roster.Clear();
+            ThreatDirector.Instance.CollectRoster(_roster);
+            var stations = FindFirstObjectByType<StationDirector>();
+            if (stations != null && stations.BossRoster != null)
+                foreach (var d in stations.BossRoster) if (d != null && !_roster.Contains(d)) _roster.Add(d);
+            Enemy = ThreatDirector.Instance.PickFor(0);
+
+            DamageLedger.Enabled = true;
+            DamageLedger.Reset();
             SetDummies(dummyCount);
             _status = "ready";
         }
 
+        // ------------------------------------------------------------------ enemies
+
+        public void SetEnemy(ZombieData data)
+        {
+            Enemy = data;
+            Rebuild();
+        }
+
+        public void SetMode(EnemyMode mode)
+        {
+            Mode = mode;
+            Rebuild();
+        }
+
         public void SetDummies(int count)
         {
-            dummyCount = Mathf.Clamp(count, 1, 60);
-            foreach (var d in _dummies) if (d != null) { Destroy(d); Bill.Pool?.Return(d.gameObject); }
-            _dummies.Clear();
-            _slots.Clear();
-            if (_spawner == null || _dummyData == null) { _status = "no spawner / data"; return; }
+            dummyCount = Mathf.Clamp(count, 1, 250);
+            Rebuild();
+        }
 
-            _spawner.EnsureRegistered(_dummyData, dummyCount);
+        private ZombieData PickEnemy() =>
+            Enemy != null ? Enemy : _roster.Count > 0 ? _roster[Random.Range(0, _roster.Count)] : null;
+
+        /// Removes every enemy and brings the chosen set again (mode, type, count).
+        public void Rebuild()
+        {
+            ClearEnemies();
+            if (_spawner == null || PlayerMovement.Instance == null) { _status = "no spawner"; return; }
+            if (Mode == EnemyMode.Dummies) BuildDummies();
+            else for (int i = 0; i < dummyCount; i++) SpawnHordeOne();
+            _status = Mode == EnemyMode.Dummies ? "dummies" : "horde";
+        }
+
+        private void BuildDummies()
+        {
             var center = PlayerMovement.Instance.transform.position;
             for (int i = 0; i < dummyCount; i++)
             {
-                var z = _spawner.Spawn(_dummyData);
-                if (z == null) continue;
-                // Three in a row in front of the player; more fill rings, so a chain has hops.
+                var data = PickEnemy();
+                if (data == null) break;
+                _spawner.EnsureRegistered(data, dummyCount);
+                var z = _spawner.Spawn(data);
+                if (z == null) { _status = "spawn failed: " + data.name; continue; }
                 // Always on screen (skills like Airstrike only target what the camera sees): three
                 // in a row above the player, more spread over a grid of the visible ground.
                 Vector3 pos = dummyCount <= 3
@@ -93,6 +147,31 @@ namespace ZombieWar.Dev
                 if ((pos - center).sqrMagnitude < 4f) pos += (pos - center).normalized * 2f + Vector3.right * 0.01f;
                 _slots.Add(pos);
                 _dummies.Add(Place(z, pos, center));
+            }
+        }
+
+        private bool SpawnHordeOne()
+        {
+            var data = PickEnemy();
+            if (data == null) return false;
+            _spawner.EnsureRegistered(data, dummyCount);
+            var z = _spawner.Spawn(data);
+            if (z == null) { _status = "spawn failed: " + data.name; return false; }
+            _horde.Add(z);
+            return true;
+        }
+
+        public void ClearEnemies()
+        {
+            foreach (var d in _dummies) if (d != null) Destroy(d);
+            _dummies.Clear();
+            _slots.Clear();
+            _horde.Clear();
+            foreach (var z in FindObjectsByType<ZombieBase>(FindObjectsSortMode.None))
+            {
+                var dummy = z.GetComponent<SandboxDummy>();
+                if (dummy != null) Destroy(dummy);
+                Bill.Pool?.Return(z.gameObject);
             }
         }
 
@@ -107,39 +186,65 @@ namespace ZombieWar.Dev
             return t > 0f ? ray.origin + ray.direction * t : fallback;
         }
 
-        private SandboxDummy Place(ZombieBase z, Vector3 pos, Vector3 lookAt)
+        private static SandboxDummy Place(ZombieBase z, Vector3 pos, Vector3 lookAt)
         {
             var d = z.gameObject.GetComponent<SandboxDummy>() ?? z.gameObject.AddComponent<SandboxDummy>();
             d.Pin(pos, lookAt);
             return d;
         }
 
-        private float _respawnAt;
-
         private void Update()
         {
             if (_spawner == null || PlayerMovement.Instance == null) return;
-            // Mortal dummies: refill empty slots shortly after a death.
-            if (Time.unscaledTime >= _respawnAt)
-                for (int i = 0; i < _dummies.Count; i++)
-                {
-                    var d = _dummies[i];
-                    if (d != null && d.isActiveAndEnabled && !d.Dead) continue;
-                    _respawnAt = Time.unscaledTime + 0.8f;
-                    if (d != null) Destroy(d);
-                    var z = _spawner.Spawn(_dummyData);
-                    if (z != null) _dummies[i] = Place(z, _slots[i], PlayerMovement.Instance.transform.position);
-                    break;
-                }
+            if (Mode == EnemyMode.Dummies) RefillDummies();
+            else RefillHorde();
             DriveWalk();
             SuppressLevelUp();
+            TickFps();
+        }
+
+        private void RefillDummies()
+        {
+            // Mortal dummies: refill empty slots shortly after a death.
+            if (Time.unscaledTime < _respawnAt) return;
+            for (int i = 0; i < _dummies.Count; i++)
+            {
+                var d = _dummies[i];
+                if (d != null && d.isActiveAndEnabled && !d.Dead) continue;
+                _respawnAt = Time.unscaledTime + 0.8f;
+                if (d != null) Destroy(d);
+                var data = PickEnemy();
+                var z = data != null ? _spawner.Spawn(data) : null;
+                if (z != null) _dummies[i] = Place(z, _slots[i], PlayerMovement.Instance.transform.position);
+                break;
+            }
+        }
+
+        private void RefillHorde()
+        {
+            _horde.RemoveAll(z => z == null || !z.gameObject.activeInHierarchy || z.IsDead);
+            if (!KeepCount) return;
+            // A few per frame: a full wipe refills over a handful of frames instead of one spike.
+            for (int n = 0; n < 8 && _horde.Count < dummyCount; n++)
+                if (!SpawnHordeOne()) break;
+        }
+
+        public int AliveCount => Mode == EnemyMode.Dummies ? _dummies.Count : _horde.Count;
+
+        // ------------------------------------------------------------------ player
+
+        public void SetGod(bool on)
+        {
+            if (God == on) return;
+            God = on;
+            Bill.Cheat?.Execute("zw.god");       // the cheat is a toggle; God mirrors its state
         }
 
         private RunOverlays _overlays;
         private float _lastScale = 1f;
 
-        /// Kills in Mortal mode earn XP; a level-up would pause the bench and hand out random cards.
-        /// The sandbox closes it without a pick and keeps the chosen time scale.
+        /// Kills earn XP; a level-up would pause the bench and hand out random cards. The sandbox
+        /// closes it without a pick and keeps the chosen time scale.
         private void SuppressLevelUp()
         {
             if (Time.timeScale > 0f) _lastScale = Time.timeScale;
@@ -152,15 +257,16 @@ namespace ZombieWar.Dev
             t.GetField("_pendingLevelUps", F)?.SetValue(_overlays, 0);
             t.GetField("_skillOffer", F)?.SetValue(_overlays, null);
             root.SetActive(false);
-            Time.timeScale = _lastScale;
+            if (!_paused) Time.timeScale = _lastScale;
         }
 
         private void DriveWalk()
         {
             if (_joystick == null)
             {
-                var type = System.AppDomain.CurrentDomain.GetAssemblies()
-                    .Select(a => a.GetType("BillGameCore.BillVirtualJoystick")).FirstOrDefault(t => t != null);
+                System.Type type = null;
+                foreach (var a in System.AppDomain.CurrentDomain.GetAssemblies())
+                    if ((type = a.GetType("BillGameCore.BillVirtualJoystick")) != null) break;
                 if (type == null) return;
                 _joystick = FindFirstObjectByType(type) as Component;
                 _applyDir = type.GetMethod("ApplyDirection", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -177,113 +283,59 @@ namespace ZombieWar.Dev
             if (_joystick != null) _applyDir?.Invoke(_joystick, new object[] { Vector2.zero });
         }
 
-        // ------------------------------------------------------------------ review capture
+        // ------------------------------------------------------------------ time
 
-        /// <summary>
-        /// Captures every card in <paramref name="specs"/> to PNGs for review. Spec format:
-        /// "cardId|family|dummies|mortal|walk|waitSeconds" (family: - for the default SMG).
-        /// Frames are taken at <paramref name="timeScale"/> every <paramref name="gap"/> real seconds.
-        /// Emergency Detonation turns god mode off for its own capture (it needs the player hurt).
-        /// </summary>
-        public IEnumerator Capture(string[] specs, string folder, int frames, float gap, float timeScale)
+        private bool _paused;
+        private float _speed = 1f;
+        public float Speed => _speed;
+        public bool Paused => _paused;
+
+        public void SetSpeed(float speed)
         {
-            _panelOpen = false;
-            System.IO.Directory.CreateDirectory(folder);
-            while (ThreatDirector.Instance == null || ThreatDirector.Instance.enabled) yield return null;
-            yield return new WaitForSecondsRealtime(1.5f);
-            foreach (var spec in specs)
+            _speed = Mathf.Clamp(speed, 0.05f, 2f);
+            if (!_paused) Time.timeScale = _speed;
+        }
+
+        public void SetPaused(bool paused)
+        {
+            _paused = paused;
+            Time.timeScale = paused ? 0f : _speed;
+        }
+
+        private float _fpsSmoothed = 60f;
+        private float _worstMs;
+        public float Fps => _fpsSmoothed;
+        /// Longest recent frame (peak hold, sinks 10 ms per second): spikes stay readable.
+        public float WorstFrameMs => _worstMs;
+
+        private void TickFps()
+        {
+            float dt = Mathf.Max(1e-4f, Time.unscaledDeltaTime);
+            _fpsSmoothed = Mathf.Lerp(_fpsSmoothed, 1f / dt, 0.05f);
+            _worstMs = Mathf.Max(dt * 1000f, _worstMs - 10f * dt);
+        }
+
+        // ------------------------------------------------------------------ camera
+
+        public enum View { Game, Close, Side, Top }
+        public View CurrentView { get; private set; } = View.Game;
+
+        public void SetView(View view)
+        {
+            var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;
+            if (follow == null) return;
+            CurrentView = view;
+            switch (view)
             {
-                var f = spec.Split('|');
-                string id = f[0];
-                ResetSkills(); StopWalk(); Mortal = false; Time.timeScale = 1f;
-                EquipFamily(f.Length > 1 && f[1] != "-" ? (WeaponClass)System.Enum.Parse(typeof(WeaponClass), f[1]) : WeaponClass.SMG);
-                SetDummies(f.Length > 2 ? int.Parse(f[2]) : 10);
-                yield return new WaitForSecondsRealtime(1.2f);
-                Mortal = f.Length > 3 && f[3] == "1";
-                Walk = f.Length > 4 && f[4] == "1";
-                Bill.Cheat?.Execute("zw.skill.max " + id);
-                Health hp = null;
-                if (id == SkillCatalogDefs.AutoEmergency)
-                {
-                    Bill.Cheat?.Execute("zw.god");
-                    hp = PlayerMovement.Instance.GetComponent<Health>();
-                    hp.TakeDamage(hp.Max * 0.85f);
-                }
-                yield return new WaitForSecondsRealtime(f.Length > 5 ? float.Parse(f[5], System.Globalization.CultureInfo.InvariantCulture) : 0.5f);
-                Time.timeScale = timeScale;
-                for (int i = 0; i < frames; i++)
-                {
-                    yield return new WaitForEndOfFrame();
-                    var tex = ScreenCapture.CaptureScreenshotAsTexture();
-                    var rt = RenderTexture.GetTemporary(540, 960);
-                    Graphics.Blit(tex, rt);
-                    var prev = RenderTexture.active; RenderTexture.active = rt;
-                    var sm = new Texture2D(540, 960, TextureFormat.RGB24, false);
-                    sm.ReadPixels(new Rect(0, 0, 540, 960), 0, 0); sm.Apply();
-                    RenderTexture.active = prev; RenderTexture.ReleaseTemporary(rt);
-                    System.IO.File.WriteAllBytes(System.IO.Path.Combine(folder, $"{id}_{i:00}.png"), sm.EncodeToPNG());
-                    Destroy(tex); Destroy(sm);
-                    yield return new WaitForSecondsRealtime(gap);
-                }
-                Time.timeScale = 1f;
-                if (hp != null) { Bill.Cheat?.Execute("zw.god"); hp.ResetHealth(); }
-                Debug.Log("[SandboxCapture] " + id);
+                case View.Game: follow.ResetView(); break;
+                case View.Close: follow.SetView(new Vector3(0f, 6.5f, -4.3f), new Vector3(56f, 0f, 0f)); break;
+                // High three-quarter view: low side angles got blocked by the nearest bush or rock.
+                case View.Side: follow.SetView(new Vector3(7.5f, 6f, -5.5f), new Vector3(35f, -54f, 0f)); break;
+                case View.Top: follow.SetView(new Vector3(0f, 15f, -0.05f), new Vector3(89.8f, 0f, 0f)); break;
             }
-            StopWalk(); Mortal = false;
-            Debug.Log("[SandboxCapture] END");
         }
 
-        /// <summary>
-        /// Fires a power right now (bypassing its cooldown) and captures the frames after it, so a
-        /// review never misses the moment. Spec: "cardToGrant|powerId|targets|radius" (radius: a
-        /// number, or "value" for the card's own value, or "frost" for the Frost Nova radius).
-        /// </summary>
-        public IEnumerator ForceCapture(string[] specs, string folder, int frames, float gap, float timeScale)
-        {
-            _panelOpen = false;
-            System.IO.Directory.CreateDirectory(folder);
-            while (ThreatDirector.Instance == null || ThreatDirector.Instance.enabled) yield return null;
-            yield return new WaitForSecondsRealtime(1.5f);
-            const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
-            var apply = typeof(SkillCombatDriver).GetMethod("Apply", F);
-            var value = typeof(SkillRuntime).GetMethod("Value", F);
-            foreach (var spec in specs)
-            {
-                var f = spec.Split('|');
-                ResetSkills(); Time.timeScale = 1f; SetDummies(10);
-                yield return new WaitForSecondsRealtime(1f);
-                Bill.Cheat?.Execute("zw.skill.max " + f[0]);
-                yield return new WaitForSecondsRealtime(0.2f);
-                var run = SkillRuntime.Active;
-                float radius = f[3] == "value" ? (float)value.Invoke(run, new object[] { f[1] })
-                             : f[3] == "frost" ? run.FrostRadius
-                             : float.Parse(f[3], System.Globalization.CultureInfo.InvariantCulture);
-                var proc = new SkillRuntime.PowerProc { skillId = f[1], targets = int.Parse(f[2]), radius = radius };
-                Time.timeScale = timeScale;
-                apply.Invoke(SkillCombatDriver.Instance, new object[] { run, proc, PlayerMovement.Instance.transform.position });
-                for (int i = 0; i < frames; i++)
-                {
-                    yield return CaptureFrame(System.IO.Path.Combine(folder, $"{f[0]}_{i:00}.png"));
-                    yield return new WaitForSecondsRealtime(gap);
-                }
-                Time.timeScale = 1f;
-            }
-            Debug.Log("[SandboxCapture] END");
-        }
-
-        private static IEnumerator CaptureFrame(string file)
-        {
-            yield return new WaitForEndOfFrame();
-            var tex = ScreenCapture.CaptureScreenshotAsTexture();
-            var rt = RenderTexture.GetTemporary(540, 960);
-            Graphics.Blit(tex, rt);
-            var prev = RenderTexture.active; RenderTexture.active = rt;
-            var sm = new Texture2D(540, 960, TextureFormat.RGB24, false);
-            sm.ReadPixels(new Rect(0, 0, 540, 960), 0, 0); sm.Apply();
-            RenderTexture.active = prev; RenderTexture.ReleaseTemporary(rt);
-            System.IO.File.WriteAllBytes(file, sm.EncodeToPNG());
-            Destroy(tex); Destroy(sm);
-        }
+        // ------------------------------------------------------------------ skills
 
         /// Puts the best playable gun of a family in the player's hands, so that family's signature
         /// cards can be tested.
@@ -305,54 +357,69 @@ namespace ZombieWar.Dev
             SkillArsenal.Instance?.ResetForRun();
         }
 
-        // ------------------------------------------------------------------ panel
-
-        private void OnGUI()
+        /// Sets one card to an exact rank (0 removes it) by rebuilding the whole build in a valid
+        /// order: base cards first, evolutions last (they need their power maxed and partner owned).
+        public static void SetRank(string id, int rank)
         {
-            float s = Screen.height / 1920f * 2.2f;
-            var m = GUI.matrix;
-            GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
-            float w = Screen.width / s, h = Screen.height / s;
+            var run = SkillRuntime.Active;
+            if (run == null) return;
+            var build = new Dictionary<string, int>(run.Ranks);
+            if (rank <= 0) build.Remove(id); else build[id] = rank;
+            ApplyBuild(build);
+        }
 
-            if (GUI.Button(new Rect(w - 110, h - 60, 100, 40), _panelOpen ? "Hide" : "Sandbox")) _panelOpen = !_panelOpen;
-            if (!_panelOpen) { GUI.matrix = m; return; }
-
-            GUILayout.BeginArea(new Rect(6, h * 0.42f, w - 12, h * 0.5f), GUI.skin.box);
-            GUILayout.Label($"SKILL SANDBOX · {_status} · dummies {dummyCount} · time ×{Time.timeScale:0.##}");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("3")) SetDummies(3);
-            if (GUILayout.Button("10")) SetDummies(10);
-            if (GUILayout.Button("30")) SetDummies(30);
-            if (GUILayout.Button("×1")) Time.timeScale = 1f;
-            if (GUILayout.Button("×0.25")) Time.timeScale = 0.25f;
-            if (GUILayout.Button("Reset")) ResetSkills();
-            if (GUILayout.Button(Mortal ? "Mortal ✓" : "Mortal")) Mortal = !Mortal;
-            if (GUILayout.Button(Walk ? "Walk ✓" : "Walk")) { if (Walk) StopWalk(); else Walk = true; }
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            foreach (var (label, fam) in new[] { ("PIS", WeaponClass.Sidearm), ("SMG", WeaponClass.SMG), ("AR", WeaponClass.AssaultRifle),
-                                                 ("SG", WeaponClass.Shotgun), ("LMG", WeaponClass.LMG), ("MK", WeaponClass.Marksman) })
-                if (GUILayout.Button(label)) EquipFamily(fam);
-            GUILayout.EndHorizontal();
-
-            _scroll = GUILayout.BeginScrollView(_scroll);
-            var rt = SkillRuntime.Active;
-            foreach (var group in SkillCatalogDefs.All.GroupBy(d => d.layer))
+        public static void ApplyBuild(IReadOnlyDictionary<string, int> build)
+        {
+            ResetSkills();
+            var run = SkillRuntime.Active;
+            if (run == null) return;
+            foreach (var kv in build)
             {
-                GUILayout.Label(group.Key.ToString().ToUpperInvariant());
-                foreach (var def in group)
-                {
-                    GUILayout.BeginHorizontal();
-                    int rank = rt != null ? rt.RankOf(def.id) : 0;
-                    GUILayout.Label($"{def.displayName}  {rank}/{def.maxRank}", GUILayout.Width(w * 0.55f));
-                    if (GUILayout.Button("+1")) Bill.Cheat?.Execute("zw.skill " + def.id);
-                    if (GUILayout.Button("MAX")) Bill.Cheat?.Execute("zw.skill.max " + def.id);
-                    GUILayout.EndHorizontal();
-                }
+                var def = SkillCatalogDefs.ById(kv.Key);
+                if (def == null || def.IsEvolution) continue;
+                for (int r = 0; r < kv.Value; r++) if (!run.Take(kv.Key)) break;
             }
-            GUILayout.EndScrollView();
-            GUILayout.EndArea();
-            GUI.matrix = m;
+            foreach (var kv in build)
+            {
+                var def = SkillCatalogDefs.ById(kv.Key);
+                if (def == null || !def.IsEvolution) continue;
+                if (run.Take(kv.Key)) SkillCombatDriver.Instance?.OnEvolutionTaken();
+            }
+        }
+
+        /// Maxes a card; for an evolution, first maxes its power and takes its partner.
+        public static void Max(string id)
+        {
+            var def = SkillCatalogDefs.ById(id);
+            var run = SkillRuntime.Active;
+            if (def == null || run == null) return;
+            if (def.IsEvolution)
+            {
+                while (run.Take(def.evolvesFrom)) { }
+                run.Take(def.partner);
+            }
+            while (run.Take(id)) { }
+            if (def.IsEvolution) SkillCombatDriver.Instance?.OnEvolutionTaken();
+        }
+
+        public static string BuildString()
+        {
+            var run = SkillRuntime.Active;
+            if (run == null) return "";
+            var parts = new List<string>();
+            foreach (var kv in run.Ranks) parts.Add(kv.Key + ":" + kv.Value);
+            return string.Join(",", parts);
+        }
+
+        public static void ApplyBuildString(string s)
+        {
+            var build = new Dictionary<string, int>();
+            foreach (var part in (s ?? "").Split(','))
+            {
+                var kv = part.Trim().Split(':');
+                if (kv.Length == 2 && int.TryParse(kv[1], out int r) && SkillCatalogDefs.ById(kv[0]) != null) build[kv[0]] = r;
+            }
+            ApplyBuild(build);
         }
     }
 

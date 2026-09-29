@@ -380,8 +380,12 @@ namespace ZombieWar
             Vector3 grounded = new Vector3(candidate.x, GameplayPlaneY, candidate.z);
 
             float checkRadius = radius + obstacleClearance;
-            float upperY = Mathf.Max(checkRadius, height - checkRadius);
-            Vector3 lower = grounded + Vector3.up * checkRadius;
+            // Lifted clear of the ground: a capsule whose bottom sits exactly on the floor collider
+            // "touches" it or not depending on float rounding, which made every placement of the
+            // Skeleton Mage (2.53 m) and Skeleton Giant (3.03 m) fail against the ground itself.
+            float lowerY = checkRadius + GroundSkin;
+            float upperY = Mathf.Max(lowerY, height - checkRadius);
+            Vector3 lower = grounded + Vector3.up * lowerY;
             Vector3 upper = grounded + Vector3.up * upperY;
 
             if (Physics.CheckCapsule(lower, upper, checkRadius, _obstacleMask,
@@ -394,6 +398,9 @@ namespace ZombieWar
 
         /// <summary>Shared gameplay plane height. Enemies, the player and spawns all live on it.</summary>
         private const float GameplayPlaneY = 0f;
+
+        /// <summary>Gap kept between the placement capsule and the floor (see IsClearAndReachable).</summary>
+        private const float GroundSkin = 0.05f;
 
         /// <summary>
         /// Footprint used for the blocker overlap test.

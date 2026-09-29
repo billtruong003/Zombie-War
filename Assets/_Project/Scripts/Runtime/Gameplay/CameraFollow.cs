@@ -55,6 +55,27 @@ namespace ZombieWar
             if (cam != null) cam.useOcclusionCulling = false;
         }
 
+        Vector3 _defaultOffset, _defaultEuler;
+        bool _defaultsStored;
+
+        /// <summary>Dev views (Skill Sandbox): move the follow offset and look angle; ResetView restores the game view.</summary>
+        public void SetView(Vector3 newOffset, Vector3 euler)
+        {
+            if (!_defaultsStored) { _defaultOffset = offset; _defaultEuler = lookEulerAngles; _defaultsStored = true; }
+            offset = newOffset;
+            lookEulerAngles = euler;
+            transform.rotation = Quaternion.Euler(lookEulerAngles);
+            _hasBase = false;
+        }
+
+        public void ResetView()
+        {
+            if (_defaultsStored) SetView(_defaultOffset, _defaultEuler);
+        }
+
+        public Vector3 Offset => offset;
+        public Vector3 LookEuler => lookEulerAngles;
+
         public void Shake(float amount)
         {
             _trauma = Mathf.Clamp01(_trauma + amount);

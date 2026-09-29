@@ -154,7 +154,7 @@ namespace ZombieWar
             if (kind == PlayerProfile.CurrencyKind.Gem)
             {
                 Gem += amount;
-                PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, amount);
+                PlayerProfile.AddDeferred(PlayerProfile.CurrencyKind.Gem, amount);
             }
             else Coin += ScaleCoin(amount);
             Changed?.Invoke();

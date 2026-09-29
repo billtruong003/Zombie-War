@@ -585,7 +585,7 @@ namespace ZombieWar
             for (int i = 0; i < found; i++)
             {
                 var enemy = ZombieWar.Skills.TargetQuery.CandidateEnemy(i);
-                if (enemy != null && enemy != direct) enemy.TakeDamage(damage);
+                if (enemy != null && enemy != direct) { enemy.TakeDamage(damage); ZombieWar.Skills.DamageLedger.Record(ZombieWar.Skills.DamageLedger.Gun, damage); }
             }
             if (data.splashFx != null)
                 FxPool.Play(data.splashFx, at + Vector3.up * 0.1f, Quaternion.identity, Mathf.Min(data.splashRadius / 2f, 1.3f));
@@ -650,6 +650,7 @@ namespace ZombieWar
                 }
 
                 dmg.TakeDamage(damage);
+                ZombieWar.Skills.DamageLedger.Record(ZombieWar.Skills.DamageLedger.Gun, damage);
             }
             if (data.impactPrefab != null)
                 FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
@@ -695,7 +696,9 @@ namespace ZombieWar
                 var col = ZombieWar.Skills.TargetQuery.Candidate(ConeBuffer[i]);
                 var enemy = col != null ? col.GetComponentInParent<ZombieBase>() : null;
                 if (enemy == null) continue;                 // never the player: enemies only
-                enemy.TakeDamage(skills.PowerDamage(18f, ZombieWar.Skills.SkillCatalogDefs.LmgShockwave));
+                float wave = skills.PowerDamage(18f, ZombieWar.Skills.SkillCatalogDefs.LmgShockwave);
+                enemy.TakeDamage(wave);
+                ZombieWar.Skills.DamageLedger.Record(ZombieWar.Skills.SkillCatalogDefs.LmgShockwave, wave);
                 enemy.ApplyPhysicalPush(1.5f);               // the "shockwave" part
             }
         }

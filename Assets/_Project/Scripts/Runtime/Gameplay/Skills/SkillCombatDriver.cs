@@ -223,14 +223,14 @@ namespace ZombieWar.Skills
                         for (int k = -2; k <= 2; k++)
                             _arsenal?.ScheduleBlast(centre + across * (k * proc.radius * 0.9f), proc.radius, damage,
                                 ordnanceDelay + 0.25f + (k + 2) * 0.12f, explosionFx, explosionNativeRadius,
-                                "sfx.skill.blast", 0.16f, 1.3f, null, 1f, bomb, null, across);
+                                "sfx.skill.blast", 0.16f, 1.3f, null, 1f, bomb, null, across, SkillCatalogDefs.EvoCarpetBomb);
                     }
                     else
                     {
                         // Shadow first, shell after: the player sees WHICH group was chosen, then
                         // watches it get hit.
                         _arsenal?.ScheduleBlast(centre, proc.radius, damage, ordnanceDelay + 0.25f, explosionFx,
-                            explosionNativeRadius, "sfx.skill.blast", 0.18f, 1.2f, null, 1f, bomb, null, toCrowd);
+                            explosionNativeRadius, "sfx.skill.blast", 0.18f, 1.2f, null, 1f, bomb, null, toCrowd, SkillCatalogDefs.AutoOrdnance);
                     }
                     break;
                 }
@@ -285,7 +285,7 @@ namespace ZombieWar.Skills
                 // Thunderstorm: a bolt from the sky on every other enemy the storm jumps through.
                 if (storm && i % 2 == 0) _arsenal?.SkyStrike(point, hopDelay);
 
-                DamageAt(col, point, damage, 0.3f);
+                DamageAt(col, point, damage, 0.3f, storm ? SkillCatalogDefs.EvoThunderstorm : skillId);
                 // Spark at chest height where the bolt lands (it was at the feet, below the bolt).
                 _arsenal?.PlayDelayed(chainArcFx, a1, ChainSparkScale, hopDelay);
                 from = point;                        // next hop starts where this one landed
@@ -306,7 +306,7 @@ namespace ZombieWar.Skills
             {
                 Vector3 p = TargetQuery.CandidatePoint(i);
                 if ((p - centre).sqrMagnitude > r2) continue;
-                DamageAt(TargetQuery.Candidate(i), p, damage, push);
+                DamageAt(TargetQuery.Candidate(i), p, damage, push, powerId);
             }
             // Sized to the blast, but capped: a self-centred burst scaled to a 4 m radius covered the
             // whole screen and the player (Emergency). The ring below still shows the true area.
@@ -329,12 +329,13 @@ namespace ZombieWar.Skills
         /// IDamageable lookup happily applied Chain Lightning to their face. Filtering to the enemy
         /// type is the fix that cannot be re-broken by a mask edit.
         /// </summary>
-        void DamageAt(Collider col, Vector3 point, float damage, float push = 0f)
+        void DamageAt(Collider col, Vector3 point, float damage, float push, string source)
         {
             if (col == null) return;
             var enemy = col.GetComponentInParent<ZombieBase>();
             if (enemy == null) return;              // player, scenery, props: never damaged by a power
             enemy.TakeDamage(damage);
+            DamageLedger.Record(source, damage);
             if (push > 0f && !enemy.IsDead) enemy.ApplyPhysicalPush(push);
             TotalPowerDamageEvents++;
             TotalPowerDamage += damage;

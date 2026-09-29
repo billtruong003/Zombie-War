@@ -274,7 +274,9 @@ namespace ZombieWar.Audio
         // A surge gets its own cue, distinct from a tier change, and surviving it is acknowledged.
         private void OnHordeSurge(Threat.HordeSurgeEvent e)
         {
-            StartCoroutine(WaveCue(e.Started ? "stinger.long" : "stinger.wave.clear", e.Started ? 0.85f : 0.6f));
+            // "stinger.long" was never in the catalog, so every surge started in silence. The wave-start
+            // stinger at a louder level is the closest cue the curated library has.
+            StartCoroutine(WaveCue(e.Started ? "stinger.wave.start" : "stinger.wave.clear", e.Started ? 0.95f : 0.6f));
         }
 
         /// <summary>Threat cues dip the bed briefly so they cut through without a full result-style duck.</summary>
@@ -295,14 +297,29 @@ namespace ZombieWar.Audio
         private static void OnPlayerDied(PlayerDiedEvent e) =>
             Bill.Audio?.PlayCue("sfx.player.death", SfxPriority.Critical, 0.78f);
 
+        // Coins arrive in bursts (a magnet sweep, an elite's pile): one voice per coin stacked dozens
+        // of cues into one frame, which both stalled it and smeared into noise. Coins now share one
+        // voice at most every CoinSoundGap seconds, and a streak climbs in pitch like a combo.
+        private const float CoinSoundGap = 0.05f;
+        private const float CoinComboWindow = 0.6f;
+        private const float CoinPitchStep = 0.025f;
+        private const float CoinPitchMax = 1.35f;
+        private static float _coinNextSoundAt, _coinComboUntil;
+        private static int _coinCombo;
+
         private static void OnPickupCollected(PickupCollectedEvent e)
         {
-            string key = e.Effect switch
-            {
-                PickupEffect.Health => "sfx.pickup.health",
-                _ => e.Kind == PlayerProfile.CurrencyKind.Gem ? "sfx.pickup.gem" : "sfx.pickup.coin",
-            };
-            Bill.Audio?.PlayCue(key, SfxPriority.Medium, 0.55f);
+            if (e.Effect == PickupEffect.Health) { Bill.Audio?.PlayCue("sfx.pickup.health", SfxPriority.Medium, 0.55f); return; }
+            if (e.Kind == PlayerProfile.CurrencyKind.Gem) { Bill.Audio?.PlayCue("sfx.pickup.gem", SfxPriority.Medium, 0.55f); return; }
+            if (e.Effect == PickupEffect.Magnet) { Bill.Audio?.PlayPitched("sfx.pickup.gem", 0.8f, 0.7f); return; }
+
+            float now = Time.unscaledTime;
+            if (now > _coinComboUntil) _coinCombo = 0;
+            _coinComboUntil = now + CoinComboWindow;
+            _coinCombo++;
+            if (now < _coinNextSoundAt) return;
+            _coinNextSoundAt = now + CoinSoundGap;
+            Bill.Audio?.PlayPitched("sfx.pickup.coin", Mathf.Min(CoinPitchMax, 1f + CoinPitchStep * (_coinCombo - 1)), 0.55f);
         }
     }
 }

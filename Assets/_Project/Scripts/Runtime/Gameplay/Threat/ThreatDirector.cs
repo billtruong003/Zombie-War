@@ -387,6 +387,15 @@ namespace ZombieWar.Threat
             for (int i = 0; i < src.Length; i++) if (src[i] != null) into.Add(src[i]);
         }
 
+        /// <summary>Every enemy type across all tiers, each once (the Skill Sandbox picks from it).</summary>
+        public void CollectRoster(List<ZombieData> into)
+        {
+            foreach (var tier in new[] { tier0Basic, tier1Specialist, tier2Mixed, tier3Heavy })
+                if (tier != null)
+                    foreach (var d in tier)
+                        if (d != null && !into.Contains(d)) into.Add(d);
+        }
+
         /// <summary>Roster size available at a tier — used by tests to prove composition widens.</summary>
         public int RosterSizeFor(int tier)
         {

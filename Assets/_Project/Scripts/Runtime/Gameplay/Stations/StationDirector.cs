@@ -33,6 +33,7 @@ namespace ZombieWar.Stations
 
         [Header("Boss Beacon")]
         [SerializeField] private ZombieData[] bossRoster;
+        public System.Collections.Generic.IReadOnlyList<ZombieData> BossRoster => bossRoster;
 
         readonly Dictionary<long, Station> _live = new(8);
         // Which beacon spawned which boss, so a kill can be routed back to the right anchor.
