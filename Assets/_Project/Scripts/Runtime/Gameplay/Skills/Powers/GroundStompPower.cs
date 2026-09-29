@@ -32,9 +32,29 @@ namespace ZombieWar.Skills.Powers
             SkillFxDirector.Instance?.Pulse(origin, r, Earth, 0.3f, 0.22f);
             Host.Sfx("sfx.player.bomb.explode", origin, 0.7f, 0.2f);
             Host.Shake(0.2f);
+            bool quake = run.IsEvolved(SkillCatalogDefs.AutoStomp);
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoStomp);
+            float now = Time.time;
             int found = TargetQuery.GatherEnemies(origin, r, Host.EnemyMask);
-            for (int i = 0; i < found; i++) PowerKit.Hit(TargetQuery.Candidate(i), damage, a.push, SkillCatalogDefs.AutoStomp);
+            for (int i = 0; i < found; i++)
+            {
+                var e = TargetQuery.CandidateEnemy(i);
+                if (e == null || e.IsDead) continue;
+                PowerKit.Hit(e, damage, quake ? a.push * 0.4f : a.push, quake ? SkillCatalogDefs.EvoEarthquake : SkillCatalogDefs.AutoStomp);
+                if (!quake) continue;
+                // Earthquake: the ground cracks under them and they are stunned where they stand.
+                StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Frozen, 1f, 1.4f, now);
+                SkillFxDirector.Instance?.TintEnemy(e, new Color(0.85f, 0.66f, 0.38f, 0.6f), 1.4f);
+            }
+            if (quake)
+            {
+                Host.Shake(0.28f);
+                for (int k = 0; k < 5; k++)
+                {
+                    Vector3 c = origin + Quaternion.Euler(0f, k * 72f + UnityEngine.Random.Range(-20f, 20f), 0f) * Vector3.forward * (r * 0.55f);
+                    Host.PlayDelayed(a.crackFx, c + Vector3.up * 0.1f, 0.7f, 0.05f * k);
+                }
+            }
         }
     }
 }

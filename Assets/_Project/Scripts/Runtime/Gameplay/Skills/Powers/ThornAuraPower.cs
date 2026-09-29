@@ -38,13 +38,15 @@ namespace ZombieWar.Skills.Powers
             _tickAt = now + TickSeconds;
             int found = TargetQuery.GatherEnemies(p, radius, Host.EnemyMask);
             if (found == 0) return;
-            float damage = run.PowerDamage(run.ThornDps, SkillCatalogDefs.AutoThorns) * TickSeconds;
+            bool maiden = run.IsEvolved(SkillCatalogDefs.AutoThorns);
+            // PowerDamage already adds the evolution's x1.5; Iron Maiden is twice the plain aura.
+            float damage = run.PowerDamage(run.ThornDps, SkillCatalogDefs.AutoThorns) * TickSeconds * (maiden ? 4f / 3f : 1f);
             int fx = 0;
             for (int i = 0; i < found; i++)
             {
                 var e = TargetQuery.CandidateEnemy(i);
                 if (e == null || e.IsDead) continue;
-                PowerKit.Hit(e, damage, 1.3f, SkillCatalogDefs.AutoThorns);
+                PowerKit.Hit(e, damage, 1.3f, maiden ? SkillCatalogDefs.EvoIronMaiden : SkillCatalogDefs.AutoThorns);
                 if (fx++ < MaxHitFx) FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.35f);
             }
             _flash = 1f;
@@ -73,6 +75,27 @@ namespace ZombieWar.Skills.Powers
             mpb.SetColor(TintId, c);
             mpb.SetFloat(ErodeId, 0.28f - 0.12f * _flash);
             _ring.SetPropertyBlock(mpb);
+        }
+
+        /// <summary>Iron Maiden: the Kinetic Shield broke — a ring of spikes bursts out of the player.</summary>
+        public void OnShieldBroken(SkillRuntime run)
+        {
+            var a = A;
+            if (a == null || run == null || !run.IsEvolved(SkillCatalogDefs.AutoThorns)) return;
+            Vector3 p = Host.Player.position;
+            float r = 4f * run.AreaMultiplier;
+            Host.Shockwave(p, 0.4f, r, a.ringColor, 0.45f);
+            SkillFxDirector.Instance?.Pulse(p, r, a.ringColor, 0.3f, 0.2f);
+            Host.Shake(0.18f);
+            float damage = run.PowerDamage(40f, SkillCatalogDefs.AutoThorns);
+            int found = TargetQuery.GatherEnemies(p, r, Host.EnemyMask);
+            for (int i = 0; i < found; i++)
+            {
+                var e = TargetQuery.CandidateEnemy(i);
+                if (e == null || e.IsDead) continue;
+                PowerKit.Hit(e, damage, 2.5f, SkillCatalogDefs.EvoIronMaiden);
+                if (i < MaxHitFx) FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.45f);
+            }
         }
 
         public override void ResetForRun() { if (_ring != null) _ring.gameObject.SetActive(false); }

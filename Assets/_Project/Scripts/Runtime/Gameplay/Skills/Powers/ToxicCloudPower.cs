@@ -26,7 +26,7 @@ namespace ZombieWar.Skills.Powers
             public float scanRadius = 22f;
         }
 
-        struct Cloud { public Vector3 pos; public float radius, until; }
+        struct Cloud { public Vector3 pos; public float radius, until; public ParticleSystem fx; }
 
         static readonly Color Lime = new(0.62f, 1f, 0.25f, 1f);
         const int MaxClouds = 4;
@@ -67,15 +67,20 @@ namespace ZombieWar.Skills.Powers
             if (a == null) return;
             float r = _pendingRadius;
             if (_clouds.Count >= MaxClouds) _clouds.RemoveAt(0);
-            _clouds.Add(new Cloud { pos = at, radius = r, until = Time.time + a.seconds });
-            FxPool.PlayFor(a.cloudFx, at + Vector3.up * 0.3f, PowerKit.Flat(a.cloudFx), r / Mathf.Max(0.1f, a.cloudNativeRadius), a.seconds);
+            float life = a.seconds * (_plague ? 1.6f : 1f);
+            var fx = FxPool.PlayFor(a.cloudFx, at + Vector3.up * 0.3f, PowerKit.Flat(a.cloudFx), r / Mathf.Max(0.1f, a.cloudNativeRadius), life);
+            _clouds.Add(new Cloud { pos = at, radius = r, until = Time.time + life, fx = fx });
             Host.ShowDisc(at, r * 1.02f, r * 0.9f, new Color(0.45f, 0.85f, 0.15f, 0.35f), a.seconds, false, 0.18f);
         }
 
+        bool _plague;
+
         public override void Tick(SkillRuntime run, Vector3 player, float dt)
         {
+            _plague = run.IsEvolved(SkillCatalogDefs.AutoToxic);
             if (_clouds.Count == 0) return;
             float now = Time.time;
+            if (_plague) Creep(dt);
             for (int i = _clouds.Count - 1; i >= 0; i--) if (now >= _clouds[i].until) _clouds.RemoveAt(i);
             if (_clouds.Count == 0 || now < _tickAt) return;
             _tickAt = now + TickSeconds;
@@ -87,6 +92,23 @@ namespace ZombieWar.Skills.Powers
                 int found = TargetQuery.GatherEnemies(c.pos, c.radius, Host.EnemyMask);
                 for (int k = 0; k < found; k++)
                     Host.Poison(TargetQuery.CandidateEnemy(k), 1, dps, SkillRuntime.PoisonSeconds, SkillCatalogDefs.AutoToxic);
+            }
+        }
+
+        // Plague: each cloud creeps toward the nearest enemy, so the crowd cannot walk out of it.
+        void Creep(float dt)
+        {
+            for (int i = 0; i < _clouds.Count; i++)
+            {
+                var c = _clouds[i];
+                int found = TargetQuery.GatherEnemies(c.pos, c.radius + 4f, Host.EnemyMask);
+                int best = TargetQuery.Nearest(found, c.pos);
+                if (best < 0) continue;
+                Vector3 to = TargetQuery.CandidatePoint(best) - c.pos; to.y = 0f;
+                if (to.sqrMagnitude < 0.25f) continue;
+                c.pos += to.normalized * Mathf.Min(to.magnitude, 1.6f * dt);
+                if (c.fx != null) c.fx.transform.position = c.pos + Vector3.up * 0.3f;
+                _clouds[i] = c;
             }
         }
 

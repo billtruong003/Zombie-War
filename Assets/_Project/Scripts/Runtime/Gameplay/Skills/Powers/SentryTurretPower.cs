@@ -21,6 +21,9 @@ namespace ZombieWar.Skills.Powers
             public ParticleSystem dropFx;
             public float baseDamage = 9f;
             public float range = 12f;
+            [Tooltip("Fortress: the rocket's burst.")]
+            public ParticleSystem rocketBlastFx;
+            public float rocketRadius = 1.6f;
         }
 
         sealed class Turret
@@ -157,8 +160,18 @@ namespace ZombieWar.Skills.Powers
             if (a.tracer != null) TracerPool.Play(a.tracer, from, to, TracerTint, 0.6f);
             FxPool.Play(a.muzzleFx, from, Quaternion.LookRotation(to - from), 0.4f);
             FxPool.Play(a.hitFx, to, PowerKit.Flat(a.hitFx), 0.45f);
-            Host.Sfx("sfx.skill.drone", from, 0.3f, 0.05f);
-            PowerKit.Hit(enemy, run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoTurret), 0.2f, SkillCatalogDefs.AutoTurret);
+            float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoTurret);
+            if (!run.IsEvolved(SkillCatalogDefs.AutoTurret))
+            {
+                Host.Sfx("sfx.skill.drone", from, 0.3f, 0.05f);
+                PowerKit.Hit(enemy, damage, 0.2f, SkillCatalogDefs.AutoTurret);
+                return;
+            }
+            // Fortress: every round is a rocket that bursts on the target.
+            Host.Sfx("sfx.skill.blast", to, 0.35f, 0.08f);
+            FxPool.Play(a.rocketBlastFx, to, PowerKit.Flat(a.rocketBlastFx), 0.5f);
+            int found = TargetQuery.GatherEnemies(to, a.rocketRadius, Host.EnemyMask);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 0.5f, SkillCatalogDefs.EvoFortress);
         }
 
         public override void ResetForRun()

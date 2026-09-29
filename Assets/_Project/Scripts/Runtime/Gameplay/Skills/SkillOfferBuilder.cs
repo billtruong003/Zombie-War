@@ -19,8 +19,8 @@ namespace ZombieWar.Skills
     /// <item>Deterministic from (run seed, level): the same seed produces the same offers.</item>
     /// <item>Early levels favour unlocking new mechanics; later levels favour ranking up what you
     /// already have, so a build converges instead of scattering.</item>
-    /// <item>M8: an evolution that has become available always takes slot A — it is the payoff the
-    /// player built toward, and hiding it behind a roll would feel like a bug.</item>
+    /// <item>A7 (owner, 2026-09-29): a level-up never offers an evolution. Evolutions come from
+    /// chests only (<see cref="SkillRuntime.OpenChest"/>).</item>
     /// <item>M8: levels 2 and 3 always offer an autonomous power, so the build visibly changes on
     /// screen within the first half-minute.</item>
     /// <item>2026-09-29: only cards unlocked at the player's account level; a NEW card only while its
@@ -67,7 +67,7 @@ namespace ZombieWar.Skills
                 if (!def.IsCompatibleWith(family)) continue;
                 if (!run.IsUnlocked(def)) continue;
                 if (run.RankOf(def.id) >= def.maxRank) continue;
-                if (def.IsEvolution && !run.CanEvolve(def)) continue;
+                if (def.IsEvolution) continue;                  // chests only (A7)
                 if (!run.HasRoomFor(def)) continue;
                 list.Add(def);
             }
@@ -94,9 +94,8 @@ namespace ZombieWar.Skills
             // Early levels want NEW mechanics; later levels want the build to converge.
             bool preferNew = level <= 4;
 
-            // ── Slot A: a ready evolution, else a signature card for this family ─────────
-            var pick = PickWeighted(ref rng, run, preferNew, d => d.IsEvolution);
-            if (pick == null) pick = PickWeighted(ref rng, run, preferNew, d => d.layer == SkillLayer.Signature);
+            // ── Slot A: a signature card for this family ────────────────────────────────
+            var pick = PickWeighted(ref rng, run, preferNew, d => d.layer == SkillLayer.Signature);
             if (pick == null) pick = PickWeighted(ref rng, run, preferNew, d => !IsStat(d));
             if (pick == null) pick = PickWeighted(ref rng, run, preferNew, _ => true);
             if (pick != null) { offer.Add(pick); statTaken |= IsStat(pick); Eligible.Remove(pick); }

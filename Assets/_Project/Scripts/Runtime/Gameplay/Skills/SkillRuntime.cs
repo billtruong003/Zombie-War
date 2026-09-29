@@ -162,6 +162,58 @@ namespace ZombieWar.Skills
         public bool CanEvolve(SkillDef evo) =>
             evo != null && evo.IsEvolution && !Has(evo.id) && IsMaxRank(evo.evolvesFrom) && Has(evo.partner);
 
+        // ══════════════════════════════════════════════════════════ CHESTS (A7)
+
+        public enum ChestKind { Evolution, RankUp, Bonus }
+
+        public struct ChestReward
+        {
+            public ChestKind kind;
+            public SkillDef card;
+            /// Rank after the chest (1 for an evolution or a bonus card).
+            public int rank;
+        }
+
+        static readonly List<SkillDef> ChestScratch = new(16);
+
+        /// <summary>
+        /// Opens a chest and applies what it gives, in this order: an evolution the build is ready
+        /// for (the only way to get one); else +1 rank on a card already owned; else a bonus card.
+        /// Deterministic for a seed. Always gives something.
+        /// </summary>
+        public ChestReward OpenChest(int seed)
+        {
+            uint s = (uint)(seed * 2654435761u) | 1u;
+            int Pick(int n) { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return n <= 0 ? 0 : (int)(s % (uint)n); }
+
+            ChestScratch.Clear();
+            foreach (var d in SkillCatalogDefs.All)
+                if (d.IsEvolution && IsUnlocked(d) && CanEvolve(d)) ChestScratch.Add(d);
+            if (ChestScratch.Count > 0)
+            {
+                var evo = ChestScratch[Pick(ChestScratch.Count)];
+                Take(evo.id);
+                return new ChestReward { kind = ChestKind.Evolution, card = evo, rank = 1 };
+            }
+
+            ChestScratch.Clear();
+            foreach (var kv in _ranks)
+            {
+                var d = SkillCatalogDefs.ById(kv.Key);
+                if (d != null && !d.IsEvolution && !d.IsOverflow && kv.Value < d.maxRank) ChestScratch.Add(d);
+            }
+            if (ChestScratch.Count > 0)
+            {
+                var d = ChestScratch[Pick(ChestScratch.Count)];
+                Take(d.id);
+                return new ChestReward { kind = ChestKind.RankUp, card = d, rank = RankOf(d.id) };
+            }
+
+            var bonus = SkillCatalogDefs.Overflow[Pick(SkillCatalogDefs.Overflow.Count)];
+            Take(bonus.id);
+            return new ChestReward { kind = ChestKind.Bonus, card = bonus, rank = 1 };
+        }
+
         /// <summary>True once the power's evolution has been taken.</summary>
         public bool IsEvolved(string powerId)
         {
@@ -217,7 +269,8 @@ namespace ZombieWar.Skills
         // ── A6 powers
         public float StormCloudInterval => Value(SkillCatalogDefs.AutoStormCloud);
         public float LandmineSpacing => Value(SkillCatalogDefs.AutoLandmine);
-        public int WarDogCount => !Has(SkillCatalogDefs.AutoWarDog) ? 0 : RankOf(SkillCatalogDefs.AutoWarDog) >= 5 ? 2 : 1;
+        public int WarDogCount => !Has(SkillCatalogDefs.AutoWarDog) ? 0 : IsEvolved(SkillCatalogDefs.AutoWarDog) ? 3
+            : RankOf(SkillCatalogDefs.AutoWarDog) >= 5 ? 2 : 1;
         public float WarDogBitesPerSecond => Value(SkillCatalogDefs.AutoWarDog);
         public float TimeWarpSeconds => Value(SkillCatalogDefs.AutoTimeWarp);
         public int AirstrikeBlasts => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoAirstrike));

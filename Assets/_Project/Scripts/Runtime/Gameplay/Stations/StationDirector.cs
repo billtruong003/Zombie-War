@@ -286,6 +286,7 @@ namespace ZombieWar.Stations
             StationRegistry.SetStatus(anchorId, StationRegistry.Status.Completed, Time.time);
             StationRegistry.ReleaseEncounter(anchorId);
             PickupManager.Instance?.DropReward(at, bossRewardCoin, bossRewardGem);   // pays on death only
+            PickupManager.Instance?.SpawnChest(at);   // A7: a boss always drops a chest (evolutions come from chests)
             ReportCompleted(StationKind.BossBeacon);
         }
 

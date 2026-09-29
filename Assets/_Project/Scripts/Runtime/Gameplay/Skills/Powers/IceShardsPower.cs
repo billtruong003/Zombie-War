@@ -42,6 +42,7 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null) return;
+            if (run.IsEvolved(SkillCatalogDefs.AutoIceShards)) return;   // Blizzard's ring never stops
             int n = Mathf.Max(1, proc.targets);
             float spin = UnityEngine.Random.Range(0f, 360f);
             Vector3 from = origin + Vector3.up * 0.9f;
@@ -58,8 +59,65 @@ namespace ZombieWar.Skills.Powers
             Host.Sfx("sfx.skill.frost", origin, 0.7f, 0.15f);
         }
 
+        // ── Blizzard
+        const int Ring = 6;
+        readonly ParticleSystem[] _ring = new ParticleSystem[Ring];
+        readonly Dictionary<int, float> _ringHit = new(64);
+        readonly List<int> _stale = new(64);
+        float _ringAngle, _ringFxAt, _ringScanAt;
+
+        void TickBlizzard(SkillRuntime run, Vector3 p, float dt)
+        {
+            var a = A;
+            float now = Time.time;
+            float radius = 3f * run.AreaMultiplier;
+            _ringAngle = (_ringAngle + 150f * dt) % 360f;
+            bool refresh = now >= _ringFxAt;
+            if (refresh) _ringFxAt = now + 2.9f;
+            for (int k = 0; k < Ring; k++)
+            {
+                float ang = (_ringAngle + k * 360f / Ring) * Mathf.Deg2Rad;
+                Vector3 pos = p + new Vector3(Mathf.Cos(ang) * radius, 0.9f, Mathf.Sin(ang) * radius);
+                Vector3 tangent = new(-Mathf.Sin(ang), 0f, Mathf.Cos(ang));
+                if (refresh || _ring[k] == null) _ring[k] = FxPool.PlayFor(a.shardFx, pos, Quaternion.LookRotation(tangent), 0.8f, 3f);
+                if (_ring[k] != null) { _ring[k].transform.position = pos; _ring[k].transform.rotation = Quaternion.LookRotation(tangent); }
+            }
+            if (now < _ringScanAt) return;
+            _ringScanAt = now + 0.1f;
+            float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoIceShards) * 0.6f;
+            int found = TargetQuery.GatherEnemies(p, radius + 1f, Host.EnemyMask);
+            for (int c = 0; c < found; c++)
+            {
+                Vector3 ep = TargetQuery.CandidatePoint(c);
+                bool touched = false;
+                for (int k = 0; k < Ring && !touched; k++)
+                {
+                    float ang = (_ringAngle + k * 360f / Ring) * Mathf.Deg2Rad;
+                    float dx = ep.x - (p.x + Mathf.Cos(ang) * radius), dz = ep.z - (p.z + Mathf.Sin(ang) * radius);
+                    touched = dx * dx + dz * dz <= Contact * Contact * 1.4f;
+                }
+                if (!touched) continue;
+                int id = TargetQuery.CandidateId(c);
+                if (_ringHit.TryGetValue(id, out float next) && now < next) continue;
+                var e = TargetQuery.CandidateEnemy(c);
+                if (e == null || e.IsDead) continue;
+                _ringHit[id] = now + 0.8f;
+                PowerKit.Hit(e, damage, 0.3f, SkillCatalogDefs.EvoBlizzard);
+                StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Frozen, 1f, 1f, now);
+                SkillFxDirector.Instance?.TintEnemy(e, Lib.frost.frozenTint, 1f);
+                FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.35f);
+            }
+            if (_ringHit.Count > 96)
+            {
+                _stale.Clear();
+                foreach (var kv in _ringHit) if (now - kv.Value > 2f) _stale.Add(kv.Key);
+                foreach (var id in _stale) _ringHit.Remove(id);
+            }
+        }
+
         public override void Tick(SkillRuntime run, Vector3 p, float dt)
         {
+            if (A != null && run.IsEvolved(SkillCatalogDefs.AutoIceShards)) TickBlizzard(run, p, dt);
             if (_shards.Count == 0) return;
             var a = A;
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoIceShards);
@@ -95,6 +153,15 @@ namespace ZombieWar.Skills.Powers
         {
             foreach (var s in _shards) { if (s.ps != null) s.ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); _sets.Push(s.hit); }
             _shards.Clear();
+            // Blizzard's ring holds pooled systems: stop them now, and never keep steering one
+            // after the pool may have handed it to someone else.
+            for (int k = 0; k < Ring; k++)
+            {
+                if (_ring[k] != null) _ring[k].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                _ring[k] = null;
+            }
+            _ringHit.Clear();
+            _ringFxAt = _ringScanAt = 0f;
         }
     }
 }

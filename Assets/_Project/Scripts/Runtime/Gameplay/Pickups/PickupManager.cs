@@ -187,9 +187,31 @@ namespace ZombieWar
             if (data.isElite && Random.value < magnetDropChance * luck)
                 Spawn(PlayerProfile.CurrencyKind.Coin, 0, magnetPoolKey, origin);
 
+            // A7: elites can drop a chest; Luck raises the chance (the beacon boss drops its own).
+            if (data.isElite && Random.value < eliteChestChance * luck)
+                SpawnChest(origin + new Vector3(0.8f, 0f, 0.4f));
+
             // Gems stay rare and authored: elites and bosses only.
             if (data.isElite && Random.value < eliteGemChance * luck)
                 Spawn(PlayerProfile.CurrencyKind.Gem, eliteGemAmount, gemPoolKey, origin);
+        }
+
+        // ── A7 chests ─────────────────────────────────────────────────────────────────
+        [Header("Chest (A7: evolutions come from chests only)")]
+        [Tooltip("Chance an elite (not a beacon boss) drops a chest, before Luck.")]
+        [SerializeField, Range(0f, 1f)] private float eliteChestChance = 0.04f;
+        [SerializeField] private string chestPoolKey = "pickup_chest";
+
+        /// <summary>A chest was walked over. RunOverlays opens it.</summary>
+        public static event System.Action<Vector3> ChestCollected;
+        public static void RaiseChestCollected(Vector3 at) => ChestCollected?.Invoke(at);
+
+        /// <summary>Drops a chest (a beacon boss always does; a Supply Drop can).</summary>
+        public void SpawnChest(Vector3 at)
+        {
+            at.y = 0f;
+            Spawn(PlayerProfile.CurrencyKind.Coin, 0, chestPoolKey, at);   // its appear burst plays on enable
+            Bill.Audio?.PlayCue("sfx.skill.evolve", at, SfxPriority.High, 0.7f);
         }
 
         /// <summary>A coin that is not a kill's authored reward (Drone Squadron's bonus).</summary>

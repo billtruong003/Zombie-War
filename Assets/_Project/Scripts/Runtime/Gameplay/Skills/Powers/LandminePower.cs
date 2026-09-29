@@ -23,7 +23,7 @@ namespace ZombieWar.Skills.Powers
 
         sealed class Mine { public Transform tr; public Vector3 pos; public float armedAt; public bool live; public float born; }
 
-        const int MaxMines = 8;
+        const int MaxMines = 18;
         static readonly Color Warn = new(1f, 0.3f, 0.2f, 1f);
         readonly List<Mine> _mines = new(MaxMines);
         Vector3 _last;
@@ -44,7 +44,17 @@ namespace ZombieWar.Skills.Powers
             {
                 _walked += d.magnitude;
                 float every = Mathf.Max(0.5f, run.LandmineSpacing);
-                if (_walked >= every) { _walked = 0f; Drop(p); }
+                if (_walked >= every)
+                {
+                    _walked = 0f;
+                    Drop(p);
+                    if (run.IsEvolved(SkillCatalogDefs.AutoLandmine))
+                    {
+                        // Minefield: a cluster of three.
+                        Drop(p + Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f) * Vector3.forward * 1.1f);
+                        Drop(p + Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f) * Vector3.forward * 1.1f);
+                    }
+                }
             }
 
             float now = Time.time;
@@ -61,6 +71,7 @@ namespace ZombieWar.Skills.Powers
 
             if (now < _scanAt) return;
             _scanAt = now + 0.1f;
+            ChainTick(run);
             for (int i = 0; i < _mines.Count; i++)
             {
                 var m = _mines[i];
@@ -111,9 +122,21 @@ namespace ZombieWar.Skills.Powers
             Host.Shockwave(m.pos, 0.3f, r, Warn, 0.4f);
             Host.Sfx("sfx.skill.blast", m.pos, 0.7f, 0.06f);
             Host.Shake(0.08f);
+            bool field = run.IsEvolved(SkillCatalogDefs.AutoLandmine);
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoLandmine);
             int found = TargetQuery.GatherEnemies(m.pos, r, Host.EnemyMask);
-            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1.2f, SkillCatalogDefs.AutoLandmine);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1.2f, field ? SkillCatalogDefs.EvoMinefield : SkillCatalogDefs.AutoLandmine);
+            if (!field) return;
+            // Minefield: the blast sets off the mines around it, a beat later — a chain reaction.
+            foreach (var other in _mines)
+                if (other.live && (other.pos - m.pos).sqrMagnitude <= r * r * 1.4f)
+                    other.armedAt = -1f;   // armed now; the chain fires on the next scans
+        }
+
+        void ChainTick(SkillRuntime run)
+        {
+            for (int i = 0; i < _mines.Count; i++)
+                if (_mines[i].live && _mines[i].armedAt < 0f) { Detonate(run, _mines[i]); return; }   // one per scan: a rolling chain
         }
 
         public override void ResetForRun()

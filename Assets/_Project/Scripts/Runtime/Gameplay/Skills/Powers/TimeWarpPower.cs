@@ -22,12 +22,15 @@ namespace ZombieWar.Skills.Powers
         public override string[] ProcIds => Ids;
 
         float _until, _refreshAt;
+        bool _stop;
+        static readonly Color StopTint = new(0.8f, 0.85f, 1f, 0.75f);
 
         public override void OnProc(SkillRuntime run, in SkillRuntime.PowerProc proc, Vector3 origin)
         {
             var a = Lib?.timeWarp;
             if (a == null) return;
-            float seconds = run.TimeWarpSeconds;
+            _stop = run.IsEvolved(SkillCatalogDefs.AutoTimeWarp);
+            float seconds = _stop ? 2f : run.TimeWarpSeconds;
             _until = Time.time + seconds;
             _refreshAt = 0f;
             FxPool.PlayFor(a.circleFx, origin + Vector3.up * 0.05f, PowerKit.Flat(a.circleFx), 1.2f, seconds);
@@ -52,8 +55,17 @@ namespace ZombieWar.Skills.Powers
             {
                 var e = TargetQuery.CandidateEnemy(i);
                 if (e == null || e.IsDead) continue;
-                StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Slow, a.slow, Mathf.Min(0.6f, left), now);
-                SkillFxDirector.Instance?.TintEnemy(e, a.tint, 0.6f);
+                if (_stop)
+                {
+                    // Time Stop: frozen solid (and frozen enemies take +50%).
+                    StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Frozen, 1f, Mathf.Min(0.6f, left), now);
+                    SkillFxDirector.Instance?.TintEnemy(e, StopTint, 0.6f);
+                }
+                else
+                {
+                    StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Slow, a.slow, Mathf.Min(0.6f, left), now);
+                    SkillFxDirector.Instance?.TintEnemy(e, a.tint, 0.6f);
+                }
             }
         }
 

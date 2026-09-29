@@ -163,6 +163,21 @@ namespace ZombieWar.Skills
         public const string EvoSquadron = "evo.squadron";
         public const string EvoReaper = "evo.reaper";
 
+        // ── A7 evolutions (owner-approved 2026-09-29): from chests only ──
+        public const string EvoPlague = "evo.plague";
+        public const string EvoSingularity = "evo.singularity";
+        public const string EvoFortress = "evo.fortress";
+        public const string EvoMeteorStorm = "evo.meteorstorm";
+        public const string EvoIronMaiden = "evo.ironmaiden";
+        public const string EvoSupercell = "evo.supercell";
+        public const string EvoBlizzard = "evo.blizzard";
+        public const string EvoDragonBreath = "evo.dragonbreath";
+        public const string EvoMinefield = "evo.minefield";
+        public const string EvoAxeStorm = "evo.axestorm";
+        public const string EvoAlphaPack = "evo.alphapack";
+        public const string EvoEarthquake = "evo.earthquake";
+        public const string EvoTimeStop = "evo.timestop";
+
         // ── Overflow: offered when every owned card is maxed and every slot is full ──
         public const string OverHeal = "over.heal";
         public const string OverMagnet = "over.magnet";
@@ -322,6 +337,21 @@ namespace ZombieWar.Skills
             new(EvoAbsoluteZero, "Absolute Zero",  SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoFrostNova,      StatMaxHealth),
             new(EvoSquadron,     "Drone Squadron", SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoDrone,          StatCoinGain),
             new(EvoReaper,       "Reaper",         SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoSoulBurst,      UniExecution),
+
+            // ── A7 EVOLUTIONS (13) — from chests only; unlocked once both parts are ──────────
+            new(EvoPlague,       "Plague",         SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoToxic,      StatArea),
+            new(EvoSingularity,  "Singularity",    SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoGravity,    StatCooldown),
+            new(EvoFortress,     "Fortress",       SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoTurret,     StatMaxHealth),
+            new(EvoMeteorStorm,  "Meteor Storm",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoMeteor,     StatDamage),
+            new(EvoIronMaiden,   "Iron Maiden",    SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoThorns,     UniKinetic),
+            new(EvoSupercell,    "Supercell",      SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoStormCloud, UniCrit),
+            new(EvoBlizzard,     "Blizzard",       SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoIceShards,  StatArea),
+            new(EvoDragonBreath, "Dragon Breath",  SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoFlameBurst, StatFireRate),
+            new(EvoMinefield,    "Minefield",      SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoLandmine,   StatMoveSpeed),
+            new(EvoAxeStorm,     "Axe Storm",      SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoAxe,        StatLuck),
+            new(EvoAlphaPack,    "Alpha Pack",     SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoWarDog,     StatRegen),
+            new(EvoEarthquake,   "Earthquake",     SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoStomp,      StatMaxHealth),
+            new(EvoTimeStop,     "Time Stop",      SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoTimeWarp,   StatCooldown),
         };
 
         /// <summary>Offered only when nothing else can be: the build is full and maxed. Not part of

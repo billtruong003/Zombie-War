@@ -27,7 +27,7 @@ namespace ZombieWar
     /// magnet is the reward that makes a big sweep feel earned rather than automatic.
     /// </summary>
     // Values are serialized in pickup prefabs: never renumber (2 was the retired bomb pickup).
-    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3 }
+    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3, Chest = 4 }
 
     public class Pickup : MonoBehaviour
     {
@@ -86,6 +86,8 @@ namespace ZombieWar
             transform.position = position;
         }
 
+        const float ChestReach = 1.4f;
+
         private void OnEnable() => PickupManager.Register(this);
         private void OnDisable() => PickupManager.Unregister(this);
 
@@ -106,6 +108,14 @@ namespace ZombieWar
 
                 if (_age < settleTime) return;
                 float sqr = (playerPos - transform.position).sqrMagnitude;
+                // A7: a chest is walked to, never pulled — no magnet, no sweep. Opening it is a choice
+                // moment, and it must not fire the instant a magnet lands in the middle of a fight.
+                if (effect == PickupEffect.Chest)
+                {
+                    Vector3 d = playerPos - _groundPos; d.y = 0f;
+                    if (d.sqrMagnitude <= ChestReach * ChestReach) Collect();
+                    return;
+                }
                 if (!forceCollect && sqr > magnetRadius * magnetRadius) return;
 
                 _flying = true;
@@ -141,6 +151,11 @@ namespace ZombieWar
                     // A travelling pull, not an instant credit: the coins visibly fly in, which is
                     // the entire point of the pickup.
                     PickupManager.BeginMagnetSweep();
+                    break;
+
+                case PickupEffect.Chest:
+                    // The run overlays open it (an evolution, a rank-up or a bonus card).
+                    PickupManager.RaiseChestCollected(transform.position);
                     break;
 
                 default:

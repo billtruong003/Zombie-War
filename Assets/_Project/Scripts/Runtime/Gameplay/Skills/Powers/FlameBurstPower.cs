@@ -37,6 +37,7 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null) return;
+            if (run.IsEvolved(SkillCatalogDefs.AutoFlameBurst)) { _range = proc.radius; return; }   // the breath never stops
             int found = TargetQuery.GatherEnemies(origin, proc.radius + 2f, Host.EnemyMask);
             if (found == 0) { run.Refund(proc.skillId); return; }
             Vector3 d = TargetQuery.CandidatePoint(TargetQuery.Nearest(found, origin)) - origin; d.y = 0f;
@@ -49,9 +50,25 @@ namespace ZombieWar.Skills.Powers
             Host.Sfx("sfx.skill.fire", origin, 0.85f, 0.2f);
         }
 
+        float _sweep, _jetAt;
+
         public override void Tick(SkillRuntime run, Vector3 p, float dt)
         {
             float now = Time.time;
+            if (A != null && run.IsEvolved(SkillCatalogDefs.AutoFlameBurst))
+            {
+                // Dragon Breath: the jet turns around the player; the proc only sets its reach.
+                if (_range <= 0f) _range = 6f;   // until the first proc sets the ranked reach
+                _sweep = (_sweep + 120f * dt) % 360f;
+                _dir = Quaternion.Euler(0f, _sweep, 0f) * Vector3.forward;
+                if (now >= _jetAt)
+                {
+                    _jetAt = now + 0.9f;
+                    _jet = FxPool.PlayFor(A.jetFx, p + Vector3.up * 0.8f, Quaternion.LookRotation(_dir), _range / Mathf.Max(0.1f, A.jetNativeRange), 1f);
+                }
+                if (_jet != null) _jet.transform.rotation = Quaternion.LookRotation(_dir);
+                _until = now + 0.2f;
+            }
             if (now >= _until) return;
             var a = A;
             if (_jet != null) _jet.transform.position = p + Vector3.up * 0.8f + _dir * 0.4f;   // it comes out of the player
@@ -65,12 +82,18 @@ namespace ZombieWar.Skills.Powers
             {
                 var e = PowerKit.EnemyOf(TargetQuery.Candidate(Cone[i]));
                 if (e == null || e.IsDead) continue;
-                PowerKit.Hit(e, damage, 0.15f, SkillCatalogDefs.AutoFlameBurst);
+                PowerKit.Hit(e, damage, 0.15f, run.IsEvolved(SkillCatalogDefs.AutoFlameBurst) ? SkillCatalogDefs.EvoDragonBreath : SkillCatalogDefs.AutoFlameBurst);
                 SkillFxDirector.Instance?.TintEnemy(e, a.burnTint, 0.5f);
                 if (flames++ < 3 && a.burnFx != null) FxPool.Play(a.burnFx, PowerKit.Chest(e), PowerKit.Flat(a.burnFx), 0.35f);
             }
         }
 
-        public override void ResetForRun() => _until = 0f;
+        public override void ResetForRun()
+        {
+            if (_jet != null) _jet.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            _jet = null;
+            _until = _jetAt = _tickAt = 0f;
+            _range = 0f;
+        }
     }
 }

@@ -34,7 +34,9 @@ namespace ZombieWar.Skills.Powers
             public string clip;
         }
 
-        const int MaxDogs = 2;
+        const int MaxDogs = 3;
+        const float AlphaHeal = 0.004f;   // share of max health per bite
+        Health _health;
         const string Idle = "Idle", Run = "Walk Forward In Place", Bite = "Bite Attack";
         static readonly int ColorId = Shader.PropertyToID("_Color");
         static readonly int RingId = Shader.PropertyToID("_Ring");
@@ -99,7 +101,14 @@ namespace ZombieWar.Skills.Powers
                 d.nextBite = now + 1f / Mathf.Max(0.2f, run.WarDogBitesPerSecond);
                 d.biteUntil = now + 0.35f;
                 Play(d, Bite, true);
-                PowerKit.Hit(d.target, run.PowerDamage(a.biteDamage, SkillCatalogDefs.AutoWarDog), 0.4f, SkillCatalogDefs.AutoWarDog);
+                bool alpha = run.IsEvolved(SkillCatalogDefs.AutoWarDog);
+                PowerKit.Hit(d.target, run.PowerDamage(a.biteDamage, SkillCatalogDefs.AutoWarDog), 0.4f, alpha ? SkillCatalogDefs.EvoAlphaPack : SkillCatalogDefs.AutoWarDog);
+                if (alpha)
+                {
+                    // Alpha Pack: every bite feeds the player a little.
+                    if (_health == null) _health = Host.Player.GetComponent<Health>();
+                    if (_health != null && _health.Current < _health.Max) _health.Heal(_health.Max * AlphaHeal);
+                }
                 FxPool.Play(a.biteFx, PowerKit.Chest(d.target) - Vector3.up * 0.3f, PowerKit.Flat(a.biteFx), 0.45f);
                 Host.Sfx("sfx.creature.canine_small.attack", pos, 0.5f, 0.15f);
             }

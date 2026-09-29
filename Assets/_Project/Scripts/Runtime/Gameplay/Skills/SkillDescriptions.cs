@@ -115,6 +115,19 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.EvoAbsoluteZero: return "Frost Nova freezes enemies solid; frozen take +50%";
                 case SkillCatalogDefs.EvoSquadron: return "3 drones; their kills can drop coins";
                 case SkillCatalogDefs.EvoReaper: return "Kills can release a soul burst";
+                case SkillCatalogDefs.EvoPlague: return "Clouds follow the crowd; poisoned kills spread poison";
+                case SkillCatalogDefs.EvoSingularity: return "A vortex that never closes drifts through the horde";
+                case SkillCatalogDefs.EvoFortress: return "Two turrets that fire rockets";
+                case SkillCatalogDefs.EvoMeteorStorm: return "Five meteors fall in a line";
+                case SkillCatalogDefs.EvoIronMaiden: return "Thorns hit twice as hard; a broken shield throws a spike wave";
+                case SkillCatalogDefs.EvoSupercell: return "A bigger storm: every strike is critical and chains to 3";
+                case SkillCatalogDefs.EvoBlizzard: return "Ice shards circle you nonstop and freeze what they cut";
+                case SkillCatalogDefs.EvoDragonBreath: return "A fire jet sweeps around you without stopping";
+                case SkillCatalogDefs.EvoMinefield: return "Cluster mines: every blast sets off the mines around it";
+                case SkillCatalogDefs.EvoAxeStorm: return "Four axes circle you, then fly out through the crowd";
+                case SkillCatalogDefs.EvoAlphaPack: return "Three war dogs; every bite heals you";
+                case SkillCatalogDefs.EvoEarthquake: return "The stomp cracks the ground and stuns everything in it";
+                case SkillCatalogDefs.EvoTimeStop: return "Every enemy freezes solid for 2 seconds";
 
                 // ── overflow ──
                 case SkillCatalogDefs.OverHeal: return $"Heal {pct} of your max health now";

@@ -136,6 +136,8 @@ namespace ZombieWar.Dev
             if (GUILayout.Button(God ? "God ✓" : "God")) SetGod(!God);
             if (GUILayout.Button(Walk ? "Walk ✓" : "Walk")) { if (Walk) StopWalk(); else Walk = true; }
             if (GUILayout.Button(AllowLevelUp ? "Level-up ✓" : "Level-up")) AllowLevelUp = !AllowLevelUp;
+            if (GUILayout.Button("Chest") && PlayerMovement.Instance != null)
+                PickupManager.Instance?.SpawnChest(PlayerMovement.Instance.transform.position + PlayerMovement.Instance.transform.forward * 2.5f);
             if (GUILayout.Button("+1 level")) RunState.Current?.AddXp(RunState.Current.XpForNextLevel);
             GUILayout.EndHorizontal();
         }

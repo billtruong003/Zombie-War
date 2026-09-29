@@ -16,7 +16,7 @@ namespace ZombieWar
     /// Revive has no ad backend yet, so it is presentation-only (test hook ShowRevive) and never
     /// opens on PlayerDiedEvent, which would block the real death -> result flow.
     /// </summary>
-    public class RunOverlays : MonoBehaviour
+    public partial class RunOverlays : MonoBehaviour
     {
         [Header("Pause (§4.8)")]
         [SerializeField] private GameObject pauseRoot;
@@ -127,12 +127,14 @@ namespace ZombieWar
             // the frozen ledger.
             Bill.Events?.Subscribe<RunFinishedEvent>(OnRunFinished);
             RunState.LevelsGained += OnLevelsGained;
+            PickupManager.ChestCollected += OnChestCollected;
         }
 
         private void OnDisable()
         {
             Bill.Events?.Unsubscribe<RunFinishedEvent>(OnRunFinished);
             RunState.LevelsGained -= OnLevelsGained;
+            PickupManager.ChestCollected -= OnChestCollected;
         }
 
         // ------------------------------------------------------------ result binding
@@ -370,6 +372,7 @@ namespace ZombieWar
         {
             if (_pendingLevelUps <= 0 || TerminalOverlayActive) return;
             if (levelUpRoot == null || levelUpRoot.activeSelf) return;
+            if (ChestOpen) return;   // one choice screen at a time; the chest hands back when claimed
             if (pauseRoot != null && pauseRoot.activeSelf) return;
             if (reviveRoot != null && reviveRoot.activeSelf) return;
             var run = RunState.Current;
@@ -423,6 +426,7 @@ namespace ZombieWar
             bool picking = levelUpRoot != null && levelUpRoot.activeSelf;
             if (_skillBar != null && _skillBar.activeSelf == picking) _skillBar.SetActive(!picking);
 
+            TickChest();
             if (levelUpRoot == null || !levelUpRoot.activeSelf) return;
             if (_skillOffer == null || _skillOffer.Count == 0) return;
             float waited = Time.realtimeSinceStartup - _levelUpShownAtRealtime;
@@ -621,6 +625,7 @@ namespace ZombieWar
             Show(levelUpRoot, false);
             Time.timeScale = 1f;
             TryShowLevelUp();   // more queued level-ups present immediately, one choice each
+            TryShowChest();
         }
 
         // ------------------------------------------------------------ ftue

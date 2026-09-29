@@ -282,6 +282,128 @@ namespace ZombieWar.EditorTools
             }
         }
 
+        /// <summary>
+        /// Phase A7 (owner-approved mockup SK_Chest, 2026-09-29): the chest overlay over the frozen
+        /// run — the gold chest, the card it gives (an evolution with its recipe, a rank-up or a
+        /// bonus) and CLAIM. Built next to the level-up overlay in UI_Hud; idempotent. RunOverlays
+        /// finds it by name and binds it (RunOverlays.Chest.cs).
+        /// </summary>
+        [MenuItem("ZombieWar/UI/M8/Apply Chest Overlay")]
+        public static void ApplyChestOverlay()
+        {
+            string path = ScreensDir + "UI_Hud.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var lu = root.transform.Find("Overlays/LevelUpOverlay") as RectTransform;
+                if (lu == null) throw new System.Exception("Overlays/LevelUpOverlay missing");
+                var overlays = lu.parent;
+                var ch = Rect(overlays, "ChestOverlay", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                ch.SetSiblingIndex(lu.GetSiblingIndex() + 1);
+                var gold = UITheme.M8Yellow;
+
+                var dim = Rect(ch, "Dim", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                var dimImg = Img(dim, "rounded_24", UITheme.M8Scrim, false);
+                dimImg.sprite = null; dimImg.raycastTarget = true;   // swallows taps on the game behind
+
+                var glow = Rect(ch, "Glow", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -640), new Vector2(900, 900));
+                Img(glow, "glow_soft", new Color(gold.r, gold.g, gold.b, 0.55f), false);
+
+                var title = Rect(ch, "Title", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -250), new Vector2(1000, 130));
+                Label(title, "Label", "TREASURE CHEST", 96, UITheme.M8Ink);
+                var sub = Rect(ch, "Sub", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -385), new Vector2(1000, 50));
+                Label(sub, "Label", "Bosses always drop one · elites and Supply Drops can too", 30, new Color(1f, 0.91f, 0.65f));
+
+                var chest = Rect(ch, "Chest", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -620), new Vector2(330, 330));
+                IconImg(chest, "ItemIcon_Chest_Gold.Png");
+
+                var card = Rect(ch, "Card", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -800), new Vector2(920, 690));
+                Img(card, "rounded_32", UITheme.M8Card, true);
+                var frame = Rect(card, "Frame", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16, 16));
+                Img(frame, "frame_32", gold, true);
+
+                var tag = Rect(card, "Tag", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -52), new Vector2(300, 56));
+                Img(tag, "pill", gold, true);
+                Label(tag, "Label", "EVOLUTION", 30, UITheme.M8OnYellow);
+
+                Tile(card, "Icon", new Vector2(0, -195), 180, 56);
+                var name = Rect(card, "Name", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -330), new Vector2(860, 80));
+                var nameText = Label(name, "Label", "Buzzsaw Halo", 64, UITheme.M8Ink);
+                MoveText(nameText, name);
+                var desc = Rect(card, "Desc", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -400), new Vector2(840, 70));
+                var descText = Label(desc, "Label", "6 bigger, faster blades", 32, UITheme.M8InkDim);
+                descText.enableWordWrapping = true;
+                MoveText(descText, desc);
+
+                var recipe = Rect(card, "Recipe", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -515), new Vector2(620, 120));
+                Img(recipe, "rounded_24", UITheme.M8Deep, true);
+                Tile(recipe, "A", new Vector2(-210, 0), 104, 34, center: true);
+                var plus = Rect(recipe, "Plus", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-105, 0), new Vector2(80, 80));
+                Label(plus, "Label", "+", 60, UITheme.M8Ink);
+                Tile(recipe, "B", new Vector2(0, 0), 104, 34, center: true);
+                var eq = Rect(recipe, "Eq", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(105, 0), new Vector2(80, 80));
+                Label(eq, "Label", "=", 60, UITheme.M8Ink);
+                Tile(recipe, "Evo", new Vector2(210, 0), 104, 34, center: true);
+
+                var req = Rect(card, "Req", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -630), new Vector2(860, 50));
+                var reqText = Label(req, "Label", "ORBIT BLADES RANK 5 + MOVE SPEED UP", 26, new Color(1f, 0.85f, 0.45f));
+                MoveText(reqText, req);
+
+                // CLAIM: the yellow primary button with its lip.
+                var claim = Rect(ch, "Claim", new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 220), new Vector2(820, 140));
+                var lip = Rect(claim, "Lip", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(0, -10), Vector2.zero);
+                Img(lip, "rounded_32", UITheme.M8YellowLip, true);
+                var face = Rect(claim, "Face", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                var faceImg = Img(face, "rounded_32", UITheme.M8Yellow, true);
+                faceImg.raycastTarget = true;
+                Label(face, "Label", "CLAIM", 64, UITheme.M8OnYellow);
+                var btn = claim.GetComponent<Button>() ?? claim.gameObject.AddComponent<Button>();
+                btn.targetGraphic = faceImg; btn.transition = Selectable.Transition.None;
+                if (claim.GetComponent<UIFxPress>() == null) claim.gameObject.AddComponent<UIFxPress>();
+
+                var hint = Rect(ch, "Hint", new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(900, 50));
+                var hintText = Label(hint, "Label", "Auto-claims in 10 s", 28, UITheme.M8InkDim);
+                MoveText(hintText, hint);
+
+                ch.gameObject.SetActive(false);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log("[M8 UI] Chest overlay applied.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        /// A card tile: tinted rounded square, icon art, and the two-letter badge fallback.
+        static RectTransform Tile(RectTransform parent, string name, Vector2 pos, float size, float badge, bool center = false)
+        {
+            var anchor = center ? new Vector2(0.5f, 0.5f) : new Vector2(0.5f, 1);
+            var t = Rect(parent, name, anchor, anchor, new Vector2(0.5f, 0.5f), pos, new Vector2(size, size));
+            Img(t, "rounded_24", UITheme.M8Card, true);
+            var art = Rect(t, "Art", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size * 0.8f, size * 0.8f));
+            var a = art.GetComponent<Image>() ?? art.gameObject.AddComponent<Image>();
+            a.preserveAspect = true; a.raycastTarget = false; a.enabled = false;
+            Label(t, "Badge", "BZ", badge, Color.white);
+            return t;
+        }
+
+        /// RunOverlays binds "Card/Name" etc. as the TMP itself: move the label's text component onto
+        /// the named node so the path resolves to the text, not to an empty holder.
+        static void MoveText(TMP_Text label, RectTransform onto)
+        {
+            if (label.transform == onto) return;
+            var existing = onto.GetComponent<TextMeshProUGUI>();
+            if (existing == null)
+            {
+                existing = onto.gameObject.AddComponent<TextMeshProUGUI>();
+                existing.font = label.font; existing.fontSize = label.fontSize; existing.color = label.color;
+                existing.alignment = label.alignment; existing.text = label.text; existing.raycastTarget = false;
+                existing.enableWordWrapping = label.enableWordWrapping; existing.overflowMode = label.overflowMode;
+            }
+            Object.DestroyImmediate(label.gameObject);
+        }
+
         // ═════════════════════════════════════════════════════════════ Result
 
         [MenuItem("ZombieWar/UI/M8/Apply Result Layout")]

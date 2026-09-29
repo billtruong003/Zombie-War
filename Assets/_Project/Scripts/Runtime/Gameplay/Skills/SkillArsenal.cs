@@ -43,6 +43,7 @@ namespace ZombieWar.Skills
         readonly Dictionary<string, PowerModule> _byProc = new(16);
         KineticShieldPower _shield;
         PoisonPower _poison;
+        ThornAuraPower _thorns;
         GuardianAngelPower _guardian;
 
         void Awake()
@@ -78,7 +79,7 @@ namespace ZombieWar.Skills
             Register(_guardian = new GuardianAngelPower());
             Register(new ToxicCloudPower());
             Register(new GravityWellPower());
-            Register(new ThornAuraPower());
+            Register(_thorns = new ThornAuraPower());
             Register(new SentryTurretPower());
             Register(new MeteorPower());
             Register(new StormCloudPower());
@@ -131,7 +132,11 @@ namespace ZombieWar.Skills
         }
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>
-        public void OnShieldBlocked() => _shield?.Break();
+        public void OnShieldBlocked()
+        {
+            _shield?.Break();
+            _thorns?.OnShieldBroken(SkillRuntime.Active);   // Iron Maiden
+        }
 
         /// <summary>A bullet from the player's gun landed (the weapon calls this after the damage).</summary>
         public void OnGunHit(SkillRuntime run, ZombieBase enemy, Vector3 point, float damage, bool crit)

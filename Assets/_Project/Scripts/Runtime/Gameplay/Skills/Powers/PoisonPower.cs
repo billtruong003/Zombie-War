@@ -88,6 +88,44 @@ namespace ZombieWar.Skills.Powers
             }
         }
 
+        /// Plague: a poisoned enemy that dies passes two stacks to the three nearest enemies.
+        public override void OnKill(SkillRuntime run, Vector3 at)
+        {
+            if (!run.IsEvolved(SkillCatalogDefs.AutoToxic)) return;
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                var e = _entries[i];
+                if (e.enemy == null || !e.enemy.IsDead) continue;
+                Vector3 d = e.enemy.transform.position - at; d.y = 0f;
+                if (d.sqrMagnitude > 0.5f) continue;
+                _entries.RemoveAt(i);
+                // Deferred a beat: kills arrive from inside damage loops walking the shared buffer.
+                _spreadAt = at; _spreadDps = e.dps;
+                Host.Delay(0.05f, _spread ??= Spread, at);
+                return;
+            }
+        }
+
+        Vector3 _spreadAt;
+        float _spreadDps;
+        Action<Vector3> _spread;
+
+        void Spread(Vector3 at)
+        {
+            var a = Lib?.poison;
+            int found = TargetQuery.GatherEnemies(at, 3f, Host.EnemyMask);
+            int given = 0;
+            for (int i = 0; i < found && given < 3; i++)
+            {
+                var e = TargetQuery.CandidateEnemy(i);
+                if (e == null || e.IsDead) continue;
+                Apply(e, 2, _spreadDps, SkillRuntime.PoisonSeconds, SkillCatalogDefs.EvoPlague);
+                if (a != null) SkillFxDirector.Instance?.DrawArc(at + Vector3.up * 0.8f, PowerKit.Chest(e), a.tint, 0.5f, 0.02f * given, 0);
+                given++;
+            }
+            if (given > 0 && a != null) FxPool.Play(a.tickFx, at + Vector3.up * 0.6f, PowerKit.Flat(a.tickFx), 0.6f);
+        }
+
         public override void ResetForRun() => _entries.Clear();
     }
 }

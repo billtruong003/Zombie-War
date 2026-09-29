@@ -30,8 +30,8 @@ namespace ZombieWar.Tests
         public void TheOwnerApprovedCardList_NothingMoreNothingLess()
         {
             var all = SkillCatalogDefs.All;
-            Assert.AreEqual(65, all.Count,
-                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3) + 5 stats (A4) + 5 powers (A5) + 8 powers (A6, owner 2026-09-29)");
+            Assert.AreEqual(78, all.Count,
+                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3) + 5 stats (A4) + 5 powers (A5) + 8 powers (A6) + 13 evolutions (A7, owner 2026-09-29)");
 
             var expected = new[]
             {
@@ -49,6 +49,8 @@ namespace ZombieWar.Tests
                 "Cooldown", "Area", "Pickup Range", "Regeneration", "Luck",
                 "Toxic Cloud", "Gravity Well", "Thorn Aura", "Sentry Turret", "Meteor",
                 "Storm Cloud", "Ice Shards", "Flame Burst", "Landmines", "Spinning Axe", "War Dog", "Ground Stomp", "Time Warp",
+                "Plague", "Singularity", "Fortress", "Meteor Storm", "Iron Maiden", "Supercell", "Blizzard", "Dragon Breath",
+                "Minefield", "Axe Storm", "Alpha Pack", "Earthquake", "Time Stop",
             };
             CollectionAssert.AreEquivalent(expected, all.Select(d => d.displayName).ToArray(),
                 "no card may be added, removed or renamed without the owner");
@@ -530,15 +532,20 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void AReadyEvolutionAlwaysTakesSlotA()
+        public void AReadyEvolutionComesFromAChest_NeverFromALevelUp()
         {
+            // A7 (owner, 2026-09-29): evolutions come from chests only.
             for (int seed = 0; seed < 50; seed++)
             {
                 var run = new SkillRuntime();
                 while (run.Take(SkillCatalogDefs.AutoOrdnance)) { }
                 run.Take(SkillCatalogDefs.StatDamage);
                 var offer = SkillOfferBuilder.Build(run, WeaponClass.Sidearm, seed, 9);
-                Assert.AreEqual(SkillCatalogDefs.EvoCarpetBomb, offer[0].id, $"seed {seed}: the payoff must be offered");
+                Assert.IsFalse(offer.Any(d => d.IsEvolution), $"seed {seed}: a level-up never offers an evolution");
+                var chest = run.OpenChest(seed);
+                Assert.AreEqual(SkillRuntime.ChestKind.Evolution, chest.kind);
+                Assert.AreEqual(SkillCatalogDefs.EvoCarpetBomb, chest.card.id, $"seed {seed}: the chest pays the build out");
+                Assert.IsTrue(run.IsEvolved(SkillCatalogDefs.AutoOrdnance));
             }
         }
 

@@ -29,6 +29,7 @@ namespace ZombieWar.Skills.Powers
             public Vector3 from, dir;
             public float reach;
             public float born, spin;
+            public bool storm;
             public bool live;
             public readonly HashSet<int> hit = new();
         }
@@ -38,6 +39,8 @@ namespace ZombieWar.Skills.Powers
         static readonly string[] Ids = { SkillCatalogDefs.AutoAxe };
         public override string[] ProcIds => Ids;
         readonly List<Axe> _axes = new(MaxAxes);
+        bool _storm;
+        const float OrbitSeconds = 0.9f;
 
         Assets A => Lib != null ? Lib.axe : null;
 
@@ -45,7 +48,8 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null || a.model == null) return;
-            int n = Mathf.Max(1, proc.targets);
+            _storm = run.IsEvolved(SkillCatalogDefs.AutoAxe);
+            int n = _storm ? 4 : Mathf.Max(1, proc.targets);
             int found = TargetQuery.GatherEnemies(origin, a.reach + 3f, Host.EnemyMask);
             Vector3 aim = found > 0 ? TargetQuery.CandidatePoint(TargetQuery.Nearest(found, origin)) - origin : Host.Player.forward;
             aim.y = 0f;
@@ -55,11 +59,12 @@ namespace ZombieWar.Skills.Powers
             for (int k = 0; k < n; k++)
             {
                 var x = Take();
-                float spread = (k - (n - 1) * 0.5f) * 28f;
+                float spread = _storm ? k * 90f : (k - (n - 1) * 0.5f) * 28f;
                 x.dir = Quaternion.Euler(0f, spread, 0f) * aim;
                 x.from = origin + Vector3.up * 1f;
                 x.reach = reach;
-                x.born = Time.time + k * 0.08f;
+                x.born = Time.time + (_storm ? 0f : k * 0.08f);
+                x.storm = _storm;
                 x.spin = UnityEngine.Random.value < 0.5f ? -1f : 1f;
                 x.live = true;
                 x.hit.Clear();
@@ -98,11 +103,26 @@ namespace ZombieWar.Skills.Powers
             foreach (var x in _axes)
             {
                 if (!x.live) continue;
-                float t = (now - x.born) / a.flightSeconds;
-                if (t < 0f) continue;
-                if (t >= 1f) { x.live = false; x.tr.gameObject.SetActive(false); continue; }
-                // Up and out, then down: a lob that lands past the crowd.
-                Vector3 pos = x.from + x.dir * (x.reach * t) + Vector3.up * (4f * a.apex * t * (1f - t)) - Vector3.up * (0.5f * t);
+                float age = now - x.born;
+                Vector3 pos;
+                if (x.storm && age < OrbitSeconds)
+                {
+                    // Axe Storm: a turn around the player first, cutting what comes close...
+                    float ang = Mathf.Atan2(x.dir.z, x.dir.x) + age / OrbitSeconds * Mathf.PI * 2f;
+                    pos = p + new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang)) * 2.2f + Vector3.up * 1f;
+                    x.from = pos;
+                    x.dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
+                    x.reach = a.reach;
+                }
+                else
+                {
+                    float t = (age - (x.storm ? OrbitSeconds : 0f)) / a.flightSeconds;
+                    if (t < 0f) continue;
+                    if (t >= 1f) { x.live = false; x.tr.gameObject.SetActive(false); continue; }
+                    // ...then out. Up and out, then down: a lob that lands past the crowd.
+                    pos = x.from + x.dir * (x.reach * t) + Vector3.up * (4f * a.apex * t * (1f - t)) - Vector3.up * (0.5f * t);
+                    if (t < 0.02f) x.hit.Clear();   // the flight may cut the same enemies again
+                }
                 x.tr.position = pos;
                 x.tr.rotation = Quaternion.Euler(0f, x.spin * (now - x.born) * 900f, 0f);
                 if (damage == 0f) damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoAxe);
@@ -114,7 +134,7 @@ namespace ZombieWar.Skills.Powers
                 {
                     var e = TargetQuery.CandidateEnemy(k);
                     if (e == null || e.IsDead || !x.hit.Add(e.GetInstanceID())) continue;
-                    PowerKit.Hit(e, damage, 0.6f, SkillCatalogDefs.AutoAxe);
+                    PowerKit.Hit(e, damage, 0.6f, x.storm ? SkillCatalogDefs.EvoAxeStorm : SkillCatalogDefs.AutoAxe);
                     FxPool.Play(a.hitFx, PowerKit.Chest(e), PowerKit.Flat(a.hitFx), 0.5f);
                     Host.Sfx("sfx.skill.blade.hit", pos, 0.5f, 0.06f);
                 }

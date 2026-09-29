@@ -55,13 +55,24 @@ namespace ZombieWar.Skills.Powers
             _pendingRadius = proc.radius; _pendingDamage = damage;
             Vector3 flight = at - origin; flight.y = 0f;
             Host.Sfx("sfx.skill.airstrike.mark", at, 0.7f, 0.3f);
-            Host.ScheduleBlast(new BlastSpec
+            var spec = new BlastSpec
             {
                 pos = at, radius = proc.radius, damage = damage, delay = a.delay,
                 fx = a.impactFx, fxNativeRadius = a.impactNativeRadius, sfx = "sfx.skill.airstrike.blast",
                 shake = 0.32f, push = 1.8f, bomb = a.fallFx, decal = a.craterFx, flight = flight,
                 source = SkillCatalogDefs.AutoMeteor, wave = Ember, landed = _landed ??= Land,
-            });
+            };
+            if (!run.IsEvolved(SkillCatalogDefs.AutoMeteor)) { Host.ScheduleBlast(spec); return; }
+            // Meteor Storm: five rocks walking across the crowd along the flight line, in sequence.
+            Vector3 across = flight.sqrMagnitude > 0.01f ? flight.normalized : Vector3.forward;
+            spec.source = SkillCatalogDefs.EvoMeteorStorm;
+            for (int k = -2; k <= 2; k++)
+            {
+                spec.pos = at + across * (k * proc.radius * 1.1f);
+                spec.delay = a.delay + (k + 2) * 0.22f;
+                spec.shake = 0.18f;
+                Host.ScheduleBlast(spec);
+            }
         }
 
         void Land(Vector3 at)

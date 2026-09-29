@@ -19,6 +19,8 @@ namespace ZombieWar.Skills.Powers
         }
 
         static readonly Color Cyan = new(0.4f, 0.8f, 1f, 1f);
+        static readonly Color Violet = new(0.7f, 0.5f, 1f, 1f);
+        static readonly int[] Hops = new int[TargetQuery.MaxChain];
         static readonly int ColorId = Shader.PropertyToID("_Color");
         static readonly int RingId = Shader.PropertyToID("_Ring");
         static readonly int FillId = Shader.PropertyToID("_Fill");
@@ -36,6 +38,8 @@ namespace ZombieWar.Skills.Powers
             if (!on) { Show(false); return; }
             if (_cloud == null) Build();
             if (!_cloud.gameObject.activeSelf) { Show(true); _cloud.position = p + Vector3.up * a.height; }
+            float grow = run.IsEvolved(SkillCatalogDefs.AutoStormCloud) ? 1.4f : 1f;
+            _cloud.localScale = Vector3.MoveTowards(_cloud.localScale, Vector3.one * grow, dt);
 
             // Lags behind the player a little and bobs: weather, not a hat.
             Vector3 goal = p + new Vector3(Mathf.Sin(Time.time * 0.7f) * 0.6f, a.height + Mathf.Sin(Time.time * 1.3f) * 0.15f, 0.8f);
@@ -60,11 +64,31 @@ namespace ZombieWar.Skills.Powers
             _nextStrike = now + run.StormCloudInterval;
 
             Vector3 at = target.transform.position;
-            FxPool.Play(a.strikeFx, at, PowerKit.Flat(a.strikeFx), 1f);
-            SkillFxDirector.Instance?.DrawArc(_cloud.position, at + Vector3.up * 1f, Cyan, 0.9f, 0f, 1);
-            SkillFxDirector.Instance?.Pulse(at, 1f, Cyan, 0.2f, 0.12f);
-            Host.Sfx("sfx.skill.chain", at, 0.5f, 0.12f);
-            PowerKit.Hit(target, run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoStormCloud), 0.3f, SkillCatalogDefs.AutoStormCloud);
+            bool super = run.IsEvolved(SkillCatalogDefs.AutoStormCloud);
+            float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoStormCloud) * (super ? SkillRuntime.CritMultiplier : 1f);
+            string source = super ? SkillCatalogDefs.EvoSupercell : SkillCatalogDefs.AutoStormCloud;
+            FxPool.Play(a.strikeFx, at, PowerKit.Flat(a.strikeFx), super ? 1.3f : 1f);
+            SkillFxDirector.Instance?.DrawArc(_cloud.position, at + Vector3.up * 1f, super ? Violet : Cyan, super ? 1.3f : 0.9f, 0f, 1);
+            SkillFxDirector.Instance?.Pulse(at, 1f, super ? Violet : Cyan, 0.2f, 0.12f);
+            Host.Sfx(super ? "sfx.skill.thunderstorm" : "sfx.skill.chain", at, 0.5f, 0.12f);
+            if (super) target.MarkNextHitCrit();
+            PowerKit.Hit(target, damage, 0.3f, source);
+            if (super)
+            {
+                // Supercell: the bolt forks on to two more enemies nearby.
+                int n = TargetQuery.Chain(found, at, 5f, 3, Hops, 5f);
+                Vector3 from = at + Vector3.up;
+                for (int i = 0; i < n; i++)
+                {
+                    var e = TargetQuery.CandidateEnemy(Hops[i]);
+                    if (e == null || e == target || e.IsDead) continue;
+                    Vector3 to = PowerKit.Chest(e);
+                    SkillFxDirector.Instance?.DrawArc(from, to, Violet, 0.9f, 0.03f * (i + 1), 1);
+                    e.MarkNextHitCrit();
+                    PowerKit.Hit(e, damage, 0.2f, source);
+                    from = to;
+                }
+            }
         }
 
         void Build()

@@ -159,6 +159,56 @@ namespace ZombieWar.EditorTools
             return "A6 FX bound";
         }
 
+        /// <summary>Phase A7: the chest pickup (KayKit's gem chest in the pack's glow rays, with the
+        /// pack's appear burst playing whenever the pool hands it out) and the Fortress rocket.</summary>
+        [MenuItem("HordeCall/Skills/Build A7 (chest pickup)")]
+        public static string BuildA7()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            lib.turret.rocketBlastFx = Fx("Combat/Explosions/SmallExplosion/SmallExplosionFire");
+            EditorUtility.SetDirty(lib);
+
+            const string chestModel = "Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Prefabs/Gems_Chest.prefab";
+            const string path = "Assets/_Project/Resources/Pools/pickup_chest.prefab";
+            var root = new GameObject("pickup_chest");
+            try
+            {
+                var pickup = root.AddComponent<ZombieWar.Pickup>();
+                var so = new SerializedObject(pickup);
+                so.FindProperty("effect").intValue = (int)ZombieWar.PickupEffect.Chest;
+                so.FindProperty("spinSpeed").floatValue = 35f;
+                so.FindProperty("bobHeight").floatValue = 0.06f;
+                so.FindProperty("settleTime").floatValue = 0.6f;
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                var model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(chestModel), root.transform);
+                PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                model.name = "Chest";
+                model.transform.localPosition = Vector3.zero;
+                model.transform.localScale = Vector3.one * 0.7f;   // ~1.1 m: reads as a prize next to a 1.8 m player
+                foreach (var c in model.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+                foreach (var r in model.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+
+                Child(root, Fx("Interactive/Loot/TreasureChestGlowRays"), "Glow", 0.8f, true);
+                Child(root, Fx("Interactive/Loot/ChestAppear/ChestAppearYellow"), "Appear", 1f, true);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            finally { Object.DestroyImmediate(root); }
+            AssetDatabase.SaveAssets();
+            return "A7 chest pickup + Fortress rocket bound";
+        }
+
+        static void Child(GameObject root, ParticleSystem fx, string name, float scale, bool playOnEnable)
+        {
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(fx.gameObject, root.transform);
+            PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            go.name = name;
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localScale = Vector3.one * scale;
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.playOnAwake = playOnEnable; }
+        }
+
         /// A prefab variant lying flat (the pack's novas are authored upright) with the named children
         /// switched off.
         static ParticleSystem Variant(string source, string path, params string[] hide)

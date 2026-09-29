@@ -42,6 +42,7 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null) return;
+            if (run.IsEvolved(SkillCatalogDefs.AutoGravity)) { _singularityRadius = proc.radius; return; }   // the permanent one pulls instead
             int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
             found = TargetQuery.Compact(found, _onScreen ??= Host.OnScreen);
             int best = found > 0 ? TargetQuery.DensestCluster(found, proc.radius * 0.6f, out _) : -1;
@@ -58,8 +59,52 @@ namespace ZombieWar.Skills.Powers
             Host.Sfx("sfx.skill.target", at, 0.6f, 0.2f);
         }
 
+        // ── Singularity
+        bool _single;
+        Vector3 _singlePos;
+        float _singularityRadius = 4.5f, _singleFxAt, _singlePopAt, _singlePullAt;
+
+        void TickSingularity(SkillRuntime run, Vector3 player, float dt)
+        {
+            var a = A;
+            float now = Time.time;
+            if (!_single) { _single = true; _singlePos = player + Host.Player.forward * 4f; _singlePos.y = 0f; _singlePopAt = now + 3f; }
+            // Drift toward the densest crowd near the player, slowly.
+            int found = TargetQuery.GatherEnemies(player, 14f, Host.EnemyMask);
+            int best = found > 0 ? TargetQuery.DensestCluster(found, 3f, out _) : -1;
+            Vector3 goal = best >= 0 ? TargetQuery.CandidatePoint(best) : player + Host.Player.forward * 4f;
+            goal.y = 0f;
+            Vector3 to = goal - _singlePos;
+            if (to.sqrMagnitude > 0.04f) _singlePos += to.normalized * Mathf.Min(to.magnitude, 1.4f * dt);
+            float r = _singularityRadius * 0.85f;
+            if (now >= _singleFxAt)
+            {
+                _singleFxAt = now + 1.2f;
+                FxPool.PlayFor(a.vortexFx, _singlePos + Vector3.up * 0.4f, PowerKit.Flat(a.vortexFx), r / Mathf.Max(0.1f, a.vortexNativeRadius), 1.3f);
+                Host.ShowDisc(_singlePos, r * 0.9f, r * 0.3f, new Color(0.12f, 0.05f, 0.25f, 0.5f), 1.25f, true);
+            }
+            if (now >= _singlePullAt)
+            {
+                _singlePullAt = now + PullTick;
+                found = TargetQuery.GatherEnemies(_singlePos, r, Host.EnemyMask);
+                for (int k = 0; k < found; k++)
+                {
+                    var e = TargetQuery.CandidateEnemy(k);
+                    if (e == null || e.IsDead) continue;
+                    e.ApplyPull(_singlePos, a.pullSpeed * 0.8f * PullTick * 1.4f, PullTick * 1.4f);
+                }
+            }
+            if (now >= _singlePopAt)
+            {
+                _singlePopAt = now + 3f;
+                Pop(run, new Well { pos = _singlePos, radius = r }, SkillCatalogDefs.EvoSingularity);
+            }
+        }
+
         public override void Tick(SkillRuntime run, Vector3 player, float dt)
         {
+            if (run.IsEvolved(SkillCatalogDefs.AutoGravity)) TickSingularity(run, player, dt);
+            else _single = false;
             if (_wells.Count == 0) return;
             var a = A;
             float now = Time.time;
@@ -68,7 +113,7 @@ namespace ZombieWar.Skills.Powers
                 var w = _wells[i];
                 if (now < w.popAt) continue;
                 _wells.RemoveAt(i);
-                Pop(run, w);
+                Pop(run, w, SkillCatalogDefs.AutoGravity);
             }
             if (_wells.Count == 0 || now < _pullAt) return;
             _pullAt = now + PullTick;
@@ -86,7 +131,7 @@ namespace ZombieWar.Skills.Powers
             }
         }
 
-        void Pop(SkillRuntime run, Well w)
+        void Pop(SkillRuntime run, Well w, string source)
         {
             var a = A;
             float r = w.radius * 0.6f;
@@ -97,9 +142,9 @@ namespace ZombieWar.Skills.Powers
             Host.Shake(0.16f);
             float damage = run.PowerDamage(a.popDamage, SkillCatalogDefs.AutoGravity);
             int found = TargetQuery.GatherEnemies(w.pos, r, Host.EnemyMask);
-            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1f, SkillCatalogDefs.AutoGravity);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1f, source);
         }
 
-        public override void ResetForRun() => _wells.Clear();
+        public override void ResetForRun() { _wells.Clear(); _single = false; }
     }
 }
