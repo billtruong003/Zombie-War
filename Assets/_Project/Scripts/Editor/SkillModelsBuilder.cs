@@ -1,0 +1,147 @@
+using UnityEditor;
+using UnityEngine;
+
+namespace ZombieWar.EditorTools
+{
+    /// <summary>
+    /// Turns the skill models made in Blender (Review/M8/skill_models.blend, exported to
+    /// Art/Models/Skills, one merged mesh each) into the prefabs SkillArsenal uses: the Drone Buddy
+    /// drone, the Orbit Blades saw and the Boomerang.
+    ///
+    /// Every model shares one low-poly palette texture (T_HC_Palette: 8 x 4 gradient cells, UVs laid
+    /// on the cells) through the weapons' toon shader. The drone's second material is the
+    /// procedural rotor smear (HordeCall/RotorSmear) on its flat 12-triangle rotor discs;
+    /// SkillArsenal tints that material per rank. Re-run after re-exporting from Blender.
+    /// </summary>
+    public static class SkillModelsBuilder
+    {
+        const string ModelDir = "Assets/_Project/Art/Models/Skills/";
+        const string MatDir = "Assets/_Project/Materials/Skills/";
+        const string PrefabDir = "Assets/_Project/Prefabs/Skills/";
+        const string Palette = "Assets/_Project/Art/Textures/T_HC_Palette.png";
+        const string ToonTemplate = "Assets/_Project/Materials/Weapons/Low Poly Weapon.mat";
+        const string RotorShader = "Assets/_Project/Art/Shaders/RotorSmear.shader";
+        const string RotorMasks = "Assets/_Project/Art/Textures/T_HC_RotorSmear.png";
+        const string PlayerPrefab = "Assets/_Project/Prefabs/Player.prefab";
+
+        [MenuItem("HordeCall/Skills/Build Skill Models")]
+        public static string Build()
+        {
+            System.IO.Directory.CreateDirectory(MatDir);
+            ImportSettings();
+
+            var palTex = AssetDatabase.LoadAssetAtPath<Texture2D>(Palette);
+            var pal = LoadOrCreate(MatDir + "M_SK_Palette.mat", () => new Material(AssetDatabase.LoadAssetAtPath<Material>(ToonTemplate)));
+            pal.SetTexture("_BaseMap", palTex);
+            pal.SetColor("_BaseColor", Color.white);
+            EditorUtility.SetDirty(pal);
+
+            // Colours are set once, on creation: re-running the build keeps the owner's tuning.
+            var rotor = LoadOrCreate(MatDir + "M_SK_RotorSmear.mat", () =>
+            {
+                var m = new Material(AssetDatabase.LoadAssetAtPath<Shader>(RotorShader));
+                m.SetFloat("_Speed", 4f);
+                return m;
+            });
+            rotor.shader = AssetDatabase.LoadAssetAtPath<Shader>(RotorShader);
+            rotor.SetTexture("_MaskMap", AssetDatabase.LoadAssetAtPath<Texture2D>(RotorMasks));
+            EditorUtility.SetDirty(rotor);
+
+            // Plain white alpha-faded trails for saws, boomerang tips and drones. They used the opaque
+            // chain-lightning material, whose streaky texture smeared black through a long ribbon.
+            var trail = LoadOrCreate(MatDir + "M_SK_Trail.mat", () => new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")));
+            trail.SetTexture("_BaseMap", null);
+            trail.SetColor("_BaseColor", Color.white);
+            trail.SetFloat("_Surface", 1f); trail.SetFloat("_Blend", 0f);
+            trail.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            trail.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            trail.SetFloat("_SrcBlendAlpha", 1f);
+            trail.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            trail.SetFloat("_ZWrite", 0f);
+            trail.SetFloat("_Cull", 0f);   // both sides: a flat ribbon reads from any camera tilt
+            trail.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            trail.SetOverrideTag("RenderType", "Transparent");
+            trail.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(trail);
+
+            var drone = MakePrefab("SK_Drone", new[] { pal, rotor });
+            var saw = MakePrefab("SK_SawBlade", new[] { pal });
+            var boom = MakePrefab("SK_Boomerang", new[] { pal });
+            AssetDatabase.SaveAssets();
+
+            var player = PrefabUtility.LoadPrefabContents(PlayerPrefab);
+            try
+            {
+                var arsenal = player.GetComponentInChildren<ZombieWar.Skills.SkillArsenal>(true);
+                var so = new SerializedObject(arsenal);
+                so.FindProperty("droneModel").objectReferenceValue = drone;
+                so.FindProperty("bladeModel").objectReferenceValue = saw;
+                so.FindProperty("boomerangModel").objectReferenceValue = boom;
+                so.FindProperty("trailMaterial").objectReferenceValue = trail;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(player); }
+            return "built SK_Drone, SK_SawBlade, SK_Boomerang";
+        }
+
+        static void ImportSettings()
+        {
+            if (AssetImporter.GetAtPath(Palette) is TextureImporter t)
+            {
+                // No mipmaps: smaller mips would bleed neighbouring palette cells into each other.
+                t.mipmapEnabled = false; t.wrapMode = TextureWrapMode.Clamp; t.filterMode = FilterMode.Bilinear;
+                t.textureCompression = TextureImporterCompression.CompressedHQ; t.maxTextureSize = 1024;
+                t.SaveAndReimport();
+            }
+            if (AssetImporter.GetAtPath(RotorMasks) is TextureImporter mk)
+            {
+                // Data masks, not colour: linear, clamped so the rotated square never wraps.
+                mk.sRGBTexture = false; mk.wrapMode = TextureWrapMode.Clamp; mk.alphaSource = TextureImporterAlphaSource.None;
+                mk.maxTextureSize = 256; mk.textureCompression = TextureImporterCompression.CompressedHQ;
+                mk.SaveAndReimport();
+            }
+            foreach (var n in new[] { "SK_Drone", "SK_SawBlade", "SK_Boomerang" })
+                if (AssetImporter.GetAtPath(ModelDir + n + ".fbx") is ModelImporter m)
+                {
+                    m.materialImportMode = ModelImporterMaterialImportMode.None;
+                    m.importNormals = ModelImporterNormals.Import;   // keep Blender's sharp creases
+                    m.importAnimation = false; m.animationType = ModelImporterAnimationType.None;
+                    // SkillArsenal reads the boomerang's vertices to put its trail on the tip.
+                    m.isReadable = n == "SK_Boomerang";
+                    m.SaveAndReimport();
+                }
+        }
+
+        static Material LoadOrCreate(string path, System.Func<Material> make)
+        {
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m != null) return m;
+            m = make();
+            AssetDatabase.CreateAsset(m, path);
+            return m;
+        }
+
+        static GameObject MakePrefab(string name, Material[] mats)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelDir + name + ".fbx");
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            try
+            {
+                PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                go.name = name;
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                {
+                    int subs = r.TryGetComponent<MeshFilter>(out var mf) && mf.sharedMesh != null ? mf.sharedMesh.subMeshCount : mats.Length;
+                    var use = new Material[Mathf.Min(subs, mats.Length)];
+                    System.Array.Copy(mats, use, use.Length);
+                    r.sharedMaterials = use;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.receiveShadows = false;
+                }
+                return PrefabUtility.SaveAsPrefabAsset(go, PrefabDir + name + ".prefab");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+    }
+}

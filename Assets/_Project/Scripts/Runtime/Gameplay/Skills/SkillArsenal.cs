@@ -75,6 +75,8 @@ namespace ZombieWar.Skills
         [SerializeField] private float boomerangBaseDamage = 14f;
         [SerializeField] private float boomerangRange = 9f;
         [SerializeField] private float boomerangOutSeconds = 0.5f;
+        [Tooltip("Boomerang mesh (lies in its XY plane, spun about Y). Empty = the saw disc.")]
+        [SerializeField] private GameObject boomerangModel;
         [SerializeField] private float boomerangScale = 1.25f;
         [SerializeField] private Color boomerangTint = new(1f, 0.72f, 0.3f, 1f);
         [SerializeField] private Color boomerangTrailColor = new(1f, 0.7f, 0.25f, 0.9f);
@@ -98,6 +100,8 @@ namespace ZombieWar.Skills
         [SerializeField] private ParticleSystem freezeBurstFx;
         [Tooltip("Alpha-blended SkillLine material for the faint Orbit Blades path.")]
         [SerializeField] private Material pathMaterial;
+        [Tooltip("Faint ring on the Orbit Blades' path. Off: the owner found it ugly (2026-09-29).")]
+        [SerializeField] private bool showOrbitPath;
 
         [Header("M8 skill pass: ground visuals")]
         [Tooltip("ZombieWar/FX/SkillDisc: bomb shadows, frost patches, the Kinetic charge ring.")]
@@ -352,23 +356,23 @@ namespace ZombieWar.Skills
         {
             for (int i = 0; i < MaxBlades; i++)
             {
-                var t = MakeBlade("blade", bladeScale, orbitTrailColor, 0.12f, Color.white, out _bladeTrails[i]);
+                var t = MakeBlade("blade", bladeModel, bladeScale, orbitTrailColor, 0.28f, Color.white, out _bladeTrails[i]);
                 _blades[i] = t;
             }
             for (int i = 0; i < MaxBoomerangs; i++)
             {
-                var t = MakeBlade("boomerang", boomerangScale, boomerangTrailColor, 0f, boomerangTint, out _);
+                var t = MakeBlade("boomerang", boomerangModel, boomerangScale, boomerangTrailColor, 0f, boomerangTint, out _);
                 _boom[i].visual = t;
-                _boom[i].streak = MakeStreak(t, boomerangTrailColor, 0.4f * boomerangScale);
+                _boom[i].tipTrail = MakeTipTrail(t, boomerangScale);
             }
         }
 
-        Transform MakeBlade(string name, float scale, Color trailColor, float trailTime, Color tint,
+        Transform MakeBlade(string name, GameObject meshModel, float scale, Color trailColor, float trailTime, Color tint,
                             out TrailRenderer trail)
         {
             var holder = new GameObject(name).transform;
             holder.SetParent(_root, false);
-            if (bladeModel == null)
+            if (meshModel == null)
             {
                 var disc = new GameObject("saw");
                 disc.transform.SetParent(holder, false);
@@ -387,7 +391,7 @@ namespace ZombieWar.Skills
             }
             else
             {
-                var model = Instantiate(bladeModel, holder);
+                var model = Instantiate(meshModel, holder);
                 model.transform.localPosition = Vector3.zero;
                 model.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);   // lie flat, edge outward
                 model.transform.localScale = Vector3.one * scale;
@@ -404,10 +408,17 @@ namespace ZombieWar.Skills
                 holder.gameObject.SetActive(false);
                 return holder;
             }
-            trail = holder.gameObject.AddComponent<TrailRenderer>();
+            // The trail lies in the blade's own plane (owner 2026-09-29: a camera-facing ribbon read
+            // as a tilted fin): a flat ribbon on a child, turned so its visible side faces the camera above.
+            var flat = new GameObject("trail").transform;
+            flat.SetParent(holder, false);
+            flat.localRotation = Quaternion.Euler(90f, 0f, 0f);   // ribbon faces up: the trail material is one-sided
+            flat.localPosition = Vector3.up * 0.06f;   // just above the blade, which would hide it
+            trail = flat.gameObject.AddComponent<TrailRenderer>();
+            trail.alignment = LineAlignment.TransformZ;
             trail.time = trailTime;
             trail.minVertexDistance = 0.08f;
-            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.45f * scale), new Keyframe(1f, 0f));
+            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.15f * scale), new Keyframe(1f, 0f));
             trail.startColor = trailColor;
             trail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -426,7 +437,7 @@ namespace ZombieWar.Skills
         /// M8: a faint ring on the blades' path, so the orbit reads as one weapon, not loose shards.
         void DrawOrbitPath(Vector3 p, float radius, bool on, bool gold)
         {
-            if (pathMaterial == null) return;
+            if (pathMaterial == null || !showOrbitPath) { if (_orbitPath != null) _orbitPath.enabled = false; return; }
             if (_orbitPath == null)
             {
                 var go = new GameObject("orbitPath");
@@ -470,7 +481,7 @@ namespace ZombieWar.Skills
                 var c = gold ? new Color(1f, 0.8f, 0.3f, 0.95f) : orbitTrailColor;
                 tr.startColor = c;
                 tr.endColor = new Color(c.r, c.g, c.b, 0f);
-                tr.time = gold ? 0.22f : 0.16f;
+                tr.time = gold ? 0.34f : 0.28f;   // long enough to show past the blade
             }
         }
 
@@ -543,28 +554,35 @@ namespace ZombieWar.Skills
         }
 
         /// <summary>
-        /// A velocity streak for fast projectiles. A TrailRenderer at 20-36 m/s and a low frame rate
-        /// kept its launch point alive for the whole flight — measured: an 8 m bar from the player
-        /// to the blade, which read as a laser. The streak is recomputed every frame from the
-        /// actual velocity, so its length is bounded whatever the frame rate.
-        /// </summary>
-        LineRenderer MakeStreak(Transform holder, Color color, float width)
+        /// A thin white trail on the boomerang's tip (the mesh point farthest from its centre), so
+        /// the spin draws a loop around the flight path. Flat, like the saws' trails.
+        TrailRenderer MakeTipTrail(Transform holder, float scale)
         {
-            var go = new GameObject("streak");
-            go.transform.SetParent(_root, false);
-            var lr = go.AddComponent<LineRenderer>();
-            lr.useWorldSpace = true;
-            lr.positionCount = 2;
-            lr.alignment = LineAlignment.View;
-            lr.numCapVertices = 2;
-            lr.widthCurve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, width));
-            lr.startColor = new Color(color.r, color.g, color.b, 0f);
-            lr.endColor = color;
-            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            lr.receiveShadows = false;
-            if (trailMaterial != null) lr.sharedMaterial = trailMaterial;
-            go.SetActive(false);
-            return lr;
+            Vector3 tip = new(0.5f * scale, 0f, 0f);
+            var mf = holder.GetComponentInChildren<MeshFilter>(true);
+            if (mf != null && mf.sharedMesh != null)
+            {
+                float best = 0f;
+                foreach (var v in mf.sharedMesh.vertices)
+                    if (v.sqrMagnitude > best) { best = v.sqrMagnitude; tip = holder.InverseTransformPoint(mf.transform.TransformPoint(v)); }
+                tip.y = 0f;
+            }
+            var go = new GameObject("tipTrail").transform;
+            go.SetParent(holder, false);
+            go.localPosition = tip;
+            go.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            go.localPosition += Vector3.up * 0.04f;
+            var tr = go.gameObject.AddComponent<TrailRenderer>();
+            tr.alignment = LineAlignment.TransformZ;
+            tr.time = 0.3f;
+            tr.minVertexDistance = 0.05f;
+            tr.widthCurve = new AnimationCurve(new Keyframe(0f, 0.07f * scale), new Keyframe(1f, 0f));
+            tr.startColor = new Color(1f, 1f, 1f, 0.9f);
+            tr.endColor = new Color(1f, 1f, 1f, 0f);
+            tr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            tr.receiveShadows = false;
+            if (trailMaterial != null) tr.sharedMaterial = trailMaterial;
+            return tr;
         }
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -633,6 +651,9 @@ namespace ZombieWar.Skills
         readonly Transform[] _rigMuzzle = new Transform[MaxDrones];
         readonly List<Transform>[] _rigRotors = new List<Transform>[MaxDrones];
         readonly Renderer[][] _rigGlow = new Renderer[MaxDrones][];
+        /// Merged drone model (one mesh): its second material is the rotor smear, tinted by rank.
+        readonly Renderer[] _rigRotorMat = new Renderer[MaxDrones];
+        static readonly int InkColorId = Shader.PropertyToID("_InkColor");
         readonly TrailRenderer[] _rigTrail = new TrailRenderer[MaxDrones];
         readonly int[] _burstLeft = new int[MaxDrones];
         int _rigColourKey = -1;
@@ -664,15 +685,28 @@ namespace ZombieWar.Skills
                 if (t.name.StartsWith("Rotor")) _rigRotors[i].Add(t);
             var glow = FindChild(go.transform, "Glow");
             _rigGlow[i] = glow != null ? glow.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
+            _rigRotorMat[i] = null;
+            if (glow == null)
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                    if (r.sharedMaterials.Length > 1) { _rigRotorMat[i] = r; break; }
             foreach (var r in go.GetComponentsInChildren<Renderer>(true))
             {
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
             }
-            var trail = go.AddComponent<TrailRenderer>();
-            trail.time = 0.25f;
-            trail.minVertexDistance = 0.06f;
-            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.18f), new Keyframe(1f, 0f));
+            // From the tail, above the hull: a trail from the pivot sat under the body and never showed.
+            var tail = new GameObject("trail").transform;
+            tail.SetParent(go.transform, false);
+            var mesh = go.GetComponentInChildren<MeshFilter>(true);
+            if (mesh != null && mesh.sharedMesh != null)
+            {
+                var bb = mesh.sharedMesh.bounds;
+                tail.position = mesh.transform.TransformPoint(new Vector3(bb.center.x, bb.max.y, bb.min.z));
+            }
+            var trail = tail.gameObject.AddComponent<TrailRenderer>();
+            trail.time = 0.6f;
+            trail.minVertexDistance = 0.05f;
+            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 0.07f), new Keyframe(1f, 0f));
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (trailMaterial != null) trail.sharedMaterial = trailMaterial;
             trail.emitting = false;
@@ -739,9 +773,10 @@ namespace ZombieWar.Skills
 
                 if (_rigTrail[i] != null)
                 {
-                    _rigTrail[i].emitting = squad;
-                    _rigTrail[i].startColor = new Color(colour.r, colour.g, colour.b, 0.8f);
-                    _rigTrail[i].endColor = new Color(colour.r, colour.g, colour.b, 0f);
+                    // Always a thin white trail that fades out (owner 2026-09-29).
+                    _rigTrail[i].emitting = true;
+                    _rigTrail[i].startColor = new Color(1f, 1f, 1f, 0.8f);
+                    _rigTrail[i].endColor = new Color(1f, 1f, 1f, 0f);
                 }
 
                 if (t < _droneNextShot[i] || target == null || target.IsDead) continue;
@@ -757,6 +792,12 @@ namespace ZombieWar.Skills
                 _mpb ??= new MaterialPropertyBlock();
                 for (int i = 0; i < MaxDrones; i++)
                 {
+                    if (_rigRotorMat[i] != null)
+                    {
+                        _mpb.Clear();
+                        _mpb.SetColor(InkColorId, colour);
+                        _rigRotorMat[i].SetPropertyBlock(_mpb, 1);
+                    }
                     if (_rigGlow[i] == null) continue;
                     foreach (var r in _rigGlow[i])
                     {
@@ -922,7 +963,7 @@ namespace ZombieWar.Skills
         struct Boomerang
         {
             public Transform visual;
-            public LineRenderer streak;
+            public TrailRenderer tipTrail;
             public Vector3 lastPos;
             public bool live;
             public Vector3 dir;
@@ -957,7 +998,7 @@ namespace ZombieWar.Skills
                 _boom[k].visual.position = from + Vector3.up * 0.9f;
                 _boom[k].lastPos = _boom[k].visual.position;
                 _boom[k].visual.gameObject.SetActive(true);
-                _boom[k].streak.gameObject.SetActive(true);
+                _boom[k].tipTrail?.Clear();
                 thrown++;
             }
             if (thrown > 0) Sfx("sfx.skill.boomerang.throw", from, 0.7f, 0.1f);
@@ -991,17 +1032,14 @@ namespace ZombieWar.Skills
                     {
                         b.live = false;
                         b.visual.gameObject.SetActive(false);
-                        b.streak.gameObject.SetActive(false);
                         continue;
                     }
                 }
                 b.visual.position = pos + Vector3.up * 0.9f;
                 Vector3 head = b.visual.position;
-                Vector3 tail = head - Vector3.ClampMagnitude((head - b.lastPos) / dt * 0.06f, 2.5f);
-                b.streak.SetPosition(0, tail);
-                b.streak.SetPosition(1, head);
                 b.lastPos = head;
-                b.visual.rotation = Quaternion.Euler(0f, b.age * 1440f, 0f);   // spin
+                // Two turns a second: fast enough to read as a boomerang, slow enough not to blur.
+                b.visual.rotation = Quaternion.Euler(0f, b.age * 720f, 0f);
 
                 if (Time.time < b.nextScan) continue;
                 b.nextScan = Time.time + 0.05f;
@@ -1364,7 +1402,7 @@ namespace ZombieWar.Skills
             {
                 _boom[k].live = false;
                 if (_boom[k].visual != null) _boom[k].visual.gameObject.SetActive(false);
-                if (_boom[k].streak != null) _boom[k].streak.gameObject.SetActive(false);
+                _boom[k].tipTrail?.Clear();
             }
         }
     }
