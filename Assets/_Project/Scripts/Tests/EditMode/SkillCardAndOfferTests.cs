@@ -30,7 +30,8 @@ namespace ZombieWar.Tests
         public void TheOwnerApprovedCardList_NothingMoreNothingLess()
         {
             var all = SkillCatalogDefs.All;
-            Assert.AreEqual(35, all.Count, "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26)");
+            Assert.AreEqual(47, all.Count,
+                "23 originals + 6 M8 powers + 6 evolutions (owner, 2026-09-26) + 10 universals and 2 Launcher cards (A3, owner 2026-09-29)");
 
             var expected = new[]
             {
@@ -42,6 +43,9 @@ namespace ZombieWar.Tests
                 "Execution Round", "Kinetic Shield",
                 "Orbit Blades", "Drone Buddy", "Frost Nova", "Fire Trail", "Boomerang", "Airstrike",
                 "Thunderstorm", "Carpet Bomb", "Buzzsaw Halo", "Absolute Zero", "Drone Squadron", "Reaper",
+                "Piercing Rounds", "Ricochet", "Split Shot", "Critical Rounds", "Blood Siphon",
+                "Acid Rounds", "Explosive Rounds", "Double Tap", "Guardian Angel", "Greed",
+                "Cluster Charge", "Napalm Shell",
             };
             CollectionAssert.AreEquivalent(expected, all.Select(d => d.displayName).ToArray(),
                 "no card may be added, removed or renamed without the owner");
@@ -53,10 +57,10 @@ namespace ZombieWar.Tests
             foreach (var d in SkillCatalogDefs.All.Where(d => d.layer == SkillLayer.Signature))
                 Assert.IsNotNull(d.family, $"{d.displayName} must name a family");
 
-            // Two per family, six families.
+            // Two per family, seven families (the Launcher joined in A3).
             var byFamily = SkillCatalogDefs.All.Where(d => d.layer == SkillLayer.Signature)
                 .GroupBy(d => d.family.Value).ToDictionary(g => g.Key, g => g.Count());
-            Assert.AreEqual(6, byFamily.Count);
+            Assert.AreEqual(7, byFamily.Count);
             foreach (var kv in byFamily) Assert.AreEqual(2, kv.Value, $"{kv.Key} should have exactly 2 signature cards");
         }
 

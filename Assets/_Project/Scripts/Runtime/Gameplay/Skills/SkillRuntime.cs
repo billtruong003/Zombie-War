@@ -309,7 +309,10 @@ namespace ZombieWar.Skills
             }
         }
 
-        public float CoinMultiplier => 1f + Value(SkillCatalogDefs.StatCoinGain);
+        public float CoinMultiplier => (1f + Value(SkillCatalogDefs.StatCoinGain)) * (1f + Value(SkillCatalogDefs.UniGreed));
+
+        /// <summary>Greed's price: enemies that spawn from now on have this much more health.</summary>
+        public float EnemyHealthMultiplier => Has(SkillCatalogDefs.UniGreed) ? 1f + Table(SkillCatalogDefs.UniGreed, "hp", 0f) : 1f;
 
         // ══════════════════════════════════════════════════════════ TICK
 
@@ -345,9 +348,13 @@ namespace ZombieWar.Skills
 
         public struct ShotPlan
         {
-            public int bonusPierce;      // Breach Round
+            public int bonusPierce;      // Breach Round + Piercing Rounds
+            public bool breach;          // this shot is a Breach Round (its tracer shows it)
+            public float pierceFalloff;  // damage kept per enemy passed (Piercing Rounds); 0 = the gun's own
             public bool shockwave;       // Shockwave Belt
             public float shockwaveAngle;
+            public int splitBullets;     // Split Shot: extra bullets fanned out with this shot
+            public bool doubleTap;       // Double Tap: one free extra bullet
         }
 
         /// <summary>OnShot. Drives the two shot-counter cards.</summary>
@@ -362,8 +369,26 @@ namespace ZombieWar.Skills
                 {
                     _shotsSinceBreach = 0;
                     plan.bonusPierce = Mathf.RoundToInt(Value(SkillCatalogDefs.ArBreach));
+                    plan.breach = true;
                 }
             }
+
+            // A3 gun modifiers: every gun, every family.
+            if (Has(SkillCatalogDefs.UniPierce))
+            {
+                plan.bonusPierce += Mathf.RoundToInt(Value(SkillCatalogDefs.UniPierce));
+                plan.pierceFalloff = Table(SkillCatalogDefs.UniPierce, "dmg", 0.9f);
+            }
+            if (Has(SkillCatalogDefs.UniSplit))
+            {
+                int every = Mathf.Max(2, Mathf.RoundToInt(Table(SkillCatalogDefs.UniSplit, "every", 5f)));
+                if (++_shotsSinceSplit >= every)
+                {
+                    _shotsSinceSplit = 0;
+                    plan.splitBullets = Mathf.RoundToInt(Value(SkillCatalogDefs.UniSplit));
+                }
+            }
+            if (Has(SkillCatalogDefs.UniDoubleTap) && Roll(Value(SkillCatalogDefs.UniDoubleTap))) plan.doubleTap = true;
 
             if (Has(SkillCatalogDefs.LmgShockwave) && EquippedFamily == WeaponClass.LMG)
             {
@@ -470,7 +495,7 @@ namespace ZombieWar.Skills
             {
                 tint = new Color(1f, 0.82f, 0.25f, 1f); thickness = 2.1f;                     // Quickstep: gold slug
             }
-            else if (plan.bonusPierce > 0)
+            else if (plan.breach)
             {
                 tint = new Color(1f, 0.42f, 0.15f, 1f); thickness = 1.7f;                     // Breach: armour-piercing
             }
@@ -520,7 +545,71 @@ namespace ZombieWar.Skills
         public void OnKill()
         {
             ProcOf(SkillCatalogDefs.AutoSoulBurst).timer.NotifyKill();
+
+            // Blood Siphon: every Nth kill heals 3% through the same queue as the Heal bonus card.
+            if (Has(SkillCatalogDefs.UniSiphon) && ++_siphonKills >= Mathf.Max(1, Mathf.RoundToInt(Value(SkillCatalogDefs.UniSiphon))))
+            {
+                _siphonKills = 0;
+                PendingHealFraction += SiphonHealFraction;
+                _siphonTriggered = true;
+            }
         }
+
+        // ══════════════════════════════════════════════════════════ A3 GUN MODIFIERS
+
+        public const float SiphonHealFraction = 0.03f;
+        public const float CritMultiplier = 2f;
+        public const int PoisonMaxStacks = 5;
+        public const float PoisonSeconds = 3f;
+        public const float ExplosiveRadius = 1.2f;
+        public const float ExplosiveShare = 0.5f;
+
+        int _shotsSinceSplit, _siphonKills;
+        bool _siphonTriggered, _guardianUsed;
+        uint _gunRng = 0x2545F491u;
+
+        /// Deterministic per runtime, so tests can count procs.
+        bool Roll(float chance)
+        {
+            if (chance <= 0f) return false;
+            _gunRng ^= _gunRng << 13; _gunRng ^= _gunRng >> 17; _gunRng ^= _gunRng << 5;
+            return (_gunRng % 10000u) < (uint)(chance * 10000f);
+        }
+
+        /// <summary>Critical Rounds: this hit is a crit (x<see cref="CritMultiplier"/>, gold number).</summary>
+        public bool RollCrit() => Has(SkillCatalogDefs.UniCrit) && Roll(Value(SkillCatalogDefs.UniCrit));
+
+        /// <summary>Explosive Rounds: this hit bursts.</summary>
+        public bool RollExplosive() => Has(SkillCatalogDefs.UniExplosive) && Roll(Value(SkillCatalogDefs.UniExplosive));
+
+        public int RicochetBounces => Has(SkillCatalogDefs.UniRicochet) ? Mathf.RoundToInt(Value(SkillCatalogDefs.UniRicochet)) : 0;
+        public float RicochetShare => Table(SkillCatalogDefs.UniRicochet, "dmg", 0.6f);
+
+        /// <summary>Acid Rounds: poison per stack per second, grown by Damage Up like every power.</summary>
+        public float AcidDps => !Has(SkillCatalogDefs.UniAcid) ? 0f
+            : Value(SkillCatalogDefs.UniAcid) * DamageMultiplier * Threat.ThreatDirector.EnemyStatMultiplier;
+
+        /// <summary>A Blood Siphon heal just triggered (for its effect); reading clears it.</summary>
+        public bool ConsumeSiphonTrigger() { bool v = _siphonTriggered; _siphonTriggered = false; return v; }
+
+        /// <summary>Guardian Angel: once per run, a hit that would kill heals instead.</summary>
+        public bool TryGuardianAngel(out float healFraction)
+        {
+            healFraction = 0f;
+            if (_guardianUsed || !Has(SkillCatalogDefs.UniGuardian)) return false;
+            _guardianUsed = true;
+            healFraction = Value(SkillCatalogDefs.UniGuardian);
+            return true;
+        }
+
+        public bool GuardianReady => Has(SkillCatalogDefs.UniGuardian) && !_guardianUsed;
+
+        // Launcher signatures (Rocket family in hand)
+        bool Launcher(string id) => Has(id) && EquippedFamily == WeaponClass.Rocket;
+        public int ClusterBomblets => Launcher(SkillCatalogDefs.RocketCluster) ? Mathf.RoundToInt(Value(SkillCatalogDefs.RocketCluster)) : 0;
+        public float ClusterShare => Table(SkillCatalogDefs.RocketCluster, "dmg", 0.4f);
+        public float NapalmSeconds => Launcher(SkillCatalogDefs.RocketNapalm) ? Value(SkillCatalogDefs.RocketNapalm) : 0f;
+        public float NapalmDpsShare => Table(SkillCatalogDefs.RocketNapalm, "dps", 0.3f);
 
         /// <summary>M8: Hunter's Mark is in play (card held, marksman rifle in hand) — drives its lock-on mark.</summary>
         public bool HuntersMarkActive => Has(SkillCatalogDefs.MarksmanHunters) && EquippedFamily == WeaponClass.Marksman;
@@ -611,7 +700,8 @@ namespace ZombieWar.Skills
             _trailDropsPending = 0;
             _bulletHose.Reset(); _heavyPressure.Reset(); _staticCharge.Reset(); _runGunMoving.Reset();
             _quickstepArmed = _kineticCharged = _staticFired = _shotWasQuickstep = false;
-            _shotsSinceBreach = _shotsSinceShockwave = 0;
+            _shotsSinceBreach = _shotsSinceShockwave = _shotsSinceSplit = _siphonKills = 0;
+            _siphonTriggered = _guardianUsed = false;
             PendingMaxHealthBonus = 0f;
             PendingHealFraction = 0f;
             PendingCoin = 0;

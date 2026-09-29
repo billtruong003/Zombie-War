@@ -57,6 +57,21 @@ namespace ZombieWar
             }
 
             _current = Mathf.Max(0f, _current - amount);
+
+            // A3 Guardian Angel: once per run a fatal hit heals instead, before any revive offer.
+            if (_current <= 0f && _isPlayer)
+            {
+                var skills = ZombieWar.Skills.SkillRuntime.Active;
+                if (skills != null && skills.TryGuardianAngel(out float heal))
+                {
+                    _current = Mathf.Max(1f, maxHealth * heal);
+                    _invulnerableUntil = Time.time + 1f;
+                    ZombieWar.Skills.SkillCombatDriver.Instance?.PlayGuardianAngel();
+                    OnHealed?.Invoke(_current);
+                    return;
+                }
+            }
+
             if (_current <= 0f && _isPlayer && ReviveGate != null && ReviveGate())
             {
                 _current = 0.01f;   // alive but held; nothing hits during the offer (time is frozen)

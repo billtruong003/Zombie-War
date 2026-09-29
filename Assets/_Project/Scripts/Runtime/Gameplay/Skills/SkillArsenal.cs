@@ -42,6 +42,8 @@ namespace ZombieWar.Skills
         readonly List<PowerModule> _modules = new(16);
         readonly Dictionary<string, PowerModule> _byProc = new(16);
         KineticShieldPower _shield;
+        PoisonPower _poison;
+        GuardianAngelPower _guardian;
 
         void Awake()
         {
@@ -70,6 +72,10 @@ namespace ZombieWar.Skills
             Register(new SelfBurstPower());
             Register(_shield = new KineticShieldPower());
             Register(new RunGunTrail());
+            Register(_poison = new PoisonPower());
+            Register(new GunModsPower());
+            Register(new LauncherPower());
+            Register(_guardian = new GuardianAngelPower());
         }
 
         void Register(PowerModule m)
@@ -113,6 +119,24 @@ namespace ZombieWar.Skills
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>
         public void OnShieldBlocked() => _shield?.Break();
+
+        /// <summary>A bullet from the player's gun landed (the weapon calls this after the damage).</summary>
+        public void OnGunHit(SkillRuntime run, ZombieBase enemy, Vector3 point, float damage, bool crit)
+        {
+            for (int i = 0; i < _modules.Count; i++) _modules[i].OnGunHit(run, enemy, point, damage, crit);
+        }
+
+        /// <summary>The grenade launcher's shell burst.</summary>
+        public void OnLauncherBlast(SkillRuntime run, Vector3 at, float radius, float damage)
+        {
+            for (int i = 0; i < _modules.Count; i++) _modules[i].OnLauncherBlast(run, at, radius, damage);
+        }
+
+        /// <summary>Guardian Angel turned a fatal hit into a heal.</summary>
+        public void OnGuardianAngel() => _guardian?.Save();
+
+        public void Poison(ZombieBase enemy, int stacks, float dpsPerStack, float seconds, string source) =>
+            _poison?.Apply(enemy, stacks, dpsPerStack, seconds, source);
 
         /// <summary>The moment an evolution is taken: a flash on the player.</summary>
         public void PlayEvolve()
@@ -437,9 +461,10 @@ namespace ZombieWar.Skills
         const float WispSeconds = 0.45f;
         readonly List<Wisp> _wisps = new(MaxWisps);
 
-        public void SoulWisp(Vector3 from)
+        public void SoulWisp(Vector3 from) => SoulWisp(from, library != null ? library.shared.soulWispFx : null);
+
+        public void SoulWisp(Vector3 from, ParticleSystem fx)
         {
-            var fx = library != null ? library.shared.soulWispFx : null;
             if (fx == null || _wisps.Count >= MaxWisps) return;
             from.y = 0.9f;
             var ps = FxPool.PlayFor(fx, from, Quaternion.identity, 0.45f, WispSeconds);

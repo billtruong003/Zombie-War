@@ -108,6 +108,22 @@ namespace ZombieWar.Skills
         public const string UniExecution = "uni.execution";
         public const string UniKinetic = "uni.kinetic";
 
+        // ── A3 gun modifiers and universals (owner-approved 2026-09-29, proposal v2 B1 + v3) ──
+        public const string UniPierce = "uni.pierce";
+        public const string UniRicochet = "uni.ricochet";
+        public const string UniSplit = "uni.split";
+        public const string UniCrit = "uni.crit";
+        public const string UniSiphon = "uni.siphon";
+        public const string UniAcid = "uni.acid";
+        public const string UniExplosive = "uni.explosive";
+        public const string UniDoubleTap = "uni.doubletap";
+        public const string UniGuardian = "uni.guardian";
+        public const string UniGreed = "uni.greed";
+
+        // ── A3 Launcher signatures (the Rocket family had none) ──
+        public const string RocketCluster = "rocket.cluster";
+        public const string RocketNapalm = "rocket.napalm";
+
         // ── M8 powers (owner-approved 2026-09-26) ──
         public const string AutoOrbit = "auto.orbit";
         public const string AutoDrone = "auto.drone";
@@ -176,6 +192,12 @@ namespace ZombieWar.Skills
                 tables: T(("every", R(10f, 9f, 8f, 7f, 6f)))),
             new(MarksmanLongshot,   "Longshot",        SkillLayer.Signature, WeaponClass.Marksman, R(0.10f, 0.125f, 0.15f, 0.175f, 0.20f), "SHOULD"),
             new(MarksmanHunters,    "Hunter's Mark",   SkillLayer.Signature, WeaponClass.Marksman, R(0.50f, 0.625f, 0.75f, 0.875f, 1.0f), "SHOULD"),
+            // value = bomblets thrown by each blast; dmg = a bomblet's share of the blast damage
+            new(RocketCluster,      "Cluster Charge",  SkillLayer.Signature, WeaponClass.Rocket, R(2f, 2f, 3f, 3f, 4f), "MUST",
+                tables: T(("dmg", R(0.35f, 0.40f, 0.40f, 0.45f, 0.45f)))),
+            // value = seconds the ground burns; dps = share of the blast damage burned per second
+            new(RocketNapalm,       "Napalm Shell",    SkillLayer.Signature, WeaponClass.Rocket, R(2f, 2.5f, 3f, 3.5f, 4f), "MUST",
+                tables: T(("dps", R(0.20f, 0.25f, 0.30f, 0.35f, 0.40f)))),
 
             // ── AUTONOMOUS (4) ──────────────────────────────────────────────────────────
             // value = enemies the chain jumps through
@@ -196,6 +218,32 @@ namespace ZombieWar.Skills
             // M8: 40/32/24 m recharged every ~5 s at run speed; a circling test bot then went eight
             // minutes without losing a single hit point (44 hits, all absorbed). value = metres per charge.
             new(UniKinetic,   "Kinetic Shield",  SkillLayer.Universal, null, R(60f, 56f, 52f, 48f, 44f), "SHOULD", 11),
+
+            // ── A3 UNIVERSAL (10) — what every bullet of the equipped gun does, and a few run rules ──
+            // value = extra enemies a bullet passes; dmg = damage kept per enemy passed
+            new(UniPierce,    "Piercing Rounds",  SkillLayer.Universal, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 1,
+                tables: T(("dmg", R(0.85f, 0.90f, 0.90f, 0.95f, 0.95f)))),
+            // value = bounces; dmg = damage of a bounce, share of the hit
+            new(UniRicochet,  "Ricochet",         SkillLayer.Universal, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 9,
+                tables: T(("dmg", R(0.50f, 0.60f, 0.60f, 0.70f, 0.70f)))),
+            // value = extra bullets in the fan; every = shots between fans
+            new(UniSplit,     "Split Shot",       SkillLayer.Universal, null, R(2f, 3f, 3f, 4f, 4f), "MUST", 6,
+                tables: T(("every", R(5f, 5f, 4f, 4f, 3f)))),
+            // value = chance of a x2 hit
+            new(UniCrit,      "Critical Rounds",  SkillLayer.Universal, null, R(0.08f, 0.11f, 0.14f, 0.17f, 0.20f), "MUST", 3),
+            // value = kills per 3% heal
+            new(UniSiphon,    "Blood Siphon",     SkillLayer.Universal, null, R(25f, 21f, 18f, 15f, 12f), "MUST", 15),
+            // value = poison damage per second per stack (stacks to 5, 3 s)
+            new(UniAcid,      "Acid Rounds",      SkillLayer.Universal, null, R(3f, 3.5f, 4f, 4.5f, 5f), "MUST", 19),
+            // value = chance a hit bursts (1.2 m, half the hit's damage)
+            new(UniExplosive, "Explosive Rounds", SkillLayer.Universal, null, R(0.20f, 0.25f, 0.30f, 0.35f, 0.40f), "MUST", 23),
+            // value = chance of a free extra bullet
+            new(UniDoubleTap, "Double Tap",       SkillLayer.Universal, null, R(0.10f, 0.15f, 0.20f, 0.25f, 0.30f), "MUST", 27),
+            // value = share of max health restored, once per run, by a hit that would kill
+            new(UniGuardian,  "Guardian Angel",   SkillLayer.Universal, null, R(0.30f, 0.40f, 0.50f, 0.60f, 0.70f), "MUST", 31),
+            // value = coin bonus; hp = extra health on enemies that spawn from now on
+            new(UniGreed,     "Greed",            SkillLayer.Universal, null, R(0.20f, 0.30f, 0.40f, 0.50f, 0.60f), "MUST", 34,
+                tables: T(("hp", R(0.10f, 0.15f, 0.20f, 0.25f, 0.30f)))),
 
             // ── M8 AUTONOMOUS (6) — value = the number each rank grows ─────────────────────
             new(AutoOrbit,     "Orbit Blades",  SkillLayer.Autonomous, null, R(2f, 2f, 3f, 3f, 4f), "MUST", 1, tables: Power()),            // blades

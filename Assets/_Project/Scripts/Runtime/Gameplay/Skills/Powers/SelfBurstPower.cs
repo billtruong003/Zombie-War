@@ -102,13 +102,18 @@ namespace ZombieWar.Skills.Powers
             }
             // Reaper: a kill can release a soul burst where the enemy fell. Budgeted to 4/s so a
             // chain of kills cannot cascade into a screen-wide wipe in one frame.
-            if (run.RollReaper() && now >= _reaperBudgetAt) { _reaperBudgetAt = now + 0.25f; Reap(run, at); }
+            // Deferred a beat: kills arrive from inside other powers' damage loops, and a query here
+            // would overwrite the shared candidate buffer those loops are still walking.
+            if (run.RollReaper() && now >= _reaperBudgetAt) { _reaperBudgetAt = now + 0.25f; Host.Delay(0.03f, _reap ??= Reap, at); }
         }
 
-        void Reap(SkillRuntime run, Vector3 at)
+        Action<Vector3> _reap;
+
+        void Reap(Vector3 at)
         {
             var a = Lib?.selfBurst;
-            if (a == null) return;
+            var run = SkillRuntime.Active;
+            if (a == null || run == null) return;
             float damage = run.PowerDamage(a.damage * 0.5f, SkillCatalogDefs.AutoSoulBurst);
             // A scythe sweep where the enemy fell — a violet crescent and a soul burst.
             at.y = 0f;

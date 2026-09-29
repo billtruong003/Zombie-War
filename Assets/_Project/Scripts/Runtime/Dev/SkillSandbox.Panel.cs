@@ -23,7 +23,7 @@ namespace ZombieWar.Dev
         static readonly (string label, WeaponClass family)[] Families =
         {
             ("PIS", WeaponClass.Sidearm), ("SMG", WeaponClass.SMG), ("AR", WeaponClass.AssaultRifle),
-            ("SG", WeaponClass.Shotgun), ("LMG", WeaponClass.LMG), ("MK", WeaponClass.Marksman),
+            ("SG", WeaponClass.Shotgun), ("LMG", WeaponClass.LMG), ("MK", WeaponClass.Marksman), ("GL", WeaponClass.Rocket),
         };
 
         private void OnGUI()

@@ -74,6 +74,31 @@ namespace ZombieWar.EditorTools
             return "built M_FX_ToonShockwave, NovaSoul_M8, NovaEmergency_M8, fire field";
         }
 
+        /// <summary>Phase A3: effects for the gun modifiers, poison, the Launcher cards and Guardian Angel,
+        /// all from the Epic Toon FX pack the rest of the skills use.</summary>
+        [MenuItem("HordeCall/Skills/Build A3 FX (gun mods)")]
+        public static string BuildA3()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            lib.gunMods.ricochetTracer = lib.drone.tracer;
+            lib.gunMods.ricochetSparkFx = Fx("Combat/Explosions (Misc)/SparkExplosion");
+            lib.gunMods.explosiveFx = Fx("Combat/Explosions/SmallExplosion/SmallExplosionFire");
+            lib.gunMods.critPopFx = Fx("Combat/Explosions/SparkleExplosion/SparkleExplosionYellow");   // the pack's text pops render as solid quads at small scale
+            lib.gunMods.siphonWispFx = Fx("Combat/Missiles/Soul/SoulMissileCrimson");
+            lib.gunMods.siphonHealFx = Fx("Interactive/Healing/HealOnceBurst");
+            lib.poison.tickFx = Fx("Combat/Explosions (Misc)/PoisonExplosionSoft");
+            lib.launcher.bombletFx = Fx("Combat/Explosions/SmallExplosion/SmallExplosionFire");
+            lib.launcher.bombletNativeRadius = 1f;
+            lib.launcher.napalmFx = lib.fireTrail.patchFx;
+            lib.launcher.napalmNativeRadius = 1.4f;   // smaller than the hit area: a launcher fires every second and the fields overlap
+            lib.guardian.healFx = Fx("Interactive/Healing/HealBig");
+            lib.guardian.novaFx = lib.shared.evolveFx;
+            EditorUtility.SetDirty(lib);
+            AssetDatabase.SaveAssets();
+            return "A3 FX bound";
+        }
+
         /// A prefab variant lying flat (the pack's novas are authored upright) with the named children
         /// switched off.
         static ParticleSystem Variant(string source, string path, params string[] hide)

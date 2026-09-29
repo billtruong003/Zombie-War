@@ -122,5 +122,8 @@ namespace ZombieWar.Skills
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>
         public void PlayShieldBreak() => _arsenal?.OnShieldBlocked();
+
+        /// <summary>Guardian Angel turned a fatal hit into a heal.</summary>
+        public void PlayGuardianAngel() => _arsenal?.OnGuardianAngel();
     }
 }

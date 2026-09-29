@@ -47,5 +47,9 @@ namespace ZombieWar.Skills.Powers
         public ChainPower.Assets chain = new();
         public SelfBurstPower.Assets selfBurst = new();
         public KineticShieldPower.Assets shield = new();
+        public PoisonPower.Assets poison = new();
+        public GunModsPower.Assets gunMods = new();
+        public LauncherPower.Assets launcher = new();
+        public GuardianAngelPower.Assets guardian = new();
     }
 }

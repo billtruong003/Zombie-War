@@ -233,7 +233,8 @@ namespace ZombieWar
             // threat scales health and damage; it is read ONCE here, so an enemy keeps the stats it
             // arrived with instead of growing mid-fight.
             _statScale = Threat.ThreatDirector.EnemyStatMultiplier;
-            _health.Configure(data.maxHealth * _statScale);
+            // Greed's price is paid by enemies that arrive after it is taken (read once, like threat).
+            _health.Configure(data.maxHealth * _statScale * (Skills.SkillRuntime.Active?.EnemyHealthMultiplier ?? 1f));
             _motor.ConfigureFromData(data.moveSpeed);
             _motor.ResetMotion();
             _state = State.Idle;
@@ -283,6 +284,11 @@ namespace ZombieWar
             if (IsInvulnerable) return;
             _health.TakeDamage(amount);
         }
+
+        bool _nextHitCrit;
+
+        /// <summary>The next damage number is a crit (gold). Set by the gun right before the hit lands.</summary>
+        public void MarkNextHitCrit() => _nextHitCrit = true;
 
         // Deliberately never calls gameObject.SetActive(false) here - that would fire OnDisable(),
         // which unregisters from ZombieManager, and an Inactive zombie would then never be found
@@ -618,7 +624,8 @@ namespace ZombieWar
 
             // Floating damage number at chest height. Covers every source (guns, bomb, contact)
             // since it hangs off Health.OnDamaged rather than any single weapon.
-            DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight);
+            DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight, _nextHitCrit);
+            _nextHitCrit = false;
 
             // The flash restarts on EVERY hit (unlike the react anim below) - that per-bullet
             // response is the whole point of it, and it's a shader value so it costs nothing.

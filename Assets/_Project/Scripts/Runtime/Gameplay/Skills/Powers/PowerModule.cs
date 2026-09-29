@@ -34,6 +34,10 @@ namespace ZombieWar.Skills.Powers
         void ScheduleBlast(in BlastSpec spec);
         /// A kill's soul flying into the player.
         void SoulWisp(Vector3 from);
+        /// The same flight with another effect (Blood Siphon's blood soul).
+        void SoulWisp(Vector3 from, ParticleSystem fx);
+        /// Poison stacks on an enemy (the shared status every poison card uses).
+        void Poison(ZombieBase enemy, int stacks, float dpsPerStack, float seconds, string source);
         MaterialPropertyBlock Block { get; }
     }
 
@@ -86,6 +90,12 @@ namespace ZombieWar.Skills.Powers
         public virtual void OnProc(SkillRuntime run, in SkillRuntime.PowerProc proc, Vector3 origin) { }
 
         public virtual void OnKill(SkillRuntime run, Vector3 at) { }
+
+        /// A bullet from the player's gun landed on an enemy (after its damage).
+        public virtual void OnGunHit(SkillRuntime run, ZombieBase enemy, Vector3 point, float damage, bool crit) { }
+
+        /// The grenade launcher's shell burst at <paramref name="at"/>.
+        public virtual void OnLauncherBlast(SkillRuntime run, Vector3 at, float radius, float damage) { }
 
         /// The run ended or restarted: drop every live effect.
         public virtual void ResetForRun() { }

@@ -459,6 +459,16 @@ namespace ZombieWar
                 FireRay(data, rayOrigin, muzzlePosition, rayRangeBonus, dir);
             }
 
+            // A3 Split Shot: extra bullets fanned out either side of the aim, 10° apart.
+            for (int k = 1; k <= _shotPlan.splitBullets; k++)
+            {
+                float angle = ((k + 1) / 2) * 10f * ((k & 1) == 1 ? 1f : -1f);
+                FireRay(data, rayOrigin, muzzlePosition, rayRangeBonus, Quaternion.Euler(0f, angle, 0f) * shotDirection);
+            }
+            // A3 Double Tap: one free extra bullet on (nearly) the same line.
+            if (_shotPlan.doubleTap)
+                FireRay(data, rayOrigin, muzzlePosition, rayRangeBonus, ScatterDirection(shotDirection, 3f));
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Third argument is the ACTUAL ray direction of this shot (the authoritative snapshot),
             // not the muzzle's visual forward - evidence probes must see what the physics saw.
@@ -549,7 +559,9 @@ namespace ZombieWar
             float rayRange = data.range + rayRangeBonus;
 
             // PiercingLine (sniper/railgun): bắn 1 đường xuyên hết zombie. Docs/Reference/Design/WEAPON_DESIGN.md §3.
-            if (data.fireMode == FireMode.PiercingLine)
+            // A3: Piercing Rounds and Breach Round make any bullet pierce (not a launcher shell,
+            // which bursts on the first thing it meets).
+            if (data.fireMode == FireMode.PiercingLine || (_shotPlan.bonusPierce > 0 && data.splashRadius <= 0f))
             {
                 FireRayPiercing(data, rayOrigin, muzzlePosition, rayRange, direction);
                 return;
@@ -578,9 +590,16 @@ namespace ZombieWar
 
         // Launcher blast: every other living enemy within splashRadius of where the shot landed takes
         // a share of the shot's damage (the direct hit already took the full hit in ApplyHit).
+        private bool _hitCrit;
+
         private void Splash(WeaponData data, Vector3 at, ZombieBase direct)
         {
             float damage = WeaponUpgradeMath.EffectiveDamage(data, _starLevel) * data.splashDamageFraction * (1f + _skinBonus);
+            // A3 Launcher signatures (Cluster Charge, Napalm Shell) build on this blast.
+            var run = ZombieWar.Skills.SkillRuntime.Active;
+            if (run != null)
+                ZombieWar.Skills.SkillArsenal.Instance?.OnLauncherBlast(run, at, data.splashRadius,
+                    WeaponUpgradeMath.EffectiveDamage(data, _starLevel) * (1f + _skinBonus) * run.DamageMultiplier);
             int found = ZombieWar.Skills.TargetQuery.GatherEnemies(at, data.splashRadius, hitMask);
             for (int i = 0; i < found; i++)
             {
@@ -622,6 +641,14 @@ namespace ZombieWar
                     damage = skills.ModifyHitDamage(damage, targetId, distance, healthFraction, Time.time);
                     skills.ApplyHitStatuses(targetId, Time.time);
 
+                    // A3 Critical Rounds: double damage and a gold number.
+                    if (skills.RollCrit())
+                    {
+                        damage *= ZombieWar.Skills.SkillRuntime.CritMultiplier;
+                        _hitCrit = true;
+                        hit.collider.GetComponentInParent<ZombieBase>()?.MarkNextHitCrit();
+                    }
+
                     // M7.2c legibility — a status the player cannot see is a status they will call a
                     // bug. Marks are WORLD-SPACE (owner owns every UI prefab, so nothing goes in the HUD).
                     var fx = ZombieWar.Skills.SkillFxDirector.Instance;
@@ -651,6 +678,13 @@ namespace ZombieWar
 
                 dmg.TakeDamage(damage);
                 ZombieWar.Skills.DamageLedger.Record(ZombieWar.Skills.DamageLedger.Gun, damage);
+
+                // A3 gun modifiers that act after the bullet lands (ricochet, burst, acid).
+                var run = ZombieWar.Skills.SkillRuntime.Active;
+                var enemy = hit.collider.GetComponentInParent<ZombieBase>();
+                if (run != null && enemy != null)
+                    ZombieWar.Skills.SkillArsenal.Instance?.OnGunHit(run, enemy, hit.point, damage, _hitCrit);
+                _hitCrit = false;
             }
             if (data.impactPrefab != null)
                 FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
@@ -783,11 +817,16 @@ namespace ZombieWar
                 // RaycastNonAlloc không sort => sort theo cự ly để falloff xuyên áp đúng thứ tự.
                 Array.Sort(_pierceBuf, 0, count, RaycastDistanceComparer.Instance);
 
-                // Breach Round adds pierce for this shot only. -1 (infinite pierce) stays infinite.
-                int effectivePierce = data.pierceCount < 0
-                    ? data.pierceCount
-                    : data.pierceCount + Mathf.Max(0, _shotPlan.bonusPierce);
+                // Breach Round / Piercing Rounds add pierce for this shot only. -1 (infinite) stays
+                // infinite. A gun that does not pierce on its own starts from 0 and keeps the card's
+                // damage per enemy passed; a piercing gun keeps its own falloff.
+                bool nativePierce = data.fireMode == FireMode.PiercingLine;
+                int basePierce = nativePierce ? data.pierceCount : 0;
+                int effectivePierce = basePierce < 0
+                    ? basePierce
+                    : basePierce + Mathf.Max(0, _shotPlan.bonusPierce);
                 int maxTargets = effectivePierce < 0 ? int.MaxValue : effectivePierce + 1;
+                float falloff = nativePierce || _shotPlan.pierceFalloff <= 0f ? data.pierceDamageFalloff : _shotPlan.pierceFalloff;
                 float dmgMult = 1f;
                 int hitTargets = 0;
 
@@ -808,7 +847,7 @@ namespace ZombieWar
                     if (!_pierceDamaged.Add(dmg)) continue;
 
                     ApplyHit(data, dmg, hit, rayOrigin, dmgMult);
-                    dmgMult *= data.pierceDamageFalloff;
+                    dmgMult *= falloff;
                     hitTargets++;
                     _lastPierceHits = hitTargets;
                     if (hitTargets >= maxTargets)

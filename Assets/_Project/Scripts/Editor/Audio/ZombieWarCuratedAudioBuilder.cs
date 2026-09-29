@@ -99,6 +99,7 @@ namespace ZombieWar.Editor.Audio
                 "sfx.skill.shield.break", "sfx.skill.frost", "sfx.skill.fire", "sfx.skill.drone",
                 "sfx.skill.airstrike.mark", "sfx.skill.airstrike.blast", "sfx.skill.evolve",
                 "sfx.skill.blade.hit", "sfx.skill.boomerang.throw",
+                "sfx.skill.crit", "sfx.skill.ricochet", "sfx.skill.poison",
                 "sfx.ui.tap", "sfx.ui.confirm", "sfx.ui.back", "sfx.ui.error", "sfx.ui.purchase",
                 "sfx.ui.levelup", "sfx.ui.card", "sfx.ui.equip",
             };
@@ -341,6 +342,10 @@ namespace ZombieWar.Editor.Audio
                 if (n is "etfx_explosion_chargeup") Add(plan, "sfx.skill.airstrike.mark");
                 if (n is "etfx_explosion_rocket" || n is "etfx_explosion_rocket2") Add(plan, "sfx.skill.airstrike.blast");
                 if (n is "etfx_explosion_magic2") Add(plan, "sfx.skill.evolve");
+                // A3 gun modifiers.
+                if (n is "etfx_impact_metal02") Add(plan, "sfx.skill.crit");
+                if (n is "etfx_impact_metal01" || n is "etfx_impact_metal03") Add(plan, "sfx.skill.ricochet");
+                if (n is "etfx_explosion_poisoncloud" || n is "etfx_explosion_acid") Add(plan, "sfx.skill.poison");
                 if (n.Contains("shoot_laser")) Add(plan, "sfx.weapon.laser.fire");
                 if (n.Contains("shoot_rocket")) Add(plan, "sfx.weapon.grenade.fire");
                 return;

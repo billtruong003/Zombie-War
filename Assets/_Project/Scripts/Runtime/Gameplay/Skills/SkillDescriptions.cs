@@ -42,11 +42,29 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.LmgShockwave: return $"Every {def.At("every", rank, 10f):0} shots, a shockwave cone";
                 case SkillCatalogDefs.MarksmanLongshot: return $"Up to +{v * 500f:0}% damage at long range";
                 case SkillCatalogDefs.MarksmanHunters: return $"First hit on each new target +{pct}";
+                case SkillCatalogDefs.RocketCluster:
+                    return $"Each blast throws {v:0} bomblets ({def.At("dmg", rank, 0.4f) * 100f:0}% damage)";
+                case SkillCatalogDefs.RocketNapalm:
+                    return $"Blasts leave fire for {v:0.#}s ({def.At("dps", rank, 0.3f) * 100f:0}% damage a second)";
 
                 // ── universals ──
                 case SkillCatalogDefs.UniExecution:
                     return $"+{pct} damage to enemies under {def.At("threshold", rank, 0.2f) * 100f:0.#}% health";
                 case SkillCatalogDefs.UniKinetic: return $"Every {v:0} m walked, a shield blocks one hit";
+                case SkillCatalogDefs.UniPierce:
+                    return $"Bullets pass through {v:0} more {(v > 1f ? "enemies" : "enemy")} ({(1f - def.At("dmg", rank, 0.9f)) * 100f:0}% less each)";
+                case SkillCatalogDefs.UniRicochet:
+                    return $"Hits bounce to {v:0} more {(v > 1f ? "enemies" : "enemy")} ({def.At("dmg", rank, 0.6f) * 100f:0}% damage)";
+                case SkillCatalogDefs.UniSplit:
+                    return $"Every {def.At("every", rank, 5f):0} shots, {v:0} extra bullets fan out";
+                case SkillCatalogDefs.UniCrit: return $"{pct} chance to deal double damage";
+                case SkillCatalogDefs.UniSiphon: return $"Every {v:0} kills, heal 3% of max health";
+                case SkillCatalogDefs.UniAcid: return $"Hits poison: {v:0.#} damage a second per stack (up to 5)";
+                case SkillCatalogDefs.UniExplosive: return $"{pct} of hits burst, hurting enemies nearby";
+                case SkillCatalogDefs.UniDoubleTap: return $"{pct} chance to fire a free extra bullet";
+                case SkillCatalogDefs.UniGuardian: return $"Once per run, a fatal hit heals you {pct} instead";
+                case SkillCatalogDefs.UniGreed:
+                    return $"Coins +{pct}, but new enemies have +{def.At("hp", rank, 0.1f) * 100f:0}% health";
 
                 // ── original powers ──
                 case SkillCatalogDefs.AutoChainLightning:
