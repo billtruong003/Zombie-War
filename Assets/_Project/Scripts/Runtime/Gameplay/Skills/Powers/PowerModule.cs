@@ -22,6 +22,8 @@ namespace ZombieWar.Skills.Powers
         bool OnScreen(Vector3 world);
         /// A flat soft disc on the ground that grows (or shrinks) and fades (or fades in).
         void ShowDisc(Vector3 at, float fromRadius, float toRadius, Color color, float duration, bool fadeIn, float ring = 0f);
+        /// A toon ground shockwave: a ring that races from one radius to another while it erodes away.
+        void Shockwave(Vector3 at, float fromRadius, float toRadius, Color color, float duration);
         /// A pooled flat quad with the disc material, for powers that draw their own ground ring.
         MeshRenderer MakeGroundRenderer(string name);
         /// Plays an effect later, in its authored orientation.
@@ -50,6 +52,8 @@ namespace ZombieWar.Skills.Powers
         public Vector3 flight;
         /// Ledger source (card id).
         public string source;
+        /// A2: a toon shockwave in this colour where it lands (alpha 0 = none).
+        public Color wave;
     }
 
     /// <summary>

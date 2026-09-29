@@ -91,6 +91,7 @@ namespace ZombieWar.Skills
             TickBlasts();
             TickDelayed();
             TickDiscs();
+            TickWaves();
             TickWisps(p);
             _shakeBudget = Mathf.Max(0f, _shakeBudget - dt * 1.5f);
         }
@@ -129,6 +130,7 @@ namespace ZombieWar.Skills
             _delayed.Clear();
             _wisps.Clear();
             for (int i = 0; i < _discs.Count; i++) { _discs[i].live = false; _discs[i].tr.gameObject.SetActive(false); }
+            for (int i = 0; i < _waves.Count; i++) { _waves[i].live = false; _waves[i].tr.gameObject.SetActive(false); }
             for (int i = 0; i < _modules.Count; i++) _modules[i].ResetForRun();
         }
 
@@ -228,6 +230,7 @@ namespace ZombieWar.Skills
             _groundQuad.vertices = new[] { new Vector3(-0.5f, 0f, -0.5f), new Vector3(-0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, 0.5f), new Vector3(0.5f, 0f, -0.5f) };
             _groundQuad.uv = new[] { new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f) };
             _groundQuad.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            _groundQuad.colors = new[] { Color.white, Color.white, Color.white, Color.white };   // ToonErode reads vertex colour
             _groundQuad.RecalculateBounds();
             return _groundQuad;
         }
@@ -291,6 +294,62 @@ namespace ZombieWar.Skills
                 float t = (now - d.bornAt) / d.duration;
                 if (t >= 1f) { d.live = false; d.tr.gameObject.SetActive(false); continue; }
                 DrawDisc(d, t);
+            }
+        }
+
+        // ── toon shockwaves (ToonErode ring on a ground quad; erosion and tint by property block)
+        sealed class Wave { public Transform tr; public MeshRenderer mr; public float bornAt, duration, from, to; public Color color; public bool live; }
+        const int MaxWaves = 12;
+        readonly List<Wave> _waves = new(MaxWaves);
+        static readonly int TintId = Shader.PropertyToID("_Tint");
+        static readonly int ErodeId = Shader.PropertyToID("_Erode");
+
+        public void Shockwave(Vector3 at, float fromRadius, float toRadius, Color color, float duration)
+        {
+            var mat = library != null ? library.shared.shockwaveMaterial : null;
+            if (mat == null || _root == null) return;
+            Wave w = null;
+            for (int i = 0; i < _waves.Count; i++) if (!_waves[i].live) { w = _waves[i]; break; }
+            if (w == null)
+            {
+                if (_waves.Count >= MaxWaves) return;          // full: drop the visual, never allocate mid-fight
+                var mr = MakeGroundRenderer("wave");
+                if (mr == null) return;
+                mr.sharedMaterial = mat;
+                w = new Wave { tr = mr.transform, mr = mr };
+                _waves.Add(w);
+            }
+            at.y = 0.06f;                                       // just above the discs
+            w.tr.position = at;
+            w.bornAt = Time.time; w.duration = Mathf.Max(0.05f, duration);
+            w.from = fromRadius; w.to = toRadius; w.color = color; w.live = true;
+            w.tr.gameObject.SetActive(true);
+            DrawWave(w, 0f);
+        }
+
+        void DrawWave(Wave w, float t)
+        {
+            // Fast out, then it slows as it eats itself away: the toon read of a blast wave.
+            float grow = 1f - (1f - t) * (1f - t) * (1f - t);
+            float r = Mathf.Lerp(w.from, w.to, grow);
+            w.tr.localScale = new Vector3(r * 2f, 1f, r * 2f);
+            var mpb = Block;
+            mpb.Clear();
+            mpb.SetColor(TintId, w.color);
+            mpb.SetFloat(ErodeId, Mathf.Lerp(0.05f, 1f, t * t));
+            w.mr.SetPropertyBlock(mpb);
+        }
+
+        void TickWaves()
+        {
+            float now = Time.time;
+            for (int i = 0; i < _waves.Count; i++)
+            {
+                var w = _waves[i];
+                if (!w.live) continue;
+                float t = (now - w.bornAt) / w.duration;
+                if (t >= 1f) { w.live = false; w.tr.gameObject.SetActive(false); continue; }
+                DrawWave(w, t);
             }
         }
 
@@ -365,6 +424,7 @@ namespace ZombieWar.Skills
                 Sfx(s.sfx, s.pos, 0.85f, 0.05f);
                 Shake(s.shake);
                 SkillFxDirector.Instance?.Pulse(s.pos, s.radius, new Color(1f, 0.62f, 0.2f, 0.85f), 0.3f, 0.18f);
+                if (s.wave.a > 0f) Shockwave(s.pos, s.radius * 0.3f, s.radius * 1.1f, s.wave, 0.45f);
 
                 int found = TargetQuery.GatherEnemies(s.pos, s.radius, EnemyMask);
                 for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.Candidate(c), s.damage, s.push, s.source);

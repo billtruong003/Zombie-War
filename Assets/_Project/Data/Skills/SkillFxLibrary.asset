@@ -24,6 +24,7 @@ MonoBehaviour:
     bombFallSeconds: 0.55
     soulWispFx: {fileID: 19833602, guid: 9cf1127ebf4098946b3c2dbba00c0917, type: 3}
     evolveFx: {fileID: 19848580, guid: 9e4fad450282ac64daeb20efbc2b9dfb, type: 3}
+    shockwaveMaterial: {fileID: 2100000, guid: 40d97d67e9396274eb50112c86ce9c7f, type: 2}
   orbit:
     bladeModel: {fileID: 8163591277018178320, guid: e59e1f3029d130f4b9ca3dc49a2187b3, type: 3}
     bladeMaterial: {fileID: 2100000, guid: cc0348986c7777b4eb8bdac2929b603d, type: 2}
@@ -52,8 +53,8 @@ MonoBehaviour:
     frozenTint: {r: 0.7, g: 0.95, b: 1, a: 0.85}
     freezeBurstFx: {fileID: 198820429938409348, guid: d24d32ae7abae424080a26044bf04ea0, type: 3}
   fireTrail:
-    patchFx: {fileID: 198392393371232998, guid: 0fc50fd3faa65944ea9ebd10b28a67ed, type: 3}
-    nativeRadius: 0.75
+    patchFx: {fileID: 19891750, guid: 1048366b48a8cc3429168da2a8224d7d, type: 3}
+    nativeRadius: 1
     radius: 1.1
     seconds: 2.2
     burnTint: {r: 1, g: 0.55, b: 0.15, a: 0.45}
@@ -75,6 +76,7 @@ MonoBehaviour:
   ordnance:
     blastFx: {fileID: 19848870, guid: a7c694f0877ea874fa57e033221095c3, type: 3}
     blastNativeRadius: 2
+    decalFx: {fileID: 198129106043806410, guid: 628d050c815a3a3448ce1dcdf0578f21, type: 3}
     delay: 0.45
     damage: 55
     scanRadius: 22
@@ -88,8 +90,11 @@ MonoBehaviour:
   selfBurst:
     soulBurstFx: {fileID: 19899408, guid: be4058b04abc8fe4ca81c721c18ecb4f, type: 3}
     soulBurstNativeRadius: 1.6
+    soulNovaFx: {fileID: 5653337010060633873, guid: 74d48cb7979063e4cb3e3fefeb749951, type: 3}
+    emergencyNovaFx: {fileID: 6145336653293739865, guid: a2260f913bf8c094ba423d88a1ca515e, type: 3}
+    novaNativeRadius: 6.5
     reaperFx: {fileID: 19879788, guid: 625165fb93553b14f8ed057807ed752a, type: 3}
-    emergencyFx: {fileID: 198807330505795946, guid: d9e3deb54a0d566438734cb2731448ea, type: 3}
+    emergencyFx: {fileID: 198757625781246262, guid: 448e8d4f82f29da4298ec7ad31825184, type: 3}
     emergencyNativeRadius: 1.5
     damage: 55
     scanRadius: 22

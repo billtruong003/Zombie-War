@@ -12,6 +12,8 @@ namespace ZombieWar.Skills.Powers
             [Tooltip("The blast on the chosen cluster.")]
             public ParticleSystem blastFx;
             public float blastNativeRadius = 1.5f;
+            [Tooltip("A2: the scorch left where the shell lands (the pack's grenade blast is mostly grey smoke).")]
+            public ParticleSystem decalFx;
             [Tooltip("Seconds between choosing the cluster and the shell landing (plus the fall).")]
             public float delay = 0.45f;
             public float damage = 34f;
@@ -44,7 +46,8 @@ namespace ZombieWar.Skills.Powers
             var spec = new BlastSpec
             {
                 radius = proc.radius, damage = damage, fx = a.blastFx, fxNativeRadius = a.blastNativeRadius,
-                sfx = "sfx.skill.blast", push = 1.2f, bomb = Lib.shared.bombFx,
+                sfx = "sfx.skill.blast", push = 1.2f, bomb = Lib.shared.bombFx, decal = a.decalFx,
+                wave = new Color(1f, 0.55f, 0.18f, 1f),
             };
             if (run.IsEvolved(SkillCatalogDefs.AutoOrdnance))
             {

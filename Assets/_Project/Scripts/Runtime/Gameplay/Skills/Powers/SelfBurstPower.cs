@@ -16,6 +16,12 @@ namespace ZombieWar.Skills.Powers
             [Tooltip("Soul Burst: self-centred burst, fired by kills.")]
             public ParticleSystem soulBurstFx;
             public float soulBurstNativeRadius = 1.6f;
+            [Tooltip("A2: the flat nova racing out to the edge of the burst (the Frost Nova family, green).")]
+            public ParticleSystem soulNovaFx;
+            [Tooltip("A2: the flat nova of Emergency Detonation (the same family, fire red).")]
+            public ParticleSystem emergencyNovaFx;
+            [Tooltip("Radius the nova prefabs cover at scale 1 (measured: the pack's ring reaches ~6.5 m).")]
+            public float novaNativeRadius = 6.5f;
             [Tooltip("Reaper: the burst where an enemy fell.")]
             public ParticleSystem reaperFx;
             [Tooltip("Emergency Detonation: must be unmistakable and clearly NOT Soul Burst.")]
@@ -31,6 +37,10 @@ namespace ZombieWar.Skills.Powers
         public override string[] ProcIds => Ids;
 
         int _burstsThisFrame, _frame = -1;
+        float _lastRadius;
+        Action<Vector3> _secondWave;
+
+        void SecondWave(Vector3 at) => Host.Shockwave(at, _lastRadius * 0.15f, _lastRadius * 0.8f, new Color(1f, 0.55f, 0.2f, 1f), 0.45f);
         float _reaperBudgetAt, _wispBudgetAt;
 
         public override void OnProc(SkillRuntime run, in SkillRuntime.PowerProc proc, Vector3 centre)
@@ -62,8 +72,20 @@ namespace ZombieWar.Skills.Powers
             // whole screen and the player. The ring below still shows the true area.
             var fx = emergency ? a.emergencyFx : a.soulBurstFx;
             PowerKit.PlaySized(fx, centre + Vector3.up * 0.1f, radius, emergency ? a.emergencyNativeRadius : a.soulBurstNativeRadius, ScaleCap);
+            // A2: a flat nova out to the edge of the hit area (Frost Nova's family, so every "burst out
+            // of the player" reads alike) and a toon shockwave on the ground at the same radius.
+            PowerKit.PlaySized(emergency ? a.emergencyNovaFx : a.soulNovaFx, centre + Vector3.up * 0.1f, radius, a.novaNativeRadius);
+            Host.Shockwave(centre, radius * 0.25f, radius, emergency ? new Color(1f, 0.28f, 0.16f, 1f) : new Color(0.4f, 1f, 0.55f, 1f),
+                           emergency ? 0.55f : 0.5f);
+            if (emergency)
+            {
+                // The panic button hits twice as hard on the eye: a second, later ring and a red band.
+                Host.Delay(0.12f, _secondWave ??= SecondWave, centre);
+                _lastRadius = radius;
+                Host.ShowDisc(centre, radius * 0.2f, radius, new Color(1f, 0.25f, 0.12f, 0.45f), 0.6f, false, 0.2f);
+            }
             Host.Sfx(emergency ? "sfx.skill.emergency" : "sfx.skill.soulburst", centre, 0.85f, 0.1f);
-            Host.Shake(emergency ? 0.4f : 0.1f);
+            Host.Shake(emergency ? 0.4f : 0.14f);
             SkillFxDirector.Instance?.Pulse(centre, radius,
                 emergency ? new Color(1f, 0.3f, 0.2f, 0.95f) : new Color(0.45f, 1f, 0.55f, 0.9f),
                 emergency ? 0.28f : 0.35f, emergency ? 0.3f : 0.22f);

@@ -32,6 +32,8 @@ namespace ZombieWar.Skills.Powers
             public ParticleSystem soulWispFx;
             [Tooltip("The moment an evolution is taken.")]
             public ParticleSystem evolveFx;
+            [Tooltip("ZombieWar/FX/ToonErode on the ring channel: toon ground shockwaves that eat themselves away.")]
+            public Material shockwaveMaterial;
         }
 
         public Shared shared = new();
