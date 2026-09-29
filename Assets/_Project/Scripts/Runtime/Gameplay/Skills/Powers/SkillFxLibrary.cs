@@ -51,5 +51,10 @@ namespace ZombieWar.Skills.Powers
         public GunModsPower.Assets gunMods = new();
         public LauncherPower.Assets launcher = new();
         public GuardianAngelPower.Assets guardian = new();
+        public ToxicCloudPower.Assets toxic = new();
+        public GravityWellPower.Assets gravity = new();
+        public ThornAuraPower.Assets thorns = new();
+        public SentryTurretPower.Assets turret = new();
+        public MeteorPower.Assets meteor = new();
     }
 }

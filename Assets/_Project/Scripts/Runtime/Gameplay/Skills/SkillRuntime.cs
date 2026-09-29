@@ -63,6 +63,10 @@ namespace ZombieWar.Skills
             new(Every(SkillCatalogDefs.AutoFrostNova, 5f), _ => 0, r => r.FrostRadius),
             new(Every(SkillCatalogDefs.AutoBoomerang, 2.5f), r => r.BoomerangCount, _ => 9f),
             new(Every(SkillCatalogDefs.AutoAirstrike, 8f), r => r.AirstrikeBlasts, r => 2.6f * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoToxic, 6f), _ => 1, r => r.Value(SkillCatalogDefs.AutoToxic) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoGravity, 9f), _ => 1, r => r.Value(SkillCatalogDefs.AutoGravity) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoTurret, 12f), r => r.TurretCount, _ => 0f),
+            new(Every(SkillCatalogDefs.AutoMeteor, 15f), _ => 1, r => r.Value(SkillCatalogDefs.AutoMeteor) * r.AreaMultiplier),
         };
 
         ProcPower ProcOf(string id)
@@ -196,6 +200,14 @@ namespace ZombieWar.Skills
         public const float FireTrailSpacing = 0.7f;   // M8: closer drops read as one strip of fire
 
         public int BoomerangCount => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoBoomerang));
+
+        // ── A5 powers
+        public const float TurretSeconds = 6f;
+        public const float ThornRadius = 1.7f;
+        public int TurretCount => RankOf(SkillCatalogDefs.AutoTurret) >= 5 ? 2 : 1;
+        public float TurretShotsPerSecond => Value(SkillCatalogDefs.AutoTurret);
+        public float ThornDps => Value(SkillCatalogDefs.AutoThorns);
+        public float ThornAuraRadius => Has(SkillCatalogDefs.AutoThorns) ? ThornRadius * AreaMultiplier : 0f;
         public int AirstrikeBlasts => Mathf.RoundToInt(Value(SkillCatalogDefs.AutoAirstrike));
         public int ChainTargets => IsEvolved(SkillCatalogDefs.AutoChainLightning) ? TargetQuery.MaxChain
             : Mathf.Min(TargetQuery.MaxChain, Mathf.RoundToInt(Value(SkillCatalogDefs.AutoChainLightning)));

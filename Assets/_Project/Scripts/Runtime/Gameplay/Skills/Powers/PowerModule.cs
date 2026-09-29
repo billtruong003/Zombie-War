@@ -58,6 +58,8 @@ namespace ZombieWar.Skills.Powers
         public string source;
         /// A2: a toon shockwave in this colour where it lands (alpha 0 = none).
         public Color wave;
+        /// A5: called where it lands, after its damage (burning ground, a cloud).
+        public System.Action<Vector3> landed;
     }
 
     /// <summary>

@@ -99,6 +99,34 @@ namespace ZombieWar.EditorTools
             return "A3 FX bound";
         }
 
+        /// <summary>Phase A5: effects and models for the five v2 powers.</summary>
+        [MenuItem("HordeCall/Skills/Build A5 FX (v2 powers)")]
+        public static string BuildA5()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            lib.toxic.canisterFx = Fx("Combat/Missiles/Gas/GasMissileGreen");
+            lib.toxic.burstFx = Fx("Combat/Explosions (Misc)/PoisonExplosion2");
+            lib.toxic.cloudFx = Fx("Environment/Smoke/StinkyCloud");
+            lib.gravity.vortexFx = Fx("Combat/Magic/Charge/MagicChargeBlue");
+            lib.gravity.vortexNativeRadius = 9f;   // the charge-up spreads its rays far past its core
+            lib.gravity.popFx = Fx("Combat/Explosions/NovaSmallExplosion/ExplosionNovaSmallPink");
+            lib.thorns.hitFx = Fx("Combat/Explosions/SpikyExplosion/SpikyExplosionPink");
+            lib.turret.model = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Skills/SK_Turret.prefab");
+            lib.turret.tracer = lib.drone.tracer;
+            lib.turret.muzzleFx = Fx("Combat/Muzzleflash/FireballMuzzle/MuzzleFireballFire");
+            lib.turret.hitFx = Fx("Combat/Explosions/BulletExplosion/BulletExplosionFire");
+            lib.turret.dropFx = Fx("Environment/Dust/DustDirtyPoof");
+            lib.meteor.fallFx = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Skills/SK_MeteorFall.prefab")?.GetComponent<ParticleSystem>();
+            lib.meteor.impactFx = Fx("Combat/Explosions/FireballRoundExplosion/ExplosionFireballFire");
+            lib.meteor.craterFx = lib.airstrike.decalFx;
+            lib.meteor.burnFx = lib.fireTrail.patchFx;
+            lib.meteor.burnNativeRadius = 1.3f;
+            EditorUtility.SetDirty(lib);
+            AssetDatabase.SaveAssets();
+            return "A5 FX bound";
+        }
+
         /// A prefab variant lying flat (the pack's novas are authored upright) with the named children
         /// switched off.
         static ParticleSystem Variant(string source, string path, params string[] hide)

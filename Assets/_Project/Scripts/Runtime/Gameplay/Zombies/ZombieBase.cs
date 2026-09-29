@@ -731,6 +731,21 @@ namespace ZombieWar
             _motor.ApplyKnockback(origin, distance, Mathf.Max(0.05f, knockbackDuration));
         }
 
+        /// <summary>
+        /// A5 Gravity Well: drags this enemy toward <paramref name="point"/> by up to
+        /// <paramref name="distance"/> (never past it). Same motor impulse as a push, aimed inward.
+        /// </summary>
+        public void ApplyPull(Vector3 point, float distance, float duration)
+        {
+            if (_state == State.Dead || distance <= 0f || !_motor.enabled) return;
+            Vector3 to = point - transform.position; to.y = 0f;
+            float d = to.magnitude;
+            if (d < 0.35f) return;
+            distance = Mathf.Min(distance, d - 0.3f);
+            // ApplyKnockback moves AWAY from its origin: put the origin on the far side.
+            _motor.ApplyKnockback(transform.position - to / d, distance, Mathf.Max(0.05f, duration));
+        }
+
         /// <summary>Stock hit reaction: a small shove away from the player on every fresh hit react.</summary>
         private void ApplyGenericKnockback()
         {

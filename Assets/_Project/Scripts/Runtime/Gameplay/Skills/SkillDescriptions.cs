@@ -90,6 +90,12 @@ namespace ZombieWar.Skills
                     return v <= 1f ? "A boomerang cuts out and back through every enemy"
                                    : $"{v:0} boomerangs cut out and back through every enemy";
                 case SkillCatalogDefs.AutoAirstrike: return $"Every {Cd(def, rank)}s, {v:0} bombs fall on enemies on screen";
+                case SkillCatalogDefs.AutoToxic: return $"Every {Cd(def, rank)}s, a poison cloud ({v:0.#} m) lands on the biggest crowd";
+                case SkillCatalogDefs.AutoGravity: return $"Every {Cd(def, rank)}s, a vortex pulls enemies in {v:0.#} m together, then bursts";
+                case SkillCatalogDefs.AutoThorns: return $"Enemies touching you take {v:0} damage a second and are knocked back";
+                case SkillCatalogDefs.AutoTurret:
+                    return $"Every {Cd(def, rank)}s, drop {(rank >= 5 ? "2 turrets" : "a turret")} that fire{(rank >= 5 ? "" : "s")} {v:0.#} shots a second for 6s";
+                case SkillCatalogDefs.AutoMeteor: return $"Every {Cd(def, rank)}s, a meteor ({v:0.#} m) crushes the biggest crowd and leaves fire";
 
                 // ── evolutions ──
                 case SkillCatalogDefs.EvoThunderstorm: return "Chain Lightning every 2s through 6 enemies, harder";

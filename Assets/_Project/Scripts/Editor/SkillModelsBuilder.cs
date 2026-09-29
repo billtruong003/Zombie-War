@@ -109,6 +109,50 @@ namespace ZombieWar.EditorTools
                 }
         }
 
+        /// <summary>Phase A5: the Sentry Turret and the Meteor (Review/M8/skill_models.blend, same palette).
+        /// The meteor becomes a falling effect: the pack's fire missile with the rock inside it, so the
+        /// shared blast system can fly it into its mark like a bomb.</summary>
+        [MenuItem("HordeCall/Skills/Build A5 Models (turret + meteor)")]
+        public static string BuildA5()
+        {
+            foreach (var n in new[] { "SK_Turret", "SK_Meteor" })
+                if (AssetImporter.GetAtPath(ModelDir + n + ".fbx") is ModelImporter m)
+                {
+                    m.materialImportMode = ModelImporterMaterialImportMode.None;
+                    m.importNormals = ModelImporterNormals.Import;
+                    m.importAnimation = false; m.animationType = ModelImporterAnimationType.None;
+                    m.SaveAndReimport();
+                }
+            var pal = AssetDatabase.LoadAssetAtPath<Material>(MatDir + "M_SK_Palette.mat");
+            if (pal == null) return "run Build Skill Models first (palette material)";
+            var turret = MakePrefab("SK_Turret", new[] { pal });
+            var rock = MakePrefab("SK_Meteor", new[] { pal });
+
+            const string fire = "Assets/ThirdParty/Epic Toon FX/Prefabs/Combat/Missiles/Fireball/FireballMissileFire.prefab";
+            var src = AssetDatabase.LoadAssetAtPath<GameObject>(fire);
+            if (src == null) return "missing " + fire;
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(src);
+            GameObject fall;
+            try
+            {
+                go.name = "SK_MeteorFall";
+                // The pack's missile flies along +Z; its own projectile scripts would fight the blast system.
+                foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true)) Object.DestroyImmediate(mb);
+                foreach (var col in go.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(col);
+                foreach (var rb in go.GetComponentsInChildren<Rigidbody>(true)) Object.DestroyImmediate(rb);
+                var inner = (GameObject)PrefabUtility.InstantiatePrefab(rock, go.transform);
+                inner.name = "Rock";
+                inner.transform.localPosition = Vector3.zero;
+                inner.transform.localScale = Vector3.one * 1.3f;
+                inner.AddComponent<ZombieWar.Skills.Powers.SpinWhileAlive>();
+                go.transform.localScale = Vector3.one * 1.4f;
+                fall = PrefabUtility.SaveAsPrefabAsset(go, PrefabDir + "SK_MeteorFall.prefab");
+            }
+            finally { Object.DestroyImmediate(go); }
+            AssetDatabase.SaveAssets();
+            return $"built {turret.name}, {rock.name}, {fall.name}";
+        }
+
         static Material LoadOrCreate(string path, System.Func<Material> make)
         {
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);

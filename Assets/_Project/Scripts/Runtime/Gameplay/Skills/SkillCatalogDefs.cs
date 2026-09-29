@@ -138,6 +138,13 @@ namespace ZombieWar.Skills
         public const string AutoBoomerang = "auto.boomerang";
         public const string AutoAirstrike = "auto.airstrike";
 
+        // ── A5 powers (owner-approved 2026-09-29, proposal v2 B2) ──
+        public const string AutoToxic = "auto.toxic";
+        public const string AutoGravity = "auto.gravity";
+        public const string AutoThorns = "auto.thorns";
+        public const string AutoTurret = "auto.turret";
+        public const string AutoMeteor = "auto.meteor";
+
         // ── M8 evolutions: power at max rank + partner card owned ──
         public const string EvoThunderstorm = "evo.thunderstorm";
         public const string EvoCarpetBomb = "evo.carpetbomb";
@@ -267,6 +274,18 @@ namespace ZombieWar.Skills
                 tables: Power(("cd", R(2.5f, 2.4f, 2.3f, 2.2f, 2.1f)))),
             new(AutoAirstrike, "Airstrike",     SkillLayer.Autonomous, null, R(3f, 3f, 4f, 4f, 5f), "MUST", 5,                               // blasts
                 tables: Power(("cd", R(8f, 7.75f, 7.5f, 7.25f, 7f)))),
+
+            // ── A5 AUTONOMOUS (5) ──────────────────────────────────────────────────────
+            new(AutoToxic,   "Toxic Cloud",   SkillLayer.Autonomous, null, R(2.6f, 2.8f, 3.0f, 3.2f, 3.4f), "MUST", 7,     // cloud radius m
+                tables: Power(("cd", R(6f, 5.75f, 5.5f, 5.25f, 5f)))),
+            new(AutoGravity, "Gravity Well",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 10,       // pull radius m
+                tables: Power(("cd", R(9f, 8.5f, 8f, 7.5f, 7f)))),
+            new(AutoThorns,  "Thorn Aura",    SkillLayer.Autonomous, null, R(10f, 13f, 16f, 19f, 22f), "MUST", 12,         // damage a second on touch
+                tables: Power()),
+            new(AutoTurret,  "Sentry Turret", SkillLayer.Autonomous, null, R(3f, 3.4f, 3.8f, 4.2f, 4.6f), "MUST", 20,      // shots a second
+                tables: Power(("cd", R(12f, 11.5f, 11f, 10.5f, 10f)))),
+            new(AutoMeteor,  "Meteor",        SkillLayer.Autonomous, null, R(3f, 3.2f, 3.4f, 3.6f, 3.8f), "MUST", 25,      // impact radius m
+                tables: Power(("cd", R(15f, 14f, 13f, 12f, 11f)))),
 
             // ── M8 EVOLUTIONS (6) — one rank, offered once the power is maxed and the partner owned ─
             new(EvoThunderstorm, "Thunderstorm",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoChainLightning, StatFireRate),

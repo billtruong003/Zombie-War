@@ -76,6 +76,11 @@ namespace ZombieWar.Skills
             Register(new GunModsPower());
             Register(new LauncherPower());
             Register(_guardian = new GuardianAngelPower());
+            Register(new ToxicCloudPower());
+            Register(new GravityWellPower());
+            Register(new ThornAuraPower());
+            Register(new SentryTurretPower());
+            Register(new MeteorPower());
         }
 
         void Register(PowerModule m)
@@ -450,8 +455,12 @@ namespace ZombieWar.Skills
                 SkillFxDirector.Instance?.Pulse(s.pos, s.radius, new Color(1f, 0.62f, 0.2f, 0.85f), 0.3f, 0.18f);
                 if (s.wave.a > 0f) Shockwave(s.pos, s.radius * 0.3f, s.radius * 1.1f, s.wave, 0.45f);
 
-                int found = TargetQuery.GatherEnemies(s.pos, s.radius, EnemyMask);
-                for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.Candidate(c), s.damage, s.push, s.source);
+                if (s.damage > 0f)
+                {
+                    int found = TargetQuery.GatherEnemies(s.pos, s.radius, EnemyMask);
+                    for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.Candidate(c), s.damage, s.push, s.source);
+                }
+                s.landed?.Invoke(s.pos);
             }
         }
 
