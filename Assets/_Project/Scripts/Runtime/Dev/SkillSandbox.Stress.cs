@@ -136,7 +136,8 @@ namespace ZombieWar.Dev
         /// Style review (phase A10): every power and evolution alone on the same swarming crowd,
         /// three frames each into one folder (Review/M8/sandbox/..._style/<id>_<n>.png), so the whole
         /// set can be laid side by side and checked for one visual language.
-        public IEnumerator StyleSheet(string label, IEnumerable<string> ids = null, int crowd = 18)
+        public IEnumerator StyleSheet(string label, IEnumerable<string> ids = null, int crowd = 18,
+                                      int frames = 3, float gap = 0.45f, float settle = 1.6f)
         {
             Stressing = true;
             _panelOpen = false;
@@ -152,11 +153,11 @@ namespace ZombieWar.Dev
                 ApplyBuild(new Dictionary<string, int>());
                 Max(id);
                 if (id == SkillCatalogDefs.AutoFireTrail) Walk = true; else StopWalk();
-                yield return new WaitForSeconds(1.6f);
-                for (int i = 0; i < 3; i++)
+                yield return new WaitForSeconds(settle);
+                for (int i = 0; i < frames; i++)
                 {
-                    yield return CaptureFrame(System.IO.Path.Combine(folder, $"{id}_{i}.png"), null);
-                    yield return new WaitForSeconds(0.45f);
+                    yield return CaptureFrame(System.IO.Path.Combine(folder, $"{id}_{i:00}.png"), null);
+                    yield return new WaitForSeconds(gap);
                 }
             }
             StopWalk();
