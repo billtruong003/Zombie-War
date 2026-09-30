@@ -5,59 +5,82 @@ using ZombieWar.Stations;
 namespace ZombieWar.EditorTools
 {
     /// <summary>
-    /// Phase A9: the sci-fi station bodies (Review/M8/skill_models.blend, shared palette, each with a
-    /// "_Spin" part that turns), the Supply Drop crate (KayKit, with the pack's violet flare), reward
-    /// icons, completion bursts and the Heal Zone field, gathered into Resources/StationArt.asset.
-    /// Idempotent: re-run after re-exporting from Blender.
+    /// Phase A9b (owner-picked concepts, 2026-09-30): the station bodies from
+    /// Review/M8/station_detail.blend — the hex pad (Relay, Cache and Beacon, told apart by the colour
+    /// of its lines), the crystal plinth (Heal Zone) and the drop pod (Supply Drop). Each model's
+    /// "*_Glow" / "*_Spin" children get the energy-line material; the body keeps the shared toon
+    /// palette. A StationVisual on the prefab drives colour, pulse, fill and the dissolve.
+    /// Gathered into Resources/StationArt.asset. Idempotent: re-run after re-exporting from Blender.
     /// </summary>
     public static class StationArtBuilder
     {
         const string ModelDir = "Assets/_Project/Art/Models/Stations/";
         const string PrefabDir = "Assets/_Project/Prefabs/Stations/";
+        const string MatDir = "Assets/_Project/Materials/Stations/";
         const string ArtPath = "Assets/_Project/Resources/StationArt.asset";
         const string Etfx = "Assets/ThirdParty/Epic Toon FX/Prefabs/";
-        const string Icons = "Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/ResourcesData/Sprites/Components/Icon_ItemIcons/256/";
-        const string Crate = "Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Prefabs/Containers_Crate_Small_Green.prefab";
+        const string Noise = "Assets/_Project/Art/Textures/FX/tex_fx_toon_pack.png";
+        const string Palette = "Assets/_Project/Art/Textures/T_HC_Palette.png";
 
-        [MenuItem("HordeCall/Stations/Build A9 Stations")]
+        [MenuItem("HordeCall/Stations/Build Stations")]
         public static string Build()
         {
             var pal = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Skills/M_SK_Palette.mat");
             if (pal == null) return "missing M_SK_Palette (run Build Skill Models)";
+            System.IO.Directory.CreateDirectory(MatDir);
+            var noise = AssetDatabase.LoadAssetAtPath<Texture2D>(Noise);
 
-            var relay = Body("ST_Relay", pal, 45f);
-            var cache = Body("ST_Cache", pal, 120f);
-            var beacon = Body("ST_Beacon", pal, 90f);
-            var heal = Body("ST_Heal", pal, 70f);
-            var drop = SupplyDrop();
+            var energy = LoadOrCreate(MatDir + "M_ST_Energy.mat", "HordeCall/Station/Energy");
+            energy.SetTexture("_NoiseTex", noise);
+            energy.SetFloat("_Intensity", 3.2f);   // measured in play: thinner or dimmer lines vanish on the lit metal
+            energy.SetFloat("_IdleLevel", 0.55f);
+            EditorUtility.SetDirty(energy);
+            var dissolve = LoadOrCreate(MatDir + "M_ST_Dissolve.mat", "HordeCall/Station/Dissolve");
+            dissolve.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(Palette));
+            dissolve.SetTexture("_NoiseTex", noise);
+            EditorUtility.SetDirty(dissolve);
+
+            var pad = Body("ST_HexPad", pal, energy);
+            var plinth = Body("ST_Plinth", pal, energy);
+            var pod = Body("ST_DropPod", pal, energy);
 
             var art = AssetDatabase.LoadAssetAtPath<StationArt>(ArtPath);
             if (art == null) { art = ScriptableObject.CreateInstance<StationArt>(); AssetDatabase.CreateAsset(art, ArtPath); }
             art.looks = new[]
             {
-                Look(StationKind.SignalRelay, relay, "ItemIcon_Star_Gold.Png", "Blue"),
-                Look(StationKind.SupplyCache, cache, "ItemIcon_Shop.Png", "Yellow"),
-                Look(StationKind.BossBeacon, beacon, "ItemIcon_Skull.png", "Red"),
-                Look(StationKind.SupplyDrop, drop, "ItemIcon_Gift_Green.Png", "Purple"),
-                Look(StationKind.HealZone, heal, "ItemIcon_Heart_Red.Png", "Green"),
+                Look(StationKind.SignalRelay, pad, "Blue"),
+                Look(StationKind.SupplyCache, pad, "Yellow"),
+                Look(StationKind.BossBeacon, pad, "Red"),
+                Look(StationKind.SupplyDrop, pod, "Purple"),
+                Look(StationKind.HealZone, plinth, "Green"),
             };
+            art.dissolveMaterial = dissolve;
             art.healFieldFx = Fx("Interactive/Healing/HealField2");
             art.healFieldNativeRadius = 4.4f;   // measured: its circle is ~9 m across at scale 1
             art.healTickFx = Fx("Interactive/Healing/HealOnce");
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
-            return "built ST_Relay, ST_Cache, ST_Beacon, ST_Heal, ST_SupplyDrop, StationArt";
+            return "built ST_HexPad, ST_Plinth, ST_DropPod, M_ST_Energy, M_ST_Dissolve, StationArt";
         }
 
-        static StationArt.Look Look(StationKind kind, GameObject body, string icon, string colour) => new()
+        static Material LoadOrCreate(string path, string shaderName)
+        {
+            var shader = Shader.Find(shaderName) ?? throw new System.Exception("shader not found: " + shaderName);
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null) { m = new Material(shader); AssetDatabase.CreateAsset(m, path); }
+            m.shader = shader;
+            return m;
+        }
+
+        static StationArt.Look Look(StationKind kind, GameObject body, string colour) => new()
         {
             kind = kind,
             body = body,
-            rewardIcon = AssetDatabase.LoadAssetAtPath<Sprite>(Icons + icon),
+            rewardIcon = null,   // A9b: no floating icon; the model and its colour say what it is
             completeFx = Fx("Interactive/Level Up/Cylinder/LevelupCylinder" + colour),
         };
 
-        static GameObject Body(string name, Material pal, float spinDegrees)
+        static GameObject Body(string name, Material pal, Material energy)
         {
             string fbx = ModelDir + name + ".fbx";
             if (AssetImporter.GetAtPath(fbx) is ModelImporter mi)
@@ -67,8 +90,7 @@ namespace ZombieWar.EditorTools
                 mi.importAnimation = false; mi.animationType = ModelImporterAnimationType.None;
                 mi.SaveAndReimport();
             }
-            var src = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
-            if (src == null) throw new System.Exception("missing " + fbx);
+            var src = AssetDatabase.LoadAssetAtPath<GameObject>(fbx) ?? throw new System.Exception("missing " + fbx);
             var go = (GameObject)PrefabUtility.InstantiatePrefab(src);
             try
             {
@@ -76,46 +98,18 @@ namespace ZombieWar.EditorTools
                 go.name = name;
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                 {
-                    r.sharedMaterials = new[] { pal };
-                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    bool glow = r.name.EndsWith("_Glow") || r.name.EndsWith("_Spin");
+                    int subs = r.TryGetComponent<MeshFilter>(out var mf) && mf.sharedMesh != null ? mf.sharedMesh.subMeshCount : 1;
+                    var mats = new Material[Mathf.Max(1, subs)];
+                    for (int i = 0; i < mats.Length; i++) mats[i] = glow ? energy : pal;
+                    r.sharedMaterials = mats;
+                    r.shadowCastingMode = glow ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
+                    r.receiveShadows = !glow;
                 }
-                foreach (var t in go.GetComponentsInChildren<Transform>(true))
-                    if (t.name.EndsWith("_Spin"))
-                    {
-                        var spin = t.gameObject.AddComponent<ZombieWar.Skills.Powers.SpinWhileAlive>();
-                        var so = new SerializedObject(spin);
-                        so.FindProperty("degreesPerSecond").vector3Value = new Vector3(0f, spinDegrees, 0f);
-                        so.ApplyModifiedPropertiesWithoutUndo();
-                    }
+                if (go.GetComponent<StationVisual>() == null) go.AddComponent<StationVisual>();
                 return PrefabUtility.SaveAsPrefabAsset(go, PrefabDir + name + ".prefab");
             }
             finally { Object.DestroyImmediate(go); }
-        }
-
-        /// The Supply Drop: KayKit's military crate with a violet signal flare burning on it.
-        static GameObject SupplyDrop()
-        {
-            var root = new GameObject("ST_SupplyDrop");
-            try
-            {
-                var crate = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Crate), root.transform);
-                PrefabUtility.UnpackPrefabInstance(crate, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-                crate.name = "Crate";
-                crate.transform.localScale = Vector3.one * 2f;   // ~1.6 m: a drop the player can spot
-                crate.transform.localRotation = Quaternion.Euler(0f, 20f, 0f);
-                foreach (var c in crate.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
-
-                var flare = (GameObject)PrefabUtility.InstantiatePrefab(Fx("Interactive/Flares/Soft/FlareSoftPurple").gameObject, root.transform);
-                PrefabUtility.UnpackPrefabInstance(flare, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-                flare.name = "Flare";
-                flare.transform.localPosition = new Vector3(0.45f, 1.05f, -0.2f);
-                foreach (var ps in flare.GetComponentsInChildren<ParticleSystem>(true))
-                {
-                    var m = ps.main; m.playOnAwake = true; m.loop = true;
-                }
-                return PrefabUtility.SaveAsPrefabAsset(root, PrefabDir + "ST_SupplyDrop.prefab");
-            }
-            finally { Object.DestroyImmediate(root); }
         }
 
         static ParticleSystem Fx(string rel)

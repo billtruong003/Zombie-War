@@ -120,19 +120,52 @@ namespace ZombieWar.Tests
         [Test]
         public void StationArtDressesEveryKind()
         {
+            // A9b: hex pad for Relay, Cache and Beacon (its lines take the type colour), crystal
+            // plinth for the Heal Zone, drop pod for the Supply Drop. No floating icons.
             var art = Resources.Load<StationArt>(StationArt.ResourcePath);
             Assert.IsNotNull(art);
+            Assert.IsNotNull(art.dissolveMaterial);
             foreach (var k in All)
             {
-                Assert.IsNotNull(art.BodyFor(k), k + " body");
-                Assert.IsNotNull(art.IconFor(k), k + " icon");
+                var body = art.BodyFor(k);
+                Assert.IsNotNull(body, k + " body");
+                Assert.IsNull(art.IconFor(k), k + " has no floating icon");
                 Assert.IsNotNull(art.CompleteFxFor(k), k + " burst");
-                Assert.Greater(art.BodyFor(k).GetComponentsInChildren<Renderer>(true).Length, 0, k + " renders");
+                Assert.IsNotNull(body.GetComponent<StationVisual>(), k + " visual");
+                bool glow = false;
+                foreach (var r in body.GetComponentsInChildren<Renderer>(true))
+                    if (r.name.EndsWith("_Glow")) { glow = true; Assert.AreEqual("HordeCall/Station/Energy", r.sharedMaterial.shader.name, k + " glow material"); }
+                Assert.IsTrue(glow, k + " has energy lines");
             }
-            foreach (var k in new[] { StationKind.SignalRelay, StationKind.SupplyCache, StationKind.BossBeacon, StationKind.HealZone })
-                Assert.IsNotNull(art.BodyFor(k).GetComponentInChildren<ZombieWar.Skills.Powers.SpinWhileAlive>(true), k + " has a turning part");
+            Assert.AreSame(art.BodyFor(StationKind.SignalRelay), art.BodyFor(StationKind.SupplyCache));
+            Assert.AreSame(art.BodyFor(StationKind.SignalRelay), art.BodyFor(StationKind.BossBeacon));
             Assert.IsNotNull(art.healFieldFx);
             Assert.IsNotNull(art.healTickFx);
+        }
+
+        [Test]
+        public void TheZoneIsTheModelsOwnLitBoundary()
+        {
+            Assert.AreEqual(2.9f, Station.RadiusFor(StationKind.SignalRelay), 1e-4);   // hex pad rim seam
+            Assert.AreEqual(2.45f, Station.RadiusFor(StationKind.SupplyDrop), 1e-4);   // pod ground ring
+            Assert.AreEqual(2.2f, Station.RadiusFor(StationKind.HealZone), 1e-4);      // plinth inner ring
+        }
+
+        [Test]
+        public void ASignalWithABodyHidesItsLinesAndFeedsTheBody()
+        {
+            _go = new GameObject("station");
+            var signal = _go.AddComponent<WorldSignal>();
+            signal.Configure(StationKind.SignalRelay, 2.9f);
+            var bodyGo = new GameObject("body"); bodyGo.transform.SetParent(_go.transform);
+            var visual = bodyGo.AddComponent<StationVisual>();
+            signal.UseVisual(visual);
+            foreach (var lr in _go.GetComponentsInChildren<LineRenderer>(true)) Assert.IsFalse(lr.enabled, lr.name + " hidden");
+            signal.SetProgress(0.4f);
+            Assert.AreEqual(0.4f, visual.Fill, 1e-4);
+            Assert.IsFalse(visual.Vanishing);
+            visual.Vanish();
+            Assert.IsTrue(visual.Vanishing, "paid out: it dissolves away");
         }
     }
 }

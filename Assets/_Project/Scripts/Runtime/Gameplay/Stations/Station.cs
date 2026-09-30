@@ -99,11 +99,18 @@ namespace ZombieWar.Stations
         /// <summary>The footprint per type: a beacon's arena is wide, a supply crate is opened up close.</summary>
         public static float RadiusFor(StationKind kind) => kind switch
         {
-            StationKind.BossBeacon => 4.5f,
-            StationKind.SupplyDrop => 2.5f,
-            StationKind.HealZone => 3.2f,
-            _ => 3.5f,
+            // A9b: the zone is the model's own lit boundary — the hex pad's rim seam, the pod's
+            // ground ring, the plinth's inner ring — so standing "on it" is exactly inside it.
+            StationKind.SupplyDrop => 2.45f,
+            StationKind.HealZone => 2.2f,
+            _ => 2.9f,
         };
+
+        /// <summary>The body has dissolved away; the director drops the object.</summary>
+        public bool Gone => Signal != null && Signal.Visual != null && Signal.Visual.Gone;
+
+        /// <summary>Paid out: the whole station dissolves and leaves the map (owner, 2026-09-30).</summary>
+        void Leave() => Signal?.Visual?.Vanish();
 
         public bool Healing => _healing;
 
@@ -176,6 +183,7 @@ namespace ZombieWar.Stations
             _finished = true;
             StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Cooldown, now, healCooldownSeconds);
             Signal.SetState(SignalState.Cooldown);
+            Leave();
         }
 
         void TickHold(float dt, bool inside, float required, bool bleeds)
@@ -235,11 +243,11 @@ namespace ZombieWar.Stations
             if (_priceLabel != null) return;
             var go = new GameObject("Price");
             go.transform.SetParent(transform, false);
-            go.transform.localPosition = new Vector3(0f, 3.2f, 0f);
+            go.transform.localPosition = new Vector3(0f, 1.4f, 0f);   // just above the pad, not up the screen
             go.transform.localRotation = Quaternion.Euler(55f, 0f, 0f);   // faces the top-down camera
             _priceLabel = go.AddComponent<TextMeshPro>();
             _priceLabel.alignment = TextAlignmentOptions.Center;
-            _priceLabel.fontSize = 8f;
+            _priceLabel.fontSize = 4.5f;
             _priceLabel.fontStyle = FontStyles.Bold;
             _priceLabel.outlineWidth = 0.25f;
             _priceLabel.outlineColor = Color.black;
@@ -312,6 +320,7 @@ namespace ZombieWar.Stations
             Signal.SetState(SignalState.Active);
             StationRegistry.SetStatus(Anchor.id, StationRegistry.Status.Active, Time.time);
             _finished = true;                       // the station's job is done; the BOSS is the event
+            Leave();                                // the beacon has called its boss and goes
         }
 
         void Complete()
@@ -355,6 +364,7 @@ namespace ZombieWar.Stations
             }
 
             StationDirector.ReportCompleted(Anchor.kind);
+            Leave();
         }
 
         /// <summary>Called when the director gives up on this station (player left the ring).</summary>

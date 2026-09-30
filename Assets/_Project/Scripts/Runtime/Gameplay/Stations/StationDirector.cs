@@ -39,6 +39,7 @@ namespace ZombieWar.Stations
         // Which beacon spawned which boss, so a kill can be routed back to the right anchor.
         readonly Dictionary<ZombieBase, long> _bossAnchors = new(4);
         readonly List<long> _scratch = new(8);
+        readonly List<long> _gone = new(4);
         static readonly StationAnchors.Anchor[] AnchorBuffer = new StationAnchors.Anchor[32];
 
         Transform _player;
@@ -117,7 +118,9 @@ namespace ZombieWar.Stations
             {
                 var a = AnchorBuffer[i];
                 if (_live.ContainsKey(a.id)) continue;
-                if (StationRegistry.StatusOf(a.id, Time.time) == StationRegistry.Status.Destroyed) continue;
+                // A9b: a station that has paid out dissolved away; only a fresh one (or a repeatable
+                // one whose cooldown has run out) materialises again.
+                if (StationRegistry.StatusOf(a.id, Time.time) != StationRegistry.Status.Untouched) continue;
                 Spawn(a);
             }
 
@@ -130,6 +133,7 @@ namespace ZombieWar.Stations
             {
                 var st = kv.Value;
                 if (st == null) { _scratch.Add(kv.Key); continue; }
+                if (st.Gone) { _gone.Add(kv.Key); continue; }
 
                 float sqr = (st.transform.position - p).sqrMagnitude;
                 if (sqr > releaseDistance * releaseDistance) { _scratch.Add(kv.Key); continue; }
@@ -138,6 +142,13 @@ namespace ZombieWar.Stations
                 if (!st.Finished && sqr < nearestSqr) { nearest = st; nearestSqr = sqr; }
             }
             for (int i = 0; i < _scratch.Count; i++) Release(_scratch[i]);
+            // A dissolved station just goes: its boss (a beacon's) and the encounter slot stay owned.
+            for (int i = 0; i < _gone.Count; i++)
+            {
+                if (_live.TryGetValue(_gone[i], out var st) && st != null) Destroy(st.gameObject);
+                _live.Remove(_gone[i]);
+            }
+            _gone.Clear();
 
             _compass?.Point(p, nearest);
         }
@@ -171,7 +182,13 @@ namespace ZombieWar.Stations
 
             var station = go.AddComponent<Station>();
             station.Bind(a, signal);
-            if (art != null) signal.SetRewardIcon(art.IconFor(a.kind));
+            var visual = go.GetComponentInChildren<StationVisual>();
+            if (visual != null)
+            {
+                visual.Init(WorldSignal.ColorOf(a.kind), art != null ? art.dissolveMaterial : null);
+                signal.UseVisual(visual);
+            }
+            else if (art != null) signal.SetRewardIcon(art.IconFor(a.kind));
             _live[a.id] = station;
             return station;
         }

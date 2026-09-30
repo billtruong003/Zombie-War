@@ -25,6 +25,10 @@ namespace ZombieWar.Stations
 
         public Look[] looks = Array.Empty<Look>();
 
+        [Header("A9b: energy lines and transitions")]
+        [Tooltip("HordeCall/Station/Dissolve: the body while it materialises or dissolves away.")]
+        public Material dissolveMaterial;
+
         [Header("Heal Zone")]
         public ParticleSystem healFieldFx;
         public float healFieldNativeRadius = 2f;

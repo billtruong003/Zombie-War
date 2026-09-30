@@ -69,6 +69,27 @@ namespace ZombieWar.Stations
 
         LineRenderer _ring, _beam, _progress, _icon;
         SpriteRenderer _reward;
+        StationVisual _visual;
+
+        /// <summary>
+        /// A9b: a station body that draws its own zone, progress and colour (StationVisual). The
+        /// line language steps aside entirely: no ring, no beam, no floating icon. The owner found the
+        /// tall beam and the billboard icon forced, pushed up the screen by the camera's perspective.
+        /// State and footprint (Contains) still live here.
+        /// </summary>
+        public void UseVisual(StationVisual visual)
+        {
+            _visual = visual;
+            bool lines = visual == null;
+            if (_ring != null) _ring.enabled = lines;
+            if (_beam != null) _beam.enabled = lines;
+            if (_progress != null) _progress.enabled = lines;
+            if (_icon != null) _icon.enabled = lines;
+            if (_reward != null) _reward.enabled = lines;
+            if (visual != null) { visual.SetFill(_progress01); visual.SetCharging(_state == SignalState.Active); }
+        }
+
+        public StationVisual Visual => _visual;
         StationKind _kind;
         SignalState _state = SignalState.Idle;
         float _progress01;
@@ -166,6 +187,7 @@ namespace ZombieWar.Stations
         /// </summary>
         public void SetPlayerInside(bool inside)
         {
+            if (_visual != null) return;
             if (_near == inside) return;
             _near = inside;
             if (_icon != null) _icon.enabled = !inside;
@@ -230,10 +252,11 @@ namespace ZombieWar.Stations
             if (_reward != null) _reward.color = state == SignalState.Cooldown ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
 
             _beam.SetPosition(1, new Vector3(0f, beamHeight * beamScale, 0f));
-            _beam.enabled = beamScale > 0.001f;
+            _beam.enabled = beamScale > 0.001f && _visual == null;
 
             // The closed progress ring IS the completion mark, so it stays on when done.
-            _progress.enabled = state == SignalState.Active || state == SignalState.Completed;
+            _progress.enabled = (state == SignalState.Active || state == SignalState.Completed) && _visual == null;
+            if (_visual != null) _visual.SetCharging(state == SignalState.Active);
             if (state == SignalState.Completed) SetProgress(1f);
         }
 
@@ -243,6 +266,7 @@ namespace ZombieWar.Stations
         public void SetProgress(float t)
         {
             _progress01 = Mathf.Clamp01(t);
+            if (_visual != null) _visual.SetFill(_progress01);
             if (_progress == null) return;
 
             int shown = Mathf.Max(1, Mathf.RoundToInt(ringSegments * _progress01));
