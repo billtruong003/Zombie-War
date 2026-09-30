@@ -307,13 +307,23 @@ namespace ZombieWar.UI
             return gun != null && weaponIcons != null ? weaponIcons.GetWeaponIcon(gun, true) : Named(rate.icon);
         }
 
+        static readonly string[] ReadableSlots = { "Chest", "Head", "Back", null };
+
         Sprite CostumeOfTier(WeaponTier tier, bool gachaOnly)
         {
             if (economy?.costumeItems == null || costumes == null) return null;
-            foreach (var c in economy.costumeItems)
-                if (c.rarity == tier && (!gachaOnly || c.source == AcquireSource.Gacha) && !string.IsNullOrEmpty(c.itemId)
-                    && costumes.TryFindByItemId(c.itemId, out _, out var part) && part.icon != null) return part.icon;
-            return null;
+            // A piece that reads as clothing at 60 px first (a top, a hat, a backpack); the first
+            // match used to be a bare body layer, shown as a T-posed mannequin (2026-09-30).
+            Sprite any = null;
+            foreach (var pass in ReadableSlots)
+                foreach (var c in economy.costumeItems)
+                    if (c.rarity == tier && (!gachaOnly || c.source == AcquireSource.Gacha) && !string.IsNullOrEmpty(c.itemId)
+                        && costumes.TryFindByItemId(c.itemId, out var slot, out var part) && part.icon != null)
+                    {
+                        if (pass == null) { any ??= part.icon; continue; }
+                        if (string.Equals(slot, pass, System.StringComparison.OrdinalIgnoreCase)) return part.icon;
+                    }
+            return any;
         }
 
         /// <summary>The prize's own icon: the gun, the outfit piece, the set, the skin on the

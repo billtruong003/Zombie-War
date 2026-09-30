@@ -123,7 +123,9 @@ namespace ZombieWar
             else
             {
                 float until = director.SecondsUntilSurgeNow(duration);
-                state = until <= hordeWarningSeconds ? Mathf.CeilToInt(until) : -1;
+                // A surge that is due but has not started (director paused, surge held back) used to
+                // leave "HORDE INCOMING 0" on screen for good: the warning is only for a real countdown.
+                state = director.isActiveAndEnabled && until > 0f && until <= hordeWarningSeconds ? Mathf.CeilToInt(until) : -1;
             }
             if (state == _shownBanner) return;
             _shownBanner = state;

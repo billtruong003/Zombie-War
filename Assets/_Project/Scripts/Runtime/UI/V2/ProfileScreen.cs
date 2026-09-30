@@ -160,10 +160,14 @@ namespace ZombieWar.UI
                 foreach (var slot in costumes.slots)
                 {
                     if (slot == null || slot.isBaseBody) continue;
-                    foreach (var p in slot.parts) { partTotal++; if (PlayerProfile.IsCostumeOwned(p.guid)) partOwned++; }
+                    // Ownership is keyed by item id (as the Studio and the shops record it), not the
+                    // asset guid: counting by guid always showed 0 owned (2026-09-30).
+                    foreach (var p in slot.parts) { partTotal++; if (PlayerProfile.IsCostumeOwned(p.itemId)) partOwned++; }
                 }
             SetCollection(1, partOwned, partTotal);
-            SetCollection(2, 0, Skins.WeaponSkins.Season1.Length);   // skins are sold from M10 Arsenal/Shop
+            int skinsOwned = 0;
+            foreach (var sk in Skins.WeaponSkins.Season1) if (PlayerProfile.IsSkinOwned(sk.id)) skinsOwned++;
+            SetCollection(2, skinsOwned, Skins.WeaponSkins.Season1.Length);
             // Every badge earned: the Legend frame.
             bool allBadges = true; foreach (var bd in Badges) if (!bd.earned()) { allBadges = false; break; }
             if (allBadges) PlayerProfile.AddFrame("frame.legend");

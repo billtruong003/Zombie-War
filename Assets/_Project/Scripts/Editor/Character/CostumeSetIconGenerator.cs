@@ -16,6 +16,9 @@ namespace ZombieWar.Editor
         const string OutputDir = "Assets/_Project/UI/Icons/Generated/CasualSets";
         const string AuditPath = "Assets/Screenshots/CasualMigration/costume_sets_audit.txt";
         const int Size = 512;
+        // The Studio preview's standing idle: sampled before each shot so the icons stop showing the
+        // bind pose (the T-pose the owner saw in the Shop boutique and the Gacha tile, 2026-09-30).
+        const string IdleClipPath = "Assets/ThirdParty/MalbersHumanAnims/Locomotion/Idle.anim";
 
         [MenuItem("ZombieWar/Costume/Generate Pro Casual Set Icons")]
         public static void Generate()
@@ -34,7 +37,10 @@ namespace ZombieWar.Editor
             {
                 inst = (GameObject)PrefabUtility.InstantiatePrefab(player);
                 inst.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                foreach (var a in inst.GetComponentsInChildren<Animator>(true)) a.enabled = false;
+                var animator = inst.GetComponentInChildren<Animator>(true);
+                var idle = AssetDatabase.LoadAssetAtPath<AnimationClip>(IdleClipPath);
+                foreach (var a in inst.GetComponentsInChildren<Animator>(true)) a.enabled = a == animator && idle != null;
+                if (idle != null) AnimationMode.StartAnimationMode();
                 var applier = inst.GetComponentInChildren<CharacterModularApplier>(true);
                 applier.SetCatalog(catalog); applier.EnsureBoneMap(true);
                 foreach (var r in inst.GetComponentsInChildren<Renderer>(true))
@@ -63,6 +69,12 @@ namespace ZombieWar.Editor
                     bool gloves = set.itemIds.Any(id => catalog.TryFindByItemId(id, out var slot, out _) && slot == "Hands");
                     bool shoes = set.itemIds.Any(id => catalog.TryFindByItemId(id, out var slot, out _) && slot == "Feet");
                     applier.ApplyCasualTechnicalBase(gloves, shoes);
+                    if (idle != null && animator != null)
+                    {
+                        AnimationMode.BeginSampling();
+                        AnimationMode.SampleAnimationClip(animator.gameObject, idle, 0.4f);
+                        AnimationMode.EndSampling();
+                    }
 
                     var renderers = inst.GetComponentsInChildren<SkinnedMeshRenderer>(true)
                         .Where(x => x.enabled && x.gameObject.activeInHierarchy
@@ -73,7 +85,17 @@ namespace ZombieWar.Editor
                     Vector3 target = b.center + Vector3.up * b.size.y * .03f;
                     float extent = Mathf.Max(b.size.y, b.size.x * 1.35f) * 1.13f;
                     float dist = extent * .5f / Mathf.Tan(cam.fieldOfView * .5f * Mathf.Deg2Rad);
-                    Vector3 dir = Quaternion.Euler(-2, 10, 0) * Vector3.forward;
+                    // The idle turns the body; frame the character from where it actually faces.
+                    Vector3 facing = Vector3.forward;
+                    var lArm = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftUpperArm) : null;
+                    var rArm = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightUpperArm) : null;
+                    if (lArm != null && rArm != null)
+                    {
+                        // Facing is square to the shoulder line (left to right, turned a quarter).
+                        var across = rArm.position - lArm.position; across.y = 0f;
+                        if (across.sqrMagnitude > 1e-4f) facing = Vector3.Cross(across.normalized, Vector3.up);
+                    }
+                    Vector3 dir = Quaternion.LookRotation(facing) * (Quaternion.Euler(-2, 10, 0) * Vector3.forward);
                     cam.transform.position = target + dir * dist;
                     cam.transform.LookAt(target);
                     string path = $"{OutputDir}/{set.setId}.png";
@@ -84,6 +106,7 @@ namespace ZombieWar.Editor
             }
             finally
             {
+                if (AnimationMode.InAnimationMode()) AnimationMode.StopAnimationMode();
                 if (rt != null) { rt.Release(); UnityEngine.Object.DestroyImmediate(rt); }
                 if (camGo != null) UnityEngine.Object.DestroyImmediate(camGo);
                 if (keyGo != null) UnityEngine.Object.DestroyImmediate(keyGo);

@@ -368,7 +368,8 @@ namespace ZombieWar.UI
             int total = 0, owned = 0;
             foreach (var d in ZombieWar.Skills.SkillCatalogDefs.All)
             {
-                if (d.IsEvolution || d.layer == ZombieWar.Skills.SkillLayer.Signature) continue;
+                // Bonus cards (heal, coin bag…) are always there: they are not part of the collection.
+                if (d.IsEvolution || d.IsOverflow || d.layer == ZombieWar.Skills.SkillLayer.Signature) continue;
                 total++;
                 if (d.unlockLevel <= lv) owned++;
             }

@@ -22,6 +22,7 @@ namespace ZombieWar
         [SerializeField] private SkillIconSet icons;
 
         static readonly Color EvolutionGold = new(1f, 0.8f, 0.2f);
+        const int MaxChips = 4;
         readonly List<SkillDef> _powers = new(8);
         readonly List<SkillDef> _passives = new(8);
         float _nextRefresh;
@@ -47,6 +48,8 @@ namespace ZombieWar
                     if (def == null || kv.Value <= 0 || def.IsEvolution) continue;
                     (def.layer == SkillLayer.Autonomous ? _powers : _passives).Add(def);
                 }
+                // Stats first: they are the four fixed slots. Gun cards follow.
+                _passives.Sort((a, b) => (a.layer == SkillLayer.Stat ? 0 : 1).CompareTo(b.layer == SkillLayer.Stat ? 0 : 1));
             }
 
             if (slots != null)
@@ -56,10 +59,12 @@ namespace ZombieWar
                     if (i >= _powers.Count) { slots[i].ShowEmpty(); continue; }
                     var def = _powers[i];
                     bool evolved = run.IsEvolved(def.id);
-                    slots[i].Show(icons != null ? icons.For(def.id) : null, SkillIconSet.Abbreviation(def.displayName),
+                    // An evolved slot shows the evolution (Buzzsaw Halo), not the power it came from.
+                    var shown = evolved ? SkillCatalogDefs.EvolutionOf(def.id) ?? def : def;
+                    slots[i].Show(icons != null ? icons.For(shown.id) : null, SkillIconSet.Abbreviation(shown.displayName),
                         evolved ? EvolutionGold : SkillDescriptions.LayerColor(def),
                         evolved ? "EVO" : run.RankOf(def.id).ToString(),
-                        1f - run.ReadinessOf(def.id));
+                        1f - run.ReadinessOf(def.id), evolved);
                 }
 
             if (passivePips != null)
@@ -67,9 +72,21 @@ namespace ZombieWar
                 {
                     var pip = passivePips[i];
                     if (pip == null) continue;
-                    bool on = i < _passives.Count;
+                    // The row is as wide as the skill bar: four chips fit. With more cards the fourth
+                    // chip says how many more, instead of chips running off the screen (2026-09-30).
+                    int visible = _passives.Count > MaxChips ? MaxChips - 1 : _passives.Count;
+                    bool more = _passives.Count > MaxChips && i == MaxChips - 1;
+                    bool on = i < visible || more;
                     if (pip.transform.parent.gameObject.activeSelf != on) pip.transform.parent.gameObject.SetActive(on);
                     if (!on) continue;
+                    if (more)
+                    {
+                        PipIcon(pip, false);
+                        pip.text = "+" + (_passives.Count - visible);
+                        pip.alignment = TextAlignmentOptions.Center;
+                        pip.color = Color.white;
+                        continue;
+                    }
                     var def = _passives[i];
                     var sprite = icons != null ? icons.For(def.id) : null;
                     var icon = PipIcon(pip, sprite != null);

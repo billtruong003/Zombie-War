@@ -224,6 +224,24 @@ namespace ZombieWar.UI
             GameFlow.StartGameplay();
         }
 
+        /// The strip's gacha card names the live event banner. It was the builder's placeholder
+        /// ("Inferno") while the Gacha ran Neon Nights (2026-09-30).
+        void RefreshGachaStrip(int today)
+        {
+            if (stripGacha == null) return;
+            GachaBanners.Banner evt = null;
+            foreach (var b in GachaBanners.All) if (b.kind == GachaBanners.Kind.Event) { evt = b; break; }
+            if (evt == null) return;
+            var title = stripGacha.transform.Find("Title")?.GetComponent<TMP_Text>();
+            var sub = stripGacha.transform.Find("Sub")?.GetComponent<TMP_Text>();
+            if (title != null) title.text = System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(evt.title.ToLowerInvariant());
+            if (sub != null)
+            {
+                int days = GachaBanners.DaysLeft(evt, today);
+                sub.text = days > 0 ? $"EVENT · {days}D" : "EVENT BANNER";
+            }
+        }
+
         void Open(UIScreen s)
         {
             if (s == null) { Toast.Show("Coming soon"); return; }
@@ -270,6 +288,7 @@ namespace ZombieWar.UI
             RefreshNextBuy();
             Set(stripDailyText, DailyRewards.CanStamp(today) ? $"Stamp day {DailyRewards.Stamps + 1}" : DailyRewards.Stamps >= DailyRewards.CardDays ? "Card complete" : "Back tomorrow");
             Set(stripPassText, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass) ? $"PASS LV {PassLevel()}" : "LV 2 UNLOCKS");
+            RefreshGachaStrip(today);
 
             bool firstRun = FirstRunPending;
             if (playHint != null) playHint.SetActive(firstRun);

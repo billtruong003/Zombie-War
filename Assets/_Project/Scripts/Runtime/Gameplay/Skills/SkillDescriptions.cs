@@ -90,16 +90,16 @@ namespace ZombieWar.Skills
                     return v <= 1f ? "A boomerang cuts out and back through every enemy"
                                    : $"{v:0} boomerangs cut out and back through every enemy";
                 case SkillCatalogDefs.AutoAirstrike: return $"Every {Cd(def, rank)}s, {v:0} bombs fall on enemies on screen";
-                case SkillCatalogDefs.AutoToxic: return $"Every {Cd(def, rank)}s, a poison cloud ({v:0.#} m) lands on the biggest crowd";
-                case SkillCatalogDefs.AutoGravity: return $"Every {Cd(def, rank)}s, a vortex pulls enemies in {v:0.#} m together, then bursts";
-                case SkillCatalogDefs.AutoThorns: return $"Enemies touching you take {v:0} damage a second and are knocked back";
+                case SkillCatalogDefs.AutoToxic: return $"Every {Cd(def, rank)}s, a {v:0.#} m poison cloud lands on the crowd";
+                case SkillCatalogDefs.AutoGravity: return $"Every {Cd(def, rank)}s, a {v:0.#} m vortex pulls the crowd in, then bursts";
+                case SkillCatalogDefs.AutoThorns: return $"Touching enemies take {v:0} damage a second and fly back";
                 case SkillCatalogDefs.AutoTurret:
-                    return $"Every {Cd(def, rank)}s, drop {(rank >= 5 ? "2 turrets" : "a turret")} that fire{(rank >= 5 ? "" : "s")} {v:0.#} shots a second for 6s";
-                case SkillCatalogDefs.AutoMeteor: return $"Every {Cd(def, rank)}s, a meteor ({v:0.#} m) crushes the biggest crowd and leaves fire";
+                    return $"Every {Cd(def, rank)}s, {(rank >= 5 ? "2 turrets" : "a turret")}: {v:0.#} shots a second for 6s";
+                case SkillCatalogDefs.AutoMeteor: return $"Every {Cd(def, rank)}s, a {v:0.#} m meteor crushes the crowd and burns";
                 case SkillCatalogDefs.AutoStormCloud: return $"A storm cloud follows you and strikes an enemy every {v:0.##}s";
                 case SkillCatalogDefs.AutoIceShards: return $"Every {Cd(def, rank)}s, {v:0} ice shards burst out, piercing and slowing";
                 case SkillCatalogDefs.AutoFlameBurst: return $"Every {Cd(def, rank)}s, a fire cone ({v:0.#} m) burns the nearest crowd";
-                case SkillCatalogDefs.AutoLandmine: return $"Every {v:0.#} m walked, drop a mine that blows up under enemies";
+                case SkillCatalogDefs.AutoLandmine: return $"Every {v:0.#} m walked, drop a mine that blasts enemies";
                 case SkillCatalogDefs.AutoAxe:
                     return v <= 1f ? $"Every {Cd(def, rank)}s, hurl a spinning axe through the crowd"
                                    : $"Every {Cd(def, rank)}s, hurl {v:0} spinning axes through the crowd";
@@ -119,7 +119,7 @@ namespace ZombieWar.Skills
                 case SkillCatalogDefs.EvoSingularity: return "A vortex that never closes drifts through the horde";
                 case SkillCatalogDefs.EvoFortress: return "Two turrets that fire rockets";
                 case SkillCatalogDefs.EvoMeteorStorm: return "Five meteors fall in a line";
-                case SkillCatalogDefs.EvoIronMaiden: return "Thorns hit twice as hard; a broken shield throws a spike wave";
+                case SkillCatalogDefs.EvoIronMaiden: return "Thorns hit twice as hard; a broken shield fires spikes";
                 case SkillCatalogDefs.EvoSupercell: return "A bigger storm: every strike is critical and chains to 3";
                 case SkillCatalogDefs.EvoBlizzard: return "Ice shards circle you nonstop and freeze what they cut";
                 case SkillCatalogDefs.EvoDragonBreath: return "A fire jet sweeps around you without stopping";

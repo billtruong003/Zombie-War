@@ -15,7 +15,12 @@ namespace ZombieWar
         [SerializeField] private TMP_Text rank;
         [SerializeField] private GameObject content;
 
-        public void Show(Sprite sprite, string abbreviation, Color color, string rankText, float cooldown01)
+        // The rank pill is cream; its number was cream too and could not be read (2026-09-30).
+        static readonly Color PillInk = new(0.12f, 0.14f, 0.19f, 1f);
+        static readonly Color PillCream = new(0.96f, 0.95f, 0.92f, 1f);
+        Image _pill;
+
+        public void Show(Sprite sprite, string abbreviation, Color color, string rankText, float cooldown01, bool evolved = false)
         {
             if (content != null && !content.activeSelf) content.SetActive(true);
             if (icon != null)
@@ -31,7 +36,13 @@ namespace ZombieWar
             }
             if (border != null) border.color = color;
             if (cooldown != null) cooldown.fillAmount = Mathf.Clamp01(cooldown01);
-            if (rank != null) rank.text = rankText;
+            if (rank != null)
+            {
+                rank.text = rankText;
+                rank.color = PillInk;
+                if (_pill == null) _pill = rank.transform.parent != null ? rank.transform.parent.GetComponent<Image>() : null;
+                if (_pill != null) _pill.color = evolved ? color : PillCream;   // an evolution's pill is gold
+            }
         }
 
         public void ShowEmpty()
