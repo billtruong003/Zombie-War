@@ -84,7 +84,6 @@ namespace ZombieWar.Skills.Powers
         {
             var a = Lib.chain;
             FxPool.Play(a.skyStrikeFx, at, PowerKit.Flat(a.skyStrikeFx), 1.3f);
-            SkillFxDirector.Instance?.Pulse(at, 1.6f, new Color(0.62f, 0.45f, 1f, 0.9f), 0.28f, 0.2f);
             Host.Sfx("sfx.skill.thunderstorm", at, 0.8f, 0.3f);
             Host.Shake(0.08f);
         }

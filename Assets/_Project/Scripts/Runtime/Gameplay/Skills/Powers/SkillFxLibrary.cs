@@ -32,8 +32,28 @@ namespace ZombieWar.Skills.Powers
             public ParticleSystem soulWispFx;
             [Tooltip("The moment an evolution is taken.")]
             public ParticleSystem evolveFx;
-            [Tooltip("ZombieWar/FX/ToonErode on the ring channel: toon ground shockwaves that eat themselves away.")]
+            [Tooltip("ZombieWar/FX/ToonErode on the ring channel: the Thorn Aura ring (persistent auras only).")]
             public Material shockwaveMaterial;
+
+            [Header("Epic Toon FX for every transient ring, telegraph and cone (VFX audit 30/09)")]
+            [Tooltip("Flat Epic Toon novas: an expanding ground ring picks one by the colour it is given.")]
+            public Nova novaFire = new(), novaBlue = new(), novaGreen = new(), novaPink = new(), novaYellow = new(), novaFrost = new();
+            [Tooltip("Where a delayed blast will land (Airstrike, Ordnance, Carpet Bomb): Magic Circle Simple.")]
+            public Nova telegraph = new();
+            [Tooltip("The Shockwave Belt cone: Sword Wave, laid flat along the aim. Radius = its reach.")]
+            public Nova cone = new();
+            [Tooltip("Run & Gun footfall puff.")]
+            public ParticleSystem dustFx;
+            [Tooltip("Overflow heal on the player.")]
+            public ParticleSystem healBurstFx;
+        }
+
+        /// <summary>An Epic Toon effect plus the radius it reaches at scale 1, so it can be sized to a hitbox.</summary>
+        [Serializable]
+        public sealed class Nova
+        {
+            public ParticleSystem fx;
+            public float nativeRadius = 4f;
         }
 
         public Shared shared = new();

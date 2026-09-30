@@ -25,8 +25,6 @@ namespace ZombieWar.Skills.Powers
                 FxPool.Play(a.healFx, p + Vector3.up * 0.1f, PowerKit.Flat(a.healFx), 1.1f);
                 FxPool.Play(a.novaFx, p + Vector3.up * 0.3f, PowerKit.Flat(a.novaFx), 1f);
             }
-            Host.Shockwave(p, 0.5f, 3.5f, Gold, 0.6f);
-            SkillFxDirector.Instance?.Pulse(p, 3.5f, Gold, 0.5f, 0.3f);
             Host.Sfx("sfx.skill.evolve", p, 1f, 0.5f);
             Host.Shake(0.3f);
         }

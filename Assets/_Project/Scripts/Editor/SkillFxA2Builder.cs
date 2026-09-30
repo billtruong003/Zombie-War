@@ -289,6 +289,91 @@ namespace ZombieWar.EditorTools
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.playOnAwake = playOnEnable; }
         }
 
+        /// <summary>
+        /// VFX audit (2026-09-30): every transient ring, telegraph and cone comes from Epic Toon FX
+        /// instead of our own line/disc shaders. Flat variants of the pack's novas (one per colour
+        /// family), the magic circle for blast telegraphs, the sword wave for the Shockwave Belt, and
+        /// Epic Toon's lightning material on the chain arc. Native radii are measured from the
+        /// simulated particles so each effect can be sized to the radius a power checks. Idempotent.
+        /// </summary>
+        [MenuItem("HordeCall/Skills/Build VFX audit (Epic Toon rings)")]
+        public static string BuildEpicToonRings()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<SkillFxLibrary>(SkillFxLibraryMigration.LibraryPath);
+            if (lib == null) return "missing library";
+            var sh = lib.shared;
+            var log = new System.Text.StringBuilder();
+
+            Set(sh.novaFire, Variant(Etfx + "Combat/Nova/Standard/NovaFire.prefab", FxDir + "NovaFire_M8.prefab"), log);
+            Set(sh.novaBlue, Variant(Etfx + "Combat/Nova/Standard/NovaBlue.prefab", FxDir + "NovaBlue_M8.prefab"), log);
+            Set(sh.novaGreen, Variant(Etfx + "Combat/Nova/Standard/NovaGreen.prefab", FxDir + "NovaGreen_M8.prefab"), log);
+            Set(sh.novaPink, Variant(Etfx + "Combat/Nova/Standard/NovaPink.prefab", FxDir + "NovaPink_M8.prefab"), log);
+            Set(sh.novaYellow, Variant(Etfx + "Combat/Nova/Lightning/NovaLightningYellow.prefab", FxDir + "NovaYellow_M8.prefab"), log);
+            Set(sh.novaFrost, lib.frost.fx != null ? lib.frost.fx : Variant(Etfx + "Combat/Nova/Frost/NovaFrost.prefab", FxDir + "NovaFrost_M8.prefab"), log);
+            Set(sh.telegraph, Fx("Combat/Magic/Circle Simple/MagicCircleSimpleYellow"), log);
+            Set(sh.cone, Fx("Combat/Sword/Wave/SwordWaveYellow"), log);
+            sh.dustFx = Fx("Environment/Dust/DustDirtyPoof");
+            sh.healBurstFx = Fx("Interactive/Healing/HealOnceBurst");
+            EditorUtility.SetDirty(lib);
+
+            // The chain arc: Epic Toon's own lightning material (the texture is the bolt).
+            const string playerPath = "Assets/_Project/Prefabs/Player.prefab";
+            var player = AssetDatabase.LoadAssetAtPath<GameObject>(playerPath);
+            var director = player != null ? player.GetComponentInChildren<ZombieWar.Skills.SkillFxDirector>(true) : null;
+            if (director != null)
+            {
+                var so = new SerializedObject(director);
+                so.FindProperty("arcMaterial").objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<Material>("Assets/ThirdParty/Epic Toon FX/Materials/Misc/Lightning/lightning1_ADD.mat");
+                so.FindProperty("arcWidth").floatValue = 1.5f;   // the bolt fills the middle third of the texture; 1.5 reads across a crowd
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(player);
+                log.Append("arc: lightning1_ADD");
+            }
+            AssetDatabase.SaveAssets();
+            return log.ToString();
+        }
+
+        static void Set(SkillFxLibrary.Nova n, ParticleSystem fx, System.Text.StringBuilder log)
+        {
+            n.fx = fx;
+            n.nativeRadius = MeasureRadius(fx);
+            log.Append(fx.name).Append(" r=").Append(n.nativeRadius.ToString("0.00")).Append("; ");
+        }
+
+        /// The furthest a particle's edge reaches from the effect's centre on the ground plane over its
+        /// whole life, at scale 1, as it plays in the game (with its authored rotation).
+        static float MeasureRadius(ParticleSystem prefab)
+        {
+            var go = Object.Instantiate(prefab.gameObject);
+            try
+            {
+                go.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.localRotation);
+                var root = go.GetComponent<ParticleSystem>();
+                var systems = go.GetComponentsInChildren<ParticleSystem>(true);
+                var buf = new ParticleSystem.Particle[512];
+                float best = 0f;
+                for (float t = 0.05f; t <= 2f; t += 0.05f)
+                {
+                    root.Simulate(t, true, true, true);
+                    foreach (var ps in systems)
+                    {
+                        if (!ps.gameObject.activeInHierarchy) continue;
+                        bool local = ps.main.simulationSpace == ParticleSystemSimulationSpace.Local;
+                        int n = ps.GetParticles(buf);
+                        for (int i = 0; i < n; i++)
+                        {
+                            Vector3 p = local ? ps.transform.TransformPoint(buf[i].position) : buf[i].position;
+                            float half = buf[i].GetCurrentSize3D(ps).x * 0.5f * ps.transform.lossyScale.x;
+                            best = Mathf.Max(best, new Vector2(p.x, p.z).magnitude + half);
+                        }
+                    }
+                }
+                return Mathf.Max(0.5f, best);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
         /// A prefab variant lying flat (the pack's novas are authored upright) with the named children
         /// switched off.
         static ParticleSystem Variant(string source, string path, params string[] hide)

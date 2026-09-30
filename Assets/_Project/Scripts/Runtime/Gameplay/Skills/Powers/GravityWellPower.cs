@@ -54,8 +54,6 @@ namespace ZombieWar.Skills.Powers
             // The pull reads as a hole: a dark disc tightening, rings closing, particles pouring in.
             FxPool.PlayFor(a.vortexFx, at + Vector3.up * 0.4f, PowerKit.Flat(a.vortexFx),
                            proc.radius / Mathf.Max(0.1f, a.vortexNativeRadius), a.pullSeconds);
-            Host.ShowDisc(at, proc.radius, proc.radius * 0.2f, new Color(0.12f, 0.05f, 0.25f, 0.55f), a.pullSeconds, true);
-            SkillFxDirector.Instance?.Converge(at, proc.radius, Violet, a.pullSeconds * 0.5f, 0.1f);
             Host.Sfx("sfx.skill.target", at, 0.6f, 0.2f);
         }
 
@@ -89,7 +87,6 @@ namespace ZombieWar.Skills.Powers
             {
                 _singleFxAt = now + 1.2f;
                 FxPool.PlayFor(a.vortexFx, _singlePos + Vector3.up * 0.4f, PowerKit.Flat(a.vortexFx), r / Mathf.Max(0.1f, a.vortexNativeRadius), 1.3f);
-                Host.ShowDisc(_singlePos, r * 0.9f, r * 0.3f, new Color(0.12f, 0.05f, 0.25f, 0.5f), 1.25f, true);
             }
             if (now >= _singlePullAt)
             {
@@ -145,7 +142,6 @@ namespace ZombieWar.Skills.Powers
             float r = w.radius * 0.6f;
             PowerKit.PlaySized(a.popFx, w.pos + Vector3.up * 0.2f, r, a.popNativeRadius, 1.3f);
             Host.Shockwave(w.pos, r * 0.2f, r * 1.3f, Violet, 0.45f);
-            SkillFxDirector.Instance?.Pulse(w.pos, r, Violet, 0.3f, 0.2f);
             Host.Sfx("sfx.skill.blast", w.pos, 0.8f, 0.1f);
             Host.Shake(0.16f);
             float damage = run.PowerDamage(a.popDamage, SkillCatalogDefs.AutoGravity);

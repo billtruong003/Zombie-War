@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ZombieWar.Skills.Powers
 {
-    /// <summary>Run &amp; Gun (sidearm): cyan footprints of speed while its ramp is up.</summary>
+    /// <summary>Run &amp; Gun (sidearm): Epic Toon dust puffs at the feet while its ramp is up.</summary>
     public sealed class RunGunTrail : PowerModule
     {
         Vector3 _last;
@@ -15,7 +15,8 @@ namespace ZombieWar.Skills.Powers
             _last = p;
             if (ramp < 0.3f || !moving || Time.time < _next) return;
             _next = Time.time + 0.12f;
-            Host.ShowDisc(p, 0.5f, 0.25f, new Color(0.55f, 0.92f, 1f, 0.3f + 0.25f * ramp), 0.35f, false, 0.25f);
+            var dust = Lib != null ? Lib.shared.dustFx : null;
+            if (dust != null) FxPool.Play(dust, p, PowerKit.Flat(dust), 0.35f + 0.2f * ramp);
         }
     }
 }

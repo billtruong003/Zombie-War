@@ -38,7 +38,6 @@ namespace ZombieWar.Skills.Powers
                                0.75f * radius / Mathf.Max(0.1f, a.nativeRadius), a.seconds);
                 // A glowing burn under the flames. Patches overlap, so the trail reads as one
                 // continuous strip of fire instead of separate candles.
-                Host.ShowDisc(p, radius * 1.05f, radius * 0.8f, new Color(1f, 0.42f, 0.08f, 0.5f), a.seconds, false);
                 Host.Sfx("sfx.skill.fire", p, 0.25f, 0.9f);
             }
 

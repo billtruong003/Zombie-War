@@ -64,7 +64,6 @@ namespace ZombieWar.Skills.Powers
                 t.nextShot = Time.time + PopSeconds + 0.1f * k;
                 t.live = true;
                 FxPool.Play(a.dropFx, at, PowerKit.Flat(a.dropFx), 0.8f);
-                Host.ShowDisc(at, 0.4f, 1.3f, new Color(1f, 0.6f, 0.2f, 0.45f), 0.35f, false, 0.25f);
             }
             Host.Sfx("sfx.pickup.bomb", origin, 0.6f, 0.2f);
         }

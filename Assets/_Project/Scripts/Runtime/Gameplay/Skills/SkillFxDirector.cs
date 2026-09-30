@@ -22,12 +22,9 @@ namespace ZombieWar.Skills
     {
         public static SkillFxDirector Instance { get; private set; }
 
-        [Header("Chain arc (built, not from the pack — the pack has no beam)")]
-        [Tooltip("Additive ZombieWar/FX/SkillLine material (M8: the old opaque one could not fade).")]
+        [Header("Chain arc: a pooled line drawn with Epic Toon's lightning material (the pack has no point-to-point beam)")]
+        [Tooltip("Epic Toon Materials/Misc/Lightning/lightning1_ADD: the bolt is in the texture, stretched from end to end.")]
         [SerializeField] private Material arcMaterial;
-        [Tooltip("Alpha-blended ZombieWar/FX/SkillLine material for ground rings (additive washes out on sand). " +
-                 "Empty = the arc material.")]
-        [SerializeField] private Material ringMaterial;
         [SerializeField] private Color arcColor = new(0.35f, 0.75f, 1f, 1f);
         [SerializeField] private float arcWidth = 0.34f;
         [Tooltip("How long a bolt stays: a bright flash, then a fade.")]
@@ -47,22 +44,7 @@ namespace ZombieWar.Skills
         [SerializeField] private int markPoolSize = 24;
 
         readonly List<ArcInstance> _arcs = new(12);
-
-        // Expanding ground rings: the readable edge of every area power.
-        const int RingSegments = 48;
-        class RingInstance
-        {
-            public LineRenderer line;
-            public Vector3 centre;
-            public float radius, width, bornAt, duration;
-            public Color color;
-            public bool live;
-            public bool converge;
-            // M8 cone waves: a slice of the ring (arcHalf degrees either side of arcDir). 0 = full ring.
-            public float arcHalf;
-            public float arcHeading;
-        }
-        readonly List<RingInstance> _rings = new(24);
+        bool TexturedBolt => arcMaterial != null && arcMaterial.mainTexture != null;
 
         // Timed status tints. A small fixed list scanned once per frame; a re-tint of an enemy
         // already in it just extends the timer.
@@ -102,7 +84,6 @@ namespace ZombieWar.Skills
             _root.SetParent(null);
 
             for (int i = 0; i < arcPoolSize; i++) _arcs.Add(CreateArc());
-            for (int i = 0; i < 24; i++) _rings.Add(CreateRing());
             for (int i = 0; i < markPoolSize; i++) _marks.Add(CreateMark());
         }
 
@@ -136,121 +117,6 @@ namespace ZombieWar.Skills
             return new ArcInstance { line = lr, live = false };
         }
 
-        RingInstance CreateRing()
-        {
-            var go = new GameObject("ring");
-            go.transform.SetParent(_root);
-            var lr = go.AddComponent<LineRenderer>();
-            lr.useWorldSpace = true;
-            lr.loop = true;
-            lr.positionCount = RingSegments;
-            lr.numCornerVertices = 0;
-            lr.alignment = LineAlignment.View;
-            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            lr.receiveShadows = false;
-            var m = ringMaterial != null ? ringMaterial : arcMaterial;
-            if (m != null) lr.sharedMaterial = m;
-            go.SetActive(false);
-            return new RingInstance { line = lr };
-        }
-
-        /// <summary>
-        /// A ring that races out from <paramref name="centre"/> to exactly <paramref name="radius"/>
-        /// and fades. Every area power calls it with the radius it actually checked, so what the
-        /// player sees is the hitbox — the missing piece that made AoE powers read as "something
-        /// flashed somewhere".
-        /// </summary>
-        public void Pulse(Vector3 centre, float radius, Color color, float duration = 0.35f, float width = 0.2f)
-        {
-            RingInstance r = null;
-            for (int i = 0; i < _rings.Count; i++) if (!_rings[i].live) { r = _rings[i]; break; }
-            if (r == null) return;
-            centre.y = 0.08f;
-            r.centre = centre; r.radius = radius; r.width = width; r.color = color;
-            r.bornAt = Time.time; r.duration = Mathf.Max(0.05f, duration);
-            r.converge = false;
-            r.arcHalf = 0f;
-            r.live = true;
-            r.line.gameObject.SetActive(true);
-            DrawRing(r, 0f);
-        }
-
-        /// <summary>
-        /// M8 Shockwave Belt: a wave that races out of the muzzle across exactly the cone that was hit
-        /// (the card had damage and push but nothing on screen).
-        /// </summary>
-        public void ConeWave(Vector3 origin, Vector3 direction, float angleDegrees, float range, Color color, float duration = 0.26f)
-        {
-            RingInstance r = null;
-            for (int i = 0; i < _rings.Count; i++) if (!_rings[i].live) { r = _rings[i]; break; }
-            if (r == null) return;
-            direction.y = 0f;
-            if (direction.sqrMagnitude < 1e-4f) return;
-            origin.y = 0.6f;
-            r.centre = origin; r.radius = range; r.width = 0.4f; r.color = color;
-            r.bornAt = Time.time; r.duration = Mathf.Max(0.05f, duration);
-            r.converge = false;
-            r.arcHalf = Mathf.Clamp(angleDegrees * 0.5f, 5f, 180f);
-            r.arcHeading = Mathf.Atan2(direction.z, direction.x);
-            r.live = true;
-            r.line.gameObject.SetActive(true);
-            DrawRing(r, 0f);
-        }
-
-        /// <summary>
-        /// A target lock: a ring that closes in from wide to exactly <paramref name="radius"/> over
-        /// <paramref name="duration"/> and brightens as it lands. Used for anything that will hit a
-        /// spot later (airstrike, ordnance) so "something is coming HERE" reads before it arrives.
-        /// </summary>
-        public void Converge(Vector3 centre, float radius, Color color, float duration, float width = 0.1f)
-        {
-            RingInstance r = null;
-            for (int i = 0; i < _rings.Count; i++) if (!_rings[i].live) { r = _rings[i]; break; }
-            if (r == null) return;
-            centre.y = 0.08f;
-            r.centre = centre; r.radius = radius; r.width = width; r.color = color;
-            r.bornAt = Time.time; r.duration = Mathf.Max(0.05f, duration);
-            r.converge = true;
-            r.live = true;
-            r.line.gameObject.SetActive(true);
-            DrawRing(r, 0f);
-        }
-
-        static void DrawRing(RingInstance r, float t)
-        {
-            if (r.converge)
-            {
-                r.line.loop = true;
-                float k = t * t;                                   // slow start, snaps shut
-                float rr = Mathf.Lerp(r.radius * 1.15f, r.radius, k);
-                for (int i = 0; i < RingSegments; i++)
-                {
-                    float a = i * Mathf.PI * 2f / RingSegments;
-                    r.line.SetPosition(i, r.centre + new Vector3(Mathf.Cos(a) * rr, 0f, Mathf.Sin(a) * rr));
-                }
-                // Fades in as it closes: a telegraph is a hint, not a wall of colour.
-                var cc = r.color; cc.a *= Mathf.Lerp(0.1f, 0.7f, t);
-                r.line.startColor = r.line.endColor = cc;
-                r.line.widthMultiplier = r.width;
-                return;
-            }
-            float e = 1f - (1f - t) * (1f - t) * (1f - t);          // fast out, soft landing
-            float radius = Mathf.Lerp(r.radius * 0.15f, r.radius, e);
-            bool slice = r.arcHalf > 0f;
-            r.line.loop = !slice;
-            float half = r.arcHalf * Mathf.Deg2Rad;
-            for (int i = 0; i < RingSegments; i++)
-            {
-                float a = slice
-                    ? r.arcHeading - half + 2f * half * i / (RingSegments - 1)
-                    : i * Mathf.PI * 2f / RingSegments;
-                r.line.SetPosition(i, r.centre + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
-            }
-            var c = r.color; c.a *= 1f - t * t;
-            r.line.startColor = r.line.endColor = c;
-            r.line.widthMultiplier = r.width * (1f - 0.5f * t);
-        }
-
         MarkInstance CreateMark()
         {
             var go = new GameObject("mark");
@@ -281,6 +147,7 @@ namespace ZombieWar.Skills
             var color = tint ?? arcColor;
             float width = arcWidth * widthScale;
             Arm(arc, ArcLayer.Glow, from, to, seed, width, color, now + delay);
+            if (TexturedBolt) return;   // Epic Toon's texture already is the bolt: no hand-drawn core or forks
 
             var core = Take();
             if (core != null) Arm(core, ArcLayer.Core, from, to, seed, width * 0.32f, Color.white, now + delay);
@@ -316,8 +183,10 @@ namespace ZombieWar.Skills
             float length = dir.magnitude;
             Vector3 side = Vector3.Cross(dir.normalized, Vector3.up);
             if (side.sqrMagnitude < 1e-5f) side = Vector3.right;
-            int segments = Mathf.Clamp(Mathf.RoundToInt(length / 0.55f), arcSegments, 20);
-            float jag = Mathf.Clamp(length * 0.08f, arcJitter, 0.9f);
+            // A textured bolt stays nearly straight (the texture carries the zig-zag); only a slight bend
+            // on each flicker frame keeps it alive.
+            int segments = TexturedBolt ? 2 : Mathf.Clamp(Mathf.RoundToInt(length / 0.55f), arcSegments, 20);
+            float jag = TexturedBolt ? Mathf.Min(0.2f, length * 0.04f) : Mathf.Clamp(length * 0.08f, arcJitter, 0.9f);
             float frame = Mathf.Floor(now / Mathf.Max(0.01f, arcRejagSeconds));
 
             if (a.layer == ArcLayer.Fork)
@@ -405,15 +274,6 @@ namespace ZombieWar.Skills
         void LateUpdate()
         {
             float now = Time.time;
-
-            for (int i = 0; i < _rings.Count; i++)
-            {
-                var r = _rings[i];
-                if (!r.live) continue;
-                float t = (now - r.bornAt) / r.duration;
-                if (t >= 1f) { r.live = false; r.line.gameObject.SetActive(false); continue; }
-                DrawRing(r, t);
-            }
 
             for (int i = _tints.Count - 1; i >= 0; i--)
             {

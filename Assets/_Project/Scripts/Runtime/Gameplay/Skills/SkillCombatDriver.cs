@@ -120,7 +120,8 @@ namespace ZombieWar.Skills
             if (heal > 0f && _health != null)
             {
                 _health.Heal(_health.Max * heal);
-                SkillFxDirector.Instance?.Pulse(pos, 1.8f, new Color(0.35f, 1f, 0.5f, 0.9f), 0.45f, 0.25f);
+                var burst = SkillArsenal.Instance != null && SkillArsenal.Instance.Library != null ? SkillArsenal.Instance.Library.shared.healBurstFx : null;
+                if (burst != null) FxPool.Play(burst, pos, Powers.PowerKit.Flat(burst), 0.8f);
             }
             int coin = run.ConsumeCoin();
             if (coin > 0) RunState.Current?.AddCurrency(PlayerProfile.CurrencyKind.Coin, coin);

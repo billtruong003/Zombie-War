@@ -69,7 +69,6 @@ namespace ZombieWar.Skills.Powers
             string source = super ? SkillCatalogDefs.EvoSupercell : SkillCatalogDefs.AutoStormCloud;
             FxPool.Play(a.strikeFx, at, PowerKit.Flat(a.strikeFx), super ? 1.3f : 1f);
             SkillFxDirector.Instance?.DrawArc(_cloud.position, at + Vector3.up * 1f, super ? Violet : Cyan, super ? 1.3f : 0.9f, 0f, 1);
-            SkillFxDirector.Instance?.Pulse(at, 1f, super ? Violet : Cyan, 0.2f, 0.12f);
             Host.Sfx(super ? "sfx.skill.thunderstorm" : "sfx.skill.chain", at, 0.5f, 0.12f);
             if (super) target.MarkNextHitCrit();
             PowerKit.Hit(target, damage, 0.3f, source);

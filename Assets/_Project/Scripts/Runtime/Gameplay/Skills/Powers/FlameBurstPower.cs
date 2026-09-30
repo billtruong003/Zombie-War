@@ -46,7 +46,6 @@ namespace ZombieWar.Skills.Powers
             _until = Time.time + a.seconds;
             _jet = FxPool.PlayFor(a.jetFx, origin + Vector3.up * 0.8f + _dir * 0.4f, Quaternion.LookRotation(_dir),
                                   _range / Mathf.Max(0.1f, a.jetNativeRange), a.seconds);
-            SkillFxDirector.Instance?.ConeWave(origin, _dir, a.coneDegrees, _range, new Color(1f, 0.55f, 0.15f, 0.85f), a.seconds * 0.6f);
             Host.Sfx("sfx.skill.fire", origin, 0.85f, 0.2f);
         }
 

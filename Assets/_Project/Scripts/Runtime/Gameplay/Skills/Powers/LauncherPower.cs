@@ -66,7 +66,6 @@ namespace ZombieWar.Skills.Powers
                 _patches.Add(new Patch { pos = at, radius = r, dps = damage * run.NapalmDpsShare, until = Time.time + seconds });
                 FxPool.PlayFor(a.napalmFx, at + Vector3.up * 0.05f, PowerKit.Flat(a.napalmFx),
                                r / Mathf.Max(0.1f, a.napalmNativeRadius), seconds);
-                Host.ShowDisc(at, r * 1.05f, r * 0.9f, new Color(1f, 0.4f, 0.08f, 0.5f), seconds, false);
             }
         }
 

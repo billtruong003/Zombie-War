@@ -86,13 +86,14 @@ namespace ZombieWar.Tests
         [Test]
         public void OrdnanceMarksItsClusterBeforeDetonating()
         {
-            // M8: the marker became the shadow of the falling bomb plus a ring closing on the cluster.
+            // M8: the marker became the shadow of the falling bomb; since the VFX audit an Epic Toon
+            // magic circle marks the landing area.
             string src = Read(OrdnanceSrc);
             StringAssert.Contains("bomb = Lib.shared.bombFx", src,
                 "the player must read WHICH group was chosen, not just that something exploded");
             StringAssert.Contains("delay = a.delay", src, "the shell must land after a beat, not at once");
             string host = Read(ArsenalSrc);
-            StringAssert.Contains("Converge(", host, "a delayed blast must telegraph where it lands");
+            StringAssert.Contains("shared.telegraph", host, "a delayed blast must telegraph where it lands");
         }
 
         // ─────────────────────────────────────────── shield legibility

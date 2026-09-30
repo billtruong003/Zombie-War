@@ -70,7 +70,6 @@ namespace ZombieWar.Skills.Powers
             float life = a.seconds * (_plague ? 1.6f : 1f);
             var fx = FxPool.PlayFor(a.cloudFx, at + Vector3.up * 0.3f, PowerKit.Flat(a.cloudFx), r / Mathf.Max(0.1f, a.cloudNativeRadius), life);
             _clouds.Add(new Cloud { pos = at, radius = r, until = Time.time + life, fx = fx });
-            Host.ShowDisc(at, r * 1.02f, r * 0.9f, new Color(0.45f, 0.85f, 0.15f, 0.35f), a.seconds, false, 0.18f);
         }
 
         bool _plague;

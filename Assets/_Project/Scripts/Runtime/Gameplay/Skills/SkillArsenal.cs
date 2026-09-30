@@ -110,8 +110,6 @@ namespace ZombieWar.Skills
             for (int i = 0; i < _modules.Count; i++) _modules[i].Tick(run, p, dt);
             TickBlasts();
             TickDelayed();
-            TickDiscs();
-            TickWaves();
             TickWisps(p);
             _shakeBudget = Mathf.Max(0f, _shakeBudget - dt * 1.5f);
         }
@@ -171,8 +169,6 @@ namespace ZombieWar.Skills
             _blasts.Clear();
             _delayed.Clear();
             _wisps.Clear();
-            for (int i = 0; i < _discs.Count; i++) { _discs[i].live = false; _discs[i].tr.gameObject.SetActive(false); }
-            for (int i = 0; i < _waves.Count; i++) { _waves[i].live = false; _waves[i].tr.gameObject.SetActive(false); }
             for (int i = 0; i < _modules.Count; i++) _modules[i].ResetForRun();
         }
 
@@ -248,22 +244,8 @@ namespace ZombieWar.Skills
             }
         }
 
-        // ── ground discs (pooled flat quads, one shared material, colour through a property block)
-        sealed class Disc
-        {
-            public Transform tr;
-            public MeshRenderer mr;
-            public float bornAt, duration, fromRadius, toRadius;
-            public Color color;
-            public bool live, fadeIn;
-            public float ring;      // 0 = filled disc, >0 = a band of that width (share of the radius)
-        }
-        const int MaxDiscs = 48;
-        readonly List<Disc> _discs = new(MaxDiscs);
+        // ── ground renderers for the persistent auras (Thorn ring, Storm Cloud shadow, War Dog, Kinetic charge)
         static Mesh _groundQuad;
-        static readonly int ColorId = Shader.PropertyToID("_Color");
-        static readonly int RingId = Shader.PropertyToID("_Ring");
-        static readonly int FillId = Shader.PropertyToID("_Fill");
 
         static Mesh GroundQuad()
         {
@@ -292,107 +274,45 @@ namespace ZombieWar.Skills
             return mr;
         }
 
-        public void ShowDisc(Vector3 at, float fromRadius, float toRadius, Color color, float duration, bool fadeIn, float ring = 0f)
-        {
-            Disc d = null;
-            for (int i = 0; i < _discs.Count; i++) if (!_discs[i].live) { d = _discs[i]; break; }
-            if (d == null)
-            {
-                if (_discs.Count >= MaxDiscs) return;               // full: drop the visual, never allocate mid-fight
-                var mr = MakeGroundRenderer("disc");
-                if (mr == null) return;
-                d = new Disc { tr = mr.transform, mr = mr };
-                _discs.Add(d);
-            }
-            at.y = 0.04f;
-            d.tr.position = at;
-            d.bornAt = Time.time; d.duration = Mathf.Max(0.05f, duration);
-            d.fromRadius = fromRadius; d.toRadius = toRadius; d.color = color; d.fadeIn = fadeIn; d.ring = ring;
-            d.live = true;
-            d.tr.gameObject.SetActive(true);
-            DrawDisc(d, 0f);
-        }
+        // ── expanding rings: Epic Toon novas (VFX audit 30/09 — no hand-made ring shader for a burst)
 
-        void DrawDisc(Disc d, float t)
-        {
-            float r = Mathf.Lerp(d.fromRadius, d.toRadius, d.fadeIn ? t * t : 1f - (1f - t) * (1f - t));
-            d.tr.localScale = new Vector3(r * 2f, 1f, r * 2f);
-            var c = d.color; c.a *= d.fadeIn ? t : 1f - t;
-            var mpb = Block;
-            mpb.Clear();
-            mpb.SetColor(ColorId, c);
-            mpb.SetFloat(RingId, d.ring);
-            mpb.SetFloat(FillId, 1f);
-            d.mr.SetPropertyBlock(mpb);
-        }
-
-        void TickDiscs()
-        {
-            float now = Time.time;
-            for (int i = 0; i < _discs.Count; i++)
-            {
-                var d = _discs[i];
-                if (!d.live) continue;
-                float t = (now - d.bornAt) / d.duration;
-                if (t >= 1f) { d.live = false; d.tr.gameObject.SetActive(false); continue; }
-                DrawDisc(d, t);
-            }
-        }
-
-        // ── toon shockwaves (ToonErode ring on a ground quad; erosion and tint by property block)
-        sealed class Wave { public Transform tr; public MeshRenderer mr; public float bornAt, duration, from, to; public Color color; public bool live; }
-        const int MaxWaves = 12;
-        readonly List<Wave> _waves = new(MaxWaves);
-        static readonly int TintId = Shader.PropertyToID("_Tint");
-        static readonly int ErodeId = Shader.PropertyToID("_Erode");
-
+        /// <summary>
+        /// An expanding ground ring out to <paramref name="toRadius"/>: the flat Epic Toon nova of the
+        /// colour family nearest <paramref name="color"/>, sized to the radius the power checked. The
+        /// nova keeps its own authored timing and falloff; start radius and duration are the caller's
+        /// intent and are carried by the nova itself.
+        /// </summary>
         public void Shockwave(Vector3 at, float fromRadius, float toRadius, Color color, float duration)
         {
-            var mat = library != null ? library.shared.shockwaveMaterial : null;
-            if (mat == null || _root == null) return;
-            Wave w = null;
-            for (int i = 0; i < _waves.Count; i++) if (!_waves[i].live) { w = _waves[i]; break; }
-            if (w == null)
-            {
-                if (_waves.Count >= MaxWaves) return;          // full: drop the visual, never allocate mid-fight
-                var mr = MakeGroundRenderer("wave");
-                if (mr == null) return;
-                mr.sharedMaterial = mat;
-                w = new Wave { tr = mr.transform, mr = mr };
-                _waves.Add(w);
-            }
-            at.y = 0.06f;                                       // just above the discs
-            w.tr.position = at;
-            w.bornAt = Time.time; w.duration = Mathf.Max(0.05f, duration);
-            w.from = fromRadius; w.to = toRadius; w.color = color; w.live = true;
-            w.tr.gameObject.SetActive(true);
-            DrawWave(w, 0f);
+            var n = NovaFor(color);
+            if (n == null || n.fx == null) return;
+            at.y = 0.05f;
+            PowerKit.PlaySized(n.fx, at, toRadius, n.nativeRadius);
         }
 
-        void DrawWave(Wave w, float t)
+        /// Colour family → nova. Browns and greys (earth, dust) get none: their own dust effect carries them.
+        SkillFxLibrary.Nova NovaFor(Color c)
         {
-            // Fast out, then it slows as it eats itself away: the toon read of a blast wave.
-            float grow = 1f - (1f - t) * (1f - t) * (1f - t);
-            float r = Mathf.Lerp(w.from, w.to, grow);
-            w.tr.localScale = new Vector3(r * 2f, 1f, r * 2f);
-            var mpb = Block;
-            mpb.Clear();
-            mpb.SetColor(TintId, w.color);
-            mpb.SetFloat(ErodeId, Mathf.Lerp(0.05f, 1f, t * t));
-            w.mr.SetPropertyBlock(mpb);
+            var sh = library != null ? library.shared : null;
+            if (sh == null) return null;
+            Color.RGBToHSV(c, out float h, out float s, out float v);
+            float deg = h * 360f;
+            if (s < 0.3f) return v > 0.8f ? sh.novaFrost : null;
+            if (deg < 45f || deg >= 330f) return deg >= 18f && v < 0.75f ? null : sh.novaFire;
+            if (deg < 72f) return sh.novaYellow;
+            if (deg < 165f) return sh.novaGreen;
+            if (deg < 250f) return s < 0.5f ? sh.novaFrost : sh.novaBlue;
+            return sh.novaPink;
         }
 
-        void TickWaves()
+        /// <summary>The Shockwave Belt: an Epic Toon sword wave laid along the aim, reaching <paramref name="range"/>.</summary>
+        public void Cone(Vector3 origin, Vector3 direction, float range)
         {
-            float now = Time.time;
-            for (int i = 0; i < _waves.Count; i++)
-            {
-                var w = _waves[i];
-                if (!w.live) continue;
-                float t = (now - w.bornAt) / w.duration;
-                if (t >= 1f) { w.live = false; w.tr.gameObject.SetActive(false); continue; }
-                DrawWave(w, t);
-            }
+            var c = library != null ? library.shared.cone : null;
+            direction.y = 0f;
+            if (c == null || c.fx == null || direction.sqrMagnitude < 1e-4f) return;
+            origin.y = 0.6f;
+            FxPool.Play(c.fx, origin, Quaternion.LookRotation(direction) * PowerKit.Flat(c.fx), range / Mathf.Max(0.1f, c.nativeRadius));
         }
 
         // ── delayed blasts (Airstrike, Ordnance, Carpet Bomb)
@@ -414,10 +334,10 @@ namespace ZombieWar.Skills
             s.pos.y = 0f;
             if (s.delay > 0f)
             {
-                // Telegraph: one thin ring closing in, plus the shadow of what is coming, darkening
-                // and tightening as it gets close.
-                SkillFxDirector.Instance?.Converge(s.pos, s.radius, new Color(1f, 0.35f, 0.2f, 1f), s.delay, 0.08f);
-                if (s.bomb != null) ShowDisc(s.pos, s.radius * 0.9f, s.radius * 0.35f, new Color(0.05f, 0.03f, 0.02f, 0.5f), s.delay, true);
+                // Telegraph: an Epic Toon magic circle on the exact landing area until the blast lands.
+                var tg = library != null ? library.shared.telegraph : null;
+                if (tg != null && tg.fx != null)
+                    FxPool.PlayFor(tg.fx, s.pos + Vector3.up * 0.05f, PowerKit.Flat(tg.fx), s.radius / Mathf.Max(0.1f, tg.nativeRadius), s.delay);
             }
             Vector3 dir = s.flight; dir.y = 0f;
             if (dir.sqrMagnitude < 0.01f) dir = Vector3.forward;
@@ -465,7 +385,6 @@ namespace ZombieWar.Skills
                 if (s.decal != null) FxPool.Play(s.decal, s.pos + Vector3.up * 0.03f, PowerKit.Flat(s.decal), s.radius / 1.5f);
                 Sfx(s.sfx, s.pos, 0.85f, 0.05f);
                 Shake(s.shake);
-                SkillFxDirector.Instance?.Pulse(s.pos, s.radius, new Color(1f, 0.62f, 0.2f, 0.85f), 0.3f, 0.18f);
                 if (s.wave.a > 0f) Shockwave(s.pos, s.radius * 0.3f, s.radius * 1.1f, s.wave, 0.45f);
 
                 if (s.damage > 0f)

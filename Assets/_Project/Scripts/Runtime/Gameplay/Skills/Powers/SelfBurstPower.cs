@@ -75,20 +75,14 @@ namespace ZombieWar.Skills.Powers
             // A2: a flat nova out to the edge of the hit area (Frost Nova's family, so every "burst out
             // of the player" reads alike) and a toon shockwave on the ground at the same radius.
             PowerKit.PlaySized(emergency ? a.emergencyNovaFx : a.soulNovaFx, centre + Vector3.up * 0.1f, radius, a.novaNativeRadius);
-            Host.Shockwave(centre, radius * 0.25f, radius, emergency ? new Color(1f, 0.28f, 0.16f, 1f) : new Color(0.4f, 1f, 0.55f, 1f),
-                           emergency ? 0.55f : 0.5f);
             if (emergency)
             {
                 // The panic button hits twice as hard on the eye: a second, later ring and a red band.
                 Host.Delay(0.12f, _secondWave ??= SecondWave, centre);
                 _lastRadius = radius;
-                Host.ShowDisc(centre, radius * 0.2f, radius, new Color(1f, 0.25f, 0.12f, 0.45f), 0.6f, false, 0.2f);
             }
             Host.Sfx(emergency ? "sfx.skill.emergency" : "sfx.skill.soulburst", centre, 0.85f, 0.1f);
             Host.Shake(emergency ? 0.4f : 0.14f);
-            SkillFxDirector.Instance?.Pulse(centre, radius,
-                emergency ? new Color(1f, 0.3f, 0.2f, 0.95f) : new Color(0.45f, 1f, 0.55f, 0.9f),
-                emergency ? 0.28f : 0.35f, emergency ? 0.3f : 0.22f);
         }
 
         public override void OnKill(SkillRuntime run, Vector3 at)
@@ -118,8 +112,6 @@ namespace ZombieWar.Skills.Powers
             // A scythe sweep where the enemy fell — a violet crescent and a soul burst.
             at.y = 0f;
             FxPool.Play(a.reaperFx, at + Vector3.up * 0.3f, PowerKit.Flat(a.reaperFx), 0.8f);
-            SkillFxDirector.Instance?.ConeWave(at, Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f) * Vector3.forward,
-                                               230f, 2.4f, new Color(0.62f, 0.3f, 1f, 0.9f), 0.3f);
             Host.SoulWisp(at);
             Host.Sfx("sfx.skill.reaper", at, 0.8f, 0f);
             int found = TargetQuery.GatherEnemies(at, 2.4f, Host.EnemyMask);

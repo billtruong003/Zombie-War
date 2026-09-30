@@ -37,7 +37,6 @@ namespace ZombieWar.Skills.Powers
             // A clock ring at the feet and a thin line sweeping the screen: the slow tint on every
             // enemy is the real read (a 14 m shockwave band turned the whole screen white).
             Host.Shockwave(origin, 0.5f, 5f, Clock, 0.7f);
-            SkillFxDirector.Instance?.Pulse(origin, 12f, Clock, 0.7f, 0.18f);
             Host.Sfx("sfx.skill.frost", origin, 0.8f, 0.3f);
             Host.Shake(0.1f);
         }

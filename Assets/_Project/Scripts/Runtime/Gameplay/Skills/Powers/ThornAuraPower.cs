@@ -85,7 +85,6 @@ namespace ZombieWar.Skills.Powers
             Vector3 p = Host.Player.position;
             float r = 4f * run.AreaMultiplier;
             Host.Shockwave(p, 0.4f, r, a.ringColor, 0.45f);
-            SkillFxDirector.Instance?.Pulse(p, r, a.ringColor, 0.3f, 0.2f);
             Host.Shake(0.18f);
             float damage = run.PowerDamage(40f, SkillCatalogDefs.AutoThorns);
             int found = TargetQuery.GatherEnemies(p, r, Host.EnemyMask);

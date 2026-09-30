@@ -20,9 +20,7 @@ namespace ZombieWar.Skills.Powers
         /// A power's sound, at most once per <paramref name="minGap"/> seconds per key.
         void Sfx(string key, Vector3 at, float volume = 0.8f, float minGap = 0.08f);
         bool OnScreen(Vector3 world);
-        /// A flat soft disc on the ground that grows (or shrinks) and fades (or fades in).
-        void ShowDisc(Vector3 at, float fromRadius, float toRadius, Color color, float duration, bool fadeIn, float ring = 0f);
-        /// A toon ground shockwave: a ring that races from one radius to another while it erodes away.
+        /// An expanding ground ring (an Epic Toon nova of the nearest colour) out to the radius checked.
         void Shockwave(Vector3 at, float fromRadius, float toRadius, Color color, float duration);
         /// A pooled flat quad with the disc material, for powers that draw their own ground ring.
         MeshRenderer MakeGroundRenderer(string name);

@@ -82,7 +82,6 @@ namespace ZombieWar.Skills.Powers
             if (_burns.Count >= MaxBurns) _burns.RemoveAt(0);
             _burns.Add(new Burn { pos = at, radius = r, dps = _pendingDamage * a.burnShare, until = Time.time + a.burnSeconds });
             FxPool.PlayFor(a.burnFx, at + Vector3.up * 0.05f, PowerKit.Flat(a.burnFx), r / Mathf.Max(0.1f, a.burnNativeRadius), a.burnSeconds);
-            Host.ShowDisc(at, r * 1.05f, r * 0.85f, new Color(0.25f, 0.08f, 0.02f, 0.55f), a.burnSeconds, false);
         }
 
         public override void Tick(SkillRuntime run, Vector3 player, float dt)

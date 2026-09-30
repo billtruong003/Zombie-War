@@ -61,7 +61,6 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             point.y = Mathf.Max(0.3f, point.y);
             FxPool.Play(a.explosiveFx, point, PowerKit.Flat(a.explosiveFx), 0.55f);
-            SkillFxDirector.Instance?.Pulse(new Vector3(point.x, 0f, point.z), SkillRuntime.ExplosiveRadius, new Color(1f, 0.6f, 0.2f, 0.85f), 0.2f, 0.12f);
             if (Time.time >= _explosiveSfxAt) { _explosiveSfxAt = Time.time + 0.08f; Host.Sfx("sfx.skill.blast", point, 0.35f, 0.08f); }
             int found = TargetQuery.GatherEnemies(point, SkillRuntime.ExplosiveRadius, Host.EnemyMask);
             for (int i = 0; i < found; i++)

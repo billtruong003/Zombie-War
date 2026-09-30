@@ -28,8 +28,6 @@ namespace ZombieWar.Skills.Powers
             FxPool.Play(a.dustFx, origin, PowerKit.Flat(a.dustFx), 1.2f);
             FxPool.Play(a.crackFx, origin + Vector3.up * 0.1f, PowerKit.Flat(a.crackFx), 0.9f);
             Host.Shockwave(origin, 0.4f, r, Earth, 0.5f);
-            Host.ShowDisc(origin, r * 0.2f, r, new Color(0.55f, 0.42f, 0.25f, 0.35f), 0.45f, false, 0.12f);
-            SkillFxDirector.Instance?.Pulse(origin, r, Earth, 0.3f, 0.22f);
             Host.Sfx("sfx.player.bomb.explode", origin, 0.7f, 0.2f);
             Host.Shake(0.2f);
             bool quake = run.IsEvolved(SkillCatalogDefs.AutoStomp);

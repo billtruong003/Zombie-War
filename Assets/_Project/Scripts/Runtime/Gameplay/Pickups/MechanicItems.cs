@@ -79,8 +79,6 @@ namespace ZombieWar
             at.y = 0f;
             if (a?.bombFx != null) PowerKit.PlaySized(a.bombFx, at + Vector3.up * 0.2f, 3.2f, a.bombNativeRadius);
             host.Shockwave(at, 0.5f, Reach, Blast, 0.55f);
-            host.ShowDisc(at, 1f, Reach * 0.8f, new Color(1f, 0.85f, 0.5f, 0.28f), 0.3f, false, 0.1f);
-            SkillFxDirector.Instance?.Pulse(at, Reach * 0.6f, Blast, 0.35f, 0.3f);
             host.Sfx("sfx.player.bomb.explode", at, 1f, 0.1f);
             host.Shake(0.55f);
             _fxLeft = FxBudget;
@@ -118,8 +116,6 @@ namespace ZombieWar
             at.y = 0f;
             if (a?.freezeFx != null) PowerKit.PlaySized(a.freezeFx, at + Vector3.up * 0.2f, 3f, a.freezeNativeRadius);
             host.Shockwave(at, 0.5f, Reach, Ice, 0.6f);
-            host.ShowDisc(at, 1f, Reach * 0.8f, new Color(0.75f, 0.95f, 1f, 0.28f), 0.4f, false, 0.1f);
-            SkillFxDirector.Instance?.Pulse(at, Reach * 0.6f, Ice, 0.35f, 0.3f);
             host.Sfx("sfx.skill.frost", at, 0.9f, 0.1f);
             host.Shake(0.2f);
             var tint = host.Library != null ? host.Library.frost.frozenTint : Ice;

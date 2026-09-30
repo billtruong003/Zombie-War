@@ -610,10 +610,10 @@ namespace ZombieWar
                 var taken = _skillOffer[slot];
                 skills.Take(taken.id);
                 UIFeedback.Confirm();
-                // M8: a stat card has no power of its own to watch; a pulse in its layer colour marks the pick.
+                // M8: a stat card has no power of its own to watch; a small Epic Toon nova in its layer colour marks the pick.
                 if (taken.layer == ZombieWar.Skills.SkillLayer.Stat && PlayerMovement.Instance != null)
-                    ZombieWar.Skills.SkillFxDirector.Instance?.Pulse(PlayerMovement.Instance.transform.position, 1.8f,
-                        ZombieWar.Skills.SkillDescriptions.LayerColor(taken), 0.45f, 0.25f);
+                    ZombieWar.Skills.SkillArsenal.Instance?.Shockwave(PlayerMovement.Instance.transform.position, 0.3f, 1.8f,
+                        ZombieWar.Skills.SkillDescriptions.LayerColor(taken), 0.45f);
                 UIFeedback.Haptic(UIFeedback.Buzz.Tick);
                 MissionTracker.ReportCardChosen();
                 if (taken.IsEvolution) ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();

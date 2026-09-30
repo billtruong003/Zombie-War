@@ -717,8 +717,7 @@ namespace ZombieWar
 
             Vector3 origin = transform.position;
             // M8: the wave is drawn whether or not it hits, across exactly the cone it checks.
-            ZombieWar.Skills.SkillFxDirector.Instance?.ConeWave(origin, aimDirection, _shotPlan.shockwaveAngle, 12f,
-                                                               new Color(1f, 0.78f, 0.35f, 0.9f));
+            ZombieWar.Skills.SkillArsenal.Instance?.Cone(origin, aimDirection, 12f);
             int found = ZombieWar.Skills.TargetQuery.Gather(origin, 12f, hitMask);
             if (found == 0) return;
 
