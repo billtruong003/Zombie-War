@@ -191,7 +191,7 @@ namespace ZombieWar.EditorTools
                 rig.AddComponent<ToonLightRig>();
 
                 foreach (var z in Zones()) log.Append(BuildZone(z, root.transform)).Append("; ");
-                log.Append(BuildTileGrids(root.transform));
+                log.Append(BuildMaps(root.transform));
 
                 var overview = new GameObject("Cam_Overview").AddComponent<Camera>();
                 overview.enabled = false;
