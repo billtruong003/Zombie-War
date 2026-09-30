@@ -1,0 +1,189 @@
+<title>HordeCall Concept Refs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--bg:#EEF3F9;--surface:#fff;--ink:#1A2233;--muted:#5B6678;--line:#D3DCE8;--shark:#3E8EF0;--cta:#FFC93C;--code:#F4F7FB;
+--display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;--body:"Be Vietnam Pro",system-ui,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161F;--surface:#1A212D;--ink:#E6ECF4;--muted:#9AA6B8;--line:#2A3444;--shark:#6CAEFF;--code:#141A24;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161F;--surface:#1A212D;--ink:#E6ECF4;--muted:#9AA6B8;--line:#2A3444;--shark:#6CAEFF;--code:#141A24;color-scheme:dark}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:28px 60px;display:grid;gap:26px}
+h1,h2{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}h1{font-size:clamp(30px,5vw,46px);font-weight:800}h2{font-size:20px;font-weight:800}
+p{margin:0;max-width:72ch}.muted{color:var(--muted)}.kicker{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.steps{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--shark);border-radius:10px;padding:14px 18px;display:grid;gap:8px}
+ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:18px;align-items:start}
+.c{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid;min-width:0}
+.c header{display:flex;gap:12px;align-items:center;padding:12px 14px}.n{font:600 13px/1 var(--mono);color:var(--shark);border:1.5px solid var(--shark);border-radius:6px;padding:6px 7px}
+.kind{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tabs{display:flex;gap:6px;padding:0 14px 10px}.tabs button{font:600 12px var(--body);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:4px 11px;cursor:pointer}
+.tabs button.on{background:var(--shark);border-color:var(--shark);color:#fff}
+figure{margin:0;background:#000}figure img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain}
+details{padding:10px 14px 14px}summary{cursor:pointer;font-weight:600}pre{white-space:pre-wrap;font:12.5px/1.55 var(--mono);background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+.cp{font:600 12px var(--body);border:0;background:var(--cta);color:#1A2233;border-radius:8px;padding:6px 12px;cursor:pointer}
+.style pre{max-height:none}
+</style>
+<div class="wrap">
+<header style="display:grid;gap:10px"><div class="kicker">HordeCall · Concept refs v2 · 30/09/2026</div><h1>HordeCall Concept Refs</h1>
+<p class="muted">20 concept chụp thẳng từ game (Unity sandbox): đúng tỉ lệ, đúng outfit, đúng quái, đúng trạm. Cá mập xanh là nhân vật chính ở mọi cảnh. Mỗi concept có 3 bản: màu (tham chiếu chuẩn), sketch trắng đen (duyệt tỉ lệ) và layout 3 tông với lưới 1/3 (bố cục) để đưa ChatGPT vẽ theo.</p></header>
+<section class="steps"><h2>Cách dùng với ChatGPT</h2><ol>
+<li>Dán style block bên dưới một lần ở tin nhắn đầu.</li>
+<li>Mỗi concept: đính kèm 3 file (màu, sketch, layout) trong <code>Review/KeyArt/concepts_v2/final/</code> rồi dán prompt. Prompt bắt nó vẽ sketch trắng đen trước.</li>
+<li>So sketch của nó với layout: đầu to khoảng 45% chiều cao, súng dài bằng thân + đầu, quái đúng chiều cao so với nhân vật. Đạt thì mới cho tô màu.</li>
+<li>Chỉ giữ ảnh đẹp nhất; bỏ ảnh nào lệch tỉ lệ hoặc "mùi AI".</li></ol></section>
+<section class="steps style"><h2>Style block</h2><pre>Art direction for HordeCall, a cute zombie-survival mobile shooter (portrait, auto-aim, huge hordes).
+- Chunky low-poly 3D toy look like vinyl figures: big heads, short bodies, soft rounded shapes,
+  flat-shaded faces with gentle gradients, clean silhouettes. Match the attached character and
+  enemy references exactly in outfit, colours and proportions.
+- Bright, saturated, sunny palette: sky blue, grass green, warm yellow, with purple/magenta accents.
+  Cheerful and action-packed, a little funny.
+- Zombies are cute and goofy, never scary: no blood, no gore, no wounds.
+- Guns are real models drawn chunky and toy-like; muzzle flashes and tracers are bright and clean.
+- Soft cinematic light, warm key light from the top-left, light dust and glow for depth.
+- No text, no letters, no logo, no UI, no watermark unless the brief asks for the logo.</pre><button class="cp">Copy style</button></section>
+<section class="grid"><article class="c" id="c01">
+ <header><span class="n">01</span><div><h2>Blue Shark turnaround</h2><div class="kind">Character sheet</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/01_turnaround.jpg" data-base="final/01_turnaround" alt="Blue Shark turnaround"></figure>
+ <details><summary>Prompt</summary><pre>Concept 01: Blue Shark turnaround (Character sheet).
+Front, 3/4, side and back of the Blue Shark hero holding an assault rifle. Keep the hood with round black eyes and white teeth rim, blue shorts, blue shark boots, tail behind. Head is about 45% of the full height (about 2.2 heads tall).
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c02">
+ <header><span class="n">02</span><div><h2>Outfit lineup</h2><div class="kind">Character sheet</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/02_outfit_lineup.jpg" data-base="final/02_outfit_lineup" alt="Outfit lineup"></figure>
+ <details><summary>Prompt</summary><pre>Concept 02: Outfit lineup (Character sheet).
+Six heroes side by side, same pose and scale: Tiger Cub, Turtle Ninja, Blue Shark (centre, the iconic one), Viking, Cotton Sheep, Red Mask. Same chibi body under every outfit; only hood/costume changes.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c03">
+ <header><span class="n">03</span><div><h2>Weapon classes</h2><div class="kind">Prop sheet</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/03_weapon_lineup.jpg" data-base="final/03_weapon_lineup" alt="Weapon classes"></figure>
+ <details><summary>Prompt</summary><pre>Concept 03: Weapon classes (Prop sheet).
+The Blue Shark hero holding each gun class in turn: pistol, SMG, assault rifle, shotgun, LMG, marksman rifle, grenade launcher. Guns keep their real proportions against the small body: rifles are as long as the hero&#x27;s torso plus head.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c04">
+ <header><span class="n">04</span><div><h2>Enemy roster at scale</h2><div class="kind">Enemy sheet</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/04_enemy_roster.jpg" data-base="final/04_enemy_roster" alt="Enemy roster at scale"></figure>
+ <details><summary>Prompt</summary><pre>Concept 04: Enemy roster at scale (Enemy sheet).
+The hero at the left for scale, then the enemies in a row facing the viewer: pup, cactus, mole rat, lightning cat, bark dog, big cactus, bowwow, skeleton, skeleton mage. Keep the relative heights exactly as in the reference.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c05">
+ <header><span class="n">05</span><div><h2>Bosses at scale</h2><div class="kind">Enemy sheet</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/05_boss_scale.jpg" data-base="final/05_boss_scale" alt="Bosses at scale"></figure>
+ <details><summary>Prompt</summary><pre>Concept 05: Bosses at scale (Enemy sheet).
+Hero next to the three bosses: Cactus Boss (about 2.5x hero height, horns of cactus), Mole Rat King, Skeleton Giant (tall and thin). Bosses stay goofy, not scary.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c06">
+ <header><span class="n">06</span><div><h2>Hero poster</h2><div class="kind">Key art · portrait</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/06_poster_low.jpg" data-base="final/06_poster_low" alt="Hero poster"></figure>
+ <details><summary>Prompt</summary><pre>Concept 06: Hero poster (Key art · portrait).
+Low camera, Blue Shark hero in the foreground turned toward the viewer with the rifle across the chest, a crowd of cute enemies behind at mid distance, big open sky for a title.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c07">
+ <header><span class="n">07</span><div><h2>Facing the wave</h2><div class="kind">Key art · landscape</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/07_wave_back_wide.jpg" data-base="final/07_wave_back_wide" alt="Facing the wave"></figure>
+ <details><summary>Prompt</summary><pre>Concept 07: Facing the wave (Key art · landscape).
+Over-the-shoulder: the hero from behind facing a wide wave of mixed enemies coming across the plain. Hero on the left third, crowd fills the right two thirds.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c08">
+ <header><span class="n">08</span><div><h2>Facing the wave (portrait)</h2><div class="kind">Key art · 9:16</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/08_wave_back_portrait.jpg" data-base="final/08_wave_back_portrait" alt="Facing the wave (portrait)"></figure>
+ <details><summary>Prompt</summary><pre>Concept 08: Facing the wave (portrait) (Key art · 9:16).
+Same moment in portrait for the loading screen: hero large in the lower half seen from behind, the horde above toward the horizon, clear sky at top for the logo.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c09">
+ <header><span class="n">09</span><div><h2>Gameplay: Buzzsaw Halo</h2><div class="kind">Gameplay camera</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/09_gameplay_buzzsaw.jpg" data-base="final/09_gameplay_buzzsaw" alt="Gameplay: Buzzsaw Halo"></figure>
+ <details><summary>Prompt</summary><pre>Concept 09: Gameplay: Buzzsaw Halo (Gameplay camera).
+The real game camera, tilted top-down: hero in the centre, six golden saw blades orbiting on a hexagon, enemies closing from every side.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c10">
+ <header><span class="n">10</span><div><h2>Grenade launcher</h2><div class="kind">Action</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/10_launcher_blast.jpg" data-base="final/10_launcher_blast" alt="Grenade launcher"></figure>
+ <details><summary>Prompt</summary><pre>Concept 10: Grenade launcher (Action).
+Hero from behind-right firing a grenade launcher into a packed crowd; one bright blast, enemies bouncing, no gore.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c11">
+ <header><span class="n">11</span><div><h2>Relay capture</h2><div class="kind">Mechanic</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/11_relay_hexpad.jpg" data-base="final/11_relay_hexpad" alt="Relay capture"></figure>
+ <details><summary>Prompt</summary><pre>Concept 11: Relay capture (Mechanic).
+The hexagonal capture pad (dark metal tiles, yellow-black hazard rim, blue energy lines) with the hero standing on it while the horde closes in from all sides.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c12">
+ <header><span class="n">12</span><div><h2>Supply drop pod</h2><div class="kind">Mechanic</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/12_drop_pod.jpg" data-base="final/12_drop_pod" alt="Supply drop pod"></figure>
+ <details><summary>Prompt</summary><pre>Concept 12: Supply drop pod (Mechanic).
+The orange-white drop pod on four legs landing behind the hero, pink ring on the ground marking the zone to stand in.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c13">
+ <header><span class="n">13</span><div><h2>Heal plinth</h2><div class="kind">Mechanic</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/13_heal_plinth.jpg" data-base="final/13_heal_plinth" alt="Heal plinth"></figure>
+ <details><summary>Prompt</summary><pre>Concept 13: Heal plinth (Mechanic).
+The low round plinth with a floating green crystal and dashed green rings on the ground; hero resting inside while enemies come from far away.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c14">
+ <header><span class="n">14</span><div><h2>Cactus Boss fight</h2><div class="kind">Boss moment</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/14_cactus_boss.jpg" data-base="final/14_cactus_boss" alt="Cactus Boss fight"></figure>
+ <details><summary>Prompt</summary><pre>Concept 14: Cactus Boss fight (Boss moment).
+Over the shoulder of the hero facing the Cactus Boss up close, small cacti around it. Low camera so the boss looks huge.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c15">
+ <header><span class="n">15</span><div><h2>Mole Rat King</h2><div class="kind">Boss moment</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/15_molerat_king.jpg" data-base="final/15_molerat_king" alt="Mole Rat King"></figure>
+ <details><summary>Prompt</summary><pre>Concept 15: Mole Rat King (Boss moment).
+The hero on the right aiming across the frame at the Mole Rat King and a crowd of mole rats on the left.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c16">
+ <header><span class="n">16</span><div><h2>Skeleton host</h2><div class="kind">Enemy moment</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/16_skeleton_host.jpg" data-base="final/16_skeleton_host" alt="Skeleton host"></figure>
+ <details><summary>Prompt</summary><pre>Concept 16: Skeleton host (Enemy moment).
+Portrait: hero in the foreground from behind with a rifle, a squad of goofy skeletons and a hooded skeleton mage in front, a skeleton giant behind.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c17">
+ <header><span class="n">17</span><div><h2>Cats and dogs swarm</h2><div class="kind">Gameplay camera</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/17_pets_swarm.jpg" data-base="final/17_pets_swarm" alt="Cats and dogs swarm"></figure>
+ <details><summary>Prompt</summary><pre>Concept 17: Cats and dogs swarm (Gameplay camera).
+Tilted top-down: hero in the middle with a shotgun, cute cats and dogs (lightning cat, pups, fire dog) running in from all sides.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c18">
+ <header><span class="n">18</span><div><h2>Meteor Storm</h2><div class="kind">Skill moment</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/18_meteor_storm.jpg" data-base="final/18_meteor_storm" alt="Meteor Storm"></figure>
+ <details><summary>Prompt</summary><pre>Concept 18: Meteor Storm (Skill moment).
+Meteors falling in a line across the crowd, orange burn circles on the ground, the hero standing safe in front.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c19">
+ <header><span class="n">19</span><div><h2>Absolute Zero</h2><div class="kind">Skill moment</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/19_absolute_zero.jpg" data-base="final/19_absolute_zero" alt="Absolute Zero"></figure>
+ <details><summary>Prompt</summary><pre>Concept 19: Absolute Zero (Skill moment).
+Frost ring bursting out from the hero, enemies in a circle turned to pale ice statues, snow sparkles on the ground.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article><article class="c" id="c20">
+ <header><span class="n">20</span><div><h2>Store feature graphic</h2><div class="kind">Key art · 1024x500</div></div></header>
+ <div class="tabs" role="tablist"><button class="on" data-v="">Màu</button><button data-v="_sketch">Sketch B/W</button><button data-v="_layout">Layout</button></div>
+ <figure><img loading="lazy" src="final/20_feature_wide.jpg" data-base="final/20_feature_wide" alt="Store feature graphic"></figure>
+ <details><summary>Prompt</summary><pre>Concept 20: Store feature graphic (Key art · 1024x500).
+Wide: hero in the centre with the rifle, two groups of enemies coming from left and right, empty sky across the top for the logo.
+Use the attached in-game render as the ground truth for proportions, outfit and enemy design; use the attached layout for composition (keep the big dark/mid/light shapes and where the subjects sit on the thirds grid). Step 1: draw only a clean black and white sketch (line art with light grey tone), no colour. Wait for my approval before colouring.</pre><button class="cp">Copy prompt</button></details>
+</article></section>
+</div>
+<script>
+document.querySelectorAll('.c').forEach(c=>{const img=c.querySelector('img');c.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{c.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));img.src=img.dataset.base+b.dataset.v+'.jpg'}))});
+document.querySelectorAll('.cp').forEach(b=>b.addEventListener('click',async()=>{const pre=b.parentElement.querySelector('pre');try{await navigator.clipboard.writeText(pre.textContent);b.textContent='Copied'}catch(e){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected, press Ctrl+C'}setTimeout(()=>b.textContent=b.classList.contains('cp')&&pre.closest('.style')?'Copy style':'Copy prompt',1800)}));
+</script>
