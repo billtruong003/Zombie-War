@@ -17,9 +17,14 @@ namespace ZombieWar.EditorTools
     public static class EnvSandboxPlayCapture
     {
         const string Flag = "zw.env.capture", Prev = "zw.env.capture.prev", OutDir = "Review/M8/env_sandbox/";
-        static List<Camera> _cams;
+        // A shot: which camera, the file, and (for the pathing demo) how many seconds after the
+        // demo restarts it is taken.
+        struct Shot { public Camera cam; public string file; public float at; }
+        static List<Shot> _cams;
         static int _index, _waitUntil;
         static bool _captured;
+        static float _demoStart = -1f;
+        static readonly float[] DemoTimes = { 0.5f, 6f, 12f, 20f };
 
         static EnvSandboxPlayCapture() => EditorApplication.update += Tick;
 
@@ -56,10 +61,20 @@ namespace ZombieWar.EditorTools
             if (_cams == null)
             {
                 Directory.CreateDirectory(OutDir);
-                _cams = new List<Camera>(Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None));
-                _cams.RemoveAll(c => !c.name.StartsWith("Cam_"));
-                _cams.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-                foreach (var c in _cams) c.enabled = false;
+                var all = new List<Camera>(Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+                all.RemoveAll(c => !c.name.StartsWith("Cam_"));
+                all.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+                _cams = new List<Shot>();
+                foreach (var c in all)
+                {
+                    c.enabled = false;
+                    if (!c.name.StartsWith("Cam_Nav_")) _cams.Add(new Shot { cam = c, file = c.name.Replace("Cam_", ""), at = -1f });
+                }
+                // Pathing demo shots last, at fixed times after the crowd restarts.
+                foreach (float t in DemoTimes)
+                    foreach (var c in all)
+                        if (c.name.StartsWith("Cam_Nav_")) _cams.Add(new Shot { cam = c, file = c.name.Replace("Cam_", "") + "_t" + Mathf.RoundToInt(t), at = t });
+                _demoStart = -1f;
                 _index = -1;
                 _waitUntil = Time.frameCount + 30;   // let the scene settle (shaders, particles)
                 return;
@@ -76,15 +91,25 @@ namespace ZombieWar.EditorTools
             // change until a couple of frames later.
             if (_index >= 0 && !_captured)
             {
-                ScreenCapture.CaptureScreenshot(OutDir + _cams[_index].name.Replace("Cam_", "") + ".png");
+                var shot = _cams[_index];
+                if (shot.at >= 0f)
+                {
+                    if (_demoStart < 0f)
+                    {
+                        foreach (var d in Object.FindObjectsByType<ZombieWar.WorldNav.EnvNavDemo>(FindObjectsSortMode.None)) d.Restart();
+                        _demoStart = Time.time;
+                    }
+                    if (Time.time - _demoStart < shot.at) return;
+                }
+                ScreenCapture.CaptureScreenshot(OutDir + shot.file + ".png");
                 _captured = true;
                 _waitUntil = Time.frameCount + 3;
                 return;
             }
             _captured = false;
             _index++;
-            foreach (var c in _cams) c.enabled = false;
-            if (_index < _cams.Count) _cams[_index].enabled = true;
+            foreach (var c in _cams) c.cam.enabled = false;
+            if (_index < _cams.Count) _cams[_index].cam.enabled = true;
             _waitUntil = Time.frameCount + 6;
         }
     }

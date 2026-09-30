@@ -78,6 +78,7 @@ Shader "HordeCall/EnvSandbox/Ground"
         [Header(Env Sandbox)]
         [NoScaleOffset] _BasinMask ("Basin mask (white = deep)", 2D) = "black" {}
         _ZoneRect ("Zone (origin x, origin z, size)", Vector) = (0,0,40,0)
+        [Toggle] _BasinFromUV ("Basin from mesh UV.x (tiles)", Float) = 0
         _BankDarken ("Bank darkening", Range(0,1)) = 0.35
         [NoScaleOffset] _CrackTex ("Crack mask (white = crack)", 2D) = "black" {}
         _CrackTiling ("Crack tiling (m)", Float) = 9
@@ -156,6 +157,7 @@ Shader "HordeCall/EnvSandbox/Ground"
                 half4  _AmbientFallback;
                 float  _DebugMode;
                 float4 _ZoneRect;
+                float  _BasinFromUV;
                 float  _BankDarken;
                 float  _CrackTiling;
                 float  _CrackStrength;
@@ -170,6 +172,7 @@ Shader "HordeCall/EnvSandbox/Ground"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float4 color      : COLOR;
+                float2 uv         : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -179,6 +182,7 @@ Shader "HordeCall/EnvSandbox/Ground"
                 float4 weights    : TEXCOORD0;
                 float2 worldXZ    : TEXCOORD1;
                 float3 normalWS   : TEXCOORD2;
+                float  basin      : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -192,6 +196,7 @@ Shader "HordeCall/EnvSandbox/Ground"
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.weights = input.color;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.basin = input.uv.x;
 
                 // Toa do logic = toa do vat ly + offset goc. M2A: offset luon bang 0.
                 output.worldXZ = positionWS.xz + _WorldOriginOffset.xz;
@@ -280,7 +285,9 @@ Shader "HordeCall/EnvSandbox/Ground"
 
                 // Basins: the ground darkens toward a basin (a wet or scorched bank).
                 float2 zoneUV = (worldXZ - _ZoneRect.xy) / max(_ZoneRect.z, 0.001) + 0.5;
-                float basin = SAMPLE_TEXTURE2D(_BasinMask, sampler_BasinMask, zoneUV).r;
+                // Baked tiles carry the basin value in the mesh (one material per theme); the concept
+                // zones read their own mask texture.
+                float basin = _BasinFromUV > 0.5 ? input.basin : SAMPLE_TEXTURE2D(_BasinMask, sampler_BasinMask, zoneUV).r;
                 albedo *= 1.0 - _BankDarken * smoothstep(0.02, 0.25, basin);
 
                 // Cracks: dark lines everywhere, glowing within reach of a basin.

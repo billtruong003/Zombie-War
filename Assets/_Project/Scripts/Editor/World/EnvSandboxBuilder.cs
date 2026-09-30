@@ -16,7 +16,7 @@ namespace ZombieWar.EditorTools
     /// the outer ring, one landmark, the theme's hazard at the edge. The ground uses the game's own
     /// world ground shader with the theme's four layers. No gameplay scene is opened or touched.
     /// </summary>
-    public static class EnvSandboxBuilder
+    public static partial class EnvSandboxBuilder
     {
         public const string ScenePath = "Assets/_Project/Scenes/Dev/EnvSandbox.unity";
         const string Art = "Assets/_Project/Art/EnvSandbox/";
@@ -191,6 +191,7 @@ namespace ZombieWar.EditorTools
                 rig.AddComponent<ToonLightRig>();
 
                 foreach (var z in Zones()) log.Append(BuildZone(z, root.transform)).Append("; ");
+                log.Append(BuildTileGrids(root.transform));
 
                 var overview = new GameObject("Cam_Overview").AddComponent<Camera>();
                 overview.enabled = false;

@@ -44,8 +44,8 @@ figcaption{font-size:12px;line-height:1.35;display:grid}figcaption span{color:va
 <li><b>Vết chân trên tuyết</b>: bản Interactive Snow của MinionsArt dùng tessellation, không hợp mobile (Metal hạn chế, nhiều GPU Android chậm). Làm bản mobile: camera trực giao ghi vết người chơi vào RenderTexture nhỏ, mặt tuyết quanh người chơi là lưới chia sẵn, đẩy đỉnh xuống theo RenderTexture; xa thì chỉ đổi màu.</li>
 <li>Nơi cực lạnh <b>không có cỏ</b>, cây trụi lá; chủ yếu đất đá và trại bỏ hoang phủ tuyết.</li>
 </ul></section>
-<section class="note"><h2>Env Sandbox v1 (scene Dev/EnvSandbox.unity)</h2>
-<p>8 khu dựng bằng asset có sẵn theo concept, dùng chính shader đất của game (bảng màu 4 lớp riêng cho từng theme). Khu Băng nguyên thử shader Snow Cover và tuyết rơi Epic Toon (bản web). Lava, nước, băng, vũng độc đang là mặt phẳng tạm, chờ shader. Không có gì được áp vào scene game.</p>
+<section class="note"><h2>Env Sandbox v2 (scene Dev/EnvSandbox.unity)</h2>
+<p>Đất lõm xuống theo mask noise trắng đen (trắng = sâu); hồ, sông, vũng lava và vũng độc nằm trong chỗ lõm. Nước, độc, băng và lava đọc depth của camera: dải bọt ở bờ, hai bậc màu nông → sâu, viền lava phát sáng. Núi lửa và sa mạc có đường nứt vẽ bằng shader; nứt gần lava thì phát sáng. Cây có tán lá chỉ dùng cây Lux (không dùng cây low poly); nông trại và rừng rậm dày cây hơn. Khu Băng nguyên thử Snow Cover. Chưa áp gì vào scene game.</p>
 <figure><img src="sandbox/Overview.jpg" alt="Toàn cảnh Env Sandbox" width="1280" height="720" style="width:100%;height:auto;border-radius:8px"><figcaption>Toàn cảnh 8 khu</figcaption></figure></section>
 <article class="th" id="meadow">
 <header><div><h2>Đồng cỏ nông trại</h2><div class="en">Meadow Farm</div></div><div class="sw"><span style="background:#7FB24A" title="#7FB24A"></span><span style="background:#A7C957" title="#A7C957"></span><span style="background:#C9A26B" title="#C9A26B"></span><span style="background:#8C6A43" title="#8C6A43"></span><span style="background:#F2E3B3" title="#F2E3B3"></span></div></header>
