@@ -42,6 +42,7 @@ namespace ZombieWar.EditorTools
             if (key.StartsWith("MC/SM_Nature_Tree")) return 0.6f;
             if (key.StartsWith("SG/SM_Gen_Env_Tree")) return 0.8f;
             if (key.StartsWith("TT/Cliff")) return 0.8f;
+            if (key.StartsWith("LX/S_Tree")) return 0.7f;
             return 1f;
         }
 
@@ -56,11 +57,17 @@ namespace ZombieWar.EditorTools
             public int primary, secondary, path, outerCh = 3;
             public string[] mid, outer, landmark, scatter;
             public Vector2[] midPts, outerPts, landmarkPts;
-            public Vector2[][] paths = new Vector2[0][], hazards = new Vector2[0][];
-            public Vector2[] water = new Vector2[0];
-            public Color waterColor;
+            public Vector2[][] paths = new Vector2[0][];
             public bool snow;
             public int scatterCount = 40;
+            public float gridStep = 7f;
+            // Basins (01/10): pools (x, z, radius) and rivers sink the ground; the fluid fills them.
+            public Vector3[] pools = new Vector3[0];
+            public Vector2[][] rivers = new Vector2[0][];
+            public float riverWidth = 1.8f, basinDepth = 1f;
+            public string fluid;           // water, toxic, lava, ice
+            public int bankChannel = 3;
+            public float crack, crackGlow; // ground crack darkening, and glow reach near basins
         }
 
         static Vector2 V(float x, float y) => new(x, y);
@@ -73,10 +80,12 @@ namespace ZombieWar.EditorTools
                               C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png", C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_B_Basecolor.png" },
                 tint = new[] { Color.white, Color.white, Color.white, Color.white }, primary = 1, secondary = 0, path = 0, outerCh = 1,
                 mid = new[] { "KK/Food_Crate_Large_Apples", "KK/Food_Barrel_Empty", "KK/Food_Basket_A_Berries", "KK/Containers_Box_Large", "SG/SM_Gen_Env_Log_01", "SG/SM_Gen_Env_Stump_03", "SG/SM_Gen_Env_Rock_03" },
-                outer = new[] { "MC/SM_Nature_Tree_09", "MC/SM_Nature_Tree_10", "MC/SM_Nature_Tree_03", "MC/SM_Nature_Tree_02", "SG/SM_Gen_Env_Tree_01", "SG/SM_Gen_Env_Tree_02" },
-                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "LX/S_Grass_01A", "LX/S_Flowers_E", "LX/S_Flowers_C", "SG/SM_Gen_Env_Grass_01", "SG/SM_Gen_Env_Flowers_04" },
+                outer = new[] { "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_H", "LX/S_Tree_J", "MC/SM_FloorProps_Fence_04" },
+                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "LX/S_Grass_01A", "LX/S_Grass_B", "LX/S_Flowers_E", "LX/S_Flowers_C", "LX/S_Flowers_A", "SG/SM_Gen_Env_Grass_01", "SG/SM_Gen_Env_Flowers_04", "LX/S_Clovers_A" },
                 midPts = new[] { V(-9, 8), V(-12, -6), V(8, -9), V(11, 5) }, outerPts = new[] { V(-16, 14), V(-17, -13), V(15, 15), V(17, -12), V(0, 18) }, landmarkPts = new[] { V(13, 13) },
-                paths = new[] { new[] { V(-20, -4), V(20, 6) } } },
+                paths = new[] { new[] { V(-20, -4), V(20, 6) } }, gridStep = 4.5f, scatterCount = 170,
+                pools = new[] { new Vector3(9f, -10f, 5f) }, rivers = new[] { new[] { V(-20, 13), V(-8, 7), V(2, -3), V(9, -10) } }, riverWidth = 1.7f,
+                fluid = "water", bankChannel = 0, basinDepth = 0.9f },
 
             new Zone { id = "desert", layerColor = new[] { Col(0.78f, 0.6f, 0.4f), Col(0.93f, 0.8f, 0.55f), Col(0.97f, 0.87f, 0.64f), Col(0.78f, 0.42f, 0.27f) }, name = "Tiền đồn sa mạc", col = 1, row = 0,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png",
@@ -84,7 +93,7 @@ namespace ZombieWar.EditorTools
                 tint = new[] { Col(1.1f, 0.9f, 0.72f), Col(1.08f, 0.96f, 0.8f), Col(1.15f, 1.02f, 0.85f), Col(1.2f, 0.72f, 0.5f) }, primary = 1, secondary = 2, path = 0,
                 mid = new[] { "TT/Cactus_02", "TT/Cactus_01", "TT/Rock_01", "TT/Rock_02", "TT/Rock_05", "TT/Barrel2", "TT/Barrel4", "KK/Fuel_B_Jerrycan", "KK/Fuel_A_Barrel_Dirty" },
                 outer = new[] { "TT/CliffCorner_01", "TT/CliffCorner_02", "TT/Cliff_01", "TT/Rock_04", "TT/Cactus_03", "TT/Container1", "TT/Container4", "TT/Block2" },
-                landmark = new[] { "TT/Tower1" }, scatter = new[] { "TT/Rock_05", "LX/S_Grass_02A" }, scatterCount = 18,
+                landmark = new[] { "TT/Tower1" }, scatter = new[] { "TT/Rock_05", "LX/S_Grass_02A" }, scatterCount = 18, crack = 0.35f,
                 midPts = new[] { V(-8, 7), V(9, 9), V(-10, -7), V(7, -10) }, outerPts = new[] { V(-17, 16), V(-18, -2), V(-15, -16), V(16, -15), V(18, 2) }, landmarkPts = new[] { V(14, 15) },
                 paths = new[] { new[] { V(-20, -12), V(20, -16) } } },
 
@@ -92,10 +101,10 @@ namespace ZombieWar.EditorTools
                 tex = new[] { Art + "Textures/T_Snow_Packed.png", Art + "Textures/T_Snow_Fresh.png", Art + "Textures/T_Snow_Ice.png", Art + "Textures/T_Snow_ColdRock.png" },
                 tint = new[] { Col(1.12f, 1.12f, 1.12f), Col(1.16f, 1.13f, 1.1f), Col(1f, 1.08f, 1.15f), Col(1.02f, 1.04f, 1.08f) }, primary = 1, secondary = 0, path = 0,
                 mid = new[] { "SG/SM_Gen_Env_Rock_01", "SG/SM_Gen_Env_Rock_03", "SG/SM_Gen_Env_Rock_07", "SG/SM_Gen_Env_Stump_01", "SG/SM_Gen_Env_Rock_Pebbles_02", "KK/Containers_Crate_Large", "KK/Fuel_A_Barrels", "KK/Containers_Box_Large_Dirty" },
-                outer = new[] { "SG/SM_Gen_Env_Tree_Dead_01", "SG/SM_Gen_Env_Tree_Dead_02", "SG/SM_Gen_Env_Tree_Dead_03", "SG/SM_Gen_Env_Tree_Pine_01", "SG/SM_Gen_Env_Tree_Pine_02", "SG/SM_Gen_Env_Tree_Pine_03", "DF/SM_Env_Rock_Cliff_05", "DF/SM_Env_Rock_02" },
+                outer = new[] { "SG/SM_Gen_Env_Tree_Dead_01", "SG/SM_Gen_Env_Tree_Dead_02", "SG/SM_Gen_Env_Tree_Dead_03", "DF/SM_Env_Tree_Dead_02", "DF/SM_Env_Tree_Dead_03", "DF/SM_Env_Rock_Cliff_05", "DF/SM_Env_Rock_02", "DF/SM_Env_Rock_Cliff_02" },
                 landmark = new[] { "DF/SM_Env_Rock_Cliff_Arch_01" }, scatter = new[] { "SG/SM_Gen_Env_Rock_Pebbles_03", "SG/SM_Gen_Env_Twig_01", "SG/SM_Gen_Env_Twig_03" }, scatterCount = 22,
                 midPts = new[] { V(-9, 7), V(-11, -8), V(10, 9) }, outerPts = new[] { V(-17, 15), V(-18, -12), V(16, 16), V(0, -18), V(18, 0) }, landmarkPts = new[] { V(-14, -15) },
-                water = new[] { V(9, -8) }, waterColor = Col(0.72f, 0.86f, 0.96f) },
+                pools = new[] { new Vector3(9f, -8f, 6.5f), new Vector3(-7f, 12f, 3.2f) }, fluid = "ice", bankChannel = 3, basinDepth = 0.6f },
 
             new Zone { id = "volcano", layerColor = new[] { Col(0.25f, 0.24f, 0.27f), Col(0.36f, 0.27f, 0.27f), Col(0.32f, 0.22f, 0.18f), Col(0.2f, 0.2f, 0.23f) }, name = "Núi lửa", col = 3, row = 0,
                 tex = new[] { C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_A_Basecolor.png", C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_C_Basecolor.png",
@@ -105,17 +114,21 @@ namespace ZombieWar.EditorTools
                 outer = new[] { "DF/SM_Env_Basalt_01", "DF/SM_Env_Basalt_02", "DF/SM_Env_Basalt_04", "DF/SM_Env_Basalt_05", "DF/SM_Env_Cliff_Basalt_02", "DF/SM_Env_Tree_Dead_01", "DF/SM_Env_Tree_Dead_03" },
                 landmark = new[] { "DF/SM_Env_Cliff_Basalt_03" }, scatter = new[] { "DF/SM_Env_Grunge_05", "DF/SM_Env_Rocks_Small_02" }, scatterCount = 20,
                 midPts = new[] { V(-9, 8), V(9, 8), V(8, -14) }, outerPts = new[] { V(-17, 16), V(15, 17), V(-17, -16), V(18, -2) }, landmarkPts = new[] { V(0, 17) },
-                hazards = new[] { new[] { V(-20, -6), V(-4, -2), V(20, -9) } } },
+                rivers = new[] { new[] { V(-20, -6), V(-4, -2), V(20, -9) } }, riverWidth = 2.4f,
+                pools = new[] { new Vector3(-10f, 10f, 4.5f), new Vector3(11f, -15f, 3.5f), new Vector3(12f, 6f, 2.6f) },
+                fluid = "lava", bankChannel = 3, basinDepth = 1.2f, crack = 0.85f, crackGlow = 0.45f },
 
             new Zone { id = "forest", layerColor = new[] { Col(0.42f, 0.3f, 0.2f), Col(0.26f, 0.45f, 0.22f), Col(0.36f, 0.52f, 0.25f), Col(0.4f, 0.44f, 0.38f) }, name = "Rừng sâu", col = 0, row = 1,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_02/Textures/Grass_Dense_Tint_02_Base_Basecolor_A.png",
                               C + "GRASS/GRASS_Flower/GRASS_Flower_Tint_02/Texture/Grass_Flower_Tint_02_Base_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_B_Basecolor_A.png" },
                 tint = new[] { Col(0.85f, 0.8f, 0.72f), Col(0.85f, 0.95f, 0.8f), Color.white, Col(0.8f, 0.9f, 0.8f) }, primary = 1, secondary = 2, path = 0, outerCh = 0,
                 mid = new[] { "SG/SM_Gen_Env_Mushroom_01", "SG/SM_Gen_Env_Mushroom_03", "SG/SM_Gen_Env_Leaves_Pile_01", "SG/SM_Gen_Env_Log_02", "SG/SM_Gen_Env_Stump_02", "SG/SM_Gen_Env_Fern_01", "LX/S_Fern_B", "LX/S_Fern_D" },
-                outer = new[] { "MC/SM_Nature_Tree_07", "MC/SM_Nature_Tree_08", "MC/SM_Nature_Tree_10", "SG/SM_Gen_Env_Tree_Pine_01", "SG/SM_Gen_Env_Tree_Pine_03", "SG/SM_Gen_Env_Tree_03", "SG/SM_Gen_Env_Dirt_Cliff_05" },
-                landmark = new[] { "SG/SM_Gen_Env_Dirt_Cliff_07" }, scatter = new[] { "SG/SM_Gen_Env_Leaves_01", "SG/SM_Gen_Env_Leaves_02", "SG/SM_Gen_Env_Grass_05", "LX/S_Clovers_A" },
+                outer = new[] { "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_F", "LX/S_Tree_G", "LX/S_Tree_H", "LX/S_Tree_I", "LX/S_Tree_J", "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_F", "LX/S_Tree_G", "LX/S_Tree_H", "LX/S_Tree_I", "LX/S_Tree_J", "SG/SM_Gen_Env_Dirt_Cliff_05" },
+                landmark = new[] { "SG/SM_Gen_Env_Dirt_Cliff_07" }, scatter = new[] { "SG/SM_Gen_Env_Leaves_01", "SG/SM_Gen_Env_Leaves_02", "SG/SM_Gen_Env_Grass_05", "LX/S_Clovers_A", "LX/S_Fern_A", "LX/S_Fern_C", "LX/S_Grass_B", "SG/SM_Gen_Env_Mushroom_02", "LX/S_Bush_B" },
                 midPts = new[] { V(-8, 8), V(9, 6), V(-9, -9), V(8, -9) }, outerPts = new[] { V(-17, 15), V(-18, 0), V(-16, -15), V(16, -16), V(18, 1), V(15, 16), V(0, 18), V(0, -18) }, landmarkPts = new Vector2[0],
-                paths = new[] { new[] { V(-20, 0), V(20, -2) } } },
+                paths = new[] { new[] { V(-20, 0), V(20, -2) } }, gridStep = 4f, scatterCount = 210,
+                pools = new[] { new Vector3(-10f, 11f, 4f) }, rivers = new[] { new[] { V(-20, -14), V(-6, -9), V(5, -5), V(20, 12) } }, riverWidth = 1.6f,
+                fluid = "water", bankChannel = 0, basinDepth = 0.9f },
 
             new Zone { id = "swamp", layerColor = new[] { Col(0.3f, 0.33f, 0.2f), Col(0.42f, 0.5f, 0.22f), Col(0.4f, 0.45f, 0.32f), Col(0.32f, 0.36f, 0.3f) }, name = "Đầm độc", col = 1, row = 1,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_02/Textures/Grass_Dense_Tint_02_Base_Basecolor_A.png",
@@ -125,7 +138,9 @@ namespace ZombieWar.EditorTools
                 outer = new[] { "SG/SM_Gen_Env_Tree_Dead_01", "SG/SM_Gen_Env_Tree_Dead_02", "SG/SM_Gen_Env_Tree_Dead_03", "DF/SM_Env_Tree_Dead_02", "DF/SM_Env_Tree_Dead_04", "SG/SM_Gen_Env_Dirt_Cliff_02" },
                 landmark = new[] { "KK/Fuel_C_Barrels" }, scatter = new[] { "SG/SM_Gen_Env_Grass_Tall_02", "LX/S_Clovers_B", "SG/SM_Gen_Env_Lilypads_02" },
                 midPts = new[] { V(8, 9), V(-10, -9) }, outerPts = new[] { V(-17, 15), V(16, 16), V(-17, -15), V(17, -3) }, landmarkPts = new[] { V(15, -15) },
-                water = new[] { V(-9, 6), V(10, -8) }, waterColor = Col(0.45f, 0.78f, 0.22f) },
+                pools = new[] { new Vector3(-9f, 6f, 5.5f), new Vector3(10f, -8f, 6f), new Vector3(3f, 14f, 3.5f) },
+                rivers = new[] { new[] { V(-9, 6), V(0, -1), V(10, -8) } }, riverWidth = 1.5f,
+                fluid = "toxic", bankChannel = 2, basinDepth = 0.8f },
 
             new Zone { id = "city", layerColor = new[] { Col(0.42f, 0.4f, 0.38f), Col(0.4f, 0.48f, 0.3f), Col(0.62f, 0.63f, 0.66f), Col(0.3f, 0.31f, 0.34f) }, name = "Phố đổ nát", col = 2, row = 1,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_01/Textures/Grass_Dense_Tint_01_Base_Basecolor_A.png",
@@ -213,8 +228,8 @@ namespace ZombieWar.EditorTools
             // clusters on a jittered 7 m grid across the whole zone (the player's own spot stays
             // clear), tall pieces along the border and a few inside, the landmark within one screen.
             int placed = 0;
-            for (float gx = -17f; gx <= 17.1f; gx += 7f)
-                for (float gz = -17f; gz <= 17.1f; gz += 7f)
+            for (float gx = -17f; gx <= 17.1f; gx += z.gridStep)
+                for (float gz = -17f; gz <= 17.1f; gz += z.gridStep)
                 {
                     var c = new Vector2(gx + (float)(rng.NextDouble() * 4 - 2), gz + (float)(rng.NextDouble() * 4 - 2));
                     if (c.magnitude < 4.5f || OnLine(c, z)) continue;
@@ -235,12 +250,11 @@ namespace ZombieWar.EditorTools
             for (int i = 0; i < z.scatterCount; i++)
             {
                 var p = new Vector2((float)(rng.NextDouble() * 2 - 1) * Half * 0.95f, (float)(rng.NextDouble() * 2 - 1) * Half * 0.95f);
-                if (p.magnitude < 5f) continue;
+                if (p.magnitude < 5f || BasinAt(z, p) > 0f) continue;
                 if (Place(z.scatter[rng.Next(z.scatter.Length)], zr, p, (float)rng.NextDouble() * 360f, 1f)) placed++;
             }
 
-            foreach (var w in z.water) Water(zr, w, z.waterColor, z.id);
-            foreach (var h in z.hazards) Lava(zr, h);
+            if (!string.IsNullOrEmpty(z.fluid)) Fluid(z, zr, origin);
 
             if (z.snow)
             {
@@ -282,16 +296,183 @@ namespace ZombieWar.EditorTools
             heroCam.fieldOfView = 42f;
             heroCam.clearFlags = CameraClearFlags.SolidColor;
             heroCam.backgroundColor = new Color(0.2f, 0.25f, 0.32f);
+            foreach (var c in new[] { cam, heroCam })
+                c.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>().requiresDepthOption =
+                    UnityEngine.Rendering.Universal.CameraOverrideOption.On;   // water, lava and toxic read scene depth
             return z.id + " " + placed;
         }
 
         static bool OnLine(Vector2 p, Zone z)
         {
             foreach (var l in z.paths) if (DistToPolyline(p, l) < 2.5f) return true;
-            foreach (var l in z.hazards) if (DistToPolyline(p, l) < 3f) return true;
-            foreach (var w in z.water) if (Vector2.Distance(p, w) < 6f) return true;
+            // Keep a margin around basins: a prop on the bank would hang over the fluid.
+            foreach (var o in new[] { Vector2.zero, new Vector2(1.5f, 0f), new Vector2(-1.5f, 0f), new Vector2(0f, 1.5f), new Vector2(0f, -1.5f) })
+                if (BasinAt(z, p + o) > 0f) return true;
             return false;
         }
+
+        // ── basins: a black-and-white mask (white = deep) from pools and rivers, warped by noise
+
+        static float BasinAt(Zone z, Vector2 p)
+        {
+            float v = 0f;
+            float warp = Mathf.PerlinNoise(p.x * 0.17f + 11.3f, p.y * 0.17f + 5.1f) - 0.5f;
+            foreach (var c in z.pools)
+            {
+                float d = Vector2.Distance(p, new Vector2(c.x, c.y)) + warp * c.z * 0.7f;
+                v = Mathf.Max(v, 1f - d / c.z);
+            }
+            foreach (var r in z.rivers)
+            {
+                float d = DistToPolyline(p, r) + warp * z.riverWidth * 0.8f;
+                v = Mathf.Max(v, (1f - d / z.riverWidth) * 0.85f);
+            }
+            return Mathf.Clamp01(v);
+        }
+
+        /// The ground's height from the mask: flat at 0, sinking to -basinDepth where the mask is white.
+        static float Sink(Zone z, float basin) => -z.basinDepth * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.02f, 0.6f, basin));
+
+        static Texture2D BasinMask(Zone z, Vector3 origin)
+        {
+            const int R = 256;
+            string path = Art + "Textures/T_Basin_" + z.id + ".png";
+            var tex = new Texture2D(R, R, TextureFormat.RGBA32, false, true);
+            var px = new Color[R * R];
+            for (int j = 0; j < R; j++)
+                for (int i = 0; i < R; i++)
+                {
+                    float v = BasinAt(z, new Vector2(-Half + (i + 0.5f) * 2f * Half / R, -Half + (j + 0.5f) * 2f * Half / R));
+                    px[j * R + i] = new Color(v, v, v, 1f);
+                }
+            tex.SetPixels(px); tex.Apply();
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.sRGBTexture = false; imp.wrapMode = TextureWrapMode.Clamp; imp.mipmapEnabled = false;
+            imp.textureCompression = TextureImporterCompression.Uncompressed;
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// A 512² tiling crack mask: the edges of a Worley (cellular) noise, white = crack.
+        static Texture2D CrackTexture()
+        {
+            string path = Art + "Textures/T_Cracks.png";
+            if (!File.Exists(path))
+            {
+                const int R = 512, Cells = 7;
+                var rng = new System.Random(7);
+                var pts = new Vector2[Cells * Cells];
+                for (int i = 0; i < pts.Length; i++) pts[i] = new Vector2((i % Cells + (float)rng.NextDouble()) / Cells, (i / Cells + (float)rng.NextDouble()) / Cells);
+                var tex = new Texture2D(R, R, TextureFormat.RGBA32, false, true);
+                var px = new Color[R * R];
+                for (int y = 0; y < R; y++)
+                    for (int x = 0; x < R; x++)
+                    {
+                        var uv = new Vector2((x + 0.5f) / R, (y + 0.5f) / R);
+                        float f1 = 9f, f2 = 9f;
+                        foreach (var c in pts)
+                            for (int oy = -1; oy <= 1; oy++)
+                                for (int ox = -1; ox <= 1; ox++)
+                                {
+                                    float d = Vector2.Distance(uv, c + new Vector2(ox, oy));
+                                    if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
+                                }
+                        float wob = Mathf.PerlinNoise(uv.x * 23f, uv.y * 23f) * 0.012f;
+                        float e = Mathf.InverseLerp(0.004f, 0.016f, f2 - f1 - wob);
+                        float line = 1f - e * e * (3f - 2f * e);   // shader-style smoothstep
+                        px[y * R + x] = new Color(line, line, line, 1f);
+                    }
+                tex.SetPixels(px); tex.Apply();
+                File.WriteAllBytes(path, tex.EncodeToPNG());
+                Object.DestroyImmediate(tex);
+                AssetDatabase.ImportAsset(path);
+                var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+                imp.sRGBTexture = false; imp.wrapMode = TextureWrapMode.Repeat;
+                imp.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// The fluid surface: a plane below ground level that only shows where the ground sank.
+        static void Fluid(Zone z, Transform zr, Vector3 origin)
+        {
+            const int N = 40;
+            float level = z.basinDepth * -0.35f;
+            var verts = new Vector3[(N + 1) * (N + 1)];
+            for (int j = 0; j <= N; j++)
+                for (int i = 0; i <= N; i++)
+                    // Inset 1 m: a plane as wide as the ground peeks out under the zone's near edge.
+                    verts[j * (N + 1) + i] = new Vector3(-Half + 1f + i * 2f * (Half - 1f) / N, level, -Half + 1f + j * 2f * (Half - 1f) / N);
+            var tris = new int[N * N * 6];
+            int t = 0;
+            for (int j = 0; j < N; j++)
+                for (int i = 0; i < N; i++)
+                {
+                    int a = j * (N + 1) + i, b = a + N + 1;
+                    tris[t++] = a; tris[t++] = b; tris[t++] = a + 1;
+                    tris[t++] = a + 1; tris[t++] = b; tris[t++] = b + 1;
+                }
+            var m = new Mesh { name = "EnvFluid_" + z.id, vertices = verts, triangles = tris };
+            m.RecalculateNormals(); m.RecalculateBounds();
+            string mp = Art + "Materials/EnvFluid_" + z.id + ".asset";
+            AssetDatabase.DeleteAsset(mp);
+            AssetDatabase.CreateAsset(m, mp);
+
+            var go = new GameObject("Fluid_" + z.fluid);
+            go.transform.SetParent(zr, false);
+            go.AddComponent<MeshFilter>().sharedMesh = m;
+            go.AddComponent<MeshRenderer>().sharedMaterial = FluidMaterial(z, origin);
+        }
+
+        static Material FluidMaterial(Zone z, Vector3 origin)
+        {
+            bool lava = z.fluid == "lava";
+            var shader = Shader.Find(lava ? "HordeCall/EnvSandbox/Stylized Lava" : "HordeCall/EnvSandbox/Stylized Water");
+            string path = Art + "Materials/M_Fluid_" + z.id + ".mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null) { m = new Material(shader); AssetDatabase.CreateAsset(m, path); }
+            m.shader = shader;
+            m.SetTexture("_BasinMask", AssetDatabase.LoadAssetAtPath<Texture2D>(Art + "Textures/T_Basin_" + z.id + ".png"));
+            m.SetVector("_ZoneRect", new Vector4(origin.x, origin.z, 2f * Half, 0f));
+            m.SetTexture("_NoiseTex", AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Textures/Noise/Noise_Perlin_01.png"));
+            // Depth comes from the camera depth texture, in metres along the view ray: the game camera
+            // looks down at an angle, so a basin reads deeper than it sinks.
+            if (lava)
+            {
+                m.SetFloat("_EdgeWidth", 0.38f);
+            }
+            else
+            {
+                m.SetFloat("_FoamWidth", z.fluid == "ice" ? 0.15f : 0.2f);
+                m.SetFloat("_DepthRange", z.basinDepth * 1.35f);
+                switch (z.fluid)
+                {
+                    case "toxic":
+                        m.SetColor("_ShallowColor", new Color(0.55f, 0.85f, 0.2f)); m.SetColor("_DeepColor", new Color(0.18f, 0.42f, 0.1f));
+                        m.SetColor("_FoamColor", new Color(0.78f, 0.95f, 0.45f)); m.SetColor("_StreakColor", new Color(0.7f, 0.95f, 0.3f));
+                        m.SetColor("_Emission", new Color(0.12f, 0.3f, 0.02f)); m.SetFloat("_BubbleAmount", 1f);
+                        m.SetVector("_Flow", new Vector4(0.2f, 0.1f, 0.02f, 0f)); m.SetFloat("_WaveHeight", 0.02f);
+                        break;
+                    case "ice":
+                        m.SetColor("_ShallowColor", new Color(0.8f, 0.9f, 0.97f)); m.SetColor("_DeepColor", new Color(0.45f, 0.65f, 0.85f));
+                        m.SetColor("_FoamColor", new Color(0.97f, 0.98f, 1f)); m.SetColor("_StreakColor", new Color(0.92f, 0.97f, 1f));
+                        m.SetVector("_Flow", Vector4.zero); m.SetFloat("_WaveHeight", 0f); m.SetFloat("_StreakCut", 0.66f);
+                        m.SetTexture("_CrackTex", CrackTexture()); m.SetFloat("_CrackAmount", 0.7f); m.SetFloat("_CrackTiling", 5f);
+                        break;
+                    default:
+                        m.SetColor("_ShallowColor", new Color(0.38f, 0.82f, 0.88f)); m.SetColor("_DeepColor", new Color(0.12f, 0.42f, 0.66f));
+                        m.SetColor("_FoamColor", new Color(0.95f, 0.98f, 1f)); m.SetColor("_StreakColor", new Color(0.72f, 0.94f, 1f));
+                        m.SetVector("_Flow", new Vector4(0.6f, 0.25f, 0.06f, 0f));
+                        break;
+                }
+            }
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
 
         static int Scatter(Zone z, Transform zr, System.Random rng, Vector2[] pts, string[] kit, int perPoint, float radius)
         {
@@ -335,7 +516,7 @@ namespace ZombieWar.EditorTools
 
         static Mesh GroundMesh(Zone z, Vector3 origin)
         {
-            const int N = 40;
+            const int N = 100;
             var verts = new Vector3[(N + 1) * (N + 1)];
             var cols = new Color[verts.Length];
             var uvs = new Vector2[verts.Length];
@@ -344,7 +525,7 @@ namespace ZombieWar.EditorTools
                 {
                     int k = j * (N + 1) + i;
                     var p = new Vector2(-Half + i * (2 * Half / N), -Half + j * (2 * Half / N));
-                    verts[k] = new Vector3(p.x, 0f, p.y);
+                    verts[k] = new Vector3(p.x, Sink(z, BasinAt(z, p)), p.y);
                     uvs[k] = new Vector2(i / (float)N, j / (float)N);
                     cols[k] = Weights(z, p, origin);
                 }
@@ -379,6 +560,7 @@ namespace ZombieWar.EditorTools
                 float d = DistToPolyline(p, path);
                 w[z.path] += Mathf.InverseLerp(3f, 1.2f, d) * 2f;
             }
+            w[z.bankChannel] += Mathf.InverseLerp(0.0f, 0.3f, BasinAt(z, p)) * 3f;
             float sum = w[0] + w[1] + w[2] + w[3];
             return new Color(w[0] / sum, w[1] / sum, w[2] / sum, w[3] / sum);
         }
@@ -402,7 +584,15 @@ namespace ZombieWar.EditorTools
             string path = Art + "Materials/M_Ground_" + z.id + ".mat";
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null) { m = new Material(src); AssetDatabase.CreateAsset(m, path); }
-            else m.CopyPropertiesFromMaterial(src);
+            m.shader = Shader.Find("HordeCall/EnvSandbox/Ground");
+            m.CopyPropertiesFromMaterial(src);
+            var origin = new Vector3(z.col * Spacing, 0f, z.row * Spacing);
+            m.SetTexture("_BasinMask", BasinMask(z, origin));
+            m.SetVector("_ZoneRect", new Vector4(origin.x, origin.z, 2f * Half, 0f));
+            m.SetTexture("_CrackTex", CrackTexture());
+            m.SetFloat("_CrackStrength", z.crack);
+            m.SetFloat("_CrackGlowReach", z.crackGlow);
+            m.SetFloat("_BankDarken", z.fluid == "lava" ? 0.55f : 0.3f);
             string[] texProps = { "_DryTex", "_GrassTex", "_SandTex", "_RockTex" };
             string[] tintProps = { "_DryTint", "_GrassTint", "_SandTint", "_RockTint" };
             string[] tileProps = { "_DryTiling", "_GrassTiling", "_SandTiling", "_RockTiling" };
@@ -418,36 +608,6 @@ namespace ZombieWar.EditorTools
             }
             EditorUtility.SetDirty(m);
             return m;
-        }
-
-        // ── hazards and water (flat placeholders until their shaders are made here)
-
-        static void Water(Transform zr, Vector2 at, Color color, string id)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.name = "Water";
-            go.transform.SetParent(zr, false);
-            go.transform.localPosition = new Vector3(at.x, 0.02f, at.y);
-            go.transform.localScale = new Vector3(11f, 0.01f, 7.6f);
-            go.GetComponent<MeshRenderer>().sharedMaterial = Flat("M_Water_" + id, color);
-        }
-
-        static void Lava(Transform zr, Vector2[] line)
-        {
-            for (int i = 0; i + 1 < line.Length; i++)
-            {
-                var a = line[i]; var b = line[i + 1];
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Object.DestroyImmediate(go.GetComponent<Collider>());
-                go.name = "Lava";
-                go.transform.SetParent(zr, false);
-                var mid = (a + b) * 0.5f;
-                go.transform.localPosition = new Vector3(mid.x, 0.02f, mid.y);
-                go.transform.localRotation = Quaternion.Euler(0f, -Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg, 0f);
-                go.transform.localScale = new Vector3(Vector2.Distance(a, b) + 2f, 0.02f, 3f);
-                go.GetComponent<MeshRenderer>().sharedMaterial = Flat("M_Lava_Placeholder", new Color(1f, 0.45f, 0.1f));
-            }
         }
 
         static Material Flat(string name, Color color)
@@ -468,7 +628,7 @@ namespace ZombieWar.EditorTools
             var cache = new Dictionary<Material, Material>();
             foreach (var r in zr.GetComponentsInChildren<MeshRenderer>(true))
             {
-                if (r.name == "Ground" || r.name == "Water" || r.name == "Hero_1.8m") continue;
+                if (r.name == "Ground" || r.name.StartsWith("Fluid") || r.name == "Hero_1.8m") continue;
                 var mats = r.sharedMaterials;
                 for (int i = 0; i < mats.Length; i++)
                 {
