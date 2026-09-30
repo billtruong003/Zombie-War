@@ -1,0 +1,153 @@
+<title>HordeCall Themes & Campaign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#F2F1EB;--surface:#fff;--ink:#1C2027;--muted:#5D6371;--line:#D9D6CC;--accent:#2F7D5B;--warm:#C75A0E;--hot:#B8322A;--display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;--body:"Be Vietnam Pro",system-ui,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171B;--surface:#1D2127;--ink:#E9EAE5;--muted:#A0A6B0;--line:#2E333B;--accent:#5CC79A;--warm:#FF9A4D;--hot:#FF6B5B;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171B;--surface:#1D2127;--ink:#E9EAE5;--muted:#A0A6B0;--line:#2E333B;--accent:#5CC79A;--warm:#FF9A4D;--hot:#FF6B5B;color-scheme:dark}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:18px;padding-block:28px 60px;display:grid;gap:30px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}h1{font-size:clamp(30px,5vw,44px)}h2{font-size:24px}h3{font-size:18px}
+p{margin:0;max-width:74ch}.muted{color:var(--muted)}
+section{display:grid;gap:14px}
+.kick{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.box.accent{border-left:4px solid var(--accent)}.box.warm{border-left:4px solid var(--warm)}.box.hot{border-left:4px solid var(--hot)}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:color-mix(in srgb,var(--surface) 85%,var(--line))}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:14px}
+.tag{display:inline-block;font:600 11px var(--mono);padding:2px 7px;border-radius:5px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.tag.w{background:color-mix(in srgb,var(--warm) 16%,transparent);color:var(--warm)}
+.tag.h{background:color-mix(in srgb,var(--hot) 16%,transparent);color:var(--hot)}
+code{font:500 13px var(--mono)}
+.q{display:grid;gap:8px}.q li b{color:var(--warm)}
+</style>
+<div class="wrap">
+<header style="display:grid;gap:10px">
+<div class="kick">HordeCall · Phase map theme + campaign · đề xuất 30/09/2026</div>
+<h1>HordeCall Themes &amp; Campaign</h1>
+<p class="muted">Tổng hợp từ kho package trong project, cách map đang dựng (chunk 32 m, 3 mesh gộp Ground/SolidDecor/Foliage), và kỹ thuật của MinionsArt. Kèm ý tưởng campaign và cách phân tầng độ khó giữa campaign và endless. Đây là phương án để bạn chọn, chưa làm gì trong code. Chi tiết và đường dẫn file: <code>Review/M8/env_research/RESEARCH.md</code>.</p>
+</header>
+
+<section>
+<h2>1. Hiện trạng và cơ hội</h2>
+<div class="two">
+<div class="box accent"><h3>Đã tốt, giữ nguyên</h3><ul>
+<li>Mặt đất blend 4 lớp bằng vertex color (khô, cỏ, cát, đá): đúng kỹ thuật rẻ nhất mà MinionsArt cũng dùng.</li>
+<li>Cỏ lay gió chạy trong vertex shader; decor gộp mỗi chunk thành 1 mesh cho mỗi loại nên ít draw call.</li>
+<li>Đã có nhiều bảng decor (palette) khác nhau, nên đổi theme chỉ là đổi dữ liệu.</li>
+</ul></div>
+<div class="box warm"><h3>Nên sửa khi làm theme</h3><ul>
+<li>4 texture mặt đất đang 2048², lặp mỗi 6–13 m. Camera điện thoại không thấy chi tiết đó: <b>hạ về 1024 tiết kiệm ~75% bộ nhớ</b>.</li>
+<li>Bụi cây Lux nặng 1.9k–3.9k đỉnh/cây; ngân sách decor 45k đỉnh/chunk quá rộng cho máy yếu.</li>
+<li>Shader nước/lava có sẵn trong world kit cần depth texture hoặc noise nặng: phải làm bản rẻ cho mobile.</li>
+</ul></div>
+</div>
+<div class="box hot"><h3>MinionsArt: học cách làm, không copy code</h3><ul>
+<li>Code của chị ấy nằm trên Patreon, GitHub chỉ có trang mục lục, giấy phép chưa rõ. Dùng làm tham khảo, tự viết lại bằng HLSL của mình như các shader hiện có.</li>
+<li><b>Không dùng</b> cỏ geometry shader (iOS/Metal không có, nhiều GPU Android chạy tệ) và cỏ compute (bị hồng trên OpenGL ES).</li>
+<li><b>Nên lấy</b>: cỏ bị đẩy dạt khi người chơi đi qua (1 vector toàn cục, rất rẻ), lava chảy bằng flow map trên mặt phẳng (2–3 lần đọc texture), vết nứt đất bằng mesh decal (không cần depth).</li>
+</ul></div>
+</section>
+
+<section>
+<h2>2. Kiến trúc đa theme, tối ưu cho máy yếu</h2>
+<div class="box"><ol>
+<li><b>MapTheme (ScriptableObject)</b>: 3 material (đất, prop, cỏ), 1 bảng decor, màu nắng/ambient/sương, mặt phẳng nguy hiểm tùy chọn (lava, nước độc), FX không khí từ Epic Toon. Đổi theme lúc bắt đầu trận qua đúng một chỗ (<code>ProductionWorldStreaming.cs:102</code>), không cần scene mới.</li>
+<li><b>Mỗi theme đọc lại 4 kênh màu đất theo cách riêng</b> (ví dụ sa mạc: cát, cát vỏ sò, đất khô, đá vách). Thêm 1 kênh "đặc trưng" dùng lại noise texture cho vết nứt, vũng độc, mạch lava phát sáng: thêm 1 lần đọc texture.</li>
+<li><b>Addressables theo theme</b>: chỉ theme đang chơi nằm trong RAM.</li>
+<li><b>Prop tương tác</b> (thùng gỗ, thùng sắt, đá): vài cái mỗi chunk, có collider và gắn <code>SurfaceMaterial</code>, nên đạn trúng ra mảnh gỗ/tia lửa/đá vụn đúng vật liệu (hệ thống đã làm xong hôm nay). Phần còn lại vẫn gộp mesh như cũ.</li>
+</ol></div>
+<div class="tw"><table>
+<thead><tr><th>Ngân sách môi trường</th><th>Hiện tại</th><th>Mục tiêu mỗi theme</th></tr></thead>
+<tbody>
+<tr><td>Draw call môi trường</td><td class="n">~30–40</td><td class="n">≤ 60 (kể cả lava, FX không khí, outline)</td></tr>
+<tr><td>Texture môi trường trong RAM</td><td class="n">~25 MB</td><td class="n">≤ 15–20 MB (trần 30 MB)</td></tr>
+<tr><td>Đỉnh cỏ/bụi mỗi chunk</td><td class="n">ngân sách 45k</td><td class="n">≤ 12k (thay bụi Lux bằng cụm card ≤ 500 đỉnh)</td></tr>
+<tr><td>Đỉnh prop mỗi chunk</td><td class="n">ngân sách 45k</td><td class="n">≤ 10–15k; nhà to chỉ đặt ở rìa</td></tr>
+<tr><td>Đo đạc</td><td colspan="2">WorldStreamingBenchmark + profiler từ xa (không test tay trên máy thật).</td></tr>
+</tbody></table></div>
+</section>
+
+<section>
+<h2>3. Các theme ứng viên</h2>
+<div class="tw"><table>
+<thead><tr><th>Theme</th><th>Đất</th><th>Cây cỏ / prop có sẵn</th><th>Nguy hiểm / FX</th><th>Còn thiếu</th></tr></thead>
+<tbody>
+<tr><td><b>Đồng cỏ</b> <span class="tag">đang có</span></td><td>Đất đường, cỏ dày, cát, đá</td><td>Cỏ, hoa, dương xỉ Lux; đá, thùng, pallet KayKit</td><td>Lá bay</td><td>Bụi cây nhẹ hơn</td></tr>
+<tr><td><b>Sa mạc</b> <span class="tag">làm trước</span></td><td>Cát, cát vỏ sò, đất khô, vách đá</td><td>Xương rồng, đá, vách Tiny Teacup; container, thùng, rào Military; can xăng KayKit</td><td>Bụi Epic Toon</td><td>Đụn cát, decal nứt</td></tr>
+<tr><td><b>Núi lửa</b> <span class="tag">làm trước</span></td><td>Đá núi lửa A/B, đất tối, mạch lava phát sáng</td><td>Basalt, sạt lở (Synty DarkFantasy, nhuộm lại); đá KayKit tối</td><td>Lava chảy bằng flow map; LiquidLava Epic Toon</td><td>Texture flow lava, cây cháy, decal nứt phát sáng</td></tr>
+<tr><td><b>Đất nứt</b></td><td>Đất nứt (tạo từ đất đường + mask nứt), cát, vách</td><td>Đá Tiny Teacup, khe nứt Kaiju</td><td>Bụi</td><td>Atlas decal nứt</td></tr>
+<tr><td><b>Rừng</b></td><td>Cỏ, cỏ hoa, đất, đá</td><td>Cây MegaCity (450–1k tam giác), dương xỉ, nấm, gốc cây Synty</td><td>Lá rơi, đom đóm, bóng mây</td><td>Cây tán tròn dễ thương ít tam giác</td></tr>
+<tr><td><b>Đầm độc</b></td><td>Đất nhuộm xanh, cỏ, cát đáy nước, vũng độc phát sáng</td><td>Cỏ nến, cỏ ba lá Lux; lá súng, nấm Synty; thùng bẩn KayKit</td><td>LiquidAcid, bong bóng Epic Toon</td><td>Decal vũng độc, thùng độc</td></tr>
+<tr><td><b>Thành phố đổ nát</b></td><td>Bê tông, đất, tường đá, cỏ</td><td>Cọc, thùng rác, xe MegaCity; gạch vụn Kaiju</td><td>Khói, lửa</td><td>Mảnh đổ nát nhỏ cho vùng chơi (nhà MegaCity tới 12.5k tam giác)</td></tr>
+<tr><td><b>Tuyết</b></td><td>Đất trắng (chưa có), tuyết nén, băng, vách</td><td>Đá KayKit nhuộm, container</td><td>Tuyết rơi Synty, SnowExplosion</td><td>Texture tuyết, cây thông, người tuyết</td></tr>
+<tr><td><b>Sân chơi đồ chơi</b> <span class="tag w">sự kiện / FTUE</span></td><td>Cỏ, cát</td><td>60 prefab Playground Low Poly: dễ thương nhất</td><td>Confetti</td><td>—</td></tr>
+</tbody></table></div>
+<p class="muted">Không nên: Nghĩa địa bằng Synty DarkFantasy (nét sắc, u ám, có xác, thòng lọng); chỉ làm sau khi nhuộm lại và bỏ các prop đó.</p>
+<div class="box accent"><h3>Thứ tự làm đề xuất</h3><ol>
+<li>MapTheme + chỗ nối vào streaming; hạ texture đất về 1024; siết ngân sách decor (có đo trước/sau).</li>
+<li>Sa mạc và Núi lửa: package phủ tốt nhất, khác biệt hình ảnh lớn nhất.</li>
+<li>Shader lava flow map + decal nứt + cỏ dạt theo người chơi.</li>
+<li>Rừng, Đầm độc, Thành phố, Tuyết (tuyết cần mua/làm thêm asset).</li>
+</ol></div>
+</section>
+
+<section>
+<h2>4. Ý tưởng campaign</h2>
+<div class="two">
+<div class="box accent"><h3>Cấu trúc</h3><ul>
+<li><b>Chương = 1 theme</b> (Đồng cỏ → Sa mạc → Núi lửa → Rừng → Đầm độc → …), mỗi chương 10 màn.</li>
+<li><b>Màn ngắn, có đích</b>: 4–6 phút, mục tiêu rõ (sống đủ giờ, giữ trạm Relay, hạ boss). Màn 5 và 10 là boss của chương (Cactus Boss ở sa mạc, Mole Rat King ở rừng…).</li>
+<li><b>3 sao</b>: qua màn, không hồi sinh, đạt số kill. Sao mở rương chương.</li>
+<li><b>Mở theme mới</b> khi qua boss chương: theme mới cũng thành map endless mới.</li>
+</ul></div>
+<div class="box warm"><h3>Mỗi màn có một luật riêng (nhẹ, dễ làm)</h3><ul>
+<li>Sa mạc: bão cát làm tầm nhìn ngắn lại theo đợt.</li>
+<li>Núi lửa: vệt lava lan chậm, đứng lên bị đốt.</li>
+<li>Rừng: quái chui từ bụi ra (Burrower nhiều).</li>
+<li>Đầm độc: vũng độc gây chậm, trạm hồi máu hiếm hơn.</li>
+<li>Tuyết: băng trơn, quái chậm nhưng trâu.</li>
+</ul></div>
+</div>
+</section>
+
+<section>
+<h2>5. Phân tầng độ khó: campaign và endless</h2>
+<div class="two">
+<div class="box hot"><h3>Campaign: kiểm tra trang bị</h3><ul>
+<li>Máu và sát thương quái theo màn: <code>×1.10 mỗi màn</code>, <code>×1.35 khi sang chương mới</code>. Mỗi màn hiện <b>Lực chiến khuyến nghị</b> (như bảng balance cũ: màn cuối ≈ 80% trần lực chiến).</li>
+<li>Thiết kế để người chơi <b>thua ở cuối mỗi chương</b> nếu không nâng súng/skin: thua → nâng cấp → chơi lại. Đây là chỗ kinh tế và gacha có ý nghĩa.</li>
+<li>Build skill tốt chỉ bù được khoảng 1 bậc chương; không thể vượt hẳn trần lực chiến.</li>
+</ul></div>
+<div class="box accent"><h3>Endless: kiểm tra kỹ năng, trang bị kéo dài thời gian</h3><ul>
+<li>Bắt đầu nhẹ, chỉ số quái tăng theo phút: <code>1 + 0.06·phút + 0.004·phút²</code> sau phút thứ 3 (tiếp nối hệ tier hiện có), nên cuối cùng ai cũng chết (đúng quyết định "bắt buộc chết").</li>
+<li>Súng xịn cộng sát thương dạng phần trăm, nên chỉ <b>đẩy đường cong sang phải vài phút</b>, không vô hạn.</li>
+<li>Súng cùi + build skill tốt vẫn đạt mức thời gian trung vị, vì skill tự động gánh phần lớn sát thương giữa trận.</li>
+<li>Điểm tính theo kill (đã chốt), bảng xếp hạng để sau khi có backend.</li>
+</ul></div>
+</div>
+<div class="tw"><table>
+<thead><tr><th>Ví dụ</th><th>Súng cùi, build yếu</th><th>Súng cùi, build tốt</th><th>Súng xịn, build yếu</th><th>Súng xịn, build tốt</th></tr></thead>
+<tbody>
+<tr><td>Endless (thời gian sống, mục tiêu)</td><td class="n">6–8 phút</td><td class="n">11–13 phút</td><td class="n">10–12 phút</td><td class="n">15–18 phút</td></tr>
+<tr><td>Campaign cuối chương 2</td><td class="n">thua</td><td class="n">thua sát nút</td><td class="n">qua 1–2 sao</td><td class="n">qua 3 sao</td></tr>
+</tbody></table></div>
+<p class="muted">Số trong bảng là mục tiêu thiết kế để chỉnh bằng PacingRun (sandbox chạy trận tự động) và profiler, chưa phải số đo.</p>
+</section>
+
+<section>
+<h2>6. Cần bạn quyết</h2>
+<div class="box"><ol class="q">
+<li><b>Campaign quay lại?</b> M7 đã bỏ campaign cũ để tập trung endless. Làm lại theo chương/theme như trên, hay chỉ làm endless nhiều map theme trước?</li>
+<li><b>Hai theme đầu</b>: Sa mạc + Núi lửa (package tốt nhất) được không?</li>
+<li><b>Tuyết</b> cần mua hoặc làm texture tuyết và cây thông: làm hay để sau?</li>
+<li><b>Công thức độ khó</b> ở mục 5 dùng làm điểm xuất phát được không, rồi chỉnh bằng PacingRun?</li>
+</ol></div>
+</section>
+</div>

@@ -686,7 +686,9 @@ namespace ZombieWar
                     ZombieWar.Skills.SkillArsenal.Instance?.OnGunHit(run, enemy, hit.point, damage, _hitCrit);
                 _hitCrit = false;
             }
-            if (data.impactPrefab != null)
+            // The hit answers in the material of what it hit (blood, bone dust, sap, dirt, splinters…);
+            // the weapon's own impact effect is the fallback when no material entry covers it.
+            if (!SurfaceImpact.Play(hit) && data.impactPrefab != null)
                 FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
             ApplyKnockback(data, hit);
         }

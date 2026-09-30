@@ -312,6 +312,12 @@ namespace ZombieWar.EditorTools
             Set(sh.novaFrost, lib.frost.fx != null ? lib.frost.fx : Variant(Etfx + "Combat/Nova/Frost/NovaFrost.prefab", FxDir + "NovaFrost_M8.prefab"), log);
             Set(sh.telegraph, Fx("Combat/Magic/Circle Simple/MagicCircleSimpleYellow"), log);
             Set(sh.cone, Fx("Combat/Sword/Wave/SwordWaveYellow"), log);
+            // Thorn Aura / Iron Maiden: Epic Toon's thin white Magic Field, tinted (the pack has no pink field).
+            var field = Etfx + "Combat/Magic/Field/MagicFieldWhite.prefab";
+            lib.thorns.auraFx = Tinted(field, FxDir + "ThornAura_M8.prefab", new Color(1f, 0.5f, 0.72f, 1f));
+            lib.thorns.maidenAuraFx = Tinted(field, FxDir + "IronMaidenAura_M8.prefab", new Color(1f, 0.25f, 0.3f, 1f));
+            lib.thorns.auraNativeRadius = MeasureRadius(lib.thorns.auraFx);
+            log.Append("thorn field r=").Append(lib.thorns.auraNativeRadius.ToString("0.00")).Append("; ");
             sh.dustFx = Fx("Environment/Dust/DustDirtyPoof");
             sh.healBurstFx = Fx("Interactive/Healing/HealOnceBurst");
             EditorUtility.SetDirty(lib);
@@ -332,6 +338,65 @@ namespace ZombieWar.EditorTools
             }
             AssetDatabase.SaveAssets();
             return log.ToString();
+        }
+
+        /// <summary>
+        /// Bullet impacts by material (2026-09-30): blood for flesh and fur, bone dust, plant sap, dirt,
+        /// and Epic Toon giblets for props. Enemies keep their own impact sounds; ground and props get one.
+        /// </summary>
+        [MenuItem("HordeCall/FX/Build Surface Impacts")]
+        public static string BuildSurfaceImpacts()
+        {
+            const string path = "Assets/_Project/Resources/SurfaceImpacts.asset";
+            var lib = AssetDatabase.LoadAssetAtPath<SurfaceImpactLibrary>(path);
+            if (lib == null) { lib = ScriptableObject.CreateInstance<SurfaceImpactLibrary>(); AssetDatabase.CreateAsset(lib, path); }
+            SurfaceImpactLibrary.Entry E(SurfaceKind k, string fx, float scale, string sfx = null, float vol = 0.4f) =>
+                new SurfaceImpactLibrary.Entry { kind = k, fx = Fx(fx), scale = scale, sfxKey = sfx, volume = vol };
+            lib.entries = new[]
+            {
+                E(SurfaceKind.Flesh, "Combat/Blood/Red/BloodExplosion", 1f),
+                E(SurfaceKind.Fur, "Combat/Blood/Red/BloodExplosionRound", 0.8f),
+                E(SurfaceKind.Bone, "Combat/Explosions (Misc)/HitDustExplosion", 0.7f),
+                E(SurfaceKind.Plant, "Combat/Blood/Green/GreenBloodExplosion", 0.9f),
+                E(SurfaceKind.Ground, "Combat/Giblets/GibletExplodeDirt", 0.45f, "sfx.footstep.player.earth", 0.25f),
+                E(SurfaceKind.Wood, "Combat/Giblets/GibletExplodeWood", 0.5f, "sfx.prop.crate.hit", 0.45f),
+                E(SurfaceKind.Stone, "Combat/Giblets/GibletExplodeStone", 0.5f, "sfx.footstep.player.concrete", 0.35f),
+                E(SurfaceKind.Metal, "Combat/Explosions (Misc)/SparkExplosion", 0.6f, "sfx.footstep.player.metal", 0.4f),
+                E(SurfaceKind.Glass, "Combat/Giblets/GibletExplodeGlass", 0.5f),
+            };
+            EditorUtility.SetDirty(lib);
+            AssetDatabase.SaveAssets();
+            return "surface impacts: " + lib.entries.Length;
+        }
+
+        /// A prefab variant of an Epic Toon effect with every system's start colour multiplied by a tint.
+        static ParticleSystem Tinted(string source, string path, Color tint)
+        {
+            var src = AssetDatabase.LoadAssetAtPath<GameObject>(source);
+            if (src == null) throw new System.Exception("missing " + source);
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(src);
+            try
+            {
+                go.name = System.IO.Path.GetFileNameWithoutExtension(path);
+                foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    var main = ps.main;
+                    var c = main.startColor;
+                    switch (c.mode)
+                    {
+                        case ParticleSystemGradientMode.Color: c.color *= tint; break;
+                        case ParticleSystemGradientMode.TwoColors: c.colorMin *= tint; c.colorMax *= tint; break;
+                        default:
+                            var e = c.Evaluate(0.5f);
+                            c = new ParticleSystem.MinMaxGradient(new Color(tint.r, tint.g, tint.b, e.a));
+                            break;
+                    }
+                    main.startColor = c;
+                }
+                PrefabUtility.SaveAsPrefabAsset(go, path);
+            }
+            finally { Object.DestroyImmediate(go); }
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponent<ParticleSystem>();
         }
 
         static void Set(SkillFxLibrary.Nova n, ParticleSystem fx, System.Text.StringBuilder log)

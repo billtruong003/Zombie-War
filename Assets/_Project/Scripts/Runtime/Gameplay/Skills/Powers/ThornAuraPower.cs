@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ZombieWar.Skills.Powers
 {
-    /// <summary>Thorn Aura — a ring of thorns around the player: whatever touches it bleeds and is
+    /// <summary>Thorn Aura — a field of thorns around the player: whatever touches it bleeds and is
     /// thrown back. A tank card: it rewards letting the horde come close.</summary>
     public sealed class ThornAuraPower : PowerModule
     {
@@ -13,14 +13,16 @@ namespace ZombieWar.Skills.Powers
             [Tooltip("The spikes bursting on an enemy the aura hits.")]
             public ParticleSystem hitFx;
             public Color ringColor = new(0.95f, 0.35f, 0.55f, 1f);
+            [Tooltip("The aura on the ground: Epic Toon Magic Field (white) tinted pink, looping, sized to the radius.")]
+            public ParticleSystem auraFx;
+            [Tooltip("Iron Maiden's aura: the same field tinted deep red.")]
+            public ParticleSystem maidenAuraFx;
+            public float auraNativeRadius = 2.1f;
         }
 
         const float TickSeconds = 0.5f;
         const int MaxHitFx = 4;
-        static readonly int TintId = Shader.PropertyToID("_Tint");
-        static readonly int ErodeId = Shader.PropertyToID("_Erode");
-
-        MeshRenderer _ring;
+        ParticleSystem _aura, _maidenAura;
         float _tickAt, _flash;
 
         Assets A => Lib != null ? Lib.thorns : null;
@@ -30,7 +32,7 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             float radius = run.ThornAuraRadius;
             bool on = a != null && radius > 0f;
-            DrawRing(on, p, radius, dt);
+            DrawAura(on, run.IsEvolved(SkillCatalogDefs.AutoThorns), p, radius, dt);
             if (!on) return;
 
             float now = Time.time;
@@ -53,28 +55,32 @@ namespace ZombieWar.Skills.Powers
             Host.Sfx("sfx.skill.blade.hit", p, 0.35f, 0.15f);
         }
 
-        void DrawRing(bool on, Vector3 p, float radius, float dt)
+        /// The aura is one looping Epic Toon field that follows the player; a hit makes it swell briefly.
+        void DrawAura(bool on, bool maiden, Vector3 p, float radius, float dt)
         {
-            if (!on) { if (_ring != null && _ring.gameObject.activeSelf) _ring.gameObject.SetActive(false); return; }
-            if (_ring == null)
+            var a = A;
+            if (!on || a == null) { Show(_aura, false); Show(_maidenAura, false); return; }
+            var want = maiden ? a.maidenAuraFx : a.auraFx;
+            if (want == null) return;
+            ref ParticleSystem live = ref maiden ? ref _maidenAura : ref _aura;
+            if (live == null)
             {
-                _ring = Host.MakeGroundRenderer("ThornRing");
-                if (_ring == null || Lib.shared.shockwaveMaterial == null) return;
-                _ring.sharedMaterial = Lib.shared.shockwaveMaterial;
+                live = UnityEngine.Object.Instantiate(want, Host.Root);
+                live.name = maiden ? "IronMaidenAura" : "ThornAura";
             }
-            if (!_ring.gameObject.activeSelf) _ring.gameObject.SetActive(true);
+            Show(maiden ? _aura : _maidenAura, false);
+            Show(live, true);
             _flash = Mathf.MoveTowards(_flash, 0f, dt * 3f);
-            _ring.transform.position = new Vector3(p.x, 0.07f, p.z);
-            // Breathes a little, and snaps outward on each hit.
-            float r = radius * (1f + 0.04f * Mathf.Sin(Time.time * 4f) + 0.08f * _flash);
-            _ring.transform.localScale = new Vector3(r * 2f, 1f, r * 2f);
-            _ring.transform.rotation = Quaternion.Euler(0f, Time.time * 40f, 0f);
-            var mpb = Host.Block;
-            mpb.Clear();
-            var c = A.ringColor; c.a = 0.75f + 0.25f * _flash;
-            mpb.SetColor(TintId, c);
-            mpb.SetFloat(ErodeId, 0.28f - 0.12f * _flash);
-            _ring.SetPropertyBlock(mpb);
+            live.transform.SetPositionAndRotation(new Vector3(p.x, 0.06f, p.z), PowerKit.Flat(want));
+            float r = radius * (1f + 0.08f * _flash);
+            live.transform.localScale = Vector3.one * (r / Mathf.Max(0.1f, a.auraNativeRadius));
+        }
+
+        static void Show(ParticleSystem ps, bool on)
+        {
+            if (ps == null || ps.gameObject.activeSelf == on) return;
+            ps.gameObject.SetActive(on);
+            if (on) ps.Play(true);
         }
 
         /// <summary>Iron Maiden: the Kinetic Shield broke — a ring of spikes bursts out of the player.</summary>
@@ -97,6 +103,6 @@ namespace ZombieWar.Skills.Powers
             }
         }
 
-        public override void ResetForRun() { if (_ring != null) _ring.gameObject.SetActive(false); }
+        public override void ResetForRun() { Show(_aura, false); Show(_maidenAura, false); }
     }
 }
