@@ -162,6 +162,10 @@ namespace ZombieWar.Editor.Audio
             {
                 var path = AssetDatabase.GetAssetPath(data);
                 var serialized = new SerializedObject(data);
+                // A weapon whose keys already name real cues keeps them (see the curated builder's Fill).
+                if (cueKeys.Contains(serialized.FindProperty("fireSfxKey").stringValue)
+                    && cueKeys.Contains(serialized.FindProperty("reloadSfxKey").stringValue))
+                    continue;
                 var token = ResolveWeaponToken(Path.GetFileNameWithoutExtension(path), fireTokens);
                 var fireKey = $"sfx.weapon.{token}.fire";
                 var reloadKey = $"sfx.weapon.{token}.reload";

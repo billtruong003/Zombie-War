@@ -63,8 +63,9 @@ namespace ZombieWar.Editor.Audio
             ConfigureImporters(selected);
             ConfigureAddressables(selected);
             BuildRuntimeCatalog(selected);
-            UpdateWeaponKeys();
-            UpdateZombieKeys();
+            var cueKeys = selected.SelectMany(item => item.cueKeys).ToHashSet(StringComparer.Ordinal);
+            UpdateWeaponKeys(cueKeys);
+            UpdateZombieKeys(cueKeys);
             WriteReports(inventory, selected);
 
             AssetDatabase.SaveAssets();
@@ -494,7 +495,21 @@ namespace ZombieWar.Editor.Audio
             EditorUtility.SetDirty(config);
         }
 
-        private static void UpdateWeaponKeys()
+        /// <summary>
+        /// Keeps <paramref name="key"/> when it names a real cue, else takes <paramref name="fallback"/>.
+        /// The build fills gaps; it never overrides a cue someone chose per asset (it used to rewrite
+        /// every weapon from its class, turning the Launcher's chosen sound into the grenade cue and
+        /// dirtying 52 assets on every run). True when the value changed.
+        /// </summary>
+        public static bool Fill(ref string key, string fallback, HashSet<string> cueKeys)
+        {
+            if (!string.IsNullOrEmpty(key) && cueKeys.Contains(key)) return false;
+            if (key == fallback) return false;
+            key = fallback;
+            return true;
+        }
+
+        private static void UpdateWeaponKeys(HashSet<string> cueKeys)
         {
             // A5: catalog-driven. Every weapon in the catalog gets keys, including newly onboarded
             // bodies, so audio is assigned at onboarding time rather than at first fire.
@@ -510,15 +525,15 @@ namespace ZombieWar.Editor.Audio
                     WeaponClass.Laser => "laser",
                     _ => "rifle",
                 };
-                data.fireSfxKey = $"sfx.weapon.{family}.fire";
-                data.reloadSfxKey = family is "energy" or "laser"
+                bool changed = Fill(ref data.fireSfxKey, $"sfx.weapon.{family}.fire", cueKeys);
+                changed |= Fill(ref data.reloadSfxKey, family is "energy" or "laser"
                     ? "sfx.weapon.rifle.reload"
-                    : $"sfx.weapon.{family}.reload";
-                EditorUtility.SetDirty(data);
+                    : $"sfx.weapon.{family}.reload", cueKeys);
+                if (changed) EditorUtility.SetDirty(data);
             }
         }
 
-        private static void UpdateZombieKeys()
+        private static void UpdateZombieKeys(HashSet<string> cueKeys)
         {
             foreach (string guid in AssetDatabase.FindAssets("t:ZombieData", new[] { "Assets/_Project/Data/Zombies" }))
             {
@@ -539,13 +554,13 @@ namespace ZombieWar.Editor.Audio
                     : id.Contains("mole_rat") ? "burrow_heavy"
                     : id.Contains("burrow") ? "burrow_small"
                     : "flesh";
-                data.attackSfxKey = $"sfx.creature.{family}.attack";
-                data.hurtSfxKey = $"sfx.creature.{family}.hurt";
-                data.deathSfxKey = $"sfx.creature.{family}.death";
-                data.impactSfxKey = family.StartsWith("skeleton", StringComparison.Ordinal) ? "sfx.impact.bone.light"
+                bool changed = Fill(ref data.attackSfxKey, $"sfx.creature.{family}.attack", cueKeys);
+                changed |= Fill(ref data.hurtSfxKey, $"sfx.creature.{family}.hurt", cueKeys);
+                changed |= Fill(ref data.deathSfxKey, $"sfx.creature.{family}.death", cueKeys);
+                changed |= Fill(ref data.impactSfxKey, family.StartsWith("skeleton", StringComparison.Ordinal) ? "sfx.impact.bone.light"
                     : family.StartsWith("plant", StringComparison.Ordinal) ? "sfx.impact.plant.light"
-                    : family == "flesh" ? "sfx.impact.flesh.light" : "sfx.impact.fur.light";
-                EditorUtility.SetDirty(data);
+                    : family == "flesh" ? "sfx.impact.flesh.light" : "sfx.impact.fur.light", cueKeys);
+                if (changed) EditorUtility.SetDirty(data);
             }
         }
 
