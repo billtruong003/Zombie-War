@@ -75,8 +75,15 @@ namespace ZombieWar
         {
             if (!PlayerPrefs.HasKey(KGraphics)) PlayerPrefs.SetInt(KGraphics, (int)DeviceDefault(SystemInfo.systemMemorySize));
             // The editor keeps the project's URP asset as authored (a runtime copy there would leak
-            // into QualitySettings); players get a copy tuned to the preset.
-            if (Application.isEditor) return;
+            // into QualitySettings); players get a copy tuned to the preset. The camera's post
+            // effects still follow the preset in the editor, or every play test and capture there
+            // shows the game without the bloom and outline a phone renders (found 30/09).
+            if (Application.isEditor)
+            {
+                ApplyPostFx();
+                if (!_hooked) { _hooked = true; SceneManager.sceneLoaded += (_, _) => ApplyPostFx(); }
+                return;
+            }
             var p = PresetFor(Quality);
             if (_runtime == null)
             {
