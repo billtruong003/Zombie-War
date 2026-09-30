@@ -231,9 +231,10 @@ namespace ZombieWar
                         if (k >= items.childCount) break;
                         var it = items.GetChild(k++);
                         it.gameObject.SetActive(true);
-                        BindIcon(it, def, 1f);
+                        bool evolved = skills.IsEvolved(def.id);
+                        BindIcon(it, evolved ? ZombieWar.Skills.SkillCatalogDefs.EvolutionOf(def.id) ?? def : def, 1f);
                         var rank = it.Find("Rank/Label")?.GetComponent<TMP_Text>();
-                        if (rank != null) rank.text = skills.IsEvolved(def.id) ? "EVO" : kv.Value.ToString();
+                        if (rank != null) rank.text = evolved ? "" : kv.Value.ToString();
                     }
             for (; k < items.childCount; k++) items.GetChild(k).gameObject.SetActive(false);
             SetShown("Build", skills != null && skills.Ranks.Count > 0);
@@ -573,7 +574,10 @@ namespace ZombieWar
                     bool evolved = evo != null && skills.Has(evo.id);
                     BindIcon(it, evolved ? evo : def, 1f);
                     if (frame != null) frame.color = evolved ? EvolutionBg : Color.Lerp(CardBg, ZombieWar.Skills.SkillDescriptions.LayerColor(def), 0.3f);
-                    if (rank != null) rank.text = evolved ? "EVO" : skills.RankOf(def.id) >= def.maxRank ? "MAX" : skills.RankOf(def.id).ToString();
+                    // A word here covers half the icon art: max rank is its number in gold, and an
+                    // evolution already reads from its gold frame and its own icon.
+                    int r = skills.RankOf(def.id);
+                    if (rank != null) rank.text = evolved ? "" : r >= def.maxRank ? $"<color=#FFC93C>{r}</color>" : r.ToString();
                 }
                 else
                 {
