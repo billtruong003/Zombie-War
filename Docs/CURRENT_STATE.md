@@ -1,5 +1,58 @@
 # Zombie War — trạng thái thật của project
 
+> **2026-10-01 — Catch-up sau phase A, B, C, E (commits `eaaccef6`..`05a8256c`).** Khối này thắng mọi
+> khối và mục bên dưới khi mâu thuẫn. Soát bằng đọc code và asset; đường dẫn tính từ `Assets/_Project/Scripts/Runtime/`
+> nếu không ghi khác. Việc còn mở và quyết định: board "HordeCall Board" (artifact, db `items`).
+>
+> **Trong trận — đã có**
+> - Vòng trận: `GameFlow.StartGameplay` → `RunState.Begin`, một scene `Map_Level1`. Chỉ có mode Endless; campaign,
+>   chọn màn và wave đã xoá từ M7 (§2–3 bên dưới đã cũ). Kết thúc: Died hoặc Abandoned, giữ 100% coin
+>   (`Systems/RunClosure.cs:19-22`, owner chốt; GAME_DESIGN.md còn ghi 25%/0% là cũ).
+> - ThreatDirector: tier = trạm xong + mỗi 90 m + mỗi 90 s, tối đa 30 (`Gameplay/Threat/ThreatDirector.cs:266-274`);
+>   tier 0–3 nằm trên `Prefabs/Player.prefab`; quái của map cộng vào tier 0/2/3 (`World/Maps/MapTheme.cs`);
+>   từ tier 6 quái +4% chỉ số mỗi tier; pool nạp trước một tier, mỗi frame một loại.
+> - Skill: 82 thẻ (10 chỉ số, 14 signature, 12 universal, 23 autonomous, 19 tiến hoá, 4 BONUS)
+>   (`Gameplay/Skills/SkillCatalogDefs.cs:204-365`), đủ module chạy và đủ icon (`UI/Data/SkillIconSet.asset`).
+>   Rank 5, 6 ô skill + 4 ô chỉ số, mở thẻ theo cấp tài khoản LV1–34 (`:382-389`), popup mở thẻ sau trận.
+>   Tiến hoá chỉ từ rương (elite 4% × May mắn, pity 45 s, boss Beacon, Supply Drop 20%).
+> - Súng: 54 `Data/Weapons/WD_*` (không phải 25), auto-aim, tự bắn, một súng mỗi trận.
+> - Quái: 33 loại (16 Cute + 17 Blob), đều VAT; hành vi walker, pouncer, ranged, burrower, charger, boss;
+>   boss chỉ qua trạm Boss Beacon (CactusBoss, MoleRatKing, SkeletonGiant).
+> - Trạm: Signal Relay, Supply Cache, Boss Beacon, Supply Drop, Heal Zone (`Gameplay/Stations/`);
+>   vật phẩm Nam châm, Bom, Đồng hồ băng chỉ rơi từ elite (`Gameplay/Pickups/MechanicItems.cs`).
+> - Map: 5 theme bake sẵn (meadow mặc định, forest, swamp, volcano, tundra), mỗi map 192 m cuộn vòng, ô 32 m,
+>   stream 5×5 (`World/Maps/BakedMapStreamer.cs`); vùng lõm là vật cản có cầu, quái theo flow field
+>   (`World/Nav/MapNavigator.cs`); bảng màu riêng mỗi theme (`Editor/World/EnvThemeLook.cs`); thế giới procedural
+>   cũ còn làm dự phòng. Map đã commit: mesh trong kho nhị phân nén qua LFS (`BakedMeshStore`), 162 MB.
+> - Âm thanh: catalog 397 key; khoảng 105 key được dùng; nhạc hub + một nhạc trận chung cho mọi map.
+> - Công cụ: bảng QA 9 tab (có MAP), SkillSandbox, EnvSandbox, GameShot, HordeStressTest.
+>   Test: EditMode 784 pass, PlayMode 227 pass (01/10).
+>
+> **Meta — đã có:** Home v2, Arsenal, Shop v2, Gacha (3 banner), Pass 30 cấp + nhiệm vụ, Daily (7 ngày + stamp 28 ngày),
+> Studio, Profile (avatar, khung), Settings (đồ hoạ Low/Mid/High, âm lượng, 30/60 fps, rung, xoá dữ liệu),
+> Revive + Result v2. Cấp tài khoản: LV2 Pass/nhiệm vụ, LV3 Gacha/Events (chỉ chặn ở UI), LV5 nâng sao (chặn trong
+> `Systems/PlayerProfile.cs:814`). Lưu: một JSON trong PlayerPrefs, chỉ trên máy.
+>
+> **Còn thiếu cho V1 (xếp theo mức chặn)**
+> 1. Lên store: chưa có keystore, package id còn là id mẫu Unity (`ProjectSettings.asset:170`, ReleaseGuard không bắt
+>    vì so chữ hoa thường, `Editor/BuildTools/HordeCallBuild.cs:20`), productName "Zombie War", chưa gắn icon,
+>    chưa build Android lần nào, chưa đo trên máy thật, chưa có privacy policy.
+> 2. SDK: không có Firebase, quảng cáo, IAP, UMP (`Systems/Purchases.cs` chỉ giả lập; comment còn ghi AppLovin, đã bị loại).
+> 3. FTUE: flow 15 bước đã duyệt (board `tk-ftue-review`), chưa làm.
+> 4. Game không tự dừng khi ra màn hình chính: `AppPauseEvent` (BillGameCore `Core.cs:86`) không có ai nghe.
+> 5. Người chơi chưa chọn được map (chỉ có cheat QA); chưa có thiết kế mở map theo cấp.
+> 6. 17 Blob không có âm thanh tấn công, bị đau, chết (`Data/Zombies/ZD_Blob*.asset`); trạm không có âm riêng;
+>    một nhạc trận cho cả 5 map.
+> 7. Thùng rơi máu (`Prefabs/Props/PROP_*`) không được prefab hay asset nào dùng (scene `Map_Level1` lưu nhị phân, chưa
+>    soát), nên máu chỉ đến từ Heal Zone, Siphon, Regen, thẻ Heal, hồi sinh.
+> 8. Loot (gem, rương, vật phẩm) chỉ từ elite, mà elite chỉ vào từ tier 3: đầu trận gần như không có loot.
+> 9. Chưa có điểm theo kill (chỉ lưu thời gian sống lâu nhất); cần mockup màn kết quả.
+> 10. PowerBudget thiếu hệ số cho 7 power (Emergency, Frost Nova, Fire Trail, Thorns, Ice Shards, Landmine, Time Warp).
+> 11. Meta: không có bản dịch (mọi chữ hard-code tiếng Anh); lưu không mã hoá; ngày/giờ lấy từ đồng hồ máy (dễ gian lận);
+>     màn Events chưa có (nút mở Gacha); banner gacha thường dùng pity 30, không 50/50 (khác banner sự kiện 90 + 50/50);
+>     gói 2 vé giá 50 gem rẻ hơn quay đơn 30 gem; Settings còn Language, Help, Ad privacy, Privacy, Restore là "Coming soon".
+> 12. Dọn: màn M8 cũ trong Menu.unity, kết quả/hồi sinh cũ trong `UI/RunOverlays.cs`; GAME_DESIGN.md và §1–5 dưới đây đã cũ.
+
 > **2026-09-27 — M10 Meta v2 (commits `daa3e94f`..`3735a2dc`, chờ owner duyệt trước M11).**
 > - Menu mở vào **Home v2** (`Runtime/UI/V2/HomeScreen.cs`; `GameFlow.EnterMenu` → `Replace<HomeScreen>`).
 >   Màn v2: Home, Profile, Settings, Daily, Pass (`PassScreenV2`), Arsenal, Shop (`ShopScreenV2`), Gacha,
