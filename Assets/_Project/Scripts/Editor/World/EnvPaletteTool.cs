@@ -203,6 +203,7 @@ namespace ZombieWar.EditorTools
                 foreach (var list in new[] { z.mid, z.outer, z.landmark, z.scatter })
                     if (list != null) foreach (var k in list) keys.Add(k);
             keys.Add("KK/Wood_Plank_A");
+            keys.RemoveWhere(k => k.StartsWith("EP/"));      // our own grass variants are built separately
             var result = new List<(string, GameObject)>();
             foreach (var key in keys)
             {
@@ -341,7 +342,8 @@ namespace ZombieWar.EditorTools
                 prefabs++;
             }
             AssetDatabase.SaveAssets();
-            log.Append($"{prefabs} prefabs converted");
+            log.Append($"{prefabs} prefabs converted; ");
+            log.Append(BuildGrassVariants(foliageMat));
             return log.ToString();
         }
 
@@ -540,6 +542,7 @@ namespace ZombieWar.EditorTools
         }
 
         const int AtlasSize = 2048, SlotSize = 512, SlotPad = 8;
+        static Rect GrassSlot;
 
         static string SlotKey(Material m)
         {
@@ -568,7 +571,7 @@ namespace ZombieWar.EditorTools
                 }
             sources.RemoveAll(x => rejected.Contains(x.key));
             int per = AtlasSize / SlotSize;
-            if (sources.Count > per * per) sources.RemoveRange(per * per, sources.Count - per * per);
+            if (sources.Count > per * per - 1) sources.RemoveRange(per * per - 1, sources.Count - (per * per - 1));
             var px = new Color[AtlasSize * AtlasSize];
             for (int n = 0; n < sources.Count; n++)
             {
@@ -585,6 +588,28 @@ namespace ZombieWar.EditorTools
                     }
                 float inner = (SlotSize - 2f * SlotPad) / AtlasSize;
                 slots[sources[n].key] = new Rect((sx * SlotSize + SlotPad) / (float)AtlasSize, (sy * SlotSize + SlotPad) / (float)AtlasSize, inner, inner);
+            }
+            // The last slot holds four vertical gradients for the modelled grass variants (Blender):
+            // grass green, deep forest green, dry reed, and petals (lower half pink, upper half yellow).
+            {
+                int sx = per - 1, sy = per - 1;
+                Color[][] cols =
+                {
+                    new[] { new Color(0.16f, 0.32f, 0.11f), new Color(0.56f, 0.80f, 0.33f) },
+                    new[] { new Color(0.11f, 0.24f, 0.09f), new Color(0.36f, 0.60f, 0.23f) },
+                    new[] { new Color(0.30f, 0.32f, 0.14f), new Color(0.74f, 0.71f, 0.38f) },
+                };
+                for (int y = 0; y < SlotSize; y++)
+                    for (int x = 0; x < SlotSize; x++)
+                    {
+                        int c = x * 4 / SlotSize;
+                        float t = y / (SlotSize - 1f);
+                        Color col = c < 3 ? Color.Lerp(cols[c][0], cols[c][1], t)
+                                          : (t < 0.5f ? new Color(0.95f, 0.55f, 0.72f) : new Color(1f, 0.86f, 0.25f));
+                        col.a = 1f;
+                        px[(sy * SlotSize + y) * AtlasSize + sx * SlotSize + x] = col;
+                    }
+                GrassSlot = new Rect(sx * SlotSize / (float)AtlasSize, sy * SlotSize / (float)AtlasSize, SlotSize / (float)AtlasSize, SlotSize / (float)AtlasSize);
             }
             string path = Pal + "T_EnvFoliage.png";
             var tex = new Texture2D(AtlasSize, AtlasSize, TextureFormat.RGBA32, false);
@@ -606,6 +631,53 @@ namespace ZombieWar.EditorTools
             EditorUtility.SetDirty(material);
             if (rejected.Count > 0) Debug.Log("[EnvPalette] foliage kept on its own material (tiling UVs): " + string.Join(", ", rejected));
             return slots;
+        }
+
+        /// Modelled grass (Blender, Art/EnvPalette/Grass/*.fbx): UVs into the atlas's gradient slot by
+        /// height (petal column for flower heads), stiffness by height for wind and bending, one
+        /// foliage material. Prefabs are GrassV_* in the same folder, placed through the "EP" kit.
+        static string BuildGrassVariants(Material foliage)
+        {
+            const string dir = "Assets/_Project/Art/EnvPalette/Grass/";
+            var variants = new (string fbx, int column)[] { ("Grass_Tuft_Low", 0), ("Grass_Tuft_Tall", 1), ("Grass_Tuft_Flower", 0), ("Grass_Reed", 2) };
+            int made = 0;
+            foreach (var (fbx, column) in variants)
+            {
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(dir + fbx + ".fbx");
+                var src = model != null ? model.GetComponentInChildren<MeshFilter>()?.sharedMesh : null;
+                if (src == null) continue;
+                var v = src.vertices;
+                float maxY = 0.01f; foreach (var p in v) maxY = Mathf.Max(maxY, p.y);
+                bool flowers = fbx.Contains("Flower");
+                // Flower heads sit above the blades: the top 12% of the clump.
+                float bladeTop = flowers ? maxY * 0.88f : float.MaxValue;
+                var uv = new Vector2[v.Length]; var cols = new Color[v.Length]; var uv1 = new Vector2[v.Length];
+                for (int i = 0; i < v.Length; i++)
+                {
+                    float h = Mathf.Clamp01(v[i].y / maxY);
+                    bool petal = v[i].y > bladeTop;
+                    int c = petal ? 3 : column;
+                    float u = GrassSlot.x + (c + 0.5f) * GrassSlot.width / 4f;
+                    float vv = GrassSlot.y + (petal ? 0.75f : 0.04f + h * 0.92f) * GrassSlot.height;
+                    uv[i] = new Vector2(u, vv);
+                    cols[i] = new Color(0.5f, 0.5f, 0.5f, h);
+                    uv1[i] = new Vector2(0f, 1f);
+                }
+                var mesh = Object.Instantiate(src);
+                mesh.name = "GrassV_" + fbx.Substring(6);
+                mesh.uv = uv; mesh.colors = cols; mesh.SetUVs(1, uv1);
+                string meshPath = dir + mesh.name + ".asset";
+                var old = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+                if (old != null) { EditorUtility.CopySerialized(mesh, old); Object.DestroyImmediate(mesh); mesh = old; }
+                else AssetDatabase.CreateAsset(mesh, meshPath);
+                var go = new GameObject(mesh.name);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = foliage;
+                PrefabUtility.SaveAsPrefabAsset(go, dir + mesh.name + ".prefab");
+                Object.DestroyImmediate(go);
+                made++;
+            }
+            return $"{made} grass variants";
         }
 
         /// The sandbox builder places the converted prefab when one exists.
