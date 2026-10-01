@@ -1,5 +1,24 @@
 # Zombie War — Game Design Document
 
+> ## 2026-10-01 — what changed since this document (read first)
+>
+> The game is now **HordeCall**. The owner's later decisions (M8–M10, phases A–E) replaced several
+> rules below; where this block and the text disagree, this block wins. Verified state with
+> `file:line` evidence: [`CURRENT_STATE.md`](CURRENT_STATE.md) (2026-10-01 block).
+>
+> | Topic | Below says | Now |
+> |---|---|---|
+> | Run payout | death banks 25 %, walk-away 0 % | every run end keeps **100 %** of coin (`Systems/RunClosure.cs`) |
+> | Guns | Blueprint unlocks; stars, Gold retired | guns are bought with **coin** in the Shop; **stars** upgrade a gun (shards + coin, from LV5); Gold is Coin |
+> | Gacha | hidden | live: event banner (pity 90 + 50/50), outfit and shard banners, daily free pull, tickets |
+> | Meta | — | Home, Arsenal, Shop, Gacha, Pass (XP from missions only), Daily (7 days + 28-day stamp card), Studio, Profile; account level gates LV2 Pass/missions, LV3 Gacha, LV5 stars |
+> | Skills | 23 cards | 82: 10 stats, 14 signature, 12 universal, 23 powers, 19 evolutions, 4 BONUS; rank 5; 6 skill + 4 stat slots; cards unlock by account level LV1–34; **evolutions only from chests** |
+> | Enemies | no new enemy art | 33 kinds (16 Cute + 17 low-poly Blob), each map adds its own crowd, later kind and elite |
+> | World | one blended endless biome | **5 baked maps** (meadow, forest, swamp, volcano, tundra), each a 192 m wrapping map with basins and bridges, its own palette, light, music and monsters; the old procedural world is a fallback |
+> | In-run extras | Medical Station, Route Scanner, Greed Terminal; Relic, Blueprint, Boss Chest | stations are Signal Relay, Supply Cache, Boss Beacon, Supply Drop, Heal Zone; items are Magnet, Bomb, Freeze Clock |
+> | Level-up | auto-pick after ≤30 s | still 30 s; the FTUE (approved 2026-10-01) removes the timer on the very first pick |
+> | Escalation | +8 % per tier from tier 3 | enemies +4 % per tier from tier 6; crowd grows each tier |
+
 **Authority:** Canonical game vision, player fantasy, world and content direction  
 **Phase:** CONCEIVE — vision locked; **M6 system design is LOCKED** (W1–W7 answered 2026-08-15)  
 **Updated:** 2026-09-25 (owner decisions in §1; M7 Slice A delivered — see `MVP_SHIP_PLAN.md`)  
