@@ -208,17 +208,55 @@ namespace ZombieWar.Threat
             if (pm != null) _player = pm.transform;
         }
 
-        // Every roster type is registered up front, sized to the crowd it can reach at the top tier,
-        // so the first spawn of a late-tier enemy never falls back to Instantiate mid-fight.
+        // Pools are warmed one tier ahead of the run (2026-10-01): tiers 0 and 1 before the first
+        // spawn, then each next tier as soon as the current one starts, one enemy type per frame.
+        // Every type is still sized to the crowd it can reach at the top tier, so the first spawn of
+        // a late-tier enemy never falls back to Instantiate mid-fight; the cost of warming every type
+        // of every tier at once (more now that maps add their own monsters) is spread out instead.
+        int _warmedTier = -1;
+        readonly Queue<ZombieData> _warmQueue = new();
+
         void WarmPools()
         {
-            int peak = Mathf.Max(maxAlive, surgeMaxAlive);
-            Pool.Clear();
-            Append(Pool, tier0Basic);
-            Append(Pool, tier1Specialist);
-            Append(Pool, tier2Mixed);
-            Append(Pool, tier3Heavy);
-            for (int i = 0; i < Pool.Count; i++) _spawner.EnsureRegistered(Pool[i], peak);
+            _warmedTier = -1;
+            _warmQueue.Clear();
+            QueueWarm(1);
+            while (_warmQueue.Count > 0) WarmNext();
+        }
+
+        void QueueWarm(int upToTier)
+        {
+            while (_warmedTier < Mathf.Min(upToTier, 3))
+            {
+                _warmedTier++;
+                Pool.Clear();
+                AppendTier(Pool, _warmedTier);
+                for (int i = 0; i < Pool.Count; i++) _warmQueue.Enqueue(Pool[i]);
+            }
+        }
+
+        void WarmNext()
+        {
+            if (_warmQueue.Count == 0 || _spawner == null) return;
+            _spawner.EnsureRegistered(_warmQueue.Dequeue(), Mathf.Max(maxAlive, surgeMaxAlive));
+        }
+
+        ZombieData[] BaseTier(int i) => i == 0 ? tier0Basic : i == 1 ? tier1Specialist : i == 2 ? tier2Mixed : tier3Heavy;
+
+        // The baked map in play adds its own monsters (MapTheme): its crowd joins tier 0, its later
+        // kinds tier 2, its elites tier 3. Without a baked map these are empty: roster unchanged.
+        static ZombieData[] ThemeTier(int i)
+        {
+            var streamer = ZombieWar.World.BakedMapStreamer.Active;
+            var theme = streamer != null ? streamer.Theme : null;
+            if (theme == null) return null;
+            return i == 0 ? theme.crowd : i == 2 ? theme.later : i == 3 ? theme.elites : null;
+        }
+
+        void AppendTier(List<ZombieData> into, int i)
+        {
+            Append(into, BaseTier(i));
+            Append(into, ThemeTier(i));
         }
 
         /// <summary>
@@ -285,6 +323,8 @@ namespace ZombieWar.Threat
             int tier = ComputeTier(_objectiveProgress, distance, run.Duration,
                                    metresPerDistanceBand, secondsPerTimeStep, maxTier);
             _enemyStatMultiplier = StatMultiplierFor(tier, statScalingStartsAtTier, statGrowthPerTier);
+            QueueWarm(tier + 1);
+            WarmNext();
             if (tier != CurrentTier)
             {
                 bool rising = tier > CurrentTier;
@@ -373,10 +413,7 @@ namespace ZombieWar.Threat
         public ZombieData PickFor(int tier)
         {
             Pool.Clear();
-            Append(Pool, tier0Basic);
-            if (tier >= 1) Append(Pool, tier1Specialist);
-            if (tier >= 2) Append(Pool, tier2Mixed);
-            if (tier >= 3) Append(Pool, tier3Heavy);
+            for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
             if (Pool.Count == 0) return null;
             return Pool[Random.Range(0, Pool.Count)];
         }
@@ -390,20 +427,18 @@ namespace ZombieWar.Threat
         /// <summary>Every enemy type across all tiers, each once (the Skill Sandbox picks from it).</summary>
         public void CollectRoster(List<ZombieData> into)
         {
-            foreach (var tier in new[] { tier0Basic, tier1Specialist, tier2Mixed, tier3Heavy })
-                if (tier != null)
-                    foreach (var d in tier)
-                        if (d != null && !into.Contains(d)) into.Add(d);
+            for (int i = 0; i <= 3; i++)
+                foreach (var tier in new[] { BaseTier(i), ThemeTier(i) })
+                    if (tier != null)
+                        foreach (var d in tier)
+                            if (d != null && !into.Contains(d)) into.Add(d);
         }
 
         /// <summary>Roster size available at a tier — used by tests to prove composition widens.</summary>
         public int RosterSizeFor(int tier)
         {
             Pool.Clear();
-            Append(Pool, tier0Basic);
-            if (tier >= 1) Append(Pool, tier1Specialist);
-            if (tier >= 2) Append(Pool, tier2Mixed);
-            if (tier >= 3) Append(Pool, tier3Heavy);
+            for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
             return Pool.Count;
         }
     }

@@ -43,15 +43,23 @@ namespace ZombieWar.Editor
 
         /// <summary>One selected source clip. <paramref name="loop"/> drives the baked WrapMode:
         /// locomotion/idle/underground hold loop, one-shot actions clamp on their last frame.</summary>
-        class Pick
+        internal class Pick
         {
             public string suffix;
             public bool loop;
             public Pick(string suffix, bool loop = false) { this.suffix = suffix; this.loop = loop; }
         }
 
-        class EnemyBakeDef
+        internal class EnemyBakeDef
         {
+            // Packs that ship one FBX with every clip inside it (the low-poly monster pack, 2026-10-01):
+            // modelPath points at a prepared prefab (merged mesh on the palette texture), clips are read
+            // from the FBX at sourceDir/modelName.fbx by the name after the "Armature|" prefix, and the
+            // creature is scaled so its idle pose stands targetHeight metres tall.
+            public string modelPath;
+            public bool embeddedClips;
+            public float targetHeight;
+
             public string enemyId;       // enemy.cute.dog_pup
             public string displayName;   // "Dog Pup"
             public string bakeName;      // "DogPup" - drives all generated file names
@@ -313,7 +321,11 @@ namespace ZombieWar.Editor
         }
 
         [MenuItem("Tools/ZombieWar/Bake Enemies (VAT)")]
-        public static void BakeAll()
+        public static void BakeAll() => BakeList(Configs);
+
+        /// Bakes the given configs (the built-in roster, or another pack's list) and applies the
+        /// shared look. Returns "n/m baked".
+        internal static string BakeList(IList<EnemyBakeDef> configs)
         {
             EnsureFolder(VatEnemyDir);
             EnsureFolder(PrefabDir);
@@ -323,11 +335,11 @@ namespace ZombieWar.Editor
             var reports = new List<BakeReport>();
             try
             {
-                for (int i = 0; i < Configs.Length; i++)
+                for (int i = 0; i < configs.Count; i++)
                 {
-                    var cfg = Configs[i];
+                    var cfg = configs[i];
                     EditorUtility.DisplayProgressBar("ZombieWar VAT Bake",
-                        $"[{i + 1}/{Configs.Length}] {cfg.displayName}", (float)i / Configs.Length);
+                        $"[{i + 1}/{configs.Count}] {cfg.displayName}", (float)i / configs.Count);
                     try { reports.Add(BakeOne(cfg)); }
                     catch (Exception e)
                     {
@@ -347,13 +359,18 @@ namespace ZombieWar.Editor
             // One shared look across the whole roster, applied last so it wins over bake defaults.
             VatLookApplier.Apply(VatLookApplier.LoadOrCreateConfig());
 
-            WriteAuditDoc(reports);
+            if (configs == (IList<EnemyBakeDef>)Configs) WriteAuditDoc(reports);
+            // New prefabs join the outline selection like every other gameplay character.
+            GameplayOutlineLayerTool.Run();
 
             int ok = reports.Count(r => r.status == "OK");
             long totalBytes = reports.Sum(r => r.textureBytes);
             // No modal dialog here on purpose: this menu item is also driven headlessly from
             // automation, where a blocking dialog would hang the editor.
-            Debug.Log($"[VATBake] {ok}/{Configs.Length} baked. VAT texture footprint: {totalBytes / (1024f * 1024f):F1} MB. Audit -> {AuditDoc}");
+            string summary = $"{ok}/{configs.Count} baked. VAT texture footprint: {totalBytes / (1024f * 1024f):F1} MB";
+            foreach (var r in reports.Where(r => r.status != "OK")) summary += $"; {r.displayName} FAILED: {r.note}";
+            Debug.Log("[VATBake] " + summary);
+            return summary;
         }
 
         static BakeReport BakeOne(EnemyBakeDef cfg)
@@ -434,6 +451,9 @@ namespace ZombieWar.Editor
 
             ApplyLoopSemantics(vatData, resolved);
             ApplyEnemyShader(vatMat);
+            // The archetype constants (position texture, bounds) belong on the material asset itself;
+            // VAT_Animator only checks them. Without this a fresh bake renders nothing.
+            ZombieWar.EditorTools.VatMaterialAuthoring.Apply(vatMat, vatData);
             ApplySourceTexture(model, vatMat, cfg);
             long normalBytes = BakeNormalTexture(model, vatData, resolved, vatMat, dataPath);
             EditorUtility.SetDirty(vatData);
@@ -479,14 +499,13 @@ namespace ZombieWar.Editor
             //    frame, so a jump or pounce clip would otherwise inflate the capsule far past the
             //    creature's actual silhouette.
             float height = Mathf.Max(0.4f, MeasureIdleHeight(model, ResolveClip(cfg, cfg.idle.suffix)));
+            float visualScale = cfg.targetHeight > 0f ? cfg.targetHeight / height : 1f;
+            height *= visualScale;
             const float radius = 0.35f;
 
+            // No NavMeshAgent: since M4 enemies move with PlanarEnemyMotor (added below with the
+            // ZombieBase it requires), and the collider is what the spawner sizes a footprint from.
             var go = new GameObject($"ENM_{cfg.bakeName}_VAT");
-            var agent = go.AddComponent<NavMeshAgent>();
-            agent.radius = radius;
-            agent.height = height;
-            agent.speed = cfg.moveSpeed;
-            agent.stoppingDistance = cfg.attackRange * 0.8f;
 
             var col = go.AddComponent<CapsuleCollider>();
             col.radius = radius;
@@ -499,6 +518,7 @@ namespace ZombieWar.Editor
             visual.transform.SetParent(go.transform, false);
             visual.transform.localPosition = Vector3.zero;
             visual.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+            visual.transform.localScale = Vector3.one * visualScale;
             visual.AddComponent<MeshFilter>().sharedMesh = vatData.bakedMesh;
             var mr = visual.AddComponent<MeshRenderer>();
             mr.sharedMaterial = vatMat;
@@ -762,6 +782,7 @@ namespace ZombieWar.Editor
 
         static string ResolveModelPath(EnemyBakeDef cfg)
         {
+            if (!string.IsNullOrEmpty(cfg.modelPath)) return AssetDatabase.LoadAssetAtPath<GameObject>(cfg.modelPath) != null ? cfg.modelPath : null;
             foreach (var ext in new[] { "FBX", "fbx" })
             {
                 var p = $"{cfg.sourceDir}/{cfg.modelName}.{ext}";
@@ -777,6 +798,14 @@ namespace ZombieWar.Editor
         /// stray leading spaces ("Mole Rat@ Underground"), casing, and .FBX vs .fbx.</summary>
         static AnimationClip ResolveClip(EnemyBakeDef cfg, string suffix)
         {
+            if (cfg.embeddedClips)
+            {
+                string fbx = $"{cfg.sourceDir}/{cfg.modelName}.fbx";
+                string wanted = Normalize(suffix);
+                return AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>()
+                    .Where(c => !c.name.StartsWith("__preview"))
+                    .FirstOrDefault(c => Normalize(c.name.Contains("|") ? c.name.Substring(c.name.IndexOf('|') + 1) : c.name) == wanted);
+            }
             string want = Normalize(suffix);
             foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { cfg.sourceDir }))
             {

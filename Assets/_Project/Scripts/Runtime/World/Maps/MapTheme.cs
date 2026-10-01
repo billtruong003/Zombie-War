@@ -25,6 +25,14 @@ namespace ZombieWar.World
         public GameObject ambientFx;
         public bool hasFoliage = true;
 
+        [Header("Monsters of this map, added to the base roster (ThreatDirector)")]
+        [Tooltip("Join tier 0: the everyday crowd of this map.")]
+        public ZombieData[] crowd = new ZombieData[0];
+        [Tooltip("Join tier 2.")]
+        public ZombieData[] later = new ZombieData[0];
+        [Tooltip("Join tier 3: this map's elites.")]
+        public ZombieData[] elites = new ZombieData[0];
+
         public float MapSize => chunksPerSide * chunkSize;
 
         public GameObject ChunkAt(int cx, int cz)

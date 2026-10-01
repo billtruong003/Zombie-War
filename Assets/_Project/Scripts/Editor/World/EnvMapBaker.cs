@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -431,6 +432,7 @@ namespace ZombieWar.EditorTools
             for (int cz = 0; cz < n; cz++) for (int cx = 0; cx < n; cx++) theme.chunks[cz * n + cx] = prefabs[cx, cz];
             theme.hasFoliage = d.def.id == "meadow" || d.def.id == "forest" || d.def.id == "swamp";
             theme.ambientFx = AmbientFxFor(d.def.id);
+            ApplyMonsterRoster(theme);
 
             bool Open(Vector2 p)
             {
@@ -461,6 +463,28 @@ namespace ZombieWar.EditorTools
             }
             EditorUtility.SetDirty(theme);
             AssetDatabase.SaveAssets();
+        }
+
+        /// The map's own monsters (17 Blob line, owner 01/10), added to the base roster in play.
+        static readonly System.Collections.Generic.Dictionary<string, (string[] crowd, string[] later, string[] elites)> MonsterRoster = new()
+        {
+            ["meadow"] = (new[] { "BlobChicken", "BlobDog", "BlobCat", "BlobPigeon" }, new[] { "BlobBird" }, new[] { "BlobSpiky" }),
+            ["forest"] = (new[] { "BlobMushroom", "BlobOrc", "BlobBird" }, new[] { "BlobNinja" }, new[] { "BlobMushnub" }),
+            ["swamp"] = (new[] { "BlobFish", "BlobGreen", "BlobPink" }, new[] { "BlobWizard" }, new[] { "BlobSpiky" }),
+            ["volcano"] = (new[] { "BlobCactoro", "BlobAlien", "BlobNinja" }, new[] { "BlobOrc" }, new[] { "BlobSpiky" }),
+            ["tundra"] = (new[] { "BlobYeti", "BlobPigeon" }, new[] { "BlobWizard" }, new[] { "BlobMushnub" }),
+        };
+
+        public static void ApplyMonsterRoster(ZombieWar.World.MapTheme theme)
+        {
+            if (!MonsterRoster.TryGetValue(theme.id, out var r)) return;
+            ZombieWar.ZombieData[] Load(string[] names) => names
+                .Select(n => AssetDatabase.LoadAssetAtPath<ZombieWar.ZombieData>("Assets/_Project/Data/Zombies/ZD_" + n + ".asset"))
+                .Where(x => x != null).ToArray();
+            theme.crowd = Load(r.crowd);
+            theme.later = Load(r.later);
+            theme.elites = Load(r.elites);
+            EditorUtility.SetDirty(theme);
         }
 
         /// Weather that follows the player, from Epic Toon (the only FX source for the game).

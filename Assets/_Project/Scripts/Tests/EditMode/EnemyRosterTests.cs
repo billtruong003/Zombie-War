@@ -37,10 +37,12 @@ namespace ZombieWar.Tests
                 .Where(d => d != null && !string.IsNullOrEmpty(d.enemyId));
 
         [Test]
-        public void Roster_HasFifteenBakedEnemies()
+        public void Roster_HasThirtyTwoBakedEnemies()
         {
-            Assert.AreEqual(15, BakedEnemies().Count(),
-                "expected the 15 Cute-pack monsters; HUGO is documented as blocked (vertex count)");
+            // 15 Cute-pack monsters (HUGO is documented as blocked: vertex count) + the 17 low-poly
+            // Blob-line monsters the baked maps add per theme (2026-10-01).
+            Assert.AreEqual(32, BakedEnemies().Count(),
+                "expected 15 Cute-pack + 17 Blob-line monsters");
         }
 
         [Test]
