@@ -26,7 +26,7 @@ namespace ZombieWar
         private static readonly Color AccentColor = new(0.20f, 0.72f, 0.43f, 1f);
         private static readonly Color DangerColor = new(0.72f, 0.18f, 0.20f, 1f);
 
-        private static readonly string[] TabNames = { "WALLET", "GUNS", "GACHA", "META", "RUN", "SKILLS", "FLOW", "PROFILE" };
+        private static readonly string[] TabNames = { "WALLET", "GUNS", "GACHA", "META", "RUN", "SKILLS", "FLOW", "PROFILE", "MAP" };
 
         private GameObject _panel;
         private Text _status, _info;
@@ -87,6 +87,7 @@ namespace ZombieWar
             cheat.Register("zw.end", EndRun, "End the current run (walk away)");
             cheat.Register("zw.restart", RestartRun, "Restart the run");
             cheat.Register("zw.home", ReturnToMap, "Return to the menu");
+            cheat.Register<string>("zw.map.go", LoadMap, "Load a map now (restarts the run): zw.map.go forest");
             _commandsRegistered = true;
         }
 
@@ -125,12 +126,12 @@ namespace ZombieWar
             _info = CreateText(_panel.transform, "Info", "", 24, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.85f, 0.9f, 1f));
             SetAnchored(_info.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -108f), new Vector2(1000f, 72f));
 
-            // Tabs: two rows of four.
+            // Tabs: two rows of five.
             var tabs = CreateRect(_panel.transform, "Tabs", new Color(0, 0, 0, 0));
             SetAnchored(tabs, new Vector2(0.5f, 1f), new Vector2(0f, -188f), new Vector2(1016f, 144f));
             var grid = tabs.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(248f, 66f); grid.spacing = new Vector2(8f, 8f);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; grid.constraintCount = 4;
+            grid.cellSize = new Vector2(196f, 66f); grid.spacing = new Vector2(8f, 8f);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; grid.constraintCount = 5;
             for (int i = 0; i < TabNames.Length; i++)
             {
                 int idx = i;
@@ -271,6 +272,9 @@ namespace ZombieWar
                     AddSection(_content, "DANGER");
                     AddAction(_content, "RESET PROFILE — PRESS TWICE", ResetProfile, true);
                     break;
+                case 8:
+                    AddMapList();
+                    break;
             }
             if (_scroll != null) _scroll.verticalNormalizedPosition = 1f;
             RefreshInfo();
@@ -285,7 +289,8 @@ namespace ZombieWar
             _info.text = $"Coin {PlayerProfile.Coin:N0} · Gem {PlayerProfile.Gem:N0} · Tickets {PlayerProfile.Tickets:N0} · Pass XP {PlayerProfile.PassXp:N0} · Lv {PlayerProfile.AccountLevel}\n" +
                          (gun != null ? $"{gun.weaponName} ({gun.tier}) ★{PlayerProfile.GetWeaponLevel(gun.WeaponId)} · {PlayerProfile.GetWeaponShards(gun.WeaponId)} shards" : "No gun") +
                          (ev != null ? $" · Event pity {PlayerProfile.GetPity(ev.pityKey)}/{ev.hardPity}" : "") +
-                         (RunState.Current != null ? $" · Run Lv {RunState.Current.Level}" : "");
+                         (RunState.Current != null ? $" · Run Lv {RunState.Current.Level}" : "") +
+                         $" · Map {PlayingMapId()}";
         }
 
         private void AddSection(Transform parent, string label)
@@ -603,6 +608,46 @@ namespace ZombieWar
             Bill.Events?.Fire(new RunAbandonRequestedEvent());
             SetStatus("Run ended");
             SetPanelVisible(false);
+        }
+
+        // ------------------------------------------------------------------ map
+
+        private static string PlayingMapId()
+        {
+            var streamer = World.BakedMapStreamer.Active;
+            if (streamer != null && streamer.Theme != null) return streamer.Theme.id;
+            return GameFlow.InGameplay ? World.MapTheme.ProceduralId : "-";
+        }
+
+        /// Every baked map in Resources/MapThemes, plus the old procedural world. Tapping one loads it
+        /// at once: the run restarts on that map (from the menu, a run starts on it).
+        private void AddMapList()
+        {
+            AddSection(_content, $"PLAYING: {PlayingMapId().ToUpperInvariant()} · NEXT RUN: {World.MapTheme.CurrentId.ToUpperInvariant()}");
+            AddSection(_content, "TAP TO LOAD NOW (THE RUN RESTARTS)");
+            var themes = Resources.LoadAll<World.MapTheme>(World.MapTheme.ResourceFolder.TrimEnd('/'));
+            Array.Sort(themes, (a, b) => string.CompareOrdinal(a.id, b.id));
+            foreach (var t in themes)
+            {
+                if (t == null || string.IsNullOrEmpty(t.id)) continue;
+                string id = t.id;
+                AddAction(_content, id.ToUpperInvariant(), () => LoadMap(id));
+            }
+            AddAction(_content, "OLD PROCEDURAL WORLD", () => LoadMap(World.MapTheme.ProceduralId));
+        }
+
+        private void LoadMap(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Map id missing.");
+            id = id.Trim().ToLowerInvariant();
+            if (id != World.MapTheme.ProceduralId && World.MapTheme.Load(id) == null)
+                throw new ArgumentException($"No baked map '{id}'.");
+            World.MapTheme.CurrentId = id;
+            Time.timeScale = 1f;
+            SetPanelVisible(false);
+            if (GameFlow.InGameplay) GameFlow.RestartGameplay();
+            else GameFlow.StartGameplay();
+            Debug.Log("[ZombieWarCheats] map " + id);
         }
 
         private void RestartRun()
