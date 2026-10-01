@@ -527,7 +527,7 @@ namespace ZombieWar.EditorTools
                     if (Basin(d, corner + new Vector2(x, y)) > 0f) wet = true;
             var g = new GameObject("Ground");
             g.transform.SetParent(go.transform, false);
-            g.AddComponent<MeshFilter>().sharedMesh = SaveMesh(ChunkGround(d, corner, wet ? 64 : 16, name), dir + name + "_Ground.asset");
+            g.AddComponent<MeshFilter>().sharedMesh = StoreMesh(ChunkGround(d, corner, wet ? 64 : 16, name), dir + name + "_Meshes.asset");
             g.AddComponent<MeshRenderer>().sharedMaterial = ground;
 
             if (wet && fluid != null)
@@ -537,7 +537,7 @@ namespace ZombieWar.EditorTools
                 {
                     var f = new GameObject("Fluid_" + z.fluid);
                     f.transform.SetParent(go.transform, false);
-                    f.AddComponent<MeshFilter>().sharedMesh = SaveMesh(fm, dir + name + "_Fluid.asset");
+                    f.AddComponent<MeshFilter>().sharedMesh = StoreMesh(fm, dir + name + "_Meshes.asset");
                     f.AddComponent<MeshRenderer>().sharedMaterial = fluid;
                 }
             }
@@ -576,9 +576,24 @@ namespace ZombieWar.EditorTools
             return prefab;
         }
 
-        static Mesh SaveMesh(Mesh m, string path)
+        /// Adds a baked mesh to a binary store (<see cref="ZombieWar.World.BakedMeshStore"/>), or updates
+        /// the store's mesh of the same name in place so references to it survive a rebake. The project
+        /// writes assets as text, which turns every vertex into YAML: a store keeps them binary.
+        static Mesh StoreMesh(Mesh m, string storePath)
         {
-            AssetDatabase.CreateAsset(m, path);
+            var store = AssetDatabase.LoadMainAssetAtPath(storePath) as ZombieWar.World.BakedMeshStore;
+            if (store == null)
+            {
+                store = ScriptableObject.CreateInstance<ZombieWar.World.BakedMeshStore>();
+                store.name = Path.GetFileNameWithoutExtension(storePath);
+                AssetDatabase.CreateAsset(store, storePath);
+            }
+            // Quantised on disk and in the build (memory at run time is unchanged); checked in game shots
+            // for gaps between pieces and palette colours bleeding across cells.
+            MeshUtility.SetMeshCompression(m, ModelImporterMeshCompression.Medium);
+            var old = AssetDatabase.LoadAllAssetsAtPath(storePath).OfType<Mesh>().FirstOrDefault(x => x.name == m.name);
+            if (old != null) { EditorUtility.CopySerialized(m, old); Object.DestroyImmediate(m); return old; }
+            AssetDatabase.AddObjectToAsset(m, store);
             return m;
         }
 

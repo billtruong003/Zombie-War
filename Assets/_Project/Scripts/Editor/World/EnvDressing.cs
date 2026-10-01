@@ -366,7 +366,6 @@ namespace ZombieWar.EditorTools
             if (builds.Count == 0) return;
             var root = new GameObject("CoverClusters").transform;
             root.SetParent(parent, false);
-            Object mainAsset = null;
             int idx = 0;
             foreach (var kv in builds)
             {
@@ -375,8 +374,7 @@ namespace ZombieWar.EditorTools
                 if (b.v.Count > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
                 mesh.SetVertices(b.v); mesh.SetNormals(b.n); mesh.SetColors(b.c); mesh.SetUVs(0, b.uv); mesh.SetUVs(1, b.uv1);
                 mesh.SetTriangles(b.t, 0); mesh.RecalculateBounds();
-                if (mainAsset == null) { AssetDatabase.CreateAsset(mesh, meshPath + "_Cover.asset"); mainAsset = mesh; }
-                else AssetDatabase.AddObjectToAsset(mesh, mainAsset);
+                mesh = StoreMesh(mesh, meshPath + "_Meshes.asset");
                 var go = new GameObject(mesh.name);
                 go.transform.SetParent(root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;

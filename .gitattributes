@@ -33,3 +33,8 @@
 # Baked VAT data assets embed Texture2D sub-assets directly in the .asset file
 # (1-40MB+ each) - override the generic *.asset text rule above for this path.
 Assets/ThirdParty/VATEnemy/**/*.asset filter=lfs diff=lfs merge=lfs -text
+
+# Baked map and palette-kit meshes: binary stores (BakedMeshStore, [PreferBinarySerialization]).
+# Must come after the generic *.asset text rule: a binary file must never get eol conversion.
+Assets/_Project/Art/EnvSandbox/Maps/**/*_Meshes.asset filter=lfs diff=lfs merge=lfs -text
+Assets/_Project/Art/EnvPalette/Meshes/PaletteMeshes.asset filter=lfs diff=lfs merge=lfs -text

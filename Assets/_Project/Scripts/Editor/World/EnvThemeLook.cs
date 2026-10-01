@@ -119,8 +119,15 @@ namespace ZombieWar.EditorTools
             string outTex = Pal + "Themes/" + Path.GetFileNameWithoutExtension(texPath) + "_" + id + ".png";
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             tex.SetPixels(px); tex.Apply();
-            File.WriteAllBytes(outTex, tex.EncodeToPNG());
+            var png = tex.EncodeToPNG();
             Object.DestroyImmediate(tex);
+            // Unity keeps imported files mapped; release them before overwriting (IO error 1224), and
+            // leave an unchanged texture alone.
+            if (!File.Exists(outTex) || !System.Linq.Enumerable.SequenceEqual(File.ReadAllBytes(outTex), png))
+            {
+                AssetDatabase.ReleaseCachedFileHandles();
+                File.WriteAllBytes(outTex, png);
+            }
             AssetDatabase.ImportAsset(outTex);
             var imp = (TextureImporter)AssetImporter.GetAtPath(outTex);
             imp.sRGBTexture = true;

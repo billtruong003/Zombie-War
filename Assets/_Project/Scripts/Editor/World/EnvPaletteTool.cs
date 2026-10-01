@@ -27,6 +27,7 @@ namespace ZombieWar.EditorTools
     public static partial class EnvSandboxBuilder
     {
         const string Pal = "Assets/_Project/Art/EnvPalette/";
+        const string PaletteMeshStore = Pal + "Meshes/PaletteMeshes.asset";
         const string KayKitTex = "Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Textures/resource_bits_texture.png";
         const string KayKitMat = "Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Materials/resource.mat";
         const int PalCols = 8, PalRows = 4, PalSize = 1024;
@@ -231,6 +232,12 @@ namespace ZombieWar.EditorTools
         [MenuItem("HordeCall/World/Palette/Build Palette Kit")]
         public static string BuildPaletteKit()
         {
+            // The converted meshes live in one binary store; the loose text meshes of earlier kits go.
+            foreach (var g in AssetDatabase.FindAssets("t:Mesh", new[] { Pal + "Meshes" }))
+            {
+                string p = AssetDatabase.GUIDToAssetPath(g);
+                if (p != PaletteMeshStore) AssetDatabase.DeleteAsset(p);
+            }
             Directory.CreateDirectory(Pal + "Meshes");
             Directory.CreateDirectory(Pal + "Prefabs");
             TexCache.Clear(); AlphaCache.Clear(); AverageCache.Clear();
@@ -534,11 +541,8 @@ namespace ZombieWar.EditorTools
             // Stable name: the source asset path and mesh name (instance ids change between sessions).
             uint hash = 2166136261;
             foreach (char ch in AssetDatabase.GetAssetPath(src) + "|" + src.name) hash = (hash ^ ch) * 16777619;
-            string path = Pal + "Meshes/" + src.name.Replace("/", "_") + "_" + hash.ToString("x8") + ".asset";
-            var old = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (old != null) { EditorUtility.CopySerialized(mesh, old); Object.DestroyImmediate(mesh); mesh = old; }
-            else AssetDatabase.CreateAsset(mesh, path);
-            return (mesh, foliageSub);
+            mesh.name = src.name.Replace("/", "_") + "_" + hash.ToString("x8");
+            return (StoreMesh(mesh, PaletteMeshStore), foliageSub);
         }
 
         const int AtlasSize = 2048, SlotSize = 512, SlotPad = 8;
