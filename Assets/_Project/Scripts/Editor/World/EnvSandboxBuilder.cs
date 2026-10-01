@@ -98,7 +98,7 @@ namespace ZombieWar.EditorTools
                 midPts = new[] { V(-8, 7), V(9, 9), V(-10, -7), V(7, -10) }, outerPts = new[] { V(-17, 16), V(-18, -2), V(-15, -16), V(16, -15), V(18, 2) }, landmarkPts = new[] { V(14, 15) },
                 paths = new[] { new[] { V(-20, -12), V(20, -16) } } },
 
-            new Zone { id = "tundra", layerColor = new[] { Col(0.7f, 0.75f, 0.82f), Col(0.8f, 0.84f, 0.9f), Col(0.62f, 0.74f, 0.85f), Col(0.44f, 0.5f, 0.58f) }, name = "Băng nguyên", col = 2, row = 0, snow = true,
+            new Zone { id = "tundra", layerColor = new[] { Col(0.56f, 0.62f, 0.71f), Col(0.66f, 0.72f, 0.81f), Col(0.46f, 0.6f, 0.74f), Col(0.33f, 0.38f, 0.47f) }, name = "Băng nguyên", col = 2, row = 0, snow = true,
                 tex = new[] { Art + "Textures/T_Snow_Packed.png", Art + "Textures/T_Snow_Fresh.png", Art + "Textures/T_Snow_Ice.png", Art + "Textures/T_Snow_ColdRock.png" },
                 tint = new[] { Col(1f, 1f, 1.02f), Col(1.02f, 1.01f, 1f), Col(0.95f, 1f, 1.05f), Col(1f, 1.02f, 1.05f) }, primary = 1, secondary = 0, path = 0,
                 mid = new[] { "SG/SM_Gen_Env_Rock_01", "SG/SM_Gen_Env_Rock_03", "SG/SM_Gen_Env_Rock_07", "SG/SM_Gen_Env_Stump_01", "SG/SM_Gen_Env_Rock_Pebbles_02", "KK/Containers_Crate_Large", "KK/Fuel_A_Barrels", "KK/Containers_Box_Large_Dirty" },
@@ -119,7 +119,7 @@ namespace ZombieWar.EditorTools
                 pools = new[] { new Vector3(-10f, 10f, 4.5f), new Vector3(11f, -15f, 3.5f), new Vector3(12f, 6f, 2.6f) },
                 fluid = "lava", bankChannel = 3, basinDepth = 1.2f, crack = 0.85f, crackGlow = 0.45f },
 
-            new Zone { id = "forest", layerColor = new[] { Col(0.42f, 0.3f, 0.2f), Col(0.26f, 0.45f, 0.22f), Col(0.36f, 0.52f, 0.25f), Col(0.4f, 0.44f, 0.38f) }, name = "Rừng sâu", col = 0, row = 1,
+            new Zone { id = "forest", layerColor = new[] { Col(0.36f, 0.26f, 0.18f), Col(0.2f, 0.37f, 0.2f), Col(0.28f, 0.43f, 0.22f), Col(0.34f, 0.38f, 0.33f) }, name = "Rừng sâu", col = 0, row = 1,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_02/Textures/Grass_Dense_Tint_02_Base_Basecolor_A.png",
                               C + "GRASS/GRASS_Flower/GRASS_Flower_Tint_02/Texture/Grass_Flower_Tint_02_Base_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_B_Basecolor_A.png" },
                 tint = new[] { Col(0.85f, 0.8f, 0.72f), Col(0.85f, 0.95f, 0.8f), Color.white, Col(0.8f, 0.9f, 0.8f) }, primary = 1, secondary = 2, path = 0, outerCh = 0,
@@ -601,6 +601,16 @@ namespace ZombieWar.EditorTools
             m.SetFloat("_CrackStrength", z.crack);
             m.SetFloat("_CrackGlowReach", z.crackGlow);
             m.SetFloat("_BankDarken", z.fluid == "lava" ? 0.55f : 0.3f);
+            // Broad light and dark patches so open ground does not read as one flat colour; snow needs
+            // more of them, plus cold blue ice fissures, or it washes out to white under the toon light.
+            m.SetFloat("_MacroScale", 45f);
+            m.SetFloat("_MacroStrength", z.snow ? 0.3f : 0.16f);
+            if (z.snow)
+            {
+                m.SetFloat("_CrackStrength", 0.15f);
+                m.SetFloat("_CrackTiling", 24f);
+                m.SetColor("_CrackColor", new Color(0.36f, 0.5f, 0.66f));
+            }
             string[] texProps = { "_DryTex", "_GrassTex", "_SandTex", "_RockTex" };
             string[] tintProps = { "_DryTint", "_GrassTint", "_SandTint", "_RockTint" };
             string[] tileProps = { "_DryTiling", "_GrassTiling", "_SandTiling", "_RockTiling" };

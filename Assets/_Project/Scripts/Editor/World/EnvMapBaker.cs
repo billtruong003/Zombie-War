@@ -315,6 +315,7 @@ namespace ZombieWar.EditorTools
             AssetDatabase.DeleteAsset(Art + "Tiles");      // the per-tile variants this replaced
             AssetDatabase.DeleteAsset(Art + "Maps");
             var zones = Zones();
+            ThemeMats.Clear();              // rebuilt from the current palette and atlas
             var log = new System.Text.StringBuilder();
             for (int m = 0; m < Maps.Length; m++)
             {
@@ -567,6 +568,7 @@ namespace ZombieWar.EditorTools
             var pr = new GameObject("Props").transform;
             pr.SetParent(go.transform, false);
             PlaceChunkProps(pr, props, corner, centre, dir + name);
+            ApplyThemeLook(go, z.id);       // before the snow cover, which copies the material it covers
             if (z.snow) SnowCover(go.transform);
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, dir + name + ".prefab");
