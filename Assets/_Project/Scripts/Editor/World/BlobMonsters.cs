@@ -23,30 +23,34 @@ namespace ZombieWar.EditorTools
         sealed class BlobDef
         {
             public string model, bake, display;
-            public float height = 1.5f, hp = 45f, dmg = 7f, speed = 2.5f;
+            public float height = 1.2f, hp = 26f, dmg = 6f, speed = 2.5f;
             public bool elite;
             public int coin = 1, xp = 1;
         }
 
+        // Balanced against the base roster (2026-10-01): the everyday crowd joins tier 0 next to
+        // DogPup (20 HP) and Skeleton (28 HP), so it sits at 20-34 HP and about 1.1 m tall (the round
+        // bodies read bigger than their height next to the 1.7 m player); the later kinds join tier 2
+        // at 34-42 HP; the two elites stay heavy.
         static readonly BlobDef[] Blobs =
         {
-            new() { model = "Chicken Blob", bake = "BlobChicken", display = "Chicken Blob", height = 1.35f, hp = 35f, speed = 2.9f },
-            new() { model = "Dog Blob", bake = "BlobDog", display = "Dog Blob", height = 1.4f, hp = 40f, speed = 2.7f },
-            new() { model = "Cat Blob", bake = "BlobCat", display = "Cat Blob", height = 1.4f, hp = 40f, speed = 2.8f },
-            new() { model = "Pigeon Blob", bake = "BlobPigeon", display = "Pigeon Blob", height = 1.3f, hp = 30f, speed = 3.1f },
-            new() { model = "Mushroom Blob", bake = "BlobMushroom", display = "Mushroom Blob", height = 1.45f, hp = 50f, speed = 2.3f },
-            new() { model = "Orc Blob", bake = "BlobOrc", display = "Orc Blob", height = 1.6f, hp = 60f, dmg = 9f, speed = 2.4f, coin = 2, xp = 2 },
-            new() { model = "Bird Blob", bake = "BlobBird", display = "Bird Blob", height = 1.45f, hp = 40f, speed = 3.0f },
-            new() { model = "Fish Blob", bake = "BlobFish", display = "Fish Blob", height = 1.5f, hp = 45f, speed = 2.5f },
-            new() { model = "Green Blob", bake = "BlobGreen", display = "Green Blob", height = 1.3f, hp = 35f, speed = 2.6f },
-            new() { model = "Pink Blob", bake = "BlobPink", display = "Pink Blob", height = 1.35f, hp = 40f, speed = 2.6f },
-            new() { model = "Cactoro Blob", bake = "BlobCactoro", display = "Cactoro Blob", height = 1.55f, hp = 55f, dmg = 9f, speed = 2.4f, coin = 2, xp = 2 },
-            new() { model = "Alien Blob", bake = "BlobAlien", display = "Alien Blob", height = 1.6f, hp = 55f, dmg = 8f, speed = 2.7f, coin = 2, xp = 2 },
-            new() { model = "Ninja Blob", bake = "BlobNinja", display = "Ninja Blob", height = 1.5f, hp = 45f, dmg = 9f, speed = 3.2f, coin = 2, xp = 2 },
-            new() { model = "Yeti Blob", bake = "BlobYeti", display = "Yeti Blob", height = 1.6f, hp = 65f, dmg = 9f, speed = 2.3f, coin = 2, xp = 2 },
-            new() { model = "Wizard Blob", bake = "BlobWizard", display = "Wizard Blob", height = 1.5f, hp = 45f, dmg = 8f, speed = 2.6f, coin = 2, xp = 2 },
-            new() { model = "Green Spiky Blob", bake = "BlobSpiky", display = "Spiky Blob", height = 2.1f, hp = 240f, dmg = 16f, speed = 2.1f, elite = true, coin = 6, xp = 6 },
-            new() { model = "Mushnub Evolved", bake = "BlobMushnub", display = "Mushnub", height = 2.2f, hp = 260f, dmg = 18f, speed = 2.0f, elite = true, coin = 6, xp = 6 },
+            new() { model = "Chicken Blob", bake = "BlobChicken", display = "Chicken Blob", height = 1.1f, hp = 24f, speed = 2.8f },
+            new() { model = "Dog Blob", bake = "BlobDog", display = "Dog Blob", height = 1.15f, hp = 26f, speed = 2.6f },
+            new() { model = "Cat Blob", bake = "BlobCat", display = "Cat Blob", height = 1.15f, hp = 26f, speed = 2.7f },
+            new() { model = "Pigeon Blob", bake = "BlobPigeon", display = "Pigeon Blob", height = 1.05f, hp = 20f, speed = 3.0f },
+            new() { model = "Mushroom Blob", bake = "BlobMushroom", display = "Mushroom Blob", height = 1.2f, hp = 32f, speed = 2.3f },
+            new() { model = "Orc Blob", bake = "BlobOrc", display = "Orc Blob", height = 1.35f, hp = 40f, dmg = 8f, speed = 2.4f, coin = 2, xp = 2 },
+            new() { model = "Bird Blob", bake = "BlobBird", display = "Bird Blob", height = 1.15f, hp = 26f, speed = 2.9f },
+            new() { model = "Fish Blob", bake = "BlobFish", display = "Fish Blob", height = 1.2f, hp = 28f, speed = 2.5f },
+            new() { model = "Green Blob", bake = "BlobGreen", display = "Green Blob", height = 1.05f, hp = 22f, speed = 2.6f },
+            new() { model = "Pink Blob", bake = "BlobPink", display = "Pink Blob", height = 1.1f, hp = 24f, speed = 2.6f },
+            new() { model = "Cactoro Blob", bake = "BlobCactoro", display = "Cactoro Blob", height = 1.25f, hp = 34f, dmg = 8f, speed = 2.4f, coin = 2, xp = 2 },
+            new() { model = "Alien Blob", bake = "BlobAlien", display = "Alien Blob", height = 1.3f, hp = 34f, dmg = 7f, speed = 2.6f, coin = 2, xp = 2 },
+            new() { model = "Ninja Blob", bake = "BlobNinja", display = "Ninja Blob", height = 1.25f, hp = 36f, dmg = 8f, speed = 3.1f, coin = 2, xp = 2 },
+            new() { model = "Yeti Blob", bake = "BlobYeti", display = "Yeti Blob", height = 1.35f, hp = 42f, dmg = 8f, speed = 2.3f, coin = 2, xp = 2 },
+            new() { model = "Wizard Blob", bake = "BlobWizard", display = "Wizard Blob", height = 1.25f, hp = 34f, dmg = 7f, speed = 2.6f, coin = 2, xp = 2 },
+            new() { model = "Green Spiky Blob", bake = "BlobSpiky", display = "Spiky Blob", height = 1.9f, hp = 240f, dmg = 16f, speed = 2.1f, elite = true, coin = 6, xp = 6 },
+            new() { model = "Mushnub Evolved", bake = "BlobMushnub", display = "Mushnub", height = 2.0f, hp = 260f, dmg = 18f, speed = 2.0f, elite = true, coin = 6, xp = 6 },
         };
 
         [MenuItem("HordeCall/Monsters/Prepare + Bake Blob Monsters")]
