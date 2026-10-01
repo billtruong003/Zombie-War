@@ -101,6 +101,10 @@ namespace ZombieWar.Editor.Audio
                 "sfx.skill.airstrike.mark", "sfx.skill.airstrike.blast", "sfx.skill.evolve",
                 "sfx.skill.blade.hit", "sfx.skill.boomerang.throw",
                 "sfx.skill.crit", "sfx.skill.ricochet", "sfx.skill.poison",
+                "sfx.skill.deploy", "sfx.skill.timewarp", "sfx.skill.meteor", "sfx.station.complete", "sfx.station.beacon",
+                "music.run.meadow", "music.run.forest", "music.run.swamp", "music.run.volcano", "music.run.tundra",
+                "sfx.creature.blob_small.attack", "sfx.creature.blob_small.hurt", "sfx.creature.blob_small.death",
+                "sfx.creature.blob_heavy.attack", "sfx.creature.blob_heavy.hurt", "sfx.creature.blob_heavy.death",
                 "sfx.ui.tap", "sfx.ui.confirm", "sfx.ui.back", "sfx.ui.error", "sfx.ui.purchase",
                 "sfx.ui.levelup", "sfx.ui.card", "sfx.ui.equip",
             };
@@ -212,7 +216,23 @@ namespace ZombieWar.Editor.Audio
             if (p.Contains("/bgm/"))
             {
                 if (n.StartsWith("hubmusic")) Add(plan, "music.hub");
-                else if (n.StartsWith("gameplaymusic")) Add(plan, "music.run.stage1");
+                else if (n.StartsWith("gameplaymusic"))
+                {
+                    Add(plan, "music.run.stage1");
+                    // One bed per baked map (2026-10-01), four tracks for five maps: tundra shares
+                    // the forest's calmer track.
+                    // Files are "GamePlayMusic (1).wav" … "(4)".
+                    string theme = n switch
+                    {
+                        "gameplaymusic (1)" => "meadow",
+                        "gameplaymusic (2)" => "forest",
+                        "gameplaymusic (3)" => "swamp",
+                        "gameplaymusic (4)" => "volcano",
+                        _ => "",
+                    };
+                    if (theme.Length > 0) Add(plan, "music.run." + theme);
+                    if (theme == "forest") Add(plan, "music.run.tundra");
+                }
                 else if (n.StartsWith("victory")) Add(plan, "stinger.victory");
                 else if (n.StartsWith("defeat")) Add(plan, "stinger.defeat");
                 else if (n == "startgame") Add(plan, "stinger.run.start");
@@ -347,6 +367,17 @@ namespace ZombieWar.Editor.Audio
                 if (n is "etfx_impact_metal02") Add(plan, "sfx.skill.crit");
                 if (n is "etfx_impact_metal01" || n is "etfx_impact_metal03") Add(plan, "sfx.skill.ricochet");
                 if (n is "etfx_explosion_poisoncloud" || n is "etfx_explosion_acid") Add(plan, "sfx.skill.poison");
+                // 2026-10-01 audio pass: powers that borrowed another power's voice get their own,
+                // stations get a completion and a boss call, and the Blob line gets soft, squishy
+                // voices from the same toon pack instead of zombie groans.
+                if (n is "etfx_spawn") Add(plan, "sfx.skill.deploy");
+                if (n is "etfx_explosion_mystic" || n is "etfx_explosion_mystic02") Add(plan, "sfx.skill.timewarp");
+                if (n is "etfx_explosion_lava" || n is "etfx_explosion_fireball2") Add(plan, "sfx.skill.meteor");
+                if (n is "etfx_explosion_magic") Add(plan, "sfx.station.complete");
+                if (n is "etfx_explosion_dark02") Add(plan, "sfx.station.beacon");
+                if (n is "etfx_shoot_bubble" || n is "etfx_shoot_bubble2") AddFamilies(plan, "attack", "blob_small", "blob_heavy");
+                if (n is "etfx_explosion_liquid" || n is "etfx_explosion_bubble") AddFamilies(plan, "hurt", "blob_small", "blob_heavy");
+                if (n is "etfx_explosion_slime" || n is "etfx_explosion_slime2" || n is "etfx_explosion_poof") AddFamilies(plan, "death", "blob_small", "blob_heavy");
                 if (n.Contains("shoot_laser")) Add(plan, "sfx.weapon.laser.fire");
                 if (n.Contains("shoot_rocket")) Add(plan, "sfx.weapon.grenade.fire");
                 return;
@@ -540,7 +571,8 @@ namespace ZombieWar.Editor.Audio
                 var data = AssetDatabase.LoadAssetAtPath<ZombieData>(AssetDatabase.GUIDToAssetPath(guid));
                 if (data == null) continue;
                 string id = data.enemyId ?? "";
-                string family = id.Contains("dog_pup") ? "canine_small"
+                string family = id.StartsWith("enemy.blob.", StringComparison.Ordinal) ? (data.isElite ? "blob_heavy" : "blob_small")
+                    : id.Contains("dog_pup") ? "canine_small"
                     : id.Contains("dog_") ? "canine_heavy"
                     : id.Contains("cat_meow") ? "feline_small"
                     : id.Contains("cat_") ? "feline_fast"

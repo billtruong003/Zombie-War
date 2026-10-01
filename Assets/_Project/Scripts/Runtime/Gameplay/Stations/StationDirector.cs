@@ -228,7 +228,7 @@ namespace ZombieWar.Stations
             var fx = art != null ? art.CompleteFxFor(kind) : null;
             if (fx != null) FxPool.Play(fx, at, fx.transform.localRotation, 1f);
             ZombieWar.Skills.SkillArsenal.Instance?.Shockwave(at, 0.5f, Station.RadiusFor(kind) * 2.2f, WorldSignal.ColorOf(kind), 0.55f);
-            if (Bill.IsReady) Bill.Audio?.PlayCue(kind == StationKind.HealZone ? "sfx.pickup.health" : "sfx.skill.evolve", at, SfxPriority.High, 0.7f);
+            if (Bill.IsReady) Bill.Audio?.PlayCue(kind == StationKind.HealZone ? "sfx.pickup.health" : "sfx.station.complete", at, SfxPriority.High, 0.7f);
         }
 
         public void PlayHealField(Vector3 at, float radius, float seconds)
@@ -347,6 +347,8 @@ namespace ZombieWar.Stations
             // Spawning around the player is also the behaviour a chasing boss actually wants, so the
             // fix is to let the spawner own placement — which is its job.
             boss.IsBeaconOwned = true;      // exempt from the M7.4a leash
+            if (Bill.IsReady) Bill.Audio?.PlayCue("sfx.station.beacon", SfxPriority.High, 0.8f);   // the boss is coming
+            ZombieWar.UI.UIFeedback.Haptic(ZombieWar.UI.UIFeedback.Buzz.Medium);
             StationRegistry.SetBossAlive(id, true);
             _bossAnchors[boss] = id;
             return true;

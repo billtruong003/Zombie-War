@@ -148,6 +148,7 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             var go = UnityEngine.Object.Instantiate(a.model, Host.Root);
             go.name = "drone" + i;
+            Host.Sfx("sfx.skill.deploy", Host.Player.position, 0.6f, 0.3f);   // a new drone joins
             go.transform.localScale = Vector3.one * a.modelScale;
             foreach (var col in go.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.Destroy(col);
             _muzzle[i] = FindChild(go.transform, "Muzzle") ?? go.transform;
@@ -239,7 +240,7 @@ namespace ZombieWar.Skills.Powers
             if (a.tracer != null) TracerPool.Play(a.tracer, from, to, new Color(colour.r, colour.g, colour.b, 1f), 0.45f);
             FxPool.Play(a.muzzleFx, from, Quaternion.LookRotation(to - from), 0.35f);
             FxPool.Play(a.hitFx, to, PowerKit.Flat(a.hitFx), 0.45f);
-            Host.Sfx("sfx.skill.drone", from, 0.3f, 0.05f);
+            Host.Sfx("sfx.skill.drone", from, 0.55f, 0.07f);   // 0.3 was buried under the gun
 
             PowerKit.Hit(enemy, run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoDrone), 0.15f,
                          run.Has(SkillCatalogDefs.EvoSquadron) ? SkillCatalogDefs.EvoSquadron : SkillCatalogDefs.AutoDrone);

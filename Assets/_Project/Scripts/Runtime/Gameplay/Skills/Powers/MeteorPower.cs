@@ -58,7 +58,7 @@ namespace ZombieWar.Skills.Powers
             var spec = new BlastSpec
             {
                 pos = at, radius = proc.radius, damage = damage, delay = a.delay,
-                fx = a.impactFx, fxNativeRadius = a.impactNativeRadius, sfx = "sfx.skill.airstrike.blast",
+                fx = a.impactFx, fxNativeRadius = a.impactNativeRadius, sfx = "sfx.skill.meteor",
                 shake = 0.32f, push = 1.8f, bomb = a.fallFx, decal = a.craterFx, flight = flight,
                 source = SkillCatalogDefs.AutoMeteor, wave = Ember, landed = _landed ??= Land,
             };

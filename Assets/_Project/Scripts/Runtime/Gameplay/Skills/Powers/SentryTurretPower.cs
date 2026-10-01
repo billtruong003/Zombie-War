@@ -65,7 +65,7 @@ namespace ZombieWar.Skills.Powers
                 t.live = true;
                 FxPool.Play(a.dropFx, at, PowerKit.Flat(a.dropFx), 0.8f);
             }
-            Host.Sfx("sfx.pickup.bomb", origin, 0.6f, 0.2f);
+            Host.Sfx("sfx.skill.deploy", origin, 0.7f, 0.2f);
         }
 
         Turret Take()

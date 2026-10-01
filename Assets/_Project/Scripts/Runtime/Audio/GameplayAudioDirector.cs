@@ -56,7 +56,7 @@ namespace ZombieWar.Audio
 
             string state = Bill.State?.CurrentName ?? "";
             if (state == "Menu") SetMusic("music.hub", false);
-            else if (state == "Gameplay") SetMusic("music.run.stage1", false);
+            else if (state == "Gameplay") SetMusic(RunMusicKey(), false);
         }
 
         private void Subscribe()
@@ -143,7 +143,7 @@ namespace ZombieWar.Audio
             else if (e.To == "Gameplay")
             {
                 _resultStingerPlayed = false;
-                SetMusic("music.run.stage1", true);
+                SetMusic(RunMusicKey(), true);
             }
         }
 
@@ -291,11 +291,31 @@ namespace ZombieWar.Audio
             if (token != 0) Bill.Audio?.Unduck(token, AudioTuning.WaveCueDuckRelease);
         }
 
-        private static void OnPlayerDamaged(PlayerDamagedEvent e) =>
-            Bill.Audio?.PlayCue("sfx.player.hurt", SfxPriority.Medium, 0.62f);
+        /// One bed per baked map (2026-10-01); the procedural world and anything unknown keep the
+        /// shared run bed. The curated audio build guarantees a music.run.&lt;theme&gt; key per theme.
+        private static string RunMusicKey() => ZombieWar.World.MapTheme.CurrentId switch
+        {
+            "meadow" or "forest" or "swamp" or "volcano" or "tundra" => "music.run." + ZombieWar.World.MapTheme.CurrentId,
+            _ => "music.run.stage1",
+        };
 
-        private static void OnPlayerDied(PlayerDiedEvent e) =>
+        // A short tick on the phone for each hit taken, at most a few per second so a swarm does
+        // not turn it into one long buzz; a heavier one on death. Honours the Vibration toggle.
+        private static float _nextHurtBuzz;
+
+        private static void OnPlayerDamaged(PlayerDamagedEvent e)
+        {
+            Bill.Audio?.PlayCue("sfx.player.hurt", SfxPriority.Medium, 0.62f);
+            if (Time.unscaledTime < _nextHurtBuzz) return;
+            _nextHurtBuzz = Time.unscaledTime + 0.35f;
+            ZombieWar.UI.UIFeedback.Haptic(ZombieWar.UI.UIFeedback.Buzz.Tick);
+        }
+
+        private static void OnPlayerDied(PlayerDiedEvent e)
+        {
             Bill.Audio?.PlayCue("sfx.player.death", SfxPriority.Critical, 0.78f);
+            ZombieWar.UI.UIFeedback.Haptic(ZombieWar.UI.UIFeedback.Buzz.Heavy);
+        }
 
         // Coins arrive in bursts (a magnet sweep, an elite's pile): one voice per coin stacked dozens
         // of cues into one frame, which both stalled it and smeared into noise. Coins now share one
