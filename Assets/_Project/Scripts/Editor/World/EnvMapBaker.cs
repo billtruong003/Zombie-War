@@ -417,6 +417,25 @@ namespace ZombieWar.EditorTools
         /// The game reads the map through a MapTheme in Resources/MapThemes (only the theme in play
         /// is loaded). The spawn spot is the open ground nearest the map centre: no obstacle cell and
         /// no blocking piece within 7 m.
+        /// Each map's light (2026-10-01, owner: "every map is too dark"): a three-colour ambient that
+        /// fits the theme and its sun. Sky, horizon, ground, sun colour, sun intensity.
+        static readonly Dictionary<string, (Color sky, Color eq, Color ground, Color sun, float intensity)> ThemeLight = new()
+        {
+            ["meadow"]  = (new Color(0.82f, 0.86f, 0.94f), new Color(0.68f, 0.70f, 0.66f), new Color(0.48f, 0.44f, 0.38f), new Color(1f, 0.97f, 0.90f), 1.15f),
+            ["forest"]  = (new Color(0.68f, 0.78f, 0.72f), new Color(0.54f, 0.60f, 0.52f), new Color(0.36f, 0.35f, 0.30f), new Color(1f, 0.95f, 0.85f), 1.1f),
+            ["swamp"]   = (new Color(0.68f, 0.76f, 0.64f), new Color(0.54f, 0.60f, 0.48f), new Color(0.36f, 0.38f, 0.28f), new Color(0.96f, 1f, 0.86f), 1.05f),
+            ["volcano"] = (new Color(0.84f, 0.70f, 0.64f), new Color(0.74f, 0.58f, 0.50f), new Color(0.62f, 0.40f, 0.30f), new Color(1f, 0.88f, 0.76f), 1.18f),
+            ["tundra"]  = (new Color(0.58f, 0.64f, 0.76f), new Color(0.48f, 0.54f, 0.64f), new Color(0.38f, 0.42f, 0.50f), new Color(0.92f, 0.95f, 1f), 0.9f),   // snow is bright already
+        };
+
+        public static void ApplyThemeLight(ZombieWar.World.MapTheme theme)
+        {
+            if (theme == null || !ThemeLight.TryGetValue(theme.id, out var l)) return;
+            theme.ambientSky = l.sky; theme.ambientEquator = l.eq; theme.ambientGround = l.ground;
+            theme.sunColor = l.sun; theme.sunIntensity = l.intensity;
+            EditorUtility.SetDirty(theme);
+        }
+
         static void WriteMapTheme(MapData d, Zone z, GameObject[,] prefabs, List<PropSpot> props)
         {
             const string folder = "Assets/Resources/MapThemes/";
@@ -434,6 +453,7 @@ namespace ZombieWar.EditorTools
             theme.hasFoliage = d.def.id == "meadow" || d.def.id == "forest" || d.def.id == "swamp";
             theme.ambientFx = AmbientFxFor(d.def.id);
             ApplyMonsterRoster(theme);
+            ApplyThemeLight(theme);
 
             bool Open(Vector2 p)
             {

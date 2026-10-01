@@ -32,6 +32,14 @@ namespace ZombieWar
         [SerializeField] private float intensity = 1f;
 
         private void OnEnable() => Push();
+
+        /// <summary>A map sets its own sun (BakedMapStreamer, from its MapTheme).</summary>
+        public void SetLight(Color color, float newIntensity)
+        {
+            lightColor = color;
+            intensity = newIntensity;
+            Push();
+        }
         private void OnValidate() => Push();
 
         private void LateUpdate()

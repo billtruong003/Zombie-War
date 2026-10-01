@@ -25,6 +25,14 @@ namespace ZombieWar.World
         public GameObject ambientFx;
         public bool hasFoliage = true;
 
+        [Header("Light (2026-10-01: the scene's default ambient was a dark grey sky on every map)")]
+        [Tooltip("Ambient from above, the horizon and below: lights the shaded side of everything.")]
+        public Color ambientSky = new(0.80f, 0.84f, 0.92f);
+        public Color ambientEquator = new(0.66f, 0.68f, 0.66f);
+        public Color ambientGround = new(0.46f, 0.43f, 0.38f);
+        public Color sunColor = new(1f, 0.97f, 0.92f);
+        public float sunIntensity = 1.1f;
+
         [Header("Monsters of this map, added to the base roster (ThreatDirector)")]
         [Tooltip("Join tier 0: the everyday crowd of this map.")]
         public ZombieData[] crowd = new ZombieData[0];

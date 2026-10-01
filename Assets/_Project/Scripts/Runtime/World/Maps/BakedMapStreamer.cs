@@ -85,6 +85,48 @@ namespace ZombieWar.World
             GrassBenders.EnemiesBendGrass = false;
         }
 
+        // Applied on the first frame the map's scene is the active one: the gameplay scene loads
+        // additively and becomes active a few frames later, and the active scene's RenderSettings
+        // are the ones that render, so values set earlier would never show.
+        bool _lit;
+
+        // The map's own light: a three-colour ambient instead of the scene's dark default sky, and
+        // its sun colour on the toon rig. The ambient probe is written directly (the shaders read
+        // SH), since nothing re-bakes it at run time. RenderSettings belong to the gameplay scene,
+        // so they go with it when the run ends.
+        void ApplyLight()
+        {
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = Theme.ambientSky;
+            RenderSettings.ambientEquatorColor = Theme.ambientEquator;
+            RenderSettings.ambientGroundColor = Theme.ambientGround;
+            RenderSettings.ambientProbe = TrilightProbe(Theme.ambientSky, Theme.ambientEquator, Theme.ambientGround);
+            var rig = FindFirstObjectByType<ToonLightRig>();
+            if (rig != null) rig.SetLight(Theme.sunColor, Theme.sunIntensity);
+        }
+
+        // An SH that reads `sky` straight up, `equator` sideways and `ground` straight down. Unity's
+        // SH basis (as Evaluate reads it): k0 = 1, k1 = y, k6 = 3z²-1, k8 = x²-y². The vertical zonal
+        // term Z = -0.5·k6 - 1.5·k8 reads 2 up and down and -1 sideways, so with f = a + b·y + c·Z:
+        // up = a+b+2c, down = a-b+2c, side = a-c.
+        static UnityEngine.Rendering.SphericalHarmonicsL2 TrilightProbe(Color sky, Color equator, Color ground)
+        {
+            var sh = new UnityEngine.Rendering.SphericalHarmonicsL2();
+            sh.Clear();
+            for (int ch = 0; ch < 3; ch++)
+            {
+                float s = sky[ch], e = equator[ch], g = ground[ch];
+                float b = (s - g) * 0.5f;
+                float c = ((s + g) * 0.5f - e) / 3f;
+                float a = e + c;
+                sh[ch, 0] = a;
+                sh[ch, 1] = b;
+                sh[ch, 6] = -0.5f * c;
+                sh[ch, 8] = -1.5f * c;
+            }
+            return sh;
+        }
+
         static Vector3 SpawnPosition()
         {
             var point = FindFirstObjectByType<PlayerSpawnPoint>();
@@ -107,6 +149,7 @@ namespace ZombieWar.World
 
         void LateUpdate()
         {
+            if (!_lit && gameObject.scene == UnityEngine.SceneManagement.SceneManager.GetActiveScene()) { ApplyLight(); _lit = true; }
             var player = PlayerMovement.Instance;
             if (player != null)
             {
