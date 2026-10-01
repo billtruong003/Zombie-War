@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!21 &-6712858499592177975
+--- !u!21 &-6271846493993102092
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -33,11 +33,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalTexture:
-        m_Texture: {fileID: 5380618044501980569}
+        m_Texture: {fileID: 8797985012276155601}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PositionTexture:
-        m_Texture: {fileID: -1214568985968214934}
+        m_Texture: {fileID: 7816831433677740006}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -60,7 +60,7 @@ Material:
     - _ShadowTint: {r: 0.62, g: 0.62, b: 0.75, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!43 &-6310173318777116221
+--- !u!43 &-1712079214266530392
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -238,7 +238,49 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!28 &-1214568985968214934
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16c8f9301cbe452cac27c4464a63d34, type: 3}
+  m_Name: BlobDog_VAT_Data
+  m_EditorClassIdentifier: VAT.Runtime::VAT_AnimationData
+  bakedMesh: {fileID: -1712079214266530392}
+  positionTexture: {fileID: 7816831433677740006}
+  positionMinBounds: {x: -1.1891681, y: -1.4141227, z: -0.43850267}
+  positionMaxBounds: {x: 1.2251135, y: 1.5878516, z: 2.2178125}
+  animationClips:
+  - name: CharacterArmature.039|Idle
+    startFrame: 0
+    frameCount: 60
+    duration: 2
+    wrapMode: 2
+  - name: CharacterArmature.039|Walk
+    startFrame: 60
+    frameCount: 14
+    duration: 0.43333337
+    wrapMode: 2
+  - name: CharacterArmature.039|Bite_Front
+    startFrame: 74
+    frameCount: 13
+    duration: 0.40000004
+    wrapMode: 8
+  - name: CharacterArmature.039|HitRecieve
+    startFrame: 87
+    frameCount: 9
+    duration: 0.3
+    wrapMode: 8
+  - name: CharacterArmature.039|Death
+    startFrame: 96
+    frameCount: 11
+    duration: 0.36666667
+    wrapMode: 8
+--- !u!28 &7816831433677740006
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -284,49 +326,7 @@ Texture2D:
     offset: 0
     size: 0
     path: 
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b16c8f9301cbe452cac27c4464a63d34, type: 3}
-  m_Name: BlobDog_VAT_Data
-  m_EditorClassIdentifier: VAT.Runtime::VAT_AnimationData
-  bakedMesh: {fileID: -6310173318777116221}
-  positionTexture: {fileID: -1214568985968214934}
-  positionMinBounds: {x: -1.1891681, y: -1.4141227, z: -0.43850267}
-  positionMaxBounds: {x: 1.2251135, y: 1.5878516, z: 2.2178125}
-  animationClips:
-  - name: CharacterArmature.039|Idle
-    startFrame: 0
-    frameCount: 60
-    duration: 2
-    wrapMode: 2
-  - name: CharacterArmature.039|Walk
-    startFrame: 60
-    frameCount: 14
-    duration: 0.43333337
-    wrapMode: 2
-  - name: CharacterArmature.039|Bite_Front
-    startFrame: 74
-    frameCount: 13
-    duration: 0.40000004
-    wrapMode: 8
-  - name: CharacterArmature.039|HitRecieve
-    startFrame: 87
-    frameCount: 9
-    duration: 0.3
-    wrapMode: 8
-  - name: CharacterArmature.039|Death
-    startFrame: 96
-    frameCount: 11
-    duration: 0.36666667
-    wrapMode: 8
---- !u!28 &5380618044501980569
+--- !u!28 &8797985012276155601
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

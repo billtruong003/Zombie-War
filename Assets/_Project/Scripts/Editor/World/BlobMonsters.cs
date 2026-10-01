@@ -25,6 +25,8 @@ namespace ZombieWar.EditorTools
             public string model, bake, display;
             public float height = 1.2f, hp = 26f, dmg = 6f, speed = 2.5f;
             public bool elite;
+            // Leaps at the player with its Jump clip (ZombiePouncer), with a longer tell than the cats.
+            public bool pounce;
             public int coin = 1, xp = 1;
         }
 
@@ -40,13 +42,13 @@ namespace ZombieWar.EditorTools
             new() { model = "Pigeon Blob", bake = "BlobPigeon", display = "Pigeon Blob", height = 1.05f, hp = 20f, speed = 3.0f },
             new() { model = "Mushroom Blob", bake = "BlobMushroom", display = "Mushroom Blob", height = 1.2f, hp = 32f, speed = 2.3f },
             new() { model = "Orc Blob", bake = "BlobOrc", display = "Orc Blob", height = 1.35f, hp = 40f, dmg = 8f, speed = 2.4f, coin = 2, xp = 2 },
-            new() { model = "Bird Blob", bake = "BlobBird", display = "Bird Blob", height = 1.15f, hp = 26f, speed = 2.9f },
+            new() { model = "Bird Blob", bake = "BlobBird", display = "Bird Blob", height = 1.15f, hp = 26f, speed = 2.9f, pounce = true },
             new() { model = "Fish Blob", bake = "BlobFish", display = "Fish Blob", height = 1.2f, hp = 28f, speed = 2.5f },
             new() { model = "Green Blob", bake = "BlobGreen", display = "Green Blob", height = 1.05f, hp = 22f, speed = 2.6f },
             new() { model = "Pink Blob", bake = "BlobPink", display = "Pink Blob", height = 1.1f, hp = 24f, speed = 2.6f },
             new() { model = "Cactoro Blob", bake = "BlobCactoro", display = "Cactoro Blob", height = 1.25f, hp = 34f, dmg = 8f, speed = 2.4f, coin = 2, xp = 2 },
             new() { model = "Alien Blob", bake = "BlobAlien", display = "Alien Blob", height = 1.3f, hp = 34f, dmg = 7f, speed = 2.6f, coin = 2, xp = 2 },
-            new() { model = "Ninja Blob", bake = "BlobNinja", display = "Ninja Blob", height = 1.25f, hp = 36f, dmg = 8f, speed = 3.1f, coin = 2, xp = 2 },
+            new() { model = "Ninja Blob", bake = "BlobNinja", display = "Ninja Blob", height = 1.25f, hp = 36f, dmg = 8f, speed = 3.1f, coin = 2, xp = 2, pounce = true },
             new() { model = "Yeti Blob", bake = "BlobYeti", display = "Yeti Blob", height = 1.35f, hp = 42f, dmg = 8f, speed = 2.3f, coin = 2, xp = 2 },
             new() { model = "Wizard Blob", bake = "BlobWizard", display = "Wizard Blob", height = 1.25f, hp = 34f, dmg = 7f, speed = 2.6f, coin = 2, xp = 2 },
             new() { model = "Green Spiky Blob", bake = "BlobSpiky", display = "Spiky Blob", height = 1.9f, hp = 240f, dmg = 16f, speed = 2.1f, elite = true, coin = 6, xp = 6 },
@@ -78,7 +80,12 @@ namespace ZombieWar.EditorTools
                     sourceDir = BlobSource, modelName = b.model, modelPath = prepared, embeddedClips = true, targetHeight = b.height,
                     idle = new ZombieWar.Editor.ZombieVATBaker.Pick("Idle", true), move = new ZombieWar.Editor.ZombieVATBaker.Pick("Walk", true),
                     attack = new ZombieWar.Editor.ZombieVATBaker.Pick("Bite_Front"), hit = new ZombieWar.Editor.ZombieVATBaker.Pick("HitRecieve"), death = new ZombieWar.Editor.ZombieVATBaker.Pick("Death"),
-                    componentType = typeof(ZombieWar.ZombieWalker), archetype = b.elite ? ZombieWar.ZombieArchetype.Heavy : ZombieWar.ZombieArchetype.Walker, isElite = b.elite,
+                    special = b.pounce ? new ZombieWar.Editor.ZombieVATBaker.Pick("Jump") : null,
+                    componentType = b.pounce ? typeof(ZombieWar.ZombiePouncer) : typeof(ZombieWar.ZombieWalker),
+                    archetype = b.elite ? ZombieWar.ZombieArchetype.Heavy : b.pounce ? ZombieWar.ZombieArchetype.Runner : ZombieWar.ZombieArchetype.Walker, isElite = b.elite,
+                    specialWindup = 0.4f,
+                    tuning = b.pounce ? new[] { ("pounceCooldown", 5f), ("leapSpeed", 12f), ("leapDuration", 0.4f),
+                                                ("recoverDuration", 0.55f), ("pounceMaxRange", 7f), ("crouchDuration", 0.4f) } : null,
                     maxHealth = b.hp, damage = b.dmg, moveSpeed = b.speed, attackRange = b.elite ? 1.7f : 1.3f, attackCooldown = 1.2f,
                     attackWindup = 0.35f, coinReward = b.coin, xpReward = b.xp,
                 });
