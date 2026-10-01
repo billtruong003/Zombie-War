@@ -338,7 +338,10 @@ namespace ZombieWar.EditorTools
                     var r = mf.GetComponent<MeshRenderer>();
                     if (mf.sharedMesh == null || r == null || (lod0.Count > 0 && !lod0.Contains(r))) continue;
                     var mesh = mf.sharedMesh;
-                    var m = place * prefab.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+                    // The prefab's own root rotation and scale stay: a single-mesh FBX (the MegaKit) keeps
+                    // its Z-up to Y-up turn on the root, and dropping it laid every grass tuft flat.
+                    var rootRS = Matrix4x4.TRS(Vector3.zero, prefab.transform.localRotation, prefab.transform.localScale);
+                    var m = place * rootRS * prefab.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix;
                     var mv = mesh.vertices; var mn = mesh.normals; var mc = mesh.colors; var muv = mesh.uv;
                     var muv1 = new List<Vector2>(); mesh.GetUVs(1, muv1);
                     for (int sub = 0; sub < mesh.subMeshCount && sub < r.sharedMaterials.Length; sub++)

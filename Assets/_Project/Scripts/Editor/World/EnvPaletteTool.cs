@@ -217,11 +217,14 @@ namespace ZombieWar.EditorTools
         static GameObject FindVendorPrefab(string key)
         {
             string pack = key.Substring(0, 2), name = key.Substring(3);
-            foreach (var g in AssetDatabase.FindAssets(name + " t:Prefab", new[] { PackDir[pack] }))
-            {
-                var p = AssetDatabase.GUIDToAssetPath(g);
-                if (Path.GetFileNameWithoutExtension(p) == name) return AssetDatabase.LoadAssetAtPath<GameObject>(p);
-            }
+            // A prefab first; packs that ship only models (the 2026-10-02 KayKit packs, the MegaKit)
+            // are placed straight from the FBX.
+            foreach (var filter in new[] { " t:Prefab", " t:Model" })
+                foreach (var g in AssetDatabase.FindAssets(name + filter, new[] { PackDir[pack] }))
+                {
+                    var p = AssetDatabase.GUIDToAssetPath(g);
+                    if (Path.GetFileNameWithoutExtension(p) == name) return AssetDatabase.LoadAssetAtPath<GameObject>(p);
+                }
             return null;
         }
 
@@ -425,12 +428,20 @@ namespace ZombieWar.EditorTools
                     if (DeltaE(FromHex(e.hex), FromHex(o.hex)) < 6f) { e.col = o.col; e.row = o.row; e.v = o.v; e.how = "manual"; }
         }
 
+        /// Unity keeps imported files mapped, so overwriting one can fail with IO error 1224: release
+        /// its handles first.
+        static void WriteAsset(string path, byte[] bytes)
+        {
+            AssetDatabase.ReleaseCachedFileHandles();
+            File.WriteAllBytes(path, bytes);
+        }
+
         static Texture2D WritePaletteTexture(Color[] px, int w)
         {
             string path = Pal + "T_EnvPalette.png";
             var tex = new Texture2D(w, w, TextureFormat.RGBA32, false);
             tex.SetPixels(px); tex.Apply();
-            File.WriteAllBytes(path, tex.EncodeToPNG());
+            WriteAsset(path, tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
             AssetDatabase.ImportAsset(path);
             var imp = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -582,6 +593,7 @@ namespace ZombieWar.EditorTools
                 int sx = n % per, sy = n / per;
                 var src = ReadTexture(MainTex(sources[n].m), SlotSize - 2 * SlotPad, out int w);
                 var tint = Tint(sources[n].m);
+                AdjustFoliage(src, MainTex(sources[n].m).name);
                 for (int y = -SlotPad; y < SlotSize - SlotPad; y++)
                     for (int x = -SlotPad; x < SlotSize - SlotPad; x++)
                     {
@@ -618,7 +630,7 @@ namespace ZombieWar.EditorTools
             string path = Pal + "T_EnvFoliage.png";
             var tex = new Texture2D(AtlasSize, AtlasSize, TextureFormat.RGBA32, false);
             tex.SetPixels(px); tex.Apply();
-            File.WriteAllBytes(path, tex.EncodeToPNG());
+            WriteAsset(path, tex.EncodeToPNG());
             Object.DestroyImmediate(tex);
             AssetDatabase.ImportAsset(path);
             var imp = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -635,6 +647,31 @@ namespace ZombieWar.EditorTools
             EditorUtility.SetDirty(material);
             if (rejected.Count > 0) Debug.Log("[EnvPalette] foliage kept on its own material (tiling UVs): " + string.Join(", ", rejected));
             return slots;
+        }
+
+        /// MegaKit leaf colours are authored for a strongly lit engine: the pine is (51, 88, 0), almost
+        /// black under the toon light, and the twisted tree's leaves are pure autumn red. They are
+        /// brightened, and the red turned to an olive green that sits in the forest and swamp.
+        static readonly Dictionary<string, (float gain, float hue)> FoliageFix = new()
+        {
+            ["Leaf_Pine_C"] = (1.75f, -1f),
+            ["Leaves_GiantPine_C"] = (1.6f, -1f),
+            ["Leaves_NormalTree_C"] = (1.25f, -1f),
+            ["Leaves_TwistedTree_C"] = (1.15f, 82f / 360f),
+        };
+
+        static void AdjustFoliage(Color[] px, string texture)
+        {
+            if (!FoliageFix.TryGetValue(texture, out var fix)) return;
+            for (int i = 0; i < px.Length; i++)
+            {
+                var c = px[i];
+                Color.RGBToHSV(c, out float h, out float sat, out float v);
+                if (fix.hue >= 0f) { h = fix.hue; sat *= 0.8f; }
+                var o = Color.HSVToRGB(h, sat, Mathf.Clamp01(v * fix.gain));
+                o.a = c.a;
+                px[i] = o;
+            }
         }
 
         /// Modelled grass (Blender, Art/EnvPalette/Grass/*.fbx): UVs into the atlas's gradient slot by

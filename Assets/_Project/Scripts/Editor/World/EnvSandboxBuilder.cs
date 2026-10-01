@@ -29,13 +29,42 @@ namespace ZombieWar.EditorTools
             ["LX"] = "Assets/Vegetation_Stylized_Pack_ByLuxArtStudios", ["SG"] = "Assets/Synty/PolygonGeneric",
             ["DF"] = "Assets/Synty/PolygonDarkFantasy", ["KJ"] = "Assets/Synty/PolygonKaiju", ["MC"] = "Assets/JC_LP_MegaCity/Prefabs",
             ["EP"] = "Assets/_Project/Art/EnvPalette/Grass",
+            // 2026-10-02 (owner): props from the five KayKit packs; every tree, bush, grass and flower from
+            // the Stylized Nature MegaKit only (KayKit's leafy trees are solid low poly and clash with
+            // its alpha-cut leaves; its bare trunks are fine); KayKit Forest gives rocks; no Synty piece on any map.
+            ["KF"] = "Assets/KayKit/Packs/ForestNature", ["KH"] = "Assets/KayKit/Packs/HalloweenBits",
+            ["KX"] = "Assets/KayKit/Packs/HolidayBits", ["KD"] = "Assets/KayKit/Packs/Dungeon",
+            ["SN"] = "Assets/ThirdParty/StylizedNatureMegaKit",
         };
         // Kaiju is modelled at diorama scale (a car is 0.1 m tall).
-        static float PackScale(string pack) => pack == "KJ" ? 14f : 1f;
+        // KayKit Dungeon and Halloween are modelled for a ~2.5 m character, Holiday a little smaller.
+        static float PackScale(string pack) => pack switch { "KJ" => 14f, "KD" => 0.6f, "KH" => 0.65f, "KX" => 0.75f, _ => 1f };
 
         // Vendor pieces modelled far bigger than a 1.8 m hero reads in this game.
         static float PieceScale(string key)
         {
+            // Stylized Nature MegaKit is modelled big (a grass tuft 1.3–1.9 m, a twisted tree 16–19 m):
+            // trees land at 5–8 m like the Lux trees they replace, cover under the hero's knee.
+            // CommonTree_5, TwistedTree_2 and Flower_4 are left out: their leaf cards sit outside the
+            // texture (UV -1..2), which keeps their texture out of the foliage atlas for every model.
+            if (key.StartsWith("SN/TwistedTree")) return 0.4f;
+            if (key.StartsWith("SN/DeadTree")) return 0.45f;
+            if (key.StartsWith("SN/CommonTree") || key.StartsWith("SN/Pine")) return 0.75f;
+            if (key.StartsWith("SN/Bush")) return 0.85f;
+            // Seen from the top-down camera, thin upright blades read as specks: cover is kept near
+            // knee height but wide, and leans on the flat leafy pieces (clover, Plant_7, fern).
+            if (key.StartsWith("SN/Grass_Common_Tall") || key.StartsWith("SN/Grass_Wispy_Tall")) return 0.7f;
+            if (key.StartsWith("SN/Grass")) return 0.85f;
+            if (key.StartsWith("SN/Flower")) return 0.55f;
+            if (key.StartsWith("SN/Clover")) return 0.75f;
+            if (key.StartsWith("SN/Fern")) return 0.45f;
+            if (key.StartsWith("SN/Plant_7")) return 1.2f;
+            if (key.StartsWith("SN/Petal")) return 1.4f;
+            if (key.StartsWith("SN/Plant_1_Big")) return 0.4f;
+            if (key.StartsWith("SN/Plant_1")) return 0.7f;
+            if (key.StartsWith("SN/Rock_Medium")) return 0.9f;
+            if (key.StartsWith("KF/Tree_Bare")) return 0.9f;   // bare trunks have no leaves to clash, so KayKit is fine
+            if (key.StartsWith("KD/rubble") || key.StartsWith("KD/pillar")) return 1.15f;   // back to ~2.5 m after the pack scale
             if (key.StartsWith("DF/SM_Env_Cliff_Basalt")) return 0.25f;
             if (key.StartsWith("DF/SM_Env_Basalt")) return 0.3f;
             if (key.StartsWith("DF/SM_Env_Rock_Cliff")) return 0.35f;
@@ -80,9 +109,9 @@ namespace ZombieWar.EditorTools
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_01/Textures/Grass_Dense_Tint_01_Base_Basecolor_A.png",
                               C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png", C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_B_Basecolor.png" },
                 tint = new[] { Color.white, Color.white, Color.white, Color.white }, primary = 1, secondary = 0, path = 0, outerCh = 1,
-                mid = new[] { "KK/Food_Crate_Large_Apples", "KK/Food_Barrel_Empty", "KK/Food_Basket_A_Berries", "KK/Containers_Box_Large", "SG/SM_Gen_Env_Log_01", "SG/SM_Gen_Env_Stump_03", "SG/SM_Gen_Env_Rock_03" },
-                outer = new[] { "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_H", "LX/S_Tree_J", "MC/SM_FloorProps_Fence_04" },
-                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "LX/S_Grass_01A", "LX/S_Grass_B", "LX/S_Flowers_E", "LX/S_Flowers_C", "LX/S_Flowers_A", "SG/SM_Gen_Env_Grass_01", "SG/SM_Gen_Env_Flowers_04", "LX/S_Clovers_A", "EP/GrassV_Tuft_Low", "EP/GrassV_Tuft_Low", "EP/GrassV_Tuft_Flower", "EP/GrassV_Tuft_Low" },
+                mid = new[] { "KK/Food_Crate_Large_Apples", "KK/Food_Barrel_Empty", "KK/Food_Basket_A_Berries", "KK/Containers_Box_Large", "KK/Wood_Log_A", "KK/Wood_Log_Stack", "KK/Pallet_Wood_Covered_A", "KF/Rock_1_E_Color1", "KF/Rock_2_C_Color1", "SN/Rock_Medium_2", "SN/Bush_Common_Flowers", "KH/pumpkin_orange", "SN/Clover_2" },
+                outer = new[] { "SN/CommonTree_1", "SN/CommonTree_2", "SN/CommonTree_3", "SN/CommonTree_4", "SN/CommonTree_4", "SN/CommonTree_1", "SN/Bush_Common_Flowers", "KH/fence_seperate" },
+                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "SN/Grass_Wispy_Short", "SN/Grass_Common_Short", "SN/Grass_Common_Short", "SN/Clover_1", "SN/Clover_2", "SN/Plant_7", "SN/Flower_3_Group", "SN/Flower_3_Group", "SN/Flower_3_Single", "SN/Petal_1", "SN/Plant_7", "SN/Pebble_Round_2" },
                 midPts = new[] { V(-9, 8), V(-12, -6), V(8, -9), V(11, 5) }, outerPts = new[] { V(-16, 14), V(-17, -13), V(15, 15), V(17, -12), V(0, 18) }, landmarkPts = new[] { V(13, 13) },
                 paths = new[] { new[] { V(-20, -4), V(20, 6) } }, gridStep = 4.5f, scatterCount = 170,
                 pools = new[] { new Vector3(9f, -10f, 5f) }, rivers = new[] { new[] { V(-20, 13), V(-8, 7), V(2, -3), V(9, -10) } }, riverWidth = 1.7f,
@@ -94,16 +123,16 @@ namespace ZombieWar.EditorTools
                 tint = new[] { Col(1.1f, 0.9f, 0.72f), Col(1.08f, 0.96f, 0.8f), Col(1.15f, 1.02f, 0.85f), Col(1.2f, 0.72f, 0.5f) }, primary = 1, secondary = 2, path = 0,
                 mid = new[] { "TT/Cactus_02", "TT/Cactus_01", "TT/Rock_01", "TT/Rock_02", "TT/Rock_05", "TT/Barrel2", "TT/Barrel4", "KK/Fuel_B_Jerrycan", "KK/Fuel_A_Barrel_Dirty" },
                 outer = new[] { "TT/CliffCorner_01", "TT/CliffCorner_02", "TT/Cliff_01", "TT/Rock_04", "TT/Cactus_03", "TT/Container1", "TT/Container4", "TT/Block2" },
-                landmark = new[] { "TT/Tower1" }, scatter = new[] { "TT/Rock_05", "LX/S_Grass_02A" }, scatterCount = 18, crack = 0.35f,
+                landmark = new[] { "TT/Tower1" }, scatter = new[] { "TT/Rock_05", "SN/Grass_Wispy_Short" }, scatterCount = 18, crack = 0.35f,
                 midPts = new[] { V(-8, 7), V(9, 9), V(-10, -7), V(7, -10) }, outerPts = new[] { V(-17, 16), V(-18, -2), V(-15, -16), V(16, -15), V(18, 2) }, landmarkPts = new[] { V(14, 15) },
                 paths = new[] { new[] { V(-20, -12), V(20, -16) } } },
 
             new Zone { id = "tundra", layerColor = new[] { Col(0.56f, 0.62f, 0.71f), Col(0.66f, 0.72f, 0.81f), Col(0.46f, 0.6f, 0.74f), Col(0.33f, 0.38f, 0.47f) }, name = "Băng nguyên", col = 2, row = 0, snow = true,
                 tex = new[] { Art + "Textures/T_Snow_Packed.png", Art + "Textures/T_Snow_Fresh.png", Art + "Textures/T_Snow_Ice.png", Art + "Textures/T_Snow_ColdRock.png" },
                 tint = new[] { Col(1f, 1f, 1.02f), Col(1.02f, 1.01f, 1f), Col(0.95f, 1f, 1.05f), Col(1f, 1.02f, 1.05f) }, primary = 1, secondary = 0, path = 0,
-                mid = new[] { "SG/SM_Gen_Env_Rock_01", "SG/SM_Gen_Env_Rock_03", "SG/SM_Gen_Env_Rock_07", "SG/SM_Gen_Env_Stump_01", "SG/SM_Gen_Env_Rock_Pebbles_02", "KK/Containers_Crate_Large", "KK/Fuel_A_Barrels", "KK/Containers_Box_Large_Dirty" },
-                outer = new[] { "SG/SM_Gen_Env_Tree_Dead_01", "SG/SM_Gen_Env_Tree_Dead_02", "SG/SM_Gen_Env_Tree_Dead_03", "DF/SM_Env_Tree_Dead_02", "DF/SM_Env_Tree_Dead_03", "DF/SM_Env_Rock_Cliff_05", "DF/SM_Env_Rock_02", "DF/SM_Env_Rock_Cliff_02" },
-                landmark = new[] { "DF/SM_Env_Rock_Cliff_Arch_01" }, scatter = new[] { "SG/SM_Gen_Env_Rock_Pebbles_03", "SG/SM_Gen_Env_Twig_01", "SG/SM_Gen_Env_Twig_03" }, scatterCount = 22,
+                mid = new[] { "KF/Rock_1_E_Color1", "KF/Rock_1_H_Color1", "KF/Rock_2_C_Color1", "KF/Rock_3_C_Color1", "KX/snowman_A", "KX/snowball_pile", "KK/Containers_Crate_Large", "KK/Fuel_A_Barrels", "KK/Containers_Box_Large_Dirty", "KK/Wood_Log_B", "KD/barrel_large" },
+                outer = new[] { "SN/Pine_1", "SN/Pine_2", "SN/Pine_3", "SN/Pine_4", "SN/Pine_5", "SN/Pine_4", "SN/DeadTree_1", "KF/Rock_1_K_Color1", "KF/Rock_2_F_Color1", "KF/Tree_Bare_1_C_Color1", "KF/Tree_Bare_2_B_Color1" },
+                landmark = new[] { "KF/Rock_1_M_Color1" }, scatter = new[] { "SN/Pebble_Round_1", "SN/Pebble_Square_3", "KF/Rock_2_B_Color1", "KX/snowball" }, scatterCount = 22,
                 midPts = new[] { V(-9, 7), V(-11, -8), V(10, 9) }, outerPts = new[] { V(-17, 15), V(-18, -12), V(16, 16), V(0, -18), V(18, 0) }, landmarkPts = new[] { V(-14, -15) },
                 pools = new[] { new Vector3(9f, -8f, 6.5f), new Vector3(-7f, 12f, 3.2f) }, fluid = "ice", bankChannel = 3, basinDepth = 0.6f },
 
@@ -111,9 +140,9 @@ namespace ZombieWar.EditorTools
                 tex = new[] { C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_A_Basecolor.png", C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_C_Basecolor.png",
                               C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "ROCKS/ROCKS_Volcanic/Textures/Rock_Volcanic_A_Basecolor.png" },
                 tint = new[] { Col(0.78f, 0.7f, 0.68f), Col(0.7f, 0.64f, 0.63f), Col(0.55f, 0.42f, 0.36f), Col(0.55f, 0.5f, 0.5f) }, primary = 1, secondary = 0, path = 2,
-                mid = new[] { "DF/SM_Env_Rocks_Small_01", "DF/SM_Env_Rocks_Small_02", "DF/SM_Env_Rock_01", "DF/SM_Env_Rock_02", "DF/SM_Env_Rock_03", "DF/SM_Env_Basalt_03", "KK/Fuel_A_Barrel_Dirty" },
-                outer = new[] { "DF/SM_Env_Basalt_01", "DF/SM_Env_Basalt_02", "DF/SM_Env_Basalt_04", "DF/SM_Env_Basalt_05", "DF/SM_Env_Cliff_Basalt_02", "DF/SM_Env_Tree_Dead_01", "DF/SM_Env_Tree_Dead_03" },
-                landmark = new[] { "DF/SM_Env_Cliff_Basalt_03" }, scatter = new[] { "DF/SM_Env_Grunge_05", "DF/SM_Env_Rocks_Small_02" }, scatterCount = 20,
+                mid = new[] { "KF/Rock_1_D_Color1", "KF/Rock_1_G_Color1", "KF/Rock_3_D_Color1", "KF/Rock_3_H_Color1", "KF/Rock_2_D_Color1", "KH/skull", "KH/gravestone", "KK/Fuel_A_Barrel_Dirty", "KD/rubble_half" },
+                outer = new[] { "KF/Rock_1_J_Color1", "KF/Rock_1_L_Color1", "KF/Rock_2_E_Color1", "KF/Rock_2_G_Color1", "SN/DeadTree_4", "SN/DeadTree_3", "SN/DeadTree_5", "SN/DeadTree_2", "KF/Tree_Bare_2_B_Color1", "KH/tree_dead_large", "KH/tree_dead_medium" },
+                landmark = new[] { "KF/Rock_1_O_Color1", "KF/Rock_1_N_Color1" }, scatter = new[] { "SN/Pebble_Square_1", "SN/Pebble_Square_4", "KH/bone_A", "KF/Rock_2_B_Color1" }, scatterCount = 20,
                 midPts = new[] { V(-9, 8), V(9, 8), V(8, -14) }, outerPts = new[] { V(-17, 16), V(15, 17), V(-17, -16), V(18, -2) }, landmarkPts = new[] { V(0, 17) },
                 rivers = new[] { new[] { V(-20, -6), V(-4, -2), V(20, -9) } }, riverWidth = 2.4f,
                 pools = new[] { new Vector3(-10f, 10f, 4.5f), new Vector3(11f, -15f, 3.5f), new Vector3(12f, 6f, 2.6f) },
@@ -123,9 +152,9 @@ namespace ZombieWar.EditorTools
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_02/Textures/Grass_Dense_Tint_02_Base_Basecolor_A.png",
                               C + "GRASS/GRASS_Flower/GRASS_Flower_Tint_02/Texture/Grass_Flower_Tint_02_Base_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_B_Basecolor_A.png" },
                 tint = new[] { Col(0.85f, 0.8f, 0.72f), Col(0.85f, 0.95f, 0.8f), Color.white, Col(0.8f, 0.9f, 0.8f) }, primary = 1, secondary = 2, path = 0, outerCh = 0,
-                mid = new[] { "SG/SM_Gen_Env_Mushroom_01", "SG/SM_Gen_Env_Mushroom_03", "SG/SM_Gen_Env_Leaves_Pile_01", "SG/SM_Gen_Env_Log_02", "SG/SM_Gen_Env_Stump_02", "SG/SM_Gen_Env_Fern_01", "LX/S_Fern_B", "LX/S_Fern_D" },
-                outer = new[] { "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_F", "LX/S_Tree_G", "LX/S_Tree_H", "LX/S_Tree_I", "LX/S_Tree_J", "LX/S_Tree_B", "LX/S_Tree_C", "LX/S_Tree_D", "LX/S_Tree_E", "LX/S_Tree_F", "LX/S_Tree_G", "LX/S_Tree_H", "LX/S_Tree_I", "LX/S_Tree_J", "SG/SM_Gen_Env_Dirt_Cliff_05" },
-                landmark = new[] { "SG/SM_Gen_Env_Dirt_Cliff_07" }, scatter = new[] { "SG/SM_Gen_Env_Leaves_01", "SG/SM_Gen_Env_Leaves_02", "SG/SM_Gen_Env_Grass_05", "LX/S_Clovers_A", "LX/S_Fern_A", "LX/S_Fern_C", "LX/S_Grass_B", "SG/SM_Gen_Env_Mushroom_02", "LX/S_Bush_B", "EP/GrassV_Tuft_Tall", "EP/GrassV_Tuft_Tall", "EP/GrassV_Tuft_Low" },
+                mid = new[] { "SN/Mushroom_Common", "SN/Mushroom_Laetiporus", "SN/Fern_1", "SN/Plant_1_Big", "SN/Bush_Common_Flowers", "KF/Rock_1_F_Color1", "KF/Rock_3_E_Color1", "SN/Plant_1", "SN/Fern_1", "KK/Wood_Log_A" },
+                outer = new[] { "SN/CommonTree_1", "SN/CommonTree_3", "SN/CommonTree_4", "SN/Pine_1", "SN/Pine_3", "SN/Pine_5", "SN/TwistedTree_1", "SN/TwistedTree_3", "SN/Pine_1", "SN/CommonTree_3", "SN/Pine_4", "SN/CommonTree_2", "SN/Pine_2", "SN/Pine_4", "SN/TwistedTree_4", "SN/CommonTree_2", "KF/Rock_1_K_Color1" },
+                landmark = new[] { "SN/TwistedTree_4", "KF/Rock_1_P_Color1" }, scatter = new[] { "SN/Grass_Wispy_Short", "SN/Grass_Wispy_Tall", "SN/Clover_2", "SN/Clover_1", "SN/Plant_7", "SN/Plant_7_Big", "SN/Fern_1", "SN/Petal_2", "SN/Petal_3", "SN/Mushroom_Common", "SN/Flower_3_Single", "SN/Plant_7" },
                 midPts = new[] { V(-8, 8), V(9, 6), V(-9, -9), V(8, -9) }, outerPts = new[] { V(-17, 15), V(-18, 0), V(-16, -15), V(16, -16), V(18, 1), V(15, 16), V(0, 18), V(0, -18) }, landmarkPts = new Vector2[0],
                 paths = new[] { new[] { V(-20, 0), V(20, -2) } }, gridStep = 4f, scatterCount = 210,
                 pools = new[] { new Vector3(-10f, 11f, 4f) }, rivers = new[] { new[] { V(-20, -14), V(-6, -9), V(5, -5), V(20, 12) } }, riverWidth = 1.6f,
@@ -135,9 +164,9 @@ namespace ZombieWar.EditorTools
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_02/Textures/Grass_Dense_Tint_02_Base_Basecolor_A.png",
                               C + "SAND/SAND_Underwater/Textures/Sand_Underwater_Base_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_B_Basecolor_A.png" },
                 tint = new[] { Col(0.62f, 0.72f, 0.45f), Col(0.8f, 0.9f, 0.55f), Col(0.7f, 0.8f, 0.6f), Col(0.6f, 0.7f, 0.6f) }, primary = 0, secondary = 1, path = 2,
-                mid = new[] { "LX/S_Cattail_A", "LX/S_Cattail_B", "LX/S_Clovers_A", "SG/SM_Gen_Env_Mushroom_02", "SG/SM_Gen_Env_Root_01", "SG/SM_Gen_Env_Root_02", "KK/Fuel_C_Barrel_Dirty" },
-                outer = new[] { "SG/SM_Gen_Env_Tree_Dead_01", "SG/SM_Gen_Env_Tree_Dead_02", "SG/SM_Gen_Env_Tree_Dead_03", "DF/SM_Env_Tree_Dead_02", "DF/SM_Env_Tree_Dead_04", "SG/SM_Gen_Env_Dirt_Cliff_02" },
-                landmark = new[] { "KK/Fuel_C_Barrels" }, scatter = new[] { "SG/SM_Gen_Env_Grass_Tall_02", "LX/S_Clovers_B", "SG/SM_Gen_Env_Lilypads_02", "EP/GrassV_Reed", "EP/GrassV_Reed" },
+                mid = new[] { "SN/Plant_1", "SN/Plant_1_Big", "SN/Clover_2", "SN/Mushroom_Common", "KF/Rock_2_C_Color1", "KH/gravemarker_A", "KK/Fuel_C_Barrel_Dirty", "KD/barrel_small" },
+                outer = new[] { "SN/DeadTree_1", "SN/DeadTree_3", "SN/DeadTree_4", "SN/TwistedTree_5", "SN/DeadTree_2", "SN/DeadTree_5", "KF/Rock_2_H_Color1", "KF/Tree_Bare_1_B_Color1", "KF/Tree_Bare_2_C_Color1", "KH/tree_dead_large" },
+                landmark = new[] { "KK/Fuel_C_Barrels" }, scatter = new[] { "SN/Grass_Wispy_Tall", "SN/Grass_Wispy_Short", "SN/Clover_1", "SN/Plant_7_Big", "SN/Plant_7", "SN/Grass_Wispy_Tall" },
                 midPts = new[] { V(8, 9), V(-10, -9) }, outerPts = new[] { V(-17, 15), V(16, 16), V(-17, -15), V(17, -3) }, landmarkPts = new[] { V(15, -15) },
                 pools = new[] { new Vector3(-9f, 6f, 5.5f), new Vector3(10f, -8f, 6f), new Vector3(3f, 14f, 3.5f) },
                 rivers = new[] { new[] { V(-9, 6), V(0, -1), V(10, -8) } }, riverWidth = 1.5f,
@@ -147,9 +176,9 @@ namespace ZombieWar.EditorTools
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "GRASS/GRASS_Dense/GRASS_Dense_Tint_01/Textures/Grass_Dense_Tint_01_Base_Basecolor_A.png",
                               C + "WALLS/WALL_Stone/Textures/Wall_Stone_A_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_B_Basecolor_A.png" },
                 tint = new[] { Col(0.72f, 0.72f, 0.74f), Col(0.7f, 0.78f, 0.6f), Col(0.72f, 0.75f, 0.82f), Col(0.62f, 0.64f, 0.68f) }, primary = 2, secondary = 0, path = 3,
-                mid = new[] { "MC/SM_FloorProps_01", "MC/SM_FloorProps_02", "MC/SM_FloorProps_03", "MC/SM_FloorProps_04", "MC/SM_FloorProps_05", "KJ/SM_Prop_Rubble_01", "KJ/SM_Prop_Rubble_02", "KK/Containers_Box_Large_Dirty" },
-                outer = new[] { "MC/SM_FloorProps_BusStation_01", "MC/SM_FloorProps_Light_01", "KJ/SM_Prop_Bridge_Rubble_02", "KJ/SM_Prop_Bridge_Rubble_03", "KJ/SM_Prop_Car_01", "KJ/SM_Prop_Taxi_01", "KJ/SM_Prop_Bus_01" },
-                landmark = new[] { "KJ/SM_Prop_Crane_01" }, scatter = new[] { "SG/SM_Gen_Prop_Papers_04", "MC/SM_FloorProps_06" }, scatterCount = 16,
+                mid = new[] { "MC/SM_FloorProps_01", "MC/SM_FloorProps_02", "MC/SM_FloorProps_03", "MC/SM_FloorProps_04", "MC/SM_FloorProps_05", "KD/rubble_half", "KD/barrier", "KK/Containers_Box_Large_Dirty" },
+                outer = new[] { "MC/SM_FloorProps_BusStation_01", "MC/SM_FloorProps_Light_01", "KD/rubble_large", "KD/barrier_corner", "KD/pillar", "KK/Pallet_Wood_Covered_B", "KK/Fuel_B_Barrels" },
+                landmark = new[] { "KD/pillar_decorated" }, scatter = new[] { "KK/Textiles_A", "MC/SM_FloorProps_06" }, scatterCount = 16,
                 midPts = new[] { V(-7, 6), V(7, -6), V(6, 7) }, outerPts = new[] { V(-16, 15), V(15, -15), V(-16, -15), V(16, 15) }, landmarkPts = new[] { V(15, 15) },
                 paths = new[] { new[] { V(-20, 0), V(20, 0) }, new[] { V(0, -20), V(0, 20) } } },
 
@@ -499,12 +528,7 @@ namespace ZombieWar.EditorTools
             var name = key.Substring(3);
             if (!PrefabCache.TryGetValue(key, out var prefab))
             {
-                prefab = null;
-                foreach (var g in AssetDatabase.FindAssets(name + " t:Prefab", new[] { PackDir[pack] }))
-                {
-                    var p = AssetDatabase.GUIDToAssetPath(g);
-                    if (Path.GetFileNameWithoutExtension(p) == name) { prefab = AssetDatabase.LoadAssetAtPath<GameObject>(p); break; }
-                }
+                prefab = FindVendorPrefab(key);
                 PrefabCache[key] = prefab;
                 if (prefab == null) Debug.LogWarning("[EnvSandbox] missing prefab " + key);
             }
