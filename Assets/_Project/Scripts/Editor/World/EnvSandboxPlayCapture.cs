@@ -24,6 +24,7 @@ namespace ZombieWar.EditorTools
         static int _index, _waitUntil;
         static bool _captured;
         static float _demoStart = -1f;
+        static string _statsFor;
         static readonly float[] DemoTimes = { 0.5f, 6f, 12f, 20f };
 
         static EnvSandboxPlayCapture() => EditorApplication.update += Tick;
@@ -61,6 +62,7 @@ namespace ZombieWar.EditorTools
             if (_cams == null)
             {
                 Directory.CreateDirectory(OutDir);
+                File.AppendAllText(OutDir + "stats.csv", "shot,batches,setpass,triangles,vertices\n");
                 var all = new List<Camera>(Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None));
                 all.RemoveAll(c => !c.name.StartsWith("Cam_"));
                 all.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
@@ -102,9 +104,16 @@ namespace ZombieWar.EditorTools
                     if (Time.time - _demoStart < shot.at) return;
                 }
                 ScreenCapture.CaptureScreenshot(OutDir + shot.file + ".png");
+                _statsFor = shot.file;
                 _captured = true;
                 _waitUntil = Time.frameCount + 3;
                 return;
+            }
+            // Render stats of the frame just shown (game view), one line per shot.
+            if (_statsFor != null)
+            {
+                File.AppendAllText(OutDir + "stats.csv", $"{_statsFor},{UnityEditor.UnityStats.batches},{UnityEditor.UnityStats.setPassCalls},{UnityEditor.UnityStats.triangles},{UnityEditor.UnityStats.vertices}\n");
+                _statsFor = null;
             }
             _captured = false;
             _index++;

@@ -490,7 +490,9 @@ namespace ZombieWar.EditorTools
 
         static readonly Dictionary<string, GameObject> PrefabCache = new();
 
-        static bool Place(string key, Transform parent, Vector2 at, float yaw, float scale)
+        static bool Place(string key, Transform parent, Vector2 at, float yaw, float scale) => PlaceObject(key, parent, at, yaw, scale) != null;
+
+        static GameObject PlaceObject(string key, Transform parent, Vector2 at, float yaw, float scale)
         {
             var pack = key.Substring(0, 2);
             var name = key.Substring(3);
@@ -505,12 +507,16 @@ namespace ZombieWar.EditorTools
                 PrefabCache[key] = prefab;
                 if (prefab == null) Debug.LogWarning("[EnvSandbox] missing prefab " + key);
             }
-            if (prefab == null) return false;
+            if (prefab == null) return null;
+            // The palette kit (one gradient texture for every solid piece) replaces the vendor prefab
+            // once it has been built.
+            var converted = ConvertedPrefab(key);
+            if (converted != null) prefab = converted;
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             go.transform.localPosition = new Vector3(at.x, 0f, at.y);
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * go.transform.localRotation;
             go.transform.localScale *= scale * PackScale(pack) * PieceScale(key);
-            return true;
+            return go;
         }
 
         // ── ground
@@ -629,12 +635,12 @@ namespace ZombieWar.EditorTools
             var cache = new Dictionary<Material, Material>();
             foreach (var r in zr.GetComponentsInChildren<MeshRenderer>(true))
             {
-                if (r.name == "Ground" || r.name.StartsWith("Fluid") || r.name == "Hero_1.8m") continue;
+                if (r.name == "Ground" || r.name.StartsWith("Fluid") || r.name == "Hero_1.8m" || r.name == "Block") continue;
                 var mats = r.sharedMaterials;
                 for (int i = 0; i < mats.Length; i++)
                 {
                     var src = mats[i];
-                    if (src == null) continue;
+                    if (src == null || src.shader.name.Contains("Foliage")) continue;   // alpha-cut leaves keep their shape
                     if (!cache.TryGetValue(src, out var snow))
                     {
                         string path = Art + "Materials/Snow/" + src.name.Replace("/", "_") + "_Snow.mat";

@@ -106,6 +106,7 @@ namespace ZombieWar.WorldNav
                     next = !_field.IsBlocked(nx) ? nx : !_field.IsBlocked(nz) ? nz : p;
                 }
                 _agents[i].position = next + Vector3.up * 0.9f;
+                ZombieWar.World.GrassBenders.Submit(next, 0.8f);
             }
         }
     }

@@ -156,7 +156,9 @@ namespace ZombieWar.Stations
         Station Spawn(StationAnchors.Anchor a)
         {
             var go = new GameObject($"Station_{a.kind}_{a.id}");
-            go.transform.position = a.position;
+            // The map is dressed in advance: step off obstacles, then clear the decoration on the ring.
+            go.transform.position = StationClearance.Resolve(a.position);
+            go.AddComponent<StationClearing>();
 
             var signal = go.AddComponent<WorldSignal>();
             signal.SetMaterial(signalLineMaterial);

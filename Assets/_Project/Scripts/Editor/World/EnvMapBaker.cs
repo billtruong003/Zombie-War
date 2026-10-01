@@ -38,16 +38,31 @@ namespace ZombieWar.EditorTools
             public int pools;
             public Vector2 poolRadius;
             public float bridgeEvery = 18f;
-            public float tallShare = 0.3f;     // share of dressing spots that get a tall piece (trees)
+            // Dressing (EnvDressing.cs): tree groves, lone trees, vignettes, singles, ground cover.
+            public float canopyOverlap = 0.9f;     // canopy spacing factor: 1 = canopies just touch
+            public float groveNoise = 0.5f, groveSpacing = 22f;
+            public Vector2 groveRadius = new(4f, 7f);
+            public float loneTrees = 0.3f, vignettes = 0.6f, singles = 1.5f;   // per 1 000 m²
+            public float coverPer100 = 2f, coverPatch = 0.5f;                   // tries per 100 m², patch noise cut
         }
 
         static readonly MapDef[] Maps =
         {
-            new MapDef { id = "meadow", riversH = 1, pools = 5, poolRadius = new Vector2(3.5f, 6f) },
-            new MapDef { id = "forest", riversH = 1, riversV = 1, pools = 3, poolRadius = new Vector2(3f, 5f), tallShare = 0.55f },
-            new MapDef { id = "volcano", riversH = 1, riversV = 1, pools = 7, poolRadius = new Vector2(2.5f, 4.5f) },
-            new MapDef { id = "swamp", riversH = 1, pools = 11, poolRadius = new Vector2(3f, 6f) },
-            new MapDef { id = "tundra", pools = 7, poolRadius = new Vector2(5f, 8f) },
+            new MapDef { id = "meadow", riversH = 1, pools = 5, poolRadius = new Vector2(3.5f, 6f),
+                canopyOverlap = 1f, groveNoise = 0.55f, groveSpacing = 26f, groveRadius = new Vector2(5f, 8f),
+                loneTrees = 0.25f, vignettes = 1.2f, singles = 1.5f, coverPer100 = 40f, coverPatch = 0.42f },
+            new MapDef { id = "forest", riversH = 1, riversV = 1, pools = 3, poolRadius = new Vector2(3f, 5f),
+                canopyOverlap = 0.75f, groveNoise = 0.35f, groveSpacing = 16f, groveRadius = new Vector2(6f, 10f),
+                loneTrees = 0.6f, vignettes = 0.8f, singles = 1.5f, coverPer100 = 30f, coverPatch = 0.45f },
+            new MapDef { id = "volcano", riversH = 1, riversV = 1, pools = 7, poolRadius = new Vector2(2.5f, 4.5f),
+                canopyOverlap = 0.9f, groveNoise = 0.5f, groveSpacing = 22f, groveRadius = new Vector2(4f, 7f),
+                loneTrees = 0.3f, vignettes = 0.5f, singles = 2.5f, coverPer100 = 2f, coverPatch = 0.5f },
+            new MapDef { id = "swamp", riversH = 1, pools = 11, poolRadius = new Vector2(3f, 6f),
+                canopyOverlap = 0.9f, groveNoise = 0.45f, groveSpacing = 20f, groveRadius = new Vector2(4f, 7f),
+                loneTrees = 0.5f, vignettes = 0.6f, singles = 1.2f, coverPer100 = 5f, coverPatch = 0.42f },
+            new MapDef { id = "tundra", pools = 7, poolRadius = new Vector2(5f, 8f),
+                canopyOverlap = 1f, groveNoise = 0.5f, groveSpacing = 24f, groveRadius = new Vector2(4f, 7f),
+                loneTrees = 0.3f, vignettes = 0.5f, singles = 1.5f, coverPer100 = 2f, coverPatch = 0.5f },
         };
 
         /// One generated map: its features and the sampled basin field (wraps with period M).
@@ -390,7 +405,10 @@ namespace ZombieWar.EditorTools
             label.rectTransform.sizeDelta = new Vector2(200f, 14f);
             label.color = Color.white;
 
-            return $"{def.id}: {n * n} chunks, {d.rivers.Count} rivers, {d.pools.Count} pools, {d.bridges.Count} bridges, {NavReport(d)}";
+            var dr = _lastDressing;
+            return $"{def.id}: {n * n} chunks, {d.rivers.Count} rivers, {d.pools.Count} pools, {d.bridges.Count} bridges, {NavReport(d)}; " +
+                   $"dressing: {dr.landmarks} landmarks, {dr.trees} trees in {dr.groves} groves, {dr.vignettes} vignettes ({dr.vignetteProps} pieces), " +
+                   $"{dr.singles} singles, {dr.cover} cover, {dr.blockers} blockers ({dr.removedForPaths} removed to keep paths), {dr.rejected} rejected for overlap";
         }
 
         static void GameCam(string name, Transform parent, Vector3 at)
@@ -399,54 +417,6 @@ namespace ZombieWar.EditorTools
             cam.transform.position = at + new Vector3(0f, 12f, -8f);
             cam.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
             cam.fieldOfView = 60f;
-        }
-
-        sealed class PropSpot { public string key; public Vector2 p; public float yaw, scale; }
-
-        static List<PropSpot> MapProps(MapData d)
-        {
-            var z = d.z;
-            var rng = new System.Random(("props" + d.def.id).GetHashCode());
-            var list = new List<PropSpot>();
-            bool Free(Vector2 q)
-            {
-                foreach (var o in new[] { Vector2.zero, new Vector2(1.5f, 0f), new Vector2(-1.5f, 0f), new Vector2(0f, 1.5f), new Vector2(0f, -1.5f) })
-                    if (Basin(d, q + o) > 0f) return false;
-                foreach (var b in d.bridges)
-                {
-                    var dq = WrapDelta(q - b.c, d.M);
-                    var side = new Vector2(b.along.y, -b.along.x);
-                    if (Mathf.Abs(Vector2.Dot(dq, b.along)) < b.span * 0.5f + 3f && Mathf.Abs(Vector2.Dot(dq, side)) < BridgeWidth * 0.5f + 1.2f) return false;
-                }
-                return true;
-            }
-            float R() => (float)rng.NextDouble();
-            void Add(string[] kit, Vector2 at, float radius, int count)
-            {
-                if (kit == null || kit.Length == 0) return;
-                for (int i = 0; i < count; i++)
-                {
-                    var p = at + new Vector2(R() * 2 - 1, R() * 2 - 1) * radius;
-                    if (!Free(p)) continue;
-                    list.Add(new PropSpot { key = kit[rng.Next(kit.Length)], p = new Vector2(Wrap(p.x, d.M), Wrap(p.y, d.M)), yaw = R() * 360f, scale = 0.9f + R() * 0.2f });
-                }
-            }
-            float step = z.gridStep;
-            for (float gx = step * 0.5f; gx < d.M; gx += step)
-                for (float gz = step * 0.5f; gz < d.M; gz += step)
-                {
-                    var c = new Vector2(gx + (R() * 3 - 1.5f), gz + (R() * 3 - 1.5f));
-                    if (R() < d.def.tallShare) Add(z.outer, c, 0f, 1);
-                    else Add(z.mid, c, 1.4f, 1 + rng.Next(2));
-                }
-            int loose = Mathf.RoundToInt(z.scatterCount * d.M * d.M / 1600f);
-            for (int i = 0; i < loose; i++)
-            {
-                var p = new Vector2(R() * d.M, R() * d.M);
-                if (Basin(d, p) > 0f) continue;
-                list.Add(new PropSpot { key = z.scatter[rng.Next(z.scatter.Length)], p = p, yaw = R() * 360f, scale = 1f });
-            }
-            return list;
         }
 
         static GameObject BakeChunk(MapData d, int cx, int cz, string dir, Material ground, Material fluid, List<PropSpot> props)
@@ -505,10 +475,7 @@ namespace ZombieWar.EditorTools
 
             var pr = new GameObject("Props").transform;
             pr.SetParent(go.transform, false);
-            foreach (var s in props)
-                if (s.p.x >= corner.x && s.p.y >= corner.y && s.p.x < corner.x + ChunkSize && s.p.y < corner.y + ChunkSize)
-                    Place(s.key, pr, s.p - centre, s.yaw, s.scale);
-            foreach (var col in pr.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(col);
+            PlaceChunkProps(pr, props, corner, centre, dir + name);
             if (z.snow) SnowCover(go.transform);
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, dir + name + ".prefab");
@@ -641,7 +608,7 @@ namespace ZombieWar.EditorTools
         /// short post at each corner. Decoration only; the walk grid already treats it as ground.
         static void BuildBridge(Transform parent, Vector2 c, Vector2 along, float span)
         {
-            if (_plank == null) _plank = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Prefabs/Wood_Plank_A.prefab");
+            if (_plank == null) _plank = ConvertedPrefab("KK/Wood_Plank_A") ?? AssetDatabase.LoadAssetAtPath<GameObject>("Assets/KayKit/Packs/Bits/KayKit - Resource Bits (for Unity)/Prefabs/Wood_Plank_A.prefab");
             if (_plank == null) return;
             var root = new GameObject("Bridge").transform;
             root.SetParent(parent, false);
