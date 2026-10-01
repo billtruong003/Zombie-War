@@ -598,9 +598,12 @@ namespace ZombieWar
 
         private static void ScheduleFlush()
         {
-            if (_flushScheduled) return;
+            // No timer means nothing will flush later, whatever the flag says: a flag left set by a
+            // timer that never fired (Play exited first; statics survive without a domain reload)
+            // used to swallow every deferred save after it.
             var timer = Bill.IsReady ? Bill.Timer : null;
-            if (timer == null) { SaveNow(); return; }
+            if (timer == null) { _flushScheduled = false; SaveNow(); return; }
+            if (_flushScheduled) return;
             _flushScheduled = true;
             timer.Delay(DeferredFlushSeconds, () => { _flushScheduled = false; FlushIfDirty(); }, true);
         }

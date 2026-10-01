@@ -38,6 +38,15 @@ namespace ZombieWar.Skills
             { SkillCatalogDefs.AutoWarDog,         3.0f },   //  54 → ~162
             { SkillCatalogDefs.AutoStomp,          1.1f },   // 110 → ~120-215 (after: 295 at 1.5, noisy; control first)
             { SkillCatalogDefs.AutoBoomerang,      2.0f },   // 20-178 run to run: three narrow lines through the crowd
+            // Already in the band at 1 (final bench 0930_070843_a10_crowd_r5_final.csv), listed so a
+            // missing entry never reads as forgotten:
+            { SkillCatalogDefs.AutoFireTrail,      1.0f },   // 211
+            { SkillCatalogDefs.AutoThorns,         1.0f },   // 167 (control: knockback)
+            { SkillCatalogDefs.AutoFrostNova,      1.0f },   // 165 (control: slow)
+            { SkillCatalogDefs.AutoIceShards,      1.0f },   // 149 (control: slow)
+            { SkillCatalogDefs.AutoLandmine,       1.0f },   // 147 (contact, noisy)
+            { SkillCatalogDefs.AutoEmergency,      1.0f },   // a last-stand burst at low health, not sustained damage
+            { SkillCatalogDefs.AutoTimeWarp,       1.0f },   // control only: slows time, deals no damage
         };
 
         /// Applied on top of the power's factor once it has evolved.

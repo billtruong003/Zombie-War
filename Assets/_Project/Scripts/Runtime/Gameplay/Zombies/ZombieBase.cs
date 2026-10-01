@@ -252,7 +252,31 @@ namespace ZombieWar
             SetDissolve(0f);
             SetHitFlash(0f); // a pooled instance must not reappear still lit from its last death
             SetStatusTint(Color.clear); // nor still frozen or burning
+            ShowEliteAura(true);
             OnSpawned();
+        }
+
+        // Elites (and bosses) wear a soft gold aura from Epic Toon (2026-10-01): they carry the
+        // chests, gems and items, and hit harder, so they must read at a glance in the crowd. One
+        // instance per pooled enemy, made the first time it spawns as an elite, hidden on death.
+        static GameObject _eliteAuraPrefab;
+        static bool _eliteAuraLoaded;
+        GameObject _eliteAura;
+
+        void ShowEliteAura(bool on)
+        {
+            on &= data != null && data.isElite;
+            if (!on) { if (_eliteAura != null) _eliteAura.SetActive(false); return; }
+            if (!_eliteAuraLoaded) { _eliteAuraPrefab = Resources.Load<GameObject>("FX/EliteAura"); _eliteAuraLoaded = true; }
+            if (_eliteAuraPrefab == null) return;
+            if (_eliteAura == null)
+            {
+                _eliteAura = Instantiate(_eliteAuraPrefab, transform);
+                _eliteAura.transform.localPosition = new Vector3(0f, 0.06f, 0f);
+                float height = TryGetComponent(out CapsuleCollider capsule) ? capsule.height : 2f;   // bosses get a wider ring
+                _eliteAura.transform.localScale = _eliteAuraPrefab.transform.localScale * Mathf.Clamp(height / 2f, 1f, 1.8f);
+            }
+            _eliteAura.SetActive(true);
         }
 
         private void OnDisable()
@@ -764,6 +788,7 @@ namespace ZombieWar
             // reward path must not depend on that: a pooled instance re-subscribes on every respawn,
             // so a double-report here would silently inflate the run's currency.
             if (_state == State.Dead) return;
+            ShowEliteAura(false);   // the corpse dissolves without its glow
 
             // When a PickupManager is present it drops physical coin instead, so the ledger must not
             // also bank it here - the kill and XP still register either way.
