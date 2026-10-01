@@ -12,12 +12,17 @@ namespace ZombieWar.Editor.Build
     /// M9: two build flavours and a guard between them.
     /// - Development: cheats, BuildTour and the dev console come from DEVELOPMENT_BUILD, so no define
     ///   is needed and nothing can leak into a store build by accident.
-    /// - Release: refuses to build while ZW_CHEATS is defined or the bundle id is still Unity's default.
+    /// - Release: refuses to build while ZW_CHEATS is defined or the bundle id is still Unity's default;
+    ///   for Android also without an upload keystore, an app icon, the HordeCall name, or a pinned
+    ///   target API (2026-10-01, the first-upload checklist).
     /// </summary>
     public static class HordeCallBuild
     {
         public const string CheatDefine = "ZW_CHEATS";
+        // Compared ignoring case: the template id is "com.UnityTechnologies.…", which a case-sensitive
+        // "com.unity" let through.
         static readonly string[] DefaultIdPrefixes = { "com.DefaultCompany", "com.Company", "com.unity" };
+        public const string ReleaseProductName = "HordeCall";
 
         /// <summary>Problems that must block a store build. Empty for a development build.</summary>
         public static List<string> ReleaseProblems(NamedBuildTarget target, bool development)
@@ -28,8 +33,20 @@ namespace ZombieWar.Editor.Build
             if (defines.Contains(CheatDefine))
                 problems.Add($"{CheatDefine} is defined for {target.TargetName}: the cheat panel would ship.");
             string id = PlayerSettings.GetApplicationIdentifier(target);
-            if (string.IsNullOrEmpty(id) || DefaultIdPrefixes.Any(p => id.StartsWith(p)))
+            if (string.IsNullOrEmpty(id) || DefaultIdPrefixes.Any(p => id.StartsWith(p, System.StringComparison.OrdinalIgnoreCase)))
                 problems.Add($"Bundle id for {target.TargetName} is '{id}'. Set the real one before a store build.");
+            if (target == NamedBuildTarget.Android)
+            {
+                if (!PlayerSettings.Android.useCustomKeystore || string.IsNullOrEmpty(PlayerSettings.Android.keystoreName))
+                    problems.Add("No upload keystore: the bundle would be signed with the debug key, which Google Play refuses.");
+                var icons = PlayerSettings.GetIcons(target, IconKind.Any);
+                if (icons == null || icons.Length == 0 || icons.All(i => i == null))
+                    problems.Add("No app icon is set in Player Settings.");
+                if (PlayerSettings.productName != ReleaseProductName)
+                    problems.Add($"Product name is '{PlayerSettings.productName}', not '{ReleaseProductName}': the launcher would show it.");
+                if (PlayerSettings.Android.targetSdkVersion == AndroidSdkVersions.AndroidApiLevelAuto)
+                    problems.Add("Target API is 'highest installed': pin the level Google Play currently requires.");
+            }
             return problems;
         }
 

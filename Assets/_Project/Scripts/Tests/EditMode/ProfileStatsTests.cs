@@ -61,6 +61,49 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void EveryClosedRun_Counts_EvenWithoutAccountXp()
+        {
+            // A run under 2 s with no kill earns 0 XP; it must still count, or the first-run gate
+            // stays locked.
+            PlayerProfile.RecordRunStats(0, 0, 1.5f);
+            Assert.AreEqual(0, PlayerProfile.AddAccountXp(0));
+            Assert.AreEqual(1, PlayerProfile.RunsPlayed);
+            PlayerProfile.AddAccountXp(5000);   // the cheat panel's XP is not a run
+            Assert.AreEqual(1, PlayerProfile.RunsPlayed);
+        }
+
+        [Test]
+        public void BestKills_KeepsTheBestRun()
+        {
+            PlayerProfile.RecordRunStats(120, 1, 60f);
+            PlayerProfile.RecordRunStats(80, 1, 60f);
+            Assert.AreEqual(120, PlayerProfile.BestKills);
+        }
+
+        [Test]
+        public void FtueStep_MovesFromItsOldPrefKey_AndCompletesOnce()
+        {
+            const string legacy = "ftue_done", legacyReveal = "ftue_reveal";
+            int had = PlayerPrefs.GetInt(legacy, 0), hadReveal = PlayerPrefs.GetInt(legacyReveal, 0);
+            try
+            {
+                PlayerPrefs.SetInt(legacy, 1);
+                PlayerPrefs.DeleteKey(legacyReveal);
+                Assert.IsTrue(Ftue.Done(Ftue.Move));
+                Assert.IsTrue(PlayerProfile.HasFtueStep(Ftue.Move));
+                Assert.IsFalse(Ftue.Done(Ftue.Reveal));
+                Ftue.Complete(Ftue.Reveal);
+                Ftue.Complete(Ftue.Reveal);
+                Assert.IsTrue(Ftue.Done(Ftue.Reveal));
+            }
+            finally
+            {
+                if (had == 1) PlayerPrefs.SetInt(legacy, 1); else PlayerPrefs.DeleteKey(legacy);
+                if (hadReveal == 1) PlayerPrefs.SetInt(legacyReveal, 1); else PlayerPrefs.DeleteKey(legacyReveal);
+            }
+        }
+
+        [Test]
         public void RunStats_IgnoreBadInput()
         {
             PlayerProfile.RecordRunStats(-5, -1, float.NaN);

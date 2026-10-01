@@ -97,6 +97,11 @@ namespace ZombieWar
             public int peakThreat;
             public float totalSeconds;
             public int bossesDefeated;
+            // Best kills in one run (2026-10-01): the kill score's record, shown once the result
+            // screen mockup is approved.
+            public int bestKills;
+            // First-time-user steps already done (Ftue.Move, Ftue.Reveal, ...).
+            public List<string> ftueSteps = new List<string>();
             // M10 Daily: gacha tickets, avatar frames, the 7-day welcome check-in, the 28-day stamp card.
             public long tickets;
             public List<string> ownedFrames = new List<string>();
@@ -244,6 +249,17 @@ namespace ZombieWar
         public static string DisplayName => Data.displayName;
         public static string PlayerId => Data.playerId;
         public static int RunsPlayed => Data.runsPlayed;
+        public static int BestKills => Data.bestKills;
+
+        public static bool HasFtueStep(string step) => Data.ftueSteps != null && Data.ftueSteps.Contains(step);
+
+        public static void MarkFtueStep(string step)
+        {
+            Data.ftueSteps ??= new List<string>();
+            if (Data.ftueSteps.Contains(step)) return;
+            Data.ftueSteps.Add(step);
+            SaveNow();
+        }
         public static long TotalKills => Data.totalKills;
         public static int PeakThreat => Data.peakThreat;
         public static float TotalSeconds => Data.totalSeconds;
@@ -367,8 +383,15 @@ namespace ZombieWar
         }
 
         /// <summary>Lifetime stats for the Profile screen, added once per closed run.</summary>
+        /// <summary>
+        /// One finished run: lifetime stats, the best-kills record, and the run count. Every closed
+        /// run counts, even one that earned no account XP (a run under 2 s with no kill used to leave
+        /// the first-run gate locked because only XP counted it).
+        /// </summary>
         public static void RecordRunStats(int kills, int peakThreat, float seconds)
         {
+            Data.runsPlayed++;
+            Data.bestKills = Math.Max(Data.bestKills, kills);
             Data.totalKills += Math.Max(0, kills);
             Data.peakThreat = Math.Max(Data.peakThreat, peakThreat);
             if (!float.IsNaN(seconds) && seconds > 0f) Data.totalSeconds += seconds;
@@ -393,7 +416,6 @@ namespace ZombieWar
             if (xp <= 0) return 0;
             int before = AccountLevel;
             Data.accountXp += xp;
-            Data.runsPlayed++;
             SaveNow();
             AccountChanged?.Invoke();
             return AccountLevel - before;
@@ -1778,6 +1800,7 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(d.playerId)) d.playerId = UnityEngine.Random.Range(10000000, 99999999).ToString();
             if (string.IsNullOrWhiteSpace(d.displayName)) d.displayName = "Survivor " + d.playerId.Substring(4);
             if (d.runsPlayed < 0) d.runsPlayed = 0;
+            if (d.bestKills < 0) d.bestKills = 0;
             if (d.totalKills < 0) d.totalKills = 0;
             if (d.bossesDefeated < 0) d.bossesDefeated = 0;
             if (d.peakThreat < 0) d.peakThreat = 0;

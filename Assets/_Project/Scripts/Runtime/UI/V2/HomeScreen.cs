@@ -116,7 +116,6 @@ namespace ZombieWar.UI
         bool _launching;
 
         /// Set once the post-first-run reveal was shown.
-        public const string FirstRunRevealKey = "ftue_reveal";
 
         /// Owner (2026-09-27): the first session starts in the menu with only PLAY; everything else
         /// opens after the first run.
@@ -191,7 +190,7 @@ namespace ZombieWar.UI
         /// First time back from a run: show what just opened (the player's gun, Arsenal + Shop).
         void MaybeReveal()
         {
-            if (revealRoot == null || FirstRunPending || PlayerPrefs.GetInt(FirstRunRevealKey, 0) == 1) return;
+            if (revealRoot == null || FirstRunPending || Ftue.Done(Ftue.Reveal)) return;
             var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
             var d = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
             if (d != null)
@@ -210,8 +209,7 @@ namespace ZombieWar.UI
 
         void CloseReveal()
         {
-            PlayerPrefs.SetInt(FirstRunRevealKey, 1);
-            PlayerPrefs.Save();
+            Ftue.Complete(Ftue.Reveal);
             if (revealRoot != null) revealRoot.SetActive(false);
             Refresh();
         }

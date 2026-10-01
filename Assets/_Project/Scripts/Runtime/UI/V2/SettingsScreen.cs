@@ -102,8 +102,7 @@ namespace ZombieWar.UI
         {
             if (deleteConfirm != null) deleteConfirm.SetActive(false);
             PlayerProfile.DeleteAllData();
-            PlayerPrefs.DeleteKey("ftue_done");
-            PlayerPrefs.DeleteKey(HomeScreen.FirstRunRevealKey);
+            foreach (var key in Ftue.LegacyPrefKeys) PlayerPrefs.DeleteKey(key);   // or the steps would come back from them
             var arsenal = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
             if (arsenal != null) PlayerProfile.EnsureValidLoadout(arsenal);   // fresh profile: starter gun again
             UIFeedback.Confirm();

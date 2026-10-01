@@ -126,6 +126,7 @@ namespace ZombieWar
             // RunDirector after RunClosure's first-wins close, so the screen can never disagree with
             // the frozen ledger.
             Bill.Events?.Subscribe<RunFinishedEvent>(OnRunFinished);
+            Bill.Events?.Subscribe<AppPauseEvent>(OnAppPause);
             RunState.LevelsGained += OnLevelsGained;
             PickupManager.ChestCollected += OnChestCollected;
         }
@@ -133,6 +134,7 @@ namespace ZombieWar
         private void OnDisable()
         {
             Bill.Events?.Unsubscribe<RunFinishedEvent>(OnRunFinished);
+            Bill.Events?.Unsubscribe<AppPauseEvent>(OnAppPause);
             RunState.LevelsGained -= OnLevelsGained;
             PickupManager.ChestCollected -= OnChestCollected;
         }
@@ -254,7 +256,7 @@ namespace ZombieWar
 
         private void Start()
         {
-            if (PlayerPrefs.GetInt("ftue_done", 0) == 0)
+            if (!Ftue.Done(Ftue.Move))
             {
                 Show(ftueRoot, true);
                 _ftueWatch = StartCoroutine(CoFtueWatchJoystick());
@@ -275,6 +277,14 @@ namespace ZombieWar
             Time.timeScale = 0f;
             Show(pauseRoot, true);
             UIFx.ModalIn(pauseRoot != null ? pauseRoot.transform : null);
+        }
+
+        // The app went to the background (home button, a call): the run waits on the pause menu
+        // instead of playing on unseen. A choice screen that already holds the game stays as it is.
+        private void OnAppPause(AppPauseEvent e)
+        {
+            if (!e.IsPaused || RunState.Current == null || Time.timeScale == 0f) return;
+            ShowPause();
         }
 
         private void ResumeWithCountdown()
@@ -637,8 +647,7 @@ namespace ZombieWar
 
         private void CompleteFtue()
         {
-            PlayerPrefs.SetInt("ftue_done", 1);
-            PlayerPrefs.Save();   // WebGL and a killed app both lose unsaved prefs
+            Ftue.Complete(Ftue.Move);
             Show(ftueRoot, false);
             StopFtueWatch();
         }
