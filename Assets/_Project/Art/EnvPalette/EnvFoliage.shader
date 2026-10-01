@@ -33,6 +33,7 @@ Shader "HordeCall/Env/Foliage"
 
     HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Assets/_Project/Art/EnvPalette/EnvSeeThrough.hlsl"
 
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
@@ -114,6 +115,7 @@ Shader "HordeCall/Env/Foliage"
                 float2 uv         : TEXCOORD0;
                 float3 normalWS   : TEXCOORD1;
                 float4 color      : TEXCOORD2;
+                float3 positionWS : TEXCOORD3;
             };
 
             float ToonBand(float value)
@@ -129,7 +131,9 @@ Shader "HordeCall/Env/Foliage"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 Varyings o;
-                o.positionCS = TransformObjectToHClip(Displace(input.positionOS.xyz, input.color.a, input.windData));
+                float3 displaced = Displace(input.positionOS.xyz, input.color.a, input.windData);
+                o.positionCS = TransformObjectToHClip(displaced);
+                o.positionWS = TransformObjectToWorld(displaced);
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 o.uv = input.uv;
                 o.color = input.color;
@@ -138,6 +142,7 @@ Shader "HordeCall/Env/Foliage"
 
             half4 Fragment(Varyings input) : SV_Target
             {
+                ZW_SeeThroughClip(input.positionWS, input.positionCS);
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 clip(albedo.a - _Cutoff);
                 albedo.rgb *= _BaseColor.rgb * input.color.rgb * _TintScale;
@@ -175,9 +180,9 @@ Shader "HordeCall/Env/Foliage"
             HLSLPROGRAM
             #pragma vertex DV
             #pragma fragment DF
-            struct V { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 n : TEXCOORD1; };
-            V DV(Attributes i) { V o; o.pos = TransformObjectToHClip(Displace(i.positionOS.xyz, i.color.a, i.windData)); o.uv = i.uv; o.n = TransformObjectToWorldNormal(i.normalOS); return o; }
-            half4 DF(V i) : SV_Target { clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a - _Cutoff); return half4(NormalizeNormalPerPixel(i.n), 0); }
+            struct V { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 n : TEXCOORD1; float3 w : TEXCOORD2; };
+            V DV(Attributes i) { V o; float3 d = Displace(i.positionOS.xyz, i.color.a, i.windData); o.pos = TransformObjectToHClip(d); o.w = TransformObjectToWorld(d); o.uv = i.uv; o.n = TransformObjectToWorldNormal(i.normalOS); return o; }
+            half4 DF(V i) : SV_Target { ZW_SeeThroughClip(i.w, i.pos); clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a - _Cutoff); return half4(NormalizeNormalPerPixel(i.n), 0); }
             ENDHLSL
         }
     }

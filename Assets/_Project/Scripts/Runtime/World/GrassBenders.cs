@@ -22,6 +22,10 @@ namespace ZombieWar.World
         static GrassBenders _runner;
 
         public static float PlayerRadius = 1.1f;
+        /// Set by the map streamer when the map has grass: enemies then submit themselves.
+        public static bool Active;
+        /// Enemies submit themselves only when the map has grass.
+        public static bool EnemiesBendGrass;
 
         /// A bender for this frame only (call every frame while it should bend grass).
         public static void Submit(Vector3 position, float radius)
@@ -44,7 +48,11 @@ namespace ZombieWar.World
                 if (((Vector3)Standing[i] - position).sqrMagnitude < 0.01f) { Standing.RemoveAt(i); return; }
         }
 
-        static void EnsureRunner()
+        static readonly int SeeThroughId = Shader.PropertyToID("_ZW_SeeThrough");
+        /// Radius of the see-through cone at the player (EnvSeeThrough.hlsl); 0 turns it off.
+        public static float SeeThroughRadius = 3.2f;
+
+        public static void EnsureRunner()
         {
             if (_runner != null || !Application.isPlaying) return;
             var go = new GameObject("GrassBenders");
@@ -79,6 +87,9 @@ namespace ZombieWar.World
             foreach (var b in Frame) Consider(b);
             Frame.Clear();
 
+            // Decoration between the camera and the player dithers away (baked maps only).
+            Shader.SetGlobalVector(SeeThroughId, player != null && Active ? new Vector4(focus.x, focus.y, focus.z, SeeThroughRadius) : Vector4.zero);
+
             for (int i = n; i < Max; i++) Upload[i] = Vector4.zero;
             Shader.SetGlobalVectorArray(BendersId, Upload);
             Shader.SetGlobalFloat(CountId, n);
@@ -88,6 +99,7 @@ namespace ZombieWar.World
         {
             if (_runner == this) _runner = null;
             Shader.SetGlobalFloat(CountId, 0f);
+            Shader.SetGlobalVector(SeeThroughId, Vector4.zero);
         }
     }
 }

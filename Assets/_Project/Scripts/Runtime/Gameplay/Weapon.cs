@@ -137,6 +137,9 @@ namespace ZombieWar
 
         private void Awake()
         {
+            // Bullets fly over the obstacles of a baked map (water, lava, rocks): never hit that layer.
+            int navObstacle = LayerMask.NameToLayer("NavObstacle");
+            if (navObstacle >= 0) hitMask &= ~(1 << navObstacle);
             _recoilNoiseSeed = UnityEngine.Random.value * 100f;
             EnsureRecoilPivot();
         }

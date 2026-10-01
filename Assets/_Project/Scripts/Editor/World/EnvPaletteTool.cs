@@ -439,6 +439,7 @@ namespace ZombieWar.EditorTools
             string path = Pal + "M_EnvSolid.mat";
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null) { m = new Material(AssetDatabase.LoadAssetAtPath<Material>(KayKitMat)); AssetDatabase.CreateAsset(m, path); }
+            m.shader = Shader.Find("HordeCall/Env/Solid");     // Toon Lit + see-through dither
             m.SetTexture("_BaseMap", palette);
             if (m.HasProperty("_EmissionMap")) m.SetTexture("_EmissionMap", palette);
             m.enableInstancing = true;

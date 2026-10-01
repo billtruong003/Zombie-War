@@ -170,7 +170,18 @@ namespace ZombieWar
         public void Move(Vector3 delta)
         {
             delta.y = 0f;
-            transform.position += delta;
+            Vector3 from = transform.position, to = from + delta;
+            // On a baked map, water, lava and big props are solid: slide along them instead of
+            // stepping in. An enemy already inside one (pushed in by a crowd) may still walk out.
+            if (ZombieWar.WorldNav.MapNavigator.Instance != null && ZombieWar.WorldNav.MapNavigator.Blocked(to) && !ZombieWar.WorldNav.MapNavigator.Blocked(from))
+            {
+                var alongX = new Vector3(to.x, to.y, from.z);
+                var alongZ = new Vector3(from.x, to.y, to.z);
+                if (!ZombieWar.WorldNav.MapNavigator.Blocked(alongX)) to = alongX;
+                else if (!ZombieWar.WorldNav.MapNavigator.Blocked(alongZ)) to = alongZ;
+                else return;
+            }
+            transform.position = to;
         }
 
         /// <summary>Nhận quyền lái từ một hành vi đặc biệt. Luôn phải có <see cref="EndExternalControl"/> đi kèm.</summary>
@@ -313,6 +324,9 @@ namespace ZombieWar
                 if (!IsStopped) FaceMovement(dt);
             }
 
+            // Grass parts around the enemy (foliage shader benders) on maps that have grass.
+            if (ZombieWar.World.GrassBenders.EnemiesBendGrass) ZombieWar.World.GrassBenders.Submit(transform.position, 0.7f);
+
             // Giữ enemy đúng trên mặt phẳng gameplay. Mặt đất thủ tục chỉ là hình ảnh; độ cao gameplay
             // là hằng số, nên không cần raycast xuống đất mỗi frame.
             Vector3 position = transform.position;
@@ -342,6 +356,11 @@ namespace ZombieWar
                     : Vector3.zero;
 
             Vector3 pursuit = toTarget / distance;
+            // On a baked map the straight line may cross a river: while chasing the player, follow
+            // the flow field (it knows the bridges). Close in, go straight.
+            if (distance > 2.5f && (_destination - ZombieWar.WorldNav.MapNavigator.Target).sqrMagnitude < 9f
+                && ZombieWar.WorldNav.MapNavigator.TryDirection(origin, out Vector3 routed))
+                pursuit = routed;
             Vector3 desired = pursuit;
 
             if (separationWeight > 0f && separationRadius > 0f)

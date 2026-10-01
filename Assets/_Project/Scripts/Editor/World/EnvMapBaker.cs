@@ -343,6 +343,7 @@ namespace ZombieWar.EditorTools
             for (int cz = 0; cz < n; cz++)
                 for (int cx = 0; cx < n; cx++)
                     prefabs[cx, cz] = BakeChunk(d, cx, cz, dir, ground, fluid, props);
+            WriteMapTheme(d, z, prefabs, props);
 
             // The map, plus one ring of wrapped chunks around it to show the edges join.
             var mapRoot = new GameObject("Map_" + def.id).transform;
@@ -409,6 +410,72 @@ namespace ZombieWar.EditorTools
             return $"{def.id}: {n * n} chunks, {d.rivers.Count} rivers, {d.pools.Count} pools, {d.bridges.Count} bridges, {NavReport(d)}; " +
                    $"dressing: {dr.landmarks} landmarks, {dr.trees} trees in {dr.groves} groves, {dr.vignettes} vignettes ({dr.vignetteProps} pieces), " +
                    $"{dr.singles} singles, {dr.cover} cover, {dr.blockers} blockers ({dr.removedForPaths} removed to keep paths), {dr.rejected} rejected for overlap";
+        }
+
+        /// The game reads the map through a MapTheme in Resources/MapThemes (only the theme in play
+        /// is loaded). The spawn spot is the open ground nearest the map centre: no obstacle cell and
+        /// no blocking piece within 7 m.
+        static void WriteMapTheme(MapData d, Zone z, GameObject[,] prefabs, List<PropSpot> props)
+        {
+            const string folder = "Assets/Resources/MapThemes/";
+            Directory.CreateDirectory(folder);
+            string path = folder + "MapTheme_" + d.def.id + ".asset";
+            var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(path);
+            if (theme == null) { theme = ScriptableObject.CreateInstance<ZombieWar.World.MapTheme>(); AssetDatabase.CreateAsset(theme, path); }
+            int n = d.def.chunks;
+            theme.id = d.def.id;
+            theme.displayName = z.name;
+            theme.chunksPerSide = n;
+            theme.chunkSize = ChunkSize;
+            theme.chunks = new GameObject[n * n];
+            for (int cz = 0; cz < n; cz++) for (int cx = 0; cx < n; cx++) theme.chunks[cz * n + cx] = prefabs[cx, cz];
+            theme.hasFoliage = d.def.id == "meadow" || d.def.id == "forest" || d.def.id == "swamp";
+            theme.ambientFx = AmbientFxFor(d.def.id);
+
+            bool Open(Vector2 p)
+            {
+                for (float y = -7f; y <= 7f; y += 0.5f)
+                    for (float x = -7f; x <= 7f; x += 0.5f)
+                    {
+                        if (x * x + y * y > 49f) continue;
+                        var q = p + new Vector2(x, y);
+                        int i = ((Mathf.FloorToInt(q.x / Cell)) % d.G + d.G) % d.G, j = ((Mathf.FloorToInt(q.y / Cell)) % d.G + d.G) % d.G;
+                        if (d.blocked[j * d.G + i]) return false;
+                    }
+                foreach (var s in props) if (s.blocks && WrapDelta(s.p - p, d.M).magnitude < 7f + s.baseR) return false;
+                return true;
+            }
+            var centre = new Vector2(d.M * 0.5f, d.M * 0.5f);
+            theme.spawnPoint = centre;
+            for (float r = 0f; r < d.M * 0.5f; r += 2f)
+            {
+                bool found = false;
+                int steps = Mathf.Max(1, Mathf.RoundToInt(r * 3f));
+                for (int k = 0; k < steps && !found; k++)
+                {
+                    float a = k * Mathf.PI * 2f / steps;
+                    var p = centre + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                    if (Open(p)) { theme.spawnPoint = p; found = true; }
+                }
+                if (found) break;
+            }
+            EditorUtility.SetDirty(theme);
+            AssetDatabase.SaveAssets();
+        }
+
+        /// Weather that follows the player, from Epic Toon (the only FX source for the game).
+        public static GameObject AmbientFxFor(string id)
+        {
+            const string env = "Assets/ThirdParty/Epic Toon FX/Prefabs/Environment/";
+            string path = id switch
+            {
+                "tundra" => env + "Weather/Snow/SnowLight.prefab",
+                "volcano" => env + "Fireflies/FireFliesRed.prefab",
+                "forest" => env + "Weather/Wind & Leaves/FallingLeaves.prefab",
+                "swamp" => env + "Fireflies/FireFliesGreen.prefab",
+                _ => null,
+            };
+            return path == null ? null : AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
         static void GameCam(string name, Transform parent, Vector3 at)
