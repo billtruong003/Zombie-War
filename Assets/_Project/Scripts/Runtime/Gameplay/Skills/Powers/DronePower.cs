@@ -40,6 +40,9 @@ namespace ZombieWar.Skills.Powers
         /// Merged drone model (one mesh): its second material is the rotor smear, tinted by rank.
         readonly Renderer[] _rotorMat = new Renderer[MaxDrones];
         readonly TrailRenderer[] _trail = new TrailRenderer[MaxDrones];
+        // Each drone carries a small light in its rank colour (owner 02/10): it changes with the
+        // level like the glow, and as the drone weaves round the hero it rims them in that colour.
+        readonly ToonPointLight[] _light = new ToonPointLight[MaxDrones];
         readonly int[] _burstLeft = new int[MaxDrones];
         int _colourKey = -1;
 
@@ -125,6 +128,7 @@ namespace ZombieWar.Skills.Powers
                 var mpb = Host.Block;
                 for (int i = 0; i < MaxDrones; i++)
                 {
+                    if (_light[i] != null) _light[i].colour = colour;
                     if (_rotorMat[i] != null)
                     {
                         mpb.Clear();
@@ -185,6 +189,14 @@ namespace ZombieWar.Skills.Powers
             trail.endColor = new Color(1f, 1f, 1f, 0f);
             if (Lib.shared.trailMaterial != null) trail.sharedMaterial = Lib.shared.trailMaterial;
             _trail[i] = trail;
+            // Under the hull, reaching the hero below: about 2.2 m down and up to 2 m to the side.
+            var lamp = new GameObject("light");
+            lamp.transform.SetParent(go.transform, false);
+            var light = lamp.AddComponent<ToonPointLight>();
+            light.range = 2.2f;
+            light.intensity = 0.35f;
+            light.offset = Vector3.down * 0.3f;
+            _light[i] = light;
             _colourKey = -1;
             return go.transform;
         }

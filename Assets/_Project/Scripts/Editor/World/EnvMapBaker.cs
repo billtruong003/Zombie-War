@@ -530,7 +530,7 @@ namespace ZombieWar.EditorTools
             const string env = "Assets/ThirdParty/Epic Toon FX/Prefabs/Environment/";
             string path = id switch
             {
-                "tundra" => env + "Weather/Snow/SnowLight.prefab",
+                "tundra" => null,   // falling snow on the GPU instead (MapTheme.snowfall, 02/10)
                 "volcano" => env + "Fireflies/FireFliesRed.prefab",
                 "forest" => env + "Weather/Wind & Leaves/FallingLeaves.prefab",
                 "swamp" => env + "Fireflies/FireFliesGreen.prefab",

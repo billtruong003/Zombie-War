@@ -96,8 +96,64 @@ namespace ZombieWar
             _age = 0f;
             _groundPos = position;
             transform.position = position;
+            EnsureBeam();
             SetHidden(false);
         }
+
+        // A fake light ray over everything but plain coins (owner 02/10): items read from afar
+        // without a real light. One quad per pickup, made the first time it spawns, coloured by
+        // what it is; it blinks and hides with the pickup.
+        static Mesh _beamMesh;
+        static Material _beamMaterial;
+        static bool _beamLoaded;
+        static MaterialPropertyBlock _beamBlock;
+        static readonly int BeamColorId = Shader.PropertyToID("_BeamColor");
+        Renderer _beam;
+
+        void EnsureBeam()
+        {
+            bool wants = effect != PickupEffect.Currency || _kind == PlayerProfile.CurrencyKind.Gem;
+            if (!wants) { if (_beam != null) _beam.gameObject.SetActive(false); return; }
+            if (!_beamLoaded) { _beamMaterial = Resources.Load<Material>("FX/M_PickupBeam"); _beamLoaded = true; }
+            if (_beamMaterial == null) return;
+            if (_beam == null)
+            {
+                if (_beamMesh == null)
+                {
+                    _beamMesh = new Mesh { name = "PickupBeam" };
+                    _beamMesh.SetVertices(new[] { new Vector3(-0.5f, 0f, 0f), new Vector3(0.5f, 0f, 0f), new Vector3(0.5f, 1f, 0f), new Vector3(-0.5f, 1f, 0f) });
+                    _beamMesh.SetUVs(0, new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) });
+                    _beamMesh.SetTriangles(new[] { 0, 2, 1, 0, 3, 2 }, 0);
+                    _beamMesh.bounds = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(1.5f, 1.5f, 1.5f));
+                }
+                var go = new GameObject("beam");
+                go.transform.SetParent(transform, false);
+                // 1.1 m wide, 3.2 m tall in the world whatever the pickup's own scale.
+                var s = transform.lossyScale;
+                go.transform.localScale = new Vector3(1.1f / Mathf.Max(0.01f, s.x), 3.2f / Mathf.Max(0.01f, s.y), 1f);
+                go.AddComponent<MeshFilter>().sharedMesh = _beamMesh;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = _beamMaterial;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                _beam = mr;
+                _renderers = null;   // re-gathered with the beam, so it blinks and hides too
+            }
+            _beamBlock ??= new MaterialPropertyBlock();
+            _beamBlock.SetColor(BeamColorId, BeamColour());
+            _beam.SetPropertyBlock(_beamBlock);
+            _beam.gameObject.SetActive(true);
+        }
+
+        Color BeamColour() => effect switch
+        {
+            PickupEffect.Chest => new Color(1.6f, 1.1f, 0.3f, 1f),
+            PickupEffect.Health => new Color(0.4f, 1.4f, 0.5f, 1f),
+            PickupEffect.Magnet => new Color(0.4f, 0.75f, 1.6f, 1f),
+            PickupEffect.Bomb => new Color(1.6f, 0.35f, 0.2f, 1f),
+            PickupEffect.Freeze => new Color(0.5f, 1.3f, 1.6f, 1f),
+            _ => new Color(1.4f, 0.4f, 1.2f, 1f),   // gem
+        };
 
         private void SetHidden(bool hidden)
         {

@@ -90,6 +90,12 @@ namespace ZombieWar
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (_material == null || renderingData.cameraData.cameraType != CameraType.Game) return;
+            // Only the game view (02/10): not the menu's character preview drawn into a render
+            // texture, and not cameras with post off (the Low preset, the menu).
+            if (!renderingData.cameraData.postProcessEnabled || renderingData.cameraData.camera.targetTexture != null) return;
+            // In play only during a run: the menu's camera has post on too (GameSettings) and its UI
+            // whites would bloom. Edit mode keeps it so the fluid lab shows the lava glowing.
+            if (Application.isPlaying && !GameFlow.InGameplay) return;
             if (GraphicsTier.BloomIterations <= 0) return;
             var settings = VolumeManager.instance.stack.GetComponent<ToonBloom>();
             if (settings == null || !settings.IsActive()) return;

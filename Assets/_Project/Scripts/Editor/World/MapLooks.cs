@@ -330,6 +330,30 @@ namespace ZombieWar.EditorTools
             m.SetFloat("_SnowHeight", 0f);
         }
 
+        static Material SnowfallMaterial()
+        {
+            const string path = "Assets/_Project/Resources/FX/M_Snowfall.mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null)
+            {
+                System.IO.Directory.CreateDirectory("Assets/_Project/Resources/FX");
+                m = new Material(Shader.Find("HordeCall/Fx/Snowfall"));
+                AssetDatabase.CreateAsset(m, path);
+            }
+            return m;
+        }
+
+        /// <summary>The pickups' fake light ray (Pickup.cs loads it from Resources).</summary>
+        [MenuItem("HordeCall/World/Make Pickup Beam Material")]
+        public static void PickupBeamMaterial()
+        {
+            const string path = "Assets/_Project/Resources/FX/M_PickupBeam.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return;
+            System.IO.Directory.CreateDirectory("Assets/_Project/Resources/FX");
+            var m = new Material(Shader.Find("HordeCall/Fx/Pickup Beam")) { enableInstancing = true };
+            AssetDatabase.CreateAsset(m, path);
+        }
+
         static void Use(Material m, string shader)
         {
             var s = Shader.Find(shader);
@@ -388,7 +412,14 @@ namespace ZombieWar.EditorTools
 
             // Snow maps press trails (SnowTrails reads the shader from the theme so it ships in builds).
             var tundra = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_tundra.asset");
-            if (tundra != null) { tundra.snowTrails = Shader.Find("Hidden/HordeCall/SnowTrail"); EditorUtility.SetDirty(tundra); }
+            if (tundra != null)
+            {
+                tundra.snowTrails = Shader.Find("Hidden/HordeCall/SnowTrail");
+                // Falling snow on the GPU replaces Epic Toon's SnowLight particles (owner 02/10).
+                tundra.snowfall = SnowfallMaterial();
+                tundra.ambientFx = null;
+                EditorUtility.SetDirty(tundra);
+            }
             AssetDatabase.SaveAssets();
             Debug.Log("[MapLooks] applied: " + log);
             return log.ToString();

@@ -130,7 +130,8 @@ namespace ZombieWar
         {
             if (bodyRenderer != null) bodyRenderer.enabled = visible;
 
-            CharacterContactShadows.Instance?.SetVisible(_contactShadowHandle, visible);
+            // A boss or elite with a planar shadow keeps its blob hidden.
+            CharacterContactShadows.Instance?.SetVisible(_contactShadowHandle, visible && !_planarShadow);
         }
 
         /// <summary>Set by subtypes that are driving their own movement phase this frame, so the
@@ -253,6 +254,7 @@ namespace ZombieWar
             SetHitFlash(0f); // a pooled instance must not reappear still lit from its last death
             SetStatusTint(Color.clear); // nor still frozen or burning
             ShowEliteAura(true);
+            UsePlanarShadow(true);
             OnSpawned();
         }
 
@@ -285,6 +287,22 @@ namespace ZombieWar
             _eliteAura.SetActive(true);
         }
 
+        // Bosses and elites cast a real (planar) shadow (owner 02/10), at every graphics tier, when the
+        // map has its baked light; the crowd keeps the blob. The body renderer is drawn with its
+        // VAT material's planar pass by PlanarShadowCastersFeature.
+        bool _planarShadow;
+        static readonly int PlanarShadowOnId = Shader.PropertyToID("_ZWPlanarShadowOn");
+
+        void UsePlanarShadow(bool on)
+        {
+            on &= bodyRenderer != null && ((data != null && data.isElite) || this is ZombieBoss)
+                  && Shader.GetGlobalFloat(PlanarShadowOnId) > 0.5f;
+            if (on == _planarShadow) return;
+            _planarShadow = on;
+            if (on) PlanarShadowCasters.Add(bodyRenderer); else PlanarShadowCasters.Remove(bodyRenderer);
+            CharacterContactShadows.Instance?.SetVisible(_contactShadowHandle, !on && (bodyRenderer == null || bodyRenderer.enabled));
+        }
+
         private void OnDisable()
         {
             // Enemies are POOLED. Statuses are keyed by transform instance id, so without this a
@@ -297,6 +315,7 @@ namespace ZombieWar
 
             TargetRegistry.Unregister(this);
             ZombieManager.Unregister(this);
+            UsePlanarShadow(false);
             ReleaseContactShadow();
             _health.OnDamaged -= HandleDamaged;
             _health.OnDeath -= HandleDeath;

@@ -92,7 +92,8 @@ namespace ZombieWar.EditorTools
                 "swamp" => "dusk",           // owner pick P3 (02/10, replaces P1 gloomy)
                 "meadow" => "sky_pastel",    // owner pick P3, 02/10
                 "desert" => "warm_sun",      // owner pick P1 (02/10, replaces P2 dusty haze)
-                "tundra" => "ice_blue",      // not picked yet (round 2 grades)
+                "tundra" => "night_frost",   // owner pick P5 (02/10, round 2 grades)
+                "volcano" => "cool_contrast", // owner pick P5 (02/10, round 2 grades)
                 _ => null,
             };
             if (pick == null) return null;

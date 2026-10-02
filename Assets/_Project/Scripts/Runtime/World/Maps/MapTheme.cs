@@ -38,6 +38,8 @@ namespace ZombieWar.World
         public Color shadowTint = new(0.56f, 0.58f, 0.76f);
         [Tooltip("Set on snow maps: walkers leave trails in the snow (SnowTrails, Hidden/HordeCall/SnowTrail).")]
         public Shader snowTrails;
+        [Tooltip("Set on snowy maps: falling snow on the GPU (Snowfall, HordeCall/Fx/Snowfall).")]
+        public Material snowfall;
         [Tooltip("The map's colour grade (owner picks per map, 02/10): a global volume above the gameplay one.")]
         public UnityEngine.Rendering.VolumeProfile post;
 

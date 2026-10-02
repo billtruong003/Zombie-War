@@ -453,6 +453,70 @@ Shader "ZombieWar/VAT/EnemyToon"
             ENDHLSL
         }
 
+        // ── Planar shadow (bosses and elites only, 02/10) ─────────────────────────────────────
+        // Not picked up by the renderers' "ZW Planar Shadows" pass (own LightMode): drawn only for
+        // the enemies registered in PlanarShadowCasters, so the crowd costs nothing extra. The body
+        // squashed onto the ground along the sun, multiplying the map's shadow tint, the same as
+        // the hero's (CharacterToon), sharing its stencil so shadows never darken twice.
+        Pass
+        {
+            Name "PlanarShadowVAT"
+            Tags { "LightMode" = "ZWPlanarShadowVAT" }
+            ZWrite Off
+            Blend DstColor Zero
+            Offset -1, -1
+            Stencil { Ref 128 ReadMask 128 WriteMask 128 Comp NotEqual Pass Replace }
+
+            HLSLPROGRAM
+            #pragma vertex vertPlanar
+            #pragma fragment fragPlanar
+            #pragma multi_compile_instancing
+            #pragma target 3.5
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
+
+            float4 _ZWSunDir;
+            float  _ZWPlanarShadowOn;
+            float  _ZWShadowPlaneY;
+
+            struct AppDataPlanar
+            {
+                float4 positionOS : POSITION;
+                float2 vertexIdUV : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct V2FPlanar
+            {
+                float4 positionCS : SV_POSITION;
+                float3 groundWS   : TEXCOORD0;
+                half   fade       : TEXCOORD1;
+            };
+
+            V2FPlanar vertPlanar(AppDataPlanar v)
+            {
+                V2FPlanar o = (V2FPlanar)0;
+                UNITY_SETUP_INSTANCE_ID(v);
+                float3 w = TransformObjectToWorld(VATPosition(v.vertexIdUV.x));
+                float3 L = normalize(float3(_ZWSunDir.x, min(_ZWSunDir.y, -0.2), _ZWSunDir.z));
+                float h = w.y - _ZWShadowPlaneY;
+                float3 g = w + L * (h / max(-L.y, 0.2));
+                g.y = _ZWShadowPlaneY;
+                o.groundWS = g;
+                // Fades with the dissolve, so a dying elite's shadow goes with its body.
+                float dissolve = UNITY_ACCESS_INSTANCED_PROP(PerInstance, _Dissolve);
+                o.fade = saturate(1.0 - h / 3.0) * (1.0 - saturate(dissolve * 1.5));
+                o.positionCS = _ZWPlanarShadowOn > 0.5 ? TransformWorldToHClip(g) : float4(0, 0, 0, 0);
+                return o;
+            }
+
+            half4 fragPlanar(V2FPlanar i) : SV_Target
+            {
+                half sun = ZW_MapLight(i.groundWS).x;   // already in a tree's shadow: nothing to add
+                return half4(lerp(half3(1, 1, 1), _ZWShadowTint.rgb, sun * lerp(0.8h, 1.0h, i.fade) * step(0.01h, i.fade)), 1.0h);
+            }
+            ENDHLSL
+        }
+
         // ── Depth only ──────────────────────────────────────────────────────────────────────
         Pass
         {

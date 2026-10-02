@@ -71,6 +71,7 @@ namespace ZombieWar.World
             GrassBenders.Active = true;
             GrassBenders.EnemiesBendGrass = Theme.hasFoliage || Theme.snowTrails != null;   // the same feet press the snow
             if (Theme.snowTrails != null) SnowTrails.Create(transform, Theme.snowTrails);
+            if (Theme.snowfall != null) Snowfall.Create(transform, Theme.snowfall);
             // The map's own grade over the gameplay volume (which keeps the outline and the bloom).
             if (Theme.post != null)
             {

@@ -26,8 +26,16 @@ namespace ZombieWar
 
         public static Graphics Quality
         {
-            get => (Graphics)Mathf.Clamp(PlayerPrefs.GetInt(KGraphics, (int)DeviceDefault(SystemInfo.systemMemorySize)), 0, 2);
-            set { PlayerPrefs.SetInt(KGraphics, (int)value); ApplyGraphics(); }
+            get => (Graphics)Mathf.Clamp(PlayerPrefs.GetInt(KGraphics, (int)DeviceGuess()), 0, 2);
+            set { PlayerPrefs.SetInt(KGraphics, (int)value); ApplyGraphics(); GraphicsTier.NotifyChanged(); }
+        }
+
+        /// <summary>Forgets the player's choice and goes back to the device guess.</summary>
+        public static void ResetQualityToDevice()
+        {
+            PlayerPrefs.DeleteKey(KGraphics);
+            ApplyGraphics();
+            GraphicsTier.NotifyChanged();
         }
 
         /// <summary>30 or 60.</summary>
@@ -65,15 +73,26 @@ namespace ZombieWar
 
         public static float ResolutionScale(Graphics g) => PresetFor(g).renderScale;
 
-        /// <summary>First launch: pick by device memory (under 3 GB Low, under 6 GB Mid, else High).</summary>
-        public static Graphics DeviceDefault(int memoryMb) => memoryMb < 3000 ? Graphics.Low : memoryMb < 6000 ? Graphics.Mid : Graphics.High;
+        /// <summary>First launch: the one device guess of the game (02/10, it was two formulas):
+        /// Low under ~3 GB, at 4 cores or fewer, or with a small GPU memory; High from ~6 GB with 8
+        /// cores; Mid between.</summary>
+        public static Graphics DeviceDefault(int memoryMb, int cores = 8, int vramMb = 0)
+        {
+            if (memoryMb < 3000 || cores <= 4 || (vramMb > 0 && vramMb < 768)) return Graphics.Low;
+            if (memoryMb >= 5800 && cores >= 8) return Graphics.High;
+            return Graphics.Mid;
+        }
+
+        /// <summary>The guess for this device (the editor always counts as High).</summary>
+        public static Graphics DeviceGuess() => Application.isEditor ? Graphics.High
+            : DeviceDefault(SystemInfo.systemMemorySize, SystemInfo.processorCount, SystemInfo.graphicsMemorySize);
 
         static UniversalRenderPipelineAsset _runtime;
         static bool _hooked;
 
         static void ApplyGraphics()
         {
-            if (!PlayerPrefs.HasKey(KGraphics)) PlayerPrefs.SetInt(KGraphics, (int)DeviceDefault(SystemInfo.systemMemorySize));
+            if (!PlayerPrefs.HasKey(KGraphics)) PlayerPrefs.SetInt(KGraphics, (int)DeviceGuess());
             // The editor keeps the project's URP asset as authored (a runtime copy there would leak
             // into QualitySettings); players get a copy tuned to the preset. The camera's post
             // effects still follow the preset in the editor, or every play test and capture there
