@@ -299,6 +299,49 @@ namespace ZombieWar
             AddAction(_content, "3 PX", () => { OutlineLook.Thickness = 3; SetStatus("Outline width 3 px"); });
             AddAction(_content, "OUTLINE OFF", () => { OutlineLook.Hidden = true; SetStatus("Outline off"); });
             AddAction(_content, "OUTLINE ON", () => { OutlineLook.Hidden = false; SetStatus("Outline on"); });
+            AddSection(_content, "GRAPHICS TIER (NOW " + GraphicsTier.Current.ToString().ToUpperInvariant() + ")");
+            AddAction(_content, "LOW", () => SetTier(GraphicsTier.Level.Low));
+            AddAction(_content, "MID", () => SetTier(GraphicsTier.Level.Mid));
+            AddAction(_content, "HIGH", () => SetTier(GraphicsTier.Level.High));
+            AddAction(_content, "DEVICE DEFAULT", () => { GraphicsTier.ResetToDetected(); SetStatus("Tier: " + GraphicsTier.Current + " (detected)"); ShowTab(9); });
+            AddSection(_content, "POINT LIGHTS");
+            AddAction(_content, "TEST LAMPS AROUND HERO", SpawnTestLamps);
+            AddAction(_content, "REMOVE TEST LAMPS", ClearTestLamps);
+        }
+
+        private void SetTier(GraphicsTier.Level level)
+        {
+            GraphicsTier.Set(level);
+            SetStatus($"Tier {level}: {GraphicsTier.PointLights} point lights, bloom {(GraphicsTier.BloomIterations > 0 ? GraphicsTier.BloomIterations + " passes" : "off")}");
+            ShowTab(9);
+        }
+
+        private GameObject _testLamps;
+
+        /// Six coloured lamps spread around the hero (apart enough to tell them apart), to see the toon point lights at work.
+        private void SpawnTestLamps()
+        {
+            ClearTestLamps();
+            var hero = PlayerMovement.Instance;
+            if (hero == null) { SetStatus("Start a run first"); return; }
+            _testLamps = new GameObject("QA_TestLamps");
+            Color[] colours = { new Color(1f, 0.6f, 0.25f), new Color(0.3f, 0.7f, 1f), new Color(1f, 0.3f, 0.6f), new Color(0.5f, 1f, 0.4f) };
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i / 6f * Mathf.PI * 2f;
+                var go = new GameObject("Lamp" + i);
+                go.transform.SetParent(_testLamps.transform, false);
+                go.transform.position = hero.transform.position + new Vector3(Mathf.Cos(a) * 6f, 1.2f, Mathf.Sin(a) * 6f);
+                var l = go.AddComponent<ToonPointLight>();
+                l.colour = colours[i % colours.Length]; l.range = 3.5f; l.intensity = 2.5f; l.flicker = i % 2 == 0 ? 0.2f : 0f;
+            }
+            SetStatus($"6 test lamps placed; {GraphicsTier.PointLights} lit at once on this tier");
+        }
+
+        private void ClearTestLamps()
+        {
+            if (_testLamps != null) Destroy(_testLamps);
+            _testLamps = null;
         }
 
         /// The numbers QA keeps checking, refreshed twice a second while the panel is open.

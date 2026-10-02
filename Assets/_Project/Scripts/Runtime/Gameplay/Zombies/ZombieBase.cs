@@ -275,6 +275,12 @@ namespace ZombieWar
                 _eliteAura.transform.localPosition = new Vector3(0f, 0.06f, 0f);
                 float height = TryGetComponent(out CapsuleCollider capsule) ? capsule.height : 2f;   // bosses get a wider ring
                 _eliteAura.transform.localScale = _eliteAuraPrefab.transform.localScale * Mathf.Clamp(height / 2f, 1f, 1.8f);
+                var glow = _eliteAura.AddComponent<ToonPointLight>();
+                glow.colour = new Color(1f, 0.82f, 0.35f);
+                glow.range = 3.5f * Mathf.Clamp(height / 2f, 1f, 1.8f);
+                glow.intensity = 0.8f;
+                glow.flicker = 0.15f;
+                glow.offset = Vector3.up * 1f;
             }
             _eliteAura.SetActive(true);
         }

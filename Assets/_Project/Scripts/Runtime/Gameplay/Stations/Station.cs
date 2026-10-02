@@ -76,6 +76,13 @@ namespace ZombieWar.Stations
 
             float radius = RadiusFor(anchor.kind);
             signal.Configure(anchor.kind, radius);
+            if (!TryGetComponent(out ToonPointLight glow)) glow = gameObject.AddComponent<ToonPointLight>();
+            glow.colour = LightColour(anchor.kind);
+            glow.range = Mathf.Max(5f, radius * 1.4f);
+            glow.intensity = 0.9f;
+            glow.flicker = 0.08f;
+            glow.priority = 1f;   // the station the player is going for always gets its light
+            glow.offset = Vector3.up * 1.2f;
             if (anchor.kind == StationKind.SupplyCache) EnsurePriceLabel();
 
             // Rebuild in the state the LEDGER remembers, not as a fresh station.
@@ -97,6 +104,16 @@ namespace ZombieWar.Stations
         }
 
         /// <summary>The footprint per type: a beacon's arena is wide, a supply crate is opened up close.</summary>
+        static Color LightColour(StationKind kind) => kind switch
+        {
+            StationKind.SignalRelay => new Color(0.35f, 0.85f, 1f),
+            StationKind.SupplyCache => new Color(1f, 0.8f, 0.35f),
+            StationKind.BossBeacon => new Color(1f, 0.3f, 0.25f),
+            StationKind.SupplyDrop => new Color(0.55f, 1f, 0.5f),
+            StationKind.HealZone => new Color(0.45f, 1f, 0.6f),
+            _ => Color.white,
+        };
+
         public static float RadiusFor(StationKind kind) => kind switch
         {
             // A9b: the zone is the model's own lit boundary — the hex pad's rim seam, the pod's

@@ -59,8 +59,12 @@ namespace ZombieWar
             _rb = GetComponent<Rigidbody>();
         }
 
-        private void OnEnable() => Instance = this;
-        private void OnDisable() { if (Instance == this) Instance = null; }
+        private void OnEnable() { Instance = this; ToonPointLights.Focus = transform; }
+        private void OnDisable()
+        {
+            if (Instance == this) Instance = null;
+            if (ToonPointLights.Focus == transform) ToonPointLights.Focus = null;
+        }
 
         // Wired at runtime by PlayerSpawner, since the player is instantiated into the map (not baked)
         // and the joystick lives on the persistent HUD.

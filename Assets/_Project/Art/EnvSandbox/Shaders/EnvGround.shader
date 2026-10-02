@@ -130,6 +130,7 @@ Shader "HordeCall/EnvSandbox/Ground"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
             #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvFluidCommon.hlsl"
+            #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
 
             TEXTURE2D(_DryTex);      SAMPLER(sampler_DryTex);
             TEXTURE2D(_GrassTex);    SAMPLER(sampler_GrassTex);
@@ -209,6 +210,7 @@ Shader "HordeCall/EnvSandbox/Ground"
                 float2 worldXZ    : TEXCOORD1;
                 float3 normalWS   : TEXCOORD2;
                 float  basin      : TEXCOORD3;
+                float3 positionWS : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -220,6 +222,7 @@ Shader "HordeCall/EnvSandbox/Ground"
 
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.positionCS = TransformWorldToHClip(positionWS);
+                output.positionWS = positionWS;
                 output.weights = input.color;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.basin = input.uv.x;
@@ -377,6 +380,7 @@ Shader "HordeCall/EnvSandbox/Ground"
 
                 half3 ambient = SampleSH(normalWS) * _AmbientBoost;
                 half3 lighting = lightColor * toonLight + ambient;
+                lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.25h);
 
                 return half4(albedo * lighting + glow, 1.0h);
             }

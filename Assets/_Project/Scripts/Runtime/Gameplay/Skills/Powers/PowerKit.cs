@@ -41,6 +41,11 @@ namespace ZombieWar.Skills.Powers
         {
             if (fx == null) return;
             FxPool.Play(fx, at, Flat(fx), Mathf.Min(radius / Mathf.Max(0.1f, nativeRadius), cap));
+            // The blast lights its surroundings for a moment, in the effect's own colour.
+            Color c = fx.main.startColor.Evaluate(0.5f);
+            float peak = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+            if (peak > 0.01f) c /= peak;
+            ToonPointLights.Flash(at + Vector3.up * 0.8f, c, Mathf.Max(3f, radius * 1.6f), 1.6f, 0.35f);
         }
     }
 }

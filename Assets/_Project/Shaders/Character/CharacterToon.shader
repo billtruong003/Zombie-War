@@ -58,6 +58,7 @@ Shader "ZombieWar/Character/Toon"
 
         HLSLINCLUDE
         #include "CharacterLighting.hlsl"
+        #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
 
         // SRP Batcher: mọi property của material nằm trong đúng một CBUFFER tên UnityPerMaterial.
         CBUFFER_START(UnityPerMaterial)
@@ -157,6 +158,7 @@ Shader "ZombieWar/Character/Toon"
                 half3 rimTint = lerp(_RimColor.rgb, _RimColor.rgb * albedo, _RimAlbedoTint);
                 color += rim * rimTint * light.color;
 
+                color += albedo * ZW_ToonPointLights(IN.positionWS, normalize(IN.normalWS), 0.0h);
                 return half4(color, tex.a);
             }
             ENDHLSL

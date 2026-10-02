@@ -126,6 +126,7 @@ Shader "HordeCall/Env/Solid"
             #pragma instancing_options renderinglayer
 
             #include "Packages/com.billtruong.stylized-toon-world-kit/Core/StylizedLighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
 
             TEXTURE2D(_BaseMap);      SAMPLER(sampler_BaseMap);
             TEXTURE2D(_BumpMap);      SAMPLER(sampler_BumpMap);
@@ -240,6 +241,7 @@ Shader "HordeCall/Env/Solid"
                 half3 color = STW_ToonLighting(s, p, IN.shadowCoord, shadowMask);
             #endif
 
+                color += s.albedo * ZW_ToonPointLights(IN.positionWS, s.normalWS, 0.15h);
                 color = STW_ApplyFog(color, IN.fogCoord);
                 return half4(color, baseTex.a * _BaseColor.a);
             }

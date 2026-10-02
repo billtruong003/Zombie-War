@@ -8,6 +8,8 @@ namespace ZombieWar
 {
     public class Weapon : MonoBehaviour
     {
+        static readonly Color MuzzleLight = new Color(1f, 0.72f, 0.38f);
+
         [Tooltip("Fallback roster. The run weapon comes from the loadout (LoadoutState.ApplyTo); " +
                  "this list only arms the player in scenes and tests that have no loadout, and feeds " +
                  "the editor pose/grip tools.")]
@@ -461,6 +463,8 @@ namespace ZombieWar
 #endif
                 FireRay(data, rayOrigin, muzzlePosition, rayRangeBonus, dir);
             }
+
+            ToonPointLights.Flash(muzzlePosition, MuzzleLight, 4f, 1.4f, 0.07f);
 
             // A3 Split Shot: extra bullets fanned out either side of the aim, 10° apart.
             for (int k = 1; k <= _shotPlan.splitBullets; k++)

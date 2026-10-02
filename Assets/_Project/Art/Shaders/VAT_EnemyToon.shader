@@ -248,8 +248,11 @@ Shader "ZombieWar/VAT/EnemyToon"
                 float3 normalWS   : TEXCOORD1;
                 float3 viewDirWS  : TEXCOORD2;
                 float  fogFactor  : TEXCOORD3;
+                float3 positionWS : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
+
+            #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
 
             Varyings vert(AppData v)
             {
@@ -264,6 +267,7 @@ Shader "ZombieWar/VAT/EnemyToon"
                 o.positionCS = posIn.positionCS;
                 o.normalWS   = TransformObjectToWorldNormal(localNormal);
                 o.viewDirWS  = GetWorldSpaceNormalizeViewDir(posIn.positionWS);
+                o.positionWS = posIn.positionWS;
                 o.uv         = TRANSFORM_TEX(v.uv, _MainTex);
                 o.fogFactor  = ComputeFogFactor(posIn.positionCS.z);
                 return o;
@@ -303,6 +307,8 @@ Shader "ZombieWar/VAT/EnemyToon"
                 half window = saturate((ndoth - (1.0 - _SpecSize)) / max(_SpecSize, 0.0001));
                 half banded = ceil(window * _SpecSteps) / _SpecSteps;
                 result += banded * _SpecIntensity * albedo.rgb * lightColor * band;
+
+                result += albedo.rgb * ZW_ToonPointLights(i.positionWS, N, 0.0h);
 
                 // Burning edge glows before the pixel disappears.
                 result = lerp(result, _DissolveEdgeColor.rgb, edge);
