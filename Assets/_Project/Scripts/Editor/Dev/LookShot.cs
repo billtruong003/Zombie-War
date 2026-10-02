@@ -30,6 +30,7 @@ namespace ZombieWar.EditorTools
         {
             if (EditorApplication.isPlaying) return "already playing";
             SessionState.SetString(Key, string.Join(",", themes));
+            SessionState.SetBool(LinesKey, false);
             Begin();
             return "running " + string.Join(",", themes);
         }
@@ -83,6 +84,7 @@ namespace ZombieWar.EditorTools
                     _step = 4; _at = now; return;
                 case 4:   // let it render, then shoot
                     if (now - _at < 0.35f) return;
+                    File.AppendAllText(Out + "lookshot_log.txt", $"{theme} {variants[_variant].name} frame={Time.frameCount} {Ctx.Describe()}\n");
                     ScreenCapture.CaptureScreenshot($"{Out}{theme}/{(_view == 0 ? "hero" : "bridge")}_{_variant:D2}_{variants[_variant].name}.png");
                     _step = 5; _at = now; return;
                 case 5:
@@ -129,7 +131,12 @@ namespace ZombieWar.EditorTools
             public static void Capture(string theme)
             {
                 Cam = Camera.main;
-                var vol = Object.FindFirstObjectByType<Volume>();
+                // The gameplay volume is the one holding the outline: the menu's volume can still be
+                // loaded next to it, and editing that one changed nothing on screen.
+                Volume vol = null;
+                foreach (var v in Object.FindObjectsByType<Volume>(FindObjectsSortMode.None))
+                    if (v.sharedProfile != null && v.sharedProfile.components.Exists(c => c != null && c.GetType().Name == "OutlineVolume")) { vol = v; break; }
+                if (vol == null) vol = Object.FindFirstObjectByType<Volume>();
                 Profile = vol.profile;   // the runtime clone (OutlineProfileRuntimeGuard)
                 _baseComponents.Clear();
                 foreach (var c in Profile.components) _baseComponents.Add(c);
@@ -195,7 +202,7 @@ namespace ZombieWar.EditorTools
                         if (!_baseComponents.Contains(c)) { Profile.components.Remove(c); Object.DestroyImmediate(c); }
                     Profile.isDirty = true;
                 }
-                OutlineColor(_outlineColor);
+                ClearOutlineOverride();
                 if (Cam != null)
                 {
                     var acd = Cam.GetComponent<UniversalAdditionalCameraData>();
@@ -206,11 +213,15 @@ namespace ZombieWar.EditorTools
                 if (Fluid != null) { Fluid.CopyPropertiesFromMaterial(_fluidSrc); Fluid.shaderKeywords = _fluidSrc.shaderKeywords; }
             }
 
-            public static void OutlineColor(Color c)
-            {
-                if (_outline == null) return;
-                ((ColorParameter)_outline.GetType().GetField("outlineColor").GetValue(_outline)).Override(c);
-            }
+            public static string Describe() => $"line={OutlineLook.Colour} tint={OutlineLook.Tint}";
+
+            // The line colour goes straight to the outline's runtime override: edits on the runtime
+            // volume profile did not reach the frozen frame (02/10, all shots came out black).
+            public static void OutlineTint(float amount, float darken) => OutlineLook.Tint = new Vector2(amount, darken);
+
+            public static void OutlineColor(Color c) => OutlineLook.Colour = c;
+
+            public static void ClearOutlineOverride() => OutlineLook.Clear();
 
             public static T Add<T>() where T : VolumeComponent
             {

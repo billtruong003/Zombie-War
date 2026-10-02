@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using static ZombieWar.EditorTools.LookShot;
 
@@ -14,6 +15,17 @@ namespace ZombieWar.EditorTools
         static List<Variant> Variants(string theme)
         {
             var list = new List<Variant> { new("now", "Hiện tại", () => { }) };
+            if (SessionState.GetBool(LinesKey, false))
+            {
+                // Outline-only run (owner 02/10: the first six colours all read as black).
+                for (int i = 0; i < OutlineLook.Presets.Length; i++)
+                {
+                    int k = i;
+                    var p = OutlineLook.Presets[i];
+                    list.Add(new Variant("line_" + p.code, p.label, () => OutlineLook.Apply(k)));
+                }
+                return list;
+            }
             var surfaces = Surfaces(theme);
             list.AddRange(surfaces);
             var pick = surfaces.Count > 1 ? surfaces[1].apply : () => { };
@@ -23,24 +35,19 @@ namespace ZombieWar.EditorTools
                 var g = grade;
                 list.Add(new Variant($"post{n++}_{name}", label, () => { pick(); ApplyGrade(g); }));
             }
-            if (theme == "forest")
-                foreach (var (name, label, c) in OutlineColours)
-                {
-                    var col = c;
-                    list.Add(new Variant("line_" + name, label, () => Ctx.OutlineColor(col)));
-                }
             return list;
         }
 
-        static readonly (string, string, Color)[] OutlineColours =
+        const string LinesKey = "zw.lookshot.lines";
+
+        /// <summary>Shoots only the outline looks, on the listed themes.</summary>
+        public static string RunLines(params string[] themes)
         {
-            ("black", "Viền gần đen (hiện tại)", new Color(0.06f, 0.05f, 0.09f)),
-            ("plum", "Viền nâu tím", new Color(0.16f, 0.09f, 0.14f)),
-            ("brown", "Viền nâu ấm", new Color(0.22f, 0.12f, 0.06f)),
-            ("navy", "Viền xanh than", new Color(0.06f, 0.09f, 0.2f)),
-            ("green", "Viền xanh rêu đậm", new Color(0.05f, 0.14f, 0.08f)),
-            ("mauve", "Viền tím xám", new Color(0.3f, 0.24f, 0.32f)),
-        };
+            string r = Run(themes);
+            SessionState.SetBool(LinesKey, true);
+            return r;
+        }
+
 
         // ── surfaces ────────────────────────────────────────────────────────────────────
 

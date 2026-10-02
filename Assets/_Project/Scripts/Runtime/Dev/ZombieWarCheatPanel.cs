@@ -26,7 +26,7 @@ namespace ZombieWar
         private static readonly Color AccentColor = new(0.20f, 0.72f, 0.43f, 1f);
         private static readonly Color DangerColor = new(0.72f, 0.18f, 0.20f, 1f);
 
-        private static readonly string[] TabNames = { "WALLET", "GUNS", "GACHA", "META", "RUN", "SKILLS", "FLOW", "PROFILE", "MAP" };
+        private static readonly string[] TabNames = { "WALLET", "GUNS", "GACHA", "META", "RUN", "SKILLS", "FLOW", "PROFILE", "MAP", "LOOK" };
 
         private GameObject _panel;
         private Text _status, _info;
@@ -275,9 +275,30 @@ namespace ZombieWar
                 case 8:
                     AddMapList();
                     break;
+                case 9:
+                    AddLookTab();
+                    break;
             }
             if (_scroll != null) _scroll.verticalNormalizedPosition = 1f;
             RefreshInfo();
+        }
+
+        /// Outline looks on trial (02/10): switch the line live in a run to compare them.
+        private void AddLookTab()
+        {
+            AddSection(_content, "OUTLINE COLOUR");
+            AddAction(_content, "GAME DEFAULT", () => { OutlineLook.Colour = null; OutlineLook.Tint = null; SetStatus("Outline: game default"); });
+            for (int i = 0; i < OutlineLook.Presets.Length; i++)
+            {
+                int k = i;
+                var p = OutlineLook.Presets[i];
+                AddAction(_content, p.code + " " + p.label.ToUpperInvariant(), () => { OutlineLook.Apply(k); SetStatus("Outline: " + p.code + " " + p.label); }, false, 22);
+            }
+            AddSection(_content, "OUTLINE WIDTH");
+            AddAction(_content, "2 PX", () => { OutlineLook.Thickness = 2; SetStatus("Outline width 2 px"); });
+            AddAction(_content, "3 PX", () => { OutlineLook.Thickness = 3; SetStatus("Outline width 3 px"); });
+            AddAction(_content, "OUTLINE OFF", () => { OutlineLook.Hidden = true; SetStatus("Outline off"); });
+            AddAction(_content, "OUTLINE ON", () => { OutlineLook.Hidden = false; SetStatus("Outline on"); });
         }
 
         /// The numbers QA keeps checking, refreshed twice a second while the panel is open.

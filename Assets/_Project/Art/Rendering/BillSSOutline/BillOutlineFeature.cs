@@ -11,6 +11,7 @@ namespace ZombieWar.Rendering.BillSSOutline
 {
     public class OutlineFeature : ScriptableRendererFeature
     {
+
         // Static Event để các hệ thống render thủ công (như Foliage) đăng ký vẽ vào Mask
         public static event Action<RasterCommandBuffer, uint> OnRenderFoliageMask;
 
@@ -196,6 +197,8 @@ namespace ZombieWar.Rendering.BillSSOutline
             private static readonly int SelectionMaskID = Shader.PropertyToID("_SelectionMaskTexture");
             private static readonly int OcclusionMaskID = Shader.PropertyToID("_OcclusionMaskTexture");
             private static readonly int FadeParamsID = Shader.PropertyToID("_FadeParams");
+            private static readonly int TintAmountID = Shader.PropertyToID("_TintAmount");
+            private static readonly int TintDarkenID = Shader.PropertyToID("_TintDarken");
 
             private LayerMaskPass selectionMaskPass;
             private LayerMaskPass occlusionMaskPass;
@@ -221,16 +224,18 @@ namespace ZombieWar.Rendering.BillSSOutline
             {
                 var stack = VolumeManager.instance.stack;
                 volumeSettings = stack.GetComponent<OutlineVolume>();
-                if (volumeSettings == null || !volumeSettings.IsActive()) return false;
+                if (volumeSettings == null || !volumeSettings.IsActive() || ZombieWar.OutlineLook.Hidden) return false;
                 if (material == null) material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
                 if (material == null) return false;
 
-                material.SetFloat(ThicknessID, volumeSettings.thickness.value);
-                material.SetColor(ColorID, volumeSettings.outlineColor.value);
+                material.SetFloat(ThicknessID, ZombieWar.OutlineLook.Thickness ?? volumeSettings.thickness.value);
+                material.SetColor(ColorID, ZombieWar.OutlineLook.Colour ?? volumeSettings.outlineColor.value);
                 material.SetFloat(DepthThresholdID, volumeSettings.depthThreshold.value);
                 material.SetFloat(NormalThresholdID, volumeSettings.normalThreshold.value);
                 material.SetFloat(ColorThresholdID, volumeSettings.colorThreshold.value);
                 material.SetInt(DebugModeID, (int)volumeSettings.debugMode.value);
+                material.SetFloat(TintAmountID, ZombieWar.OutlineLook.Tint?.x ?? volumeSettings.tintAmount.value);
+                material.SetFloat(TintDarkenID, ZombieWar.OutlineLook.Tint?.y ?? volumeSettings.tintDarken.value);
 
                 material.SetVector(FadeParamsID, new Vector4(
                     volumeSettings.fadeDistanceStart.value,

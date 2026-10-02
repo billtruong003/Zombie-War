@@ -12,6 +12,8 @@ Shader "Hidden/FullScreen/Outline"
         _ColorThreshold("Color Threshold", Float) = 0.2
         _DebugMode("Debug Mode", Int) = 0
         _FadeParams("Fade Params", Vector) = (0, 50, 0, 10)
+        _TintAmount("Line takes the object colour", Range(0,1)) = 0
+        _TintDarken("Object colour darkening", Range(0,1)) = 0.4
     }
 
     SubShader
@@ -59,6 +61,25 @@ Shader "Hidden/FullScreen/Outline"
             float _ColorThreshold;
             int _DebugMode;
             float4 _FadeParams;
+            float _TintAmount;
+            float _TintDarken;
+
+            // 2026-10-02 cartoon line: the colour of the selected object next to this edge pixel,
+            // darkened and a little more saturated (green leaf -> moss line, red -> maroon line).
+            half3 ObjectLineColour(float2 uv, float2 delta)
+            {
+                float2 dirs[4] = { float2(1, 0), float2(-1, 0), float2(0, 1), float2(0, -1) };
+                float best = 0; float2 off = 0;
+                [unroll] for (int i = 0; i < 4; i++)
+                {
+                    float m = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + dirs[i] * delta).r;
+                    if (m > best) { best = m; off = dirs[i]; }
+                }
+                half3 c = SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv + off * delta * 1.5).rgb;
+                half l = dot(c, half3(0.2126, 0.7152, 0.0722));
+                c = lerp(l.xxx, c, 1.35);
+                return saturate(c) * _TintDarken;
+            }
 
             float GetLuminance(float3 color)
             {
@@ -221,7 +242,12 @@ Shader "Hidden/FullScreen/Outline"
                 if (_DebugMode == 4) return float4(edge, edge, edge, 1);
 
                 half4 sceneColor = SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv);
-                return lerp(sceneColor, _OutlineColor, edge * _OutlineColor.a);
+                half4 lineColor = _OutlineColor;
+                #if defined(OUTLINE_SELECTION) || defined(OUTLINE_MIXED)
+                    if (_TintAmount > 0.001 && edge > 0.001)
+                        lineColor.rgb = lerp(_OutlineColor.rgb, ObjectLineColour(uv, delta), _TintAmount);
+                #endif
+                return lerp(sceneColor, lineColor, edge * _OutlineColor.a);
             }
             ENDHLSL
         }

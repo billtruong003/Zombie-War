@@ -33,6 +33,10 @@ namespace ZombieWar.Rendering.BillSSOutline
 
         public ClampedIntParameter thickness = new ClampedIntParameter(2, 1, 10);
         public ColorParameter outlineColor = new ColorParameter(new Color(0, 1, 0, 1), true, false, true);
+        // 2026-10-02: 1 = the line takes the outlined object's own colour (darkened by tintDarken)
+        // instead of outlineColor, a cartoon "coloured line". Selection modes only.
+        public ClampedFloatParameter tintAmount = new ClampedFloatParameter(0f, 0f, 1f);
+        public ClampedFloatParameter tintDarken = new ClampedFloatParameter(0.4f, 0f, 1f);
 
         public ClampedFloatParameter depthThreshold = new ClampedFloatParameter(1.5f, 0f, 10f);
         public ClampedFloatParameter normalThreshold = new ClampedFloatParameter(0.4f, 0f, 1f);
