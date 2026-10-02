@@ -38,6 +38,13 @@ namespace ZombieWar.EditorTools
                     m.SetVector("_Flow", new Vector4(0.6f, 0.25f, 0.06f, 0f));
                     m.SetFloat("_WaveHeight", 0.04f);
                     Foam(m, C(0.96f, 0.99f, 1f), line: 0.03f, noise: 1f, scale: 1.5f, reach: 1.0f);
+                    // Owner tuning in the fluid lab (02/10).
+                    m.SetColor("_ShallowColor", C(0.045f, 0f, 1f)); m.SetColor("_DeepColor", C(0f, 0.522f, 1f));
+                    m.SetFloat("_DepthRange", 0.57f); m.SetFloat("_Clarity", 1.18f); m.SetFloat("_MinAlpha", 0.41f);
+                    m.SetFloat("_Caustics", 0f); m.SetFloat("_CausticScale", 0.75f);
+                    m.SetFloat("_FoamWidth", 0.078f); m.SetFloat("_FoamSoft", 0.219f); m.SetFloat("_FoamWobble", 0f);
+                    m.SetFloat("_StreakScale", 3.22f); m.SetFloat("_StreakCut", 0.372f); m.SetFloat("_StreakAlpha", 0.132f);
+                    m.SetFloat("_WaveHeight", 0.014f);
                     return true;
                 case "forest":
                     // Green and murky: the floor goes a hand deep, duckweed and leaves drift in patches.
@@ -53,6 +60,14 @@ namespace ZombieWar.EditorTools
                     m.SetFloat("_ScumAmount", 0.45f); m.SetFloat("_ScumScale", 0.28f);
                     m.SetColor("_ScumColor", C(0.36f, 0.55f, 0.14f)); m.SetColor("_ScumColor2", C(0.27f, 0.44f, 0.1f));
                     Foam(m, C(0.8f, 0.86f, 0.66f), line: 0.04f, noise: 0.75f, scale: 1f, reach: 0.3f);
+                    // Owner tuning in the fluid lab (02/10).
+                    m.SetColor("_ShallowColor", C(0f, 1f, 0.646f)); m.SetColor("_DeepColor", C(0f, 1f, 0.379f));
+                    m.SetFloat("_DepthRange", 1.7f); m.SetFloat("_Clarity", 3f); m.SetFloat("_MinAlpha", 0f);
+                    m.SetColor("_StreakColor", C(0.082f, 0.585f, 0f)); m.SetFloat("_StreakCut", 0.485f); m.SetFloat("_StreakAlpha", 1f);
+                    m.SetFloat("_WaveHeight", 0.1f);
+                    m.SetFloat("_FoamNoise", 1f); m.SetFloat("_FoamNoiseScale", 0.85f); m.SetFloat("_FoamNoiseDist", 0.33f);
+                    m.SetFloat("_ScumAmount", 0.064f); m.SetFloat("_ScumScale", 0.45f);
+                    m.SetColor("_ScumColor", C(0.671f, 1f, 0f)); m.SetColor("_ScumColor2", C(0f, 1f, 0f));
                     return true;
                 case "swamp":
                     // Owner pick S1: see-through toxic green, small bubbles, glow.
@@ -65,6 +80,12 @@ namespace ZombieWar.EditorTools
                     m.SetVector("_Flow", new Vector4(0.2f, 0.1f, 0.02f, 0f)); m.SetFloat("_WaveHeight", 0.02f);
                     Foam(m, C(0.78f, 0.95f, 0.45f), line: 0.05f, noise: 0.6f, scale: 1.1f, reach: 0.3f);
                     m.SetFloat("_FoamSoft", 0.12f);
+                    // Owner tuning in the fluid lab (02/10).
+                    m.SetFloat("_Clarity", 1.05f); m.SetFloat("_MinAlpha", 0.026f);
+                    m.SetFloat("_FoamWidth", 0.12f); m.SetFloat("_FoamSoft", 0.214f); m.SetFloat("_FoamWobble", 0.061f);
+                    m.SetColor("_StreakColor", C(0.611f, 0.796f, 0.317f)); m.SetFloat("_StreakAlpha", 0.448f);
+                    m.SetFloat("_BubbleScale", 0.79f); m.SetFloat("_BubbleRate", 0.1f);
+                    m.SetFloat("_FoamNoise", 0.462f); m.SetFloat("_FoamNoiseScale", 5.39f); m.SetFloat("_FoamNoiseDist", 0.59f);
                     return true;
                 case "tundra":
                     // Clear ice over a blue bed, cracks, frost at the banks; still.
@@ -75,6 +96,13 @@ namespace ZombieWar.EditorTools
                     m.SetVector("_Flow", Vector4.zero); m.SetFloat("_WaveHeight", 0f);
                     m.SetFloat("_CrackAmount", 0.7f); m.SetFloat("_CrackTiling", 5f);
                     Foam(m, C(0.97f, 0.98f, 1f), line: 0.05f, noise: 0.7f, scale: 0.8f, reach: 0.3f);
+                    // Owner tuning in the fluid lab (02/10).
+                    m.SetFloat("_Clarity", 0.53f); m.SetFloat("_MinAlpha", 0.447f);
+                    m.SetColor("_FoamColor", C(1f, 1f, 1f));
+                    m.SetColor("_StreakColor", C(0f, 0.057f, 0.094f)); m.SetFloat("_StreakCut", 0.56f); m.SetFloat("_StreakAlpha", 0.2f);
+                    m.SetVector("_Flow", new Vector4(0.22f, 0.12f, 0.25f, 0f));
+                    m.SetFloat("_CrackTiling", 5.79f); m.SetFloat("_CrackAmount", 1f);
+                    m.SetFloat("_FoamNoise", 1f); m.SetFloat("_FoamNoiseDist", 0.24f);
                     return true;
                 case "desert":
                     // Oasis pools: the meadow's clear turquoise water, a touch greener.
@@ -291,6 +319,16 @@ namespace ZombieWar.EditorTools
             return m;
         }
 
+        /// <summary>Snow settled on the tundra's props (owner 02/10): painted from the top down, no
+        /// vertex push (it tore low-poly hard edges apart), a broken-up edge and a cold grey lip.</summary>
+        public static void SnowCover(Material m)
+        {
+            m.SetFloat("_SnowAmount", 0.3f); m.SetFloat("_SnowSoftness", 0.04f);
+            m.SetFloat("_SnowNoise", 0.35f); m.SetFloat("_SnowNoiseScale", 0.6f);
+            m.SetColor("_SnowEdgeColor", C(0.62f, 0.68f, 0.8f)); m.SetFloat("_SnowEdgeWidth", 0.22f);
+            m.SetFloat("_SnowHeight", 0f);
+        }
+
         static void Use(Material m, string shader)
         {
             var s = Shader.Find(shader);
@@ -336,6 +374,15 @@ namespace ZombieWar.EditorTools
                 theme.post = profile;
                 EditorUtility.SetDirty(theme);
                 log.Append("Post_").Append(id).Append(' ');
+            }
+
+            // The snow on the tundra's props.
+            foreach (var g in AssetDatabase.FindAssets("t:Material", new[] { Art + "Materials/Snow" }))
+            {
+                var snow = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(g));
+                if (snow == null || snow.shader == null || snow.shader.name != "HordeCall/EnvSandbox/Snow Cover") continue;
+                SnowCover(snow);
+                EditorUtility.SetDirty(snow);
             }
 
             // Snow maps press trails (SnowTrails reads the shader from the theme so it ships in builds).

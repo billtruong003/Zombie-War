@@ -699,8 +699,7 @@ namespace ZombieWar.EditorTools
                         snow.SetColor("_BaseColor", col);
                         // Only faces within ~60° of straight up hold snow; sides and trunks stay dark,
                         // so props keep their shape against a white ground.
-                        snow.SetFloat("_SnowAmount", 0.26f);
-                        snow.SetFloat("_SnowHeight", 0.06f);
+                        MapLooks.SnowCover(snow);
                         EditorUtility.SetDirty(snow);
                         cache[src] = snow;
                     }
