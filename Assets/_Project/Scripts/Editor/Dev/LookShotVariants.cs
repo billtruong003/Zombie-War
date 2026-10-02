@@ -92,7 +92,7 @@ namespace ZombieWar.EditorTools
                 "swamp" => "dusk",           // owner pick P3 (02/10, replaces P1 gloomy)
                 "meadow" => "sky_pastel",    // owner pick P3, 02/10
                 "desert" => "warm_sun",      // owner pick P1 (02/10, replaces P2 dusty haze)
-                "tundra" => "cold",          // not picked yet
+                "tundra" => "ice_blue",      // not picked yet (round 2 grades)
                 _ => null,
             };
             if (pick == null) return null;
@@ -276,18 +276,20 @@ namespace ZombieWar.EditorTools
                     yield return ("moss", "Post 5 · Rêu ấm", new Grade { contrast = 12, saturation = 10, temperature = 12, tint = 6, bloomThreshold = 0.82f, bloomIntensity = 0.35f, vignette = 0.28f });
                     break;
                 case "volcano":
-                    yield return ("forge", "Post 1 · Lò rèn", new Grade { contrast = 18, saturation = 18, temperature = 12, bloomThreshold = 0.72f, bloomIntensity = 0.7f, vignette = 0.32f, vignetteColor = C(0.15f, 0.03f, 0.02f) });
-                    yield return ("purple", "Post 2 · Đêm tím, lava cam", new Grade { exposure = -0.05f, contrast = 20, saturation = 16, splitShadow = C(0.42f, 0.38f, 0.64f), splitHigh = C(0.66f, 0.5f, 0.36f), bloomThreshold = 0.7f, bloomIntensity = 0.8f, vignette = 0.35f });
-                    yield return ("blaze", "Post 3 · Rực cháy", new Grade { contrast = 22, saturation = 26, temperature = 6, bloomThreshold = 0.75f, bloomIntensity = 0.8f, vignette = 0.3f });
-                    yield return ("readable", "Post 4 · Dễ nhìn", new Grade { exposure = 0.1f, contrast = 10, saturation = 10, bloomThreshold = 0.78f, bloomIntensity = 0.5f, vignette = 0.2f });
-                    yield return ("ash", "Post 5 · Tro xám điện ảnh", new Grade { contrast = 22, saturation = -10, temperature = 8, bloomThreshold = 0.7f, bloomIntensity = 0.6f, vignette = 0.38f });
+                    // Round 2 (owner 02/10): five new grades for the charcoal ground and MinionsArt lava.
+                    yield return ("ember_glow", "Post 1 · Than hồng", new Grade { contrast = 16, saturation = 14, temperature = 10, shadows = C(1.02f, 0.96f, 1.04f), vignette = 0.28f, vignetteColor = C(0.18f, 0.04f, 0.02f) });
+                    yield return ("ash_haze", "Post 2 · Tro bụi mờ", new Grade { exposure = 0.05f, contrast = -4, saturation = -18, temperature = 6, filter = C(1.02f, 0.98f, 0.96f), vignette = 0.2f });
+                    yield return ("magma_night", "Post 3 · Đêm dung nham", new Grade { exposure = -0.1f, contrast = 22, saturation = 20, splitShadow = C(0.36f, 0.34f, 0.58f), splitHigh = C(0.7f, 0.5f, 0.32f), vignette = 0.35f });
+                    yield return ("crimson", "Post 4 · Đỏ thẫm", new Grade { contrast = 18, saturation = 24, temperature = 4, tint = 6, vignette = 0.3f, vignetteColor = C(0.2f, 0.02f, 0.02f) });
+                    yield return ("cool_contrast", "Post 5 · Đá lạnh, lava nóng", new Grade { contrast = 20, saturation = 8, temperature = -8, vignette = 0.25f });
                     break;
                 default:   // tundra
-                    yield return ("cold", "Post 1 · Sáng lạnh", new Grade { exposure = 0.05f, contrast = 12, saturation = 12, temperature = -14, bloomThreshold = 0.88f, bloomIntensity = 0.3f, vignette = 0.18f });
-                    yield return ("dawn", "Post 2 · Bình minh hồng", new Grade { contrast = 10, saturation = 14, temperature = 6, tint = 10, splitShadow = C(0.42f, 0.45f, 0.62f), splitHigh = C(0.65f, 0.52f, 0.5f), bloomThreshold = 0.82f, bloomIntensity = 0.45f, vignette = 0.22f });
-                    yield return ("pastel", "Post 3 · Pastel băng", new Grade { exposure = 0.15f, contrast = -6, saturation = -4, temperature = -8, bloomThreshold = 0.9f, bloomIntensity = 0.2f, vignette = 0.1f });
-                    yield return ("crisp", "Post 4 · Trong vắt", new Grade { contrast = 18, saturation = 20, temperature = -6, bloomThreshold = 0.85f, bloomIntensity = 0.35f, vignette = 0.2f });
-                    yield return ("sunset", "Post 5 · Hoàng hôn cam", new Grade { contrast = 12, saturation = 12, temperature = 22, splitHigh = C(0.68f, 0.55f, 0.4f), bloomThreshold = 0.8f, bloomIntensity = 0.5f, vignette = 0.28f });
+                    // Round 2 (owner 02/10): five new grades.
+                    yield return ("ice_blue", "Post 1 · Xanh băng", new Grade { exposure = 0.05f, contrast = 14, saturation = 18, temperature = -18, tint = -4, splitShadow = C(0.4f, 0.48f, 0.66f), vignette = 0.15f });
+                    yield return ("aurora", "Post 2 · Cực quang", new Grade { contrast = 12, saturation = 22, temperature = -10, tint = 10, splitShadow = C(0.42f, 0.4f, 0.66f), splitHigh = C(0.5f, 0.66f, 0.62f), vignette = 0.2f });
+                    yield return ("silver_mist", "Post 3 · Sương bạc", new Grade { exposure = 0.12f, contrast = -6, saturation = -12, temperature = -6, filter = C(0.98f, 1f, 1.03f), vignette = 0.1f });
+                    yield return ("golden_snow", "Post 4 · Tuyết nắng vàng", new Grade { contrast = 12, saturation = 12, temperature = 14, splitHigh = C(0.66f, 0.56f, 0.42f), splitShadow = C(0.42f, 0.46f, 0.64f), vignette = 0.18f });
+                    yield return ("night_frost", "Post 5 · Đêm giá lạnh", new Grade { exposure = -0.15f, contrast = 18, saturation = 10, temperature = -22, vignette = 0.32f, vignetteColor = C(0.05f, 0.08f, 0.2f) });
                     break;
             }
         }

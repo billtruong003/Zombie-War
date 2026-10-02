@@ -98,6 +98,8 @@ Shader "HordeCall/Map/Forest Ground"
         // 2026-10-02 snow (tundra).
         _SnowTrailColor ("Snow trail tint", Color) = (0.62,0.72,0.95,1)
         _SnowTrailDepth ("Snow trail relief", Range(0,8)) = 3
+        _SnowTrailWobble ("Snow trail wobble (m)", Range(0,1.5)) = 0.6
+        _SnowTrailBreakup ("Snow trail edge noise", Range(0,1)) = 0.6
         _SparkleAmount ("Snow sparkles", Range(0,4)) = 0
         _SparkleScale ("Sparkle cell (m)", Float) = 0.35
         _BumpStrength ("Rough normal", Range(0,2)) = 0

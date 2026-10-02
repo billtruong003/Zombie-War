@@ -91,6 +91,8 @@ CBUFFER_START(UnityPerMaterial)
     float  _MossAmount;
     float4 _SnowTrailColor;
     float  _SnowTrailDepth;
+    float  _SnowTrailWobble;
+    float  _SnowTrailBreakup;
     float  _SparkleAmount;
     float  _SparkleScale;
     float  _BumpStrength;
@@ -322,13 +324,17 @@ half4 GroundFragment(Varyings input) : SV_Target
     float trail = 0;
     if (_ZWSnowTrailCentre.w > 0.5)
     {
-        float2 tuv = worldXZ * _ZWSnowTrailST.x;
+        // Read through a noise warp (owner 02/10: the trails looked like ruled lines): the trench
+        // wanders a little sideways and its edge comes out ragged.
+        float2 warpT = float2(SampleNoise(worldXZ + 31.7, 1.6), SampleNoise(worldXZ - 12.3, 1.6)) - 0.5;
+        float2 tuv = (worldXZ + warpT * _SnowTrailWobble) * _ZWSnowTrailST.x;
         float2 tx = float2(_ZWSnowTrailST.y * 1.5, 0);
         float c = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv).r;
         float gx = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv + tx).r - SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv - tx).r;
         float gz = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv + tx.yx).r - SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv - tx.yx).r;
         float reach = saturate((_ZWSnowTrailCentre.z - distance(worldXZ, _ZWSnowTrailCentre.xy)) / 4.0);
-        trail = c * reach;
+        float breakUp = SampleNoise(worldXZ * 1.9 + 4.4, 0.7);
+        trail = saturate(c * reach * (1.0 + (breakUp - 0.5) * 2.0 * _SnowTrailBreakup));
         normalWS = normalize(normalWS + float3(gx, 0, gz) * reach * _SnowTrailDepth);
         albedo = lerp(albedo, albedo * _SnowTrailColor.rgb, smoothstep(0.15, 0.9, trail));
     }

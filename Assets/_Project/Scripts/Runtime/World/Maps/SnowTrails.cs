@@ -105,7 +105,11 @@ namespace ZombieWar.World
             {
                 Vector4 w = walkers[i];
                 if (w.y > p.y + 0.4f) continue;            // flyers leave no trail
-                float r = FootRadius * Mathf.Clamp(w.w, 0.6f, 1.6f);
+                // Each press a little bigger or smaller and a little off the line, so a walker leaves
+                // uneven prints rather than a ruled trench (owner 02/10).
+                float r = FootRadius * Mathf.Clamp(w.w, 0.6f, 1.6f) * Random.Range(0.75f, 1.25f);
+                var jitter = Random.insideUnitCircle * r * 0.35f;
+                w.x += jitter.x; w.z += jitter.y;
                 Stamp(w.x, w.z, r, ref n);
             }
             if (n > 0) _cmd.DrawMeshInstanced(_quad, 0, _mat, 1, _stamps, n);

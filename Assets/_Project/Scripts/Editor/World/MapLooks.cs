@@ -219,6 +219,7 @@ namespace ZombieWar.EditorTools
                     m.SetFloat("_CrackStrength", 0.05f);
                     m.SetFloat("_MacroStrength", 0.22f); m.SetFloat("_MacroScale", 30f);
                     m.SetColor("_SnowTrailColor", C(0.74f, 0.82f, 0.98f)); m.SetFloat("_SnowTrailDepth", 3.5f);
+                    m.SetFloat("_SnowTrailWobble", 0.6f); m.SetFloat("_SnowTrailBreakup", 0.6f);
                     m.SetFloat("_SparkleAmount", 2.5f); m.SetFloat("_SparkleScale", 0.35f);
                     return true;
             }
