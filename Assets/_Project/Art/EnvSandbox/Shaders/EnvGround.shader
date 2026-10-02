@@ -87,6 +87,19 @@ Shader "HordeCall/EnvSandbox/Ground"
         _CrackGlow ("Crack glow near basins", Color) = (1,0.45,0.08,1)
         _CrackGlowReach ("Glow reach (mask units)", Range(0,1)) = 0
         _CrackGlowPulse ("Glow pulse speed", Float) = 1.3
+        // 2026-10-02 volcanic ground: thinner cracks, lava glowing through them everywhere.
+        _CrackThin ("Crack thinning (0 = as painted)", Range(0,0.95)) = 0
+        _CrackGlowBase ("Crack glow away from basins", Range(0,1)) = 0
+        _CrackGlowFlicker ("Crack glow flicker", Range(0,1)) = 0
+        [HDR] _CrackGlowCore ("Crack glow core (thin centre)", Color) = (1,0.8,0.35,1)
+        [Toggle(_CRACKS_PROC)] _CracksProc ("Procedural cracks (volcanic)", Float) = 0
+        _CrackCell ("Procedural crack cell (m)", Float) = 3.5
+        _CrackWidth ("Procedural crack width (cell units)", Range(0.005,0.2)) = 0.035
+        _CrackFine ("Fine crack layer", Range(0,1)) = 0.6
+        // 2026-10-02 see-through water: what the floor of a basin looks like under clear water.
+        _BedColor ("Basin bed colour", Color) = (0.62,0.54,0.38,1)
+        _BedColor2 ("Basin bed second tone", Color) = (0.45,0.42,0.33,1)
+        _BedStrength ("Basin bed strength (0 = ground darkens only)", Range(0,1)) = 0
     }
 
     SubShader
@@ -111,10 +124,12 @@ Shader "HordeCall/EnvSandbox/Ground"
             #pragma fragment Fragment
             #pragma target 3.0
             #pragma shader_feature_local_fragment _NORMALMAP
+            #pragma shader_feature_local_fragment _CRACKS_PROC
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
+            #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvFluidCommon.hlsl"
 
             TEXTURE2D(_DryTex);      SAMPLER(sampler_DryTex);
             TEXTURE2D(_GrassTex);    SAMPLER(sampler_GrassTex);
@@ -165,6 +180,17 @@ Shader "HordeCall/EnvSandbox/Ground"
                 float4 _CrackGlow;
                 float  _CrackGlowReach;
                 float  _CrackGlowPulse;
+                float  _CrackThin;
+                float  _CrackGlowBase;
+                float  _CrackGlowFlicker;
+                float4 _CrackGlowCore;
+                float  _CracksProc;
+                float  _CrackCell;
+                float  _CrackWidth;
+                float  _CrackFine;
+                float4 _BedColor;
+                float4 _BedColor2;
+                float  _BedStrength;
             CBUFFER_END
 
             struct Attributes
@@ -288,14 +314,41 @@ Shader "HordeCall/EnvSandbox/Ground"
                 // Baked tiles carry the basin value in the mesh (one material per theme); the concept
                 // zones read their own mask texture.
                 float basin = _BasinFromUV > 0.5 ? input.basin : SAMPLE_TEXTURE2D(_BasinMask, sampler_BasinMask, zoneUV).r;
+                // Under clear water the floor turns into a sandy, pebbly bed; without it the grass of
+                // the bank just carries on below the surface.
+                if (_BedStrength > 0.001)
+                {
+                    float pebbleF1, pebbleF2; float2 pid, ptc;
+                    EnvVoronoi(worldXZ / 0.35, 1.0, pebbleF1, pebbleF2, pid, ptc);
+                    half3 bed = lerp(_BedColor.rgb, _BedColor2.rgb, EnvHash21(pid)) * (0.8 + 0.4 * smoothstep(0.0, 0.25, pebbleF2 - pebbleF1));
+                    albedo = lerp(albedo, bed, smoothstep(0.03, 0.2, basin) * _BedStrength);
+                }
                 albedo *= 1.0 - _BankDarken * smoothstep(0.02, 0.25, basin);
 
-                // Cracks: dark lines everywhere, glowing within reach of a basin.
-                float crack = SAMPLE_TEXTURE2D(_CrackTex, sampler_CrackTex, worldXZ / max(_CrackTiling, 0.001)).r;
+                // Cracks: dark lines everywhere, glowing within reach of a basin (and, on volcanic
+                // ground, everywhere a little). Thinning keeps only the centre of the painted line.
+            #if defined(_CRACKS_PROC)
+                // Volcanic cracks from procedural cells: a true distance to the cell edge, so the width
+                // is exact and thin, nothing repeats, and a finer second layer splits the plates.
+                float2 warp = (float2(SampleNoise(worldXZ, 9.0), SampleNoise(worldXZ + 5.3, 9.0)) - 0.5) * 1.4;
+                float cf1, cf2, ff1, ff2; float2 cid, ctc;
+                EnvVoronoi((worldXZ + warp) / _CrackCell, 1.0, cf1, cf2, cid, ctc);
+                EnvVoronoi((worldXZ + warp * 0.6) / (_CrackCell * 0.38) + 11.7, 1.0, ff1, ff2, cid, ctc);
+                float wide = 1.0 - smoothstep(_CrackWidth * 0.35, _CrackWidth, cf2 - cf1);
+                float fine = (1.0 - smoothstep(_CrackWidth * 0.2, _CrackWidth * 0.6, ff2 - ff1)) * _CrackFine;
+                float crack = max(wide, fine * 0.7);
+            #else
+                float crackRaw = SAMPLE_TEXTURE2D(_CrackTex, sampler_CrackTex, worldXZ / max(_CrackTiling, 0.001)).r;
+                float crack = smoothstep(_CrackThin, 1.0, crackRaw);
+            #endif
                 albedo = lerp(albedo, _CrackColor.rgb, crack * _CrackStrength);
                 float nearBasin = smoothstep(0.0, max(_CrackGlowReach, 1e-3), basin + _CrackGlowReach * 0.35);
+                float reach = max(nearBasin * step(1e-3, _CrackGlowReach), _CrackGlowBase);
                 float pulse = 0.75 + 0.25 * sin(_Time.y * _CrackGlowPulse + worldXZ.x * 0.3 + worldXZ.y * 0.2);
-                half3 glow = _CrackGlow.rgb * crack * nearBasin * pulse * step(1e-3, _CrackGlowReach);
+                float flick = SampleNoise(worldXZ + _Time.y * float2(0.7, 0.4), 6.0);
+                pulse *= lerp(1.0, 0.45 + flick * 1.1, _CrackGlowFlicker);
+                half3 glowCol = lerp(_CrackGlow.rgb, _CrackGlowCore.rgb, smoothstep(0.55, 1.0, crack));
+                half3 glow = glowCol * crack * reach * pulse;
 
                 #if defined(_NORMALMAP)
                     float3 nts =

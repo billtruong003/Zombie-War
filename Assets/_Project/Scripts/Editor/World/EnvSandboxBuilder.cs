@@ -72,6 +72,7 @@ namespace ZombieWar.EditorTools
             if (key.StartsWith("MC/SM_Nature_Tree")) return 0.6f;
             if (key.StartsWith("SG/SM_Gen_Env_Tree")) return 0.8f;
             if (key.StartsWith("TT/Cliff")) return 0.8f;
+            if (key.StartsWith("TT/Cactus")) return 2.2f;   // Tiny Teacup cacti are knee-high as shipped
             if (key.StartsWith("LX/S_Tree")) return 0.7f;
             return 1f;
         }
