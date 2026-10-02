@@ -109,6 +109,7 @@ Shader "HordeCall/Env/Foliage"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
             struct Varyings
             {
@@ -153,8 +154,9 @@ Shader "HordeCall/Env/Foliage"
                 float ndotl = dot(normalWS, lightDir);
                 ndotl = lerp(saturate(ndotl), abs(ndotl), _BacklightWrap);
                 float wrapped = lerp(ndotl, ndotl * 0.5 + 0.5, _LightWrap);
-                half3 lighting = lightColor * (directional ? ToonBand(wrapped) : 1.0) + SampleSH(normalWS) * _AmbientBoost;
-                lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.35h);   // leaves are thin: lit from behind too
+                half2 mapLight = ZW_MapLight(input.positionWS);
+                half3 lighting = lightColor * ((directional ? ToonBand(wrapped) : 1.0) * mapLight.x) + SampleSH(normalWS) * _AmbientBoost * mapLight.y;
+                lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.35h) * mapLight.y;   // leaves are thin: lit from behind too
                 return half4(albedo.rgb * lighting, 1.0h);
             }
             ENDHLSL

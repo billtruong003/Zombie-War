@@ -81,6 +81,8 @@ namespace ZombieWar.World
         void OnDestroy()
         {
             if (Active == this) Active = null;
+            Shader.SetGlobalFloat(MapLightOnId, 0f);
+            Shader.SetGlobalFloat(PlanarShadowOnId, 0f);
             GrassBenders.Active = false;
             GrassBenders.EnemiesBendGrass = false;
         }
@@ -102,7 +104,34 @@ namespace ZombieWar.World
             RenderSettings.ambientGroundColor = Theme.ambientGround;
             RenderSettings.ambientProbe = TrilightProbe(Theme.ambientSky, Theme.ambientEquator, Theme.ambientGround);
             var rig = FindFirstObjectByType<ToonLightRig>();
-            if (rig != null) rig.SetLight(Theme.sunColor, Theme.sunIntensity);
+            if (rig != null)
+            {
+                rig.transform.rotation = Quaternion.Euler(Theme.sunEuler);   // the angle the shadows were baked with
+                rig.SetLight(Theme.sunColor, Theme.sunIntensity);
+            }
+            PushMapLight();
+        }
+
+        static readonly int MapLightId = Shader.PropertyToID("_ZWMapLight");
+        static readonly int MapLightSTId = Shader.PropertyToID("_ZWMapLightST");
+        static readonly int MapLightOnId = Shader.PropertyToID("_ZWMapLightOn");
+        static readonly int SunDirId = Shader.PropertyToID("_ZWSunDir");
+        static readonly int PlanarShadowOnId = Shader.PropertyToID("_ZWPlanarShadowOn");
+        static readonly int ShadowPlaneYId = Shader.PropertyToID("_ZWShadowPlaneY");
+
+        // The baked shadows and AO (MapLight.hlsl): world XZ -> map UV, wrapping with the map.
+        void PushMapLight()
+        {
+            bool on = Theme.mapLight != null;
+            Shader.SetGlobalFloat(MapLightOnId, on ? 1f : 0f);
+            Vector3 sunTravel = Quaternion.Euler(Theme.sunEuler) * Vector3.forward;
+            Shader.SetGlobalVector(SunDirId, sunTravel);
+            Shader.SetGlobalFloat(PlanarShadowOnId, 1f);     // the hero's planar shadow (CharacterToon)
+            Shader.SetGlobalFloat(ShadowPlaneYId, 0.02f);
+            if (!on) return;
+            Shader.SetGlobalTexture(MapLightId, Theme.mapLight);
+            float inv = 1f / Theme.MapSize;
+            Shader.SetGlobalVector(MapLightSTId, new Vector4(inv, inv, -MapOrigin.x * inv, -MapOrigin.z * inv));
         }
 
         // An SH that reads `sky` straight up, `equator` sideways and `ground` straight down. Unity's

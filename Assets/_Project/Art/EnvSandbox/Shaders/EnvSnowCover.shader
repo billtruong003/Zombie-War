@@ -38,6 +38,7 @@ Shader "HordeCall/EnvSandbox/Snow Cover"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             CBUFFER_START(UnityPerMaterial)
@@ -99,8 +100,9 @@ Shader "HordeCall/EnvSandbox/Snow Cover"
                 bool directional = ZW_ResolveToonLight(_AmbientFallback.rgb, lightDir, lightColor);
                 float ndotl = saturate(dot(n, lightDir));
                 float wrapped = lerp(ndotl, ndotl * 0.5 + 0.5, _LightWrap);
-                half3 lighting = lightColor * (directional ? ToonBand(wrapped) : 1.0) + SampleSH(n) * _AmbientBoost;
-                lighting += ZW_ToonPointLights(i.w, n, 0.25h);
+                half2 mapLight = ZW_MapLight(i.w);
+                half3 lighting = lightColor * ((directional ? ToonBand(wrapped) : 1.0) * mapLight.x) + SampleSH(n) * _AmbientBoost * mapLight.y;
+                lighting += ZW_ToonPointLights(i.w, n, 0.25h) * mapLight.y;
 
                 float3 viewDir = normalize(GetWorldSpaceViewDir(i.w));
                 half rim = 1.0h - saturate(dot(viewDir, n));

@@ -59,6 +59,7 @@ Shader "ZombieWar/Character/Toon"
         HLSLINCLUDE
         #include "CharacterLighting.hlsl"
         #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+        #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
         // SRP Batcher: mọi property của material nằm trong đúng một CBUFFER tên UnityPerMaterial.
         CBUFFER_START(UnityPerMaterial)
@@ -136,6 +137,9 @@ Shader "ZombieWar/Character/Toon"
 
                 // MỘT ranh giới sáng/tối. Đây là thứ trả lại khối cho bề mặt trắng.
                 half band = ZW_ToonBand(IN.normalWS, light.direction, _LightThreshold, _LightSoftness);
+                // Baked map shadow: under a tree the hero drops into its shadow tint.
+                half2 mapLight = ZW_MapLight(IN.positionWS);
+                band *= mapLight.x;
 
                 // Bóng mang MÀU: nhân albedo với sắc bóng thay vì kéo về đen. Vải tối vì thế không
                 // bị bẹp thành một mảng đen chết.
@@ -144,7 +148,10 @@ Shader "ZombieWar/Character/Toon"
                 half3 color = lerp(shadowed, lit, band);
 
                 // Nền ambient có trần — nâng vùng tối mà KHÔNG xoá ranh giới.
-                color += ZW_BoundedAmbient(albedo, _AmbientColor.rgb, _AmbientStrength);
+                // Fake AO: darker toward the feet, plus the map's own occlusion where it stands.
+                half feet = _ZWMapLightOn > 0.5 ? lerp(0.72h, 1.0h, saturate(IN.positionWS.y / 0.9h)) : 1.0h;   // run ground is y = 0
+                color += ZW_BoundedAmbient(albedo, _AmbientColor.rgb, _AmbientStrength) * mapLight.y;
+                color *= feet;
 
                 // Specular hẹp, mặc định TẮT. Vải và da không được nhận highlight bóng loáng.
                 if (_SpecStrength > 0.001h)
@@ -222,6 +229,59 @@ Shader "ZombieWar/Character/Toon"
             }
 
             half4 dnFrag (NVary IN) : SV_Target { return half4(NormalizeNormalPerPixel(IN.normalWS), 0); }
+            ENDHLSL
+        }
+
+        // Planar shadow (2026-10-02): the hero's mesh pressed flat onto the ground along the sun, in
+        // place of a realtime shadow map. One extra draw per part; the stencil lets each pixel take
+        // the shadow once, and it fades where the ground already lies in a baked tree shadow.
+        // Off (collapsed) unless a map switched it on (_ZWPlanarShadowOn): the menu preview has none.
+        // Its own LightMode, drawn after all opaques by the renderer's "ZW Planar Shadows" pass: in the
+        // opaque pass the ground (drawn after the nearer hero) would paint over it.
+        Pass
+        {
+            Name "PlanarShadow"
+            Tags { "LightMode" = "ZWPlanarShadow" }
+            ZWrite Off
+            Blend SrcAlpha OneMinusSrcAlpha
+            Offset -1, -1
+            Stencil { Ref 128 ReadMask 128 WriteMask 128 Comp NotEqual Pass Replace }
+
+            HLSLPROGRAM
+            #pragma vertex shadowVert
+            #pragma fragment shadowFrag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            float4 _ZWSunDir;          // the way sunlight travels
+            float  _ZWPlanarShadowOn;
+            float  _ZWShadowPlaneY;
+
+            struct SAttr { float4 positionOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct SVary { float4 positionCS : SV_POSITION; float3 groundWS : TEXCOORD0; half fade : TEXCOORD1; };
+
+            SVary shadowVert (SAttr IN)
+            {
+                SVary OUT = (SVary)0;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                float3 w = TransformObjectToWorld(IN.positionOS.xyz);
+                // Along the sun, but with most of its run away from the camera (+z) taken out: a shadow
+                // falling straight behind the hero hides behind its own body from this top-down view.
+                float3 L = normalize(float3(_ZWSunDir.x, _ZWSunDir.y - 1e-4, _ZWSunDir.z * 0.25));
+                float h = w.y - _ZWShadowPlaneY;
+                float3 g = w + L * (h / max(-L.y, 0.2));
+                g.y = _ZWShadowPlaneY;
+                OUT.groundWS = g;
+                OUT.fade = saturate(1.0 - h / 3.0);   // the head's shadow softer than the feet's
+                OUT.positionCS = _ZWPlanarShadowOn > 0.5 ? TransformWorldToHClip(g) : float4(0, 0, 0, 0);
+                return OUT;
+            }
+
+            half4 shadowFrag (SVary IN) : SV_Target
+            {
+                half sun = ZW_MapLight(IN.groundWS).x;
+                return half4(0.1h, 0.09h, 0.18h, 0.45h * sun * lerp(0.6h, 1.0h, IN.fade));
+            }
             ENDHLSL
         }
     }

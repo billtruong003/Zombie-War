@@ -131,6 +131,7 @@ Shader "HordeCall/EnvSandbox/Ground"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
             #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvFluidCommon.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
             TEXTURE2D(_DryTex);      SAMPLER(sampler_DryTex);
             TEXTURE2D(_GrassTex);    SAMPLER(sampler_GrassTex);
@@ -378,9 +379,10 @@ Shader "HordeCall/EnvSandbox/Ground"
                 // Khong co huong sang that thi khong ke dai: mot dai toi gia chi tao nhieu.
                 float toonLight = directional ? ToonBand(wrapped) : 1.0;
 
-                half3 ambient = SampleSH(normalWS) * _AmbientBoost;
-                half3 lighting = lightColor * toonLight + ambient;
-                lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.25h);
+                half2 mapLight = ZW_MapLight(input.positionWS);   // baked sun visibility, AO
+                half3 ambient = SampleSH(normalWS) * _AmbientBoost * mapLight.y;
+                half3 lighting = lightColor * (toonLight * mapLight.x) + ambient;
+                lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.25h) * mapLight.y;
 
                 return half4(albedo * lighting + glow, 1.0h);
             }

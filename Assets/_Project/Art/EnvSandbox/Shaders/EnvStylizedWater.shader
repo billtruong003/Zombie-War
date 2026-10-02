@@ -78,6 +78,7 @@ Shader "HordeCall/EnvSandbox/Stylized Water"
             #include "Assets/_Project/Art/Shaders/ToonLightContract.hlsl"
             #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvFluidCommon.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
             TEXTURE2D(_BasinMask); SAMPLER(sampler_BasinMask);
             TEXTURE2D(_NoiseTex);  SAMPLER(sampler_NoiseTex);
@@ -154,6 +155,7 @@ Shader "HordeCall/EnvSandbox/Stylized Water"
                 float ndotl = saturate(lightDir.y);
                 half lit = directional ? lerp(ndotl, ndotl * 0.5 + 0.5, _LightWrap) : 1.0;
                 half3 light = lightColor * lit + SampleSH(float3(0, 1, 0));
+                light *= lerp(0.6h, 1.0h, ZW_MapLight(i.w).x);   // tree and bridge shadows on the water
                 light += ZW_ToonPointLights(i.w, half3(0, 1, 0), 1.0h);
 
                 // How much of the floor still shows through the water above it.

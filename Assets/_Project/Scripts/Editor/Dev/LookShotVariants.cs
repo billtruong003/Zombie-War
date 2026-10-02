@@ -15,6 +15,16 @@ namespace ZombieWar.EditorTools
         static List<Variant> Variants(string theme)
         {
             var list = new List<Variant> { new("now", "Hiện tại", () => { }) };
+            if (SessionState.GetBool(ShadowsKey, false))
+            {
+                // Baked shadows + AO + planar hero shadow on ("now") against all of them off.
+                list.Add(new Variant("noshadow", "Không bóng, không AO", () =>
+                {
+                    Shader.SetGlobalFloat("_ZWMapLightOn", 0f);
+                    Shader.SetGlobalFloat("_ZWPlanarShadowOn", 0f);
+                }));
+                return list;
+            }
             if (SessionState.GetBool(LinesKey, false))
             {
                 // Outline-only run (owner 02/10: the first six colours all read as black).
@@ -39,6 +49,15 @@ namespace ZombieWar.EditorTools
         }
 
         const string LinesKey = "zw.lookshot.lines";
+        const string ShadowsKey = "zw.lookshot.shadows";
+
+        /// <summary>Shoots each theme with and without the baked shadows and AO.</summary>
+        public static string RunShadows(params string[] themes)
+        {
+            string r = Run(themes);
+            SessionState.SetBool(ShadowsKey, true);
+            return r;
+        }
 
         /// <summary>Shoots only the outline looks, on the listed themes.</summary>
         public static string RunLines(params string[] themes)

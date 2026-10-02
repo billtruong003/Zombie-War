@@ -32,6 +32,10 @@ namespace ZombieWar.World
         public Color ambientGround = new(0.46f, 0.43f, 0.38f);
         public Color sunColor = new(1f, 0.97f, 0.92f);
         public float sunIntensity = 1.1f;
+        [Tooltip("Where the sun stands (toon light rig rotation). The baked shadows use the same angle.")]
+        public Vector3 sunEuler = new(50f, -30f, 0f);
+        [Tooltip("Baked by MapLightBaker: R sun, G ambient occlusion, B caster height, A ground height.")]
+        public Texture2D mapLight;
 
         [Header("Monsters of this map, added to the base roster (ThreatDirector)")]
         [Tooltip("Join tier 0: the everyday crowd of this map.")]

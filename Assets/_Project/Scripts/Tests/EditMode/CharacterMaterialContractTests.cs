@@ -299,9 +299,10 @@ namespace ZombieWar.Tests
             var modes = new System.Collections.Generic.HashSet<string>();
             var lightMode = new UnityEngine.Rendering.ShaderTagId("LightMode");
             for (int i = 0; i < shader.passCount; i++) modes.Add(shader.FindPassTagValue(i, lightMode).name);
-            CollectionAssert.AreEquivalent(new[] { "UniversalForward", "DepthOnly", "DepthNormals" }, modes,
+            // + ZWPlanarShadow: the hero's planar shadow (2026-10-02, no shadow map).
+            CollectionAssert.AreEquivalent(new[] { "UniversalForward", "DepthOnly", "DepthNormals", "ZWPlanarShadow" }, modes,
                 "ZombieWar/Character/Toon pass structure changed: " + string.Join(", ", modes));
-            Assert.AreEqual(3, shader.passCount);
+            Assert.AreEqual(4, shader.passCount);
         }
 
         [Test]

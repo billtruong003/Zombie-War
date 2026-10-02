@@ -253,6 +253,7 @@ Shader "ZombieWar/VAT/EnemyToon"
             };
 
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
+            #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
 
             Varyings vert(AppData v)
             {
@@ -297,7 +298,9 @@ Shader "ZombieWar/VAT/EnemyToon"
                     band = smoothstep(_ShadowThreshold - _ShadowSoftness,
                                       _ShadowThreshold + _ShadowSoftness, halfLambert);
                 }
-                half3 result = albedo.rgb * lerp(_ShadowTint.rgb, half3(1, 1, 1), band) * lightColor;
+                half2 mapLight = ZW_MapLight(i.positionWS);   // baked shadow under trees, AO at the feet
+                band *= mapLight.x;
+                half3 result = albedo.rgb * lerp(_ShadowTint.rgb, half3(1, 1, 1), band) * lightColor * mapLight.y;
 
                 // Banded specular: remap N·H into the highlight window, then quantise it into
                 // _SpecSteps hard bands (ceil, so band 0 stays fully off). Tinted by the resolved

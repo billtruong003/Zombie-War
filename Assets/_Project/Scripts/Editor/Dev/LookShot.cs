@@ -31,6 +31,7 @@ namespace ZombieWar.EditorTools
             if (EditorApplication.isPlaying) return "already playing";
             SessionState.SetString(Key, string.Join(",", themes));
             SessionState.SetBool(LinesKey, false);
+            SessionState.SetBool(ShadowsKey, false);
             Begin();
             return "running " + string.Join(",", themes);
         }
@@ -128,8 +129,12 @@ namespace ZombieWar.EditorTools
             static readonly HashSet<VolumeComponent> _baseComponents = new();
             static object _outline; static Color _outlineColor;
 
+            static float _mapLightOn = -1f, _planarOn;
+
             public static void Capture(string theme)
             {
+                _mapLightOn = Shader.GetGlobalFloat("_ZWMapLightOn");
+                _planarOn = Shader.GetGlobalFloat("_ZWPlanarShadowOn");
                 Cam = Camera.main;
                 // The gameplay volume is the one holding the outline: the menu's volume can still be
                 // loaded next to it, and editing that one changed nothing on screen.
@@ -203,6 +208,7 @@ namespace ZombieWar.EditorTools
                     Profile.isDirty = true;
                 }
                 ClearOutlineOverride();
+                if (_mapLightOn >= 0f) { Shader.SetGlobalFloat("_ZWMapLightOn", _mapLightOn); Shader.SetGlobalFloat("_ZWPlanarShadowOn", _planarOn); }
                 if (Cam != null)
                 {
                     var acd = Cam.GetComponent<UniversalAdditionalCameraData>();
