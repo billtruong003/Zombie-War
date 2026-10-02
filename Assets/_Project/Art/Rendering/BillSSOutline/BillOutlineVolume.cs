@@ -32,6 +32,9 @@ namespace ZombieWar.Rendering.BillSSOutline
         public EnumParameter<OutlineAlgorithm> algorithm = new EnumParameter<OutlineAlgorithm>(OutlineAlgorithm.Sobel);
 
         public ClampedIntParameter thickness = new ClampedIntParameter(2, 1, 10);
+        // 2026-10-02: thickness is in pixels at this short screen side and scales with the screen, so
+        // a 3 px line on 1080 x 1920 stays the same weight on 720p, 1440p and tablets. 0 = raw pixels.
+        public FloatParameter referenceShortSide = new FloatParameter(1080f);
         public ColorParameter outlineColor = new ColorParameter(new Color(0, 1, 0, 1), true, false, true);
         // 2026-10-02: 1 = the line takes the outlined object's own colour (darkened by tintDarken)
         // instead of outlineColor, a cartoon "coloured line". Selection modes only.

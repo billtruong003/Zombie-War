@@ -228,7 +228,6 @@ namespace ZombieWar.Rendering.BillSSOutline
                 if (material == null) material = CoreUtils.CreateEngineMaterial(Shader.Find(ShaderName));
                 if (material == null) return false;
 
-                material.SetFloat(ThicknessID, ZombieWar.OutlineLook.Thickness ?? volumeSettings.thickness.value);
                 material.SetColor(ColorID, ZombieWar.OutlineLook.Colour ?? volumeSettings.outlineColor.value);
                 material.SetFloat(DepthThresholdID, volumeSettings.depthThreshold.value);
                 material.SetFloat(NormalThresholdID, volumeSettings.normalThreshold.value);
@@ -262,6 +261,18 @@ namespace ZombieWar.Rendering.BillSSOutline
                 return true;
             }
 
+            /// <summary>Line width in pixels of this camera target: the authored width is meant for the
+            /// reference short side and scales with the actual one (never below one pixel).</summary>
+            private float ScaledThickness(UniversalCameraData cameraData)
+            {
+                float px = ZombieWar.OutlineLook.Thickness ?? volumeSettings.thickness.value;
+                float reference = volumeSettings.referenceShortSide.value;
+                if (reference <= 0f) return px;
+                var d = cameraData.cameraTargetDescriptor;
+                float shortSide = Mathf.Min(d.width, d.height);
+                return Mathf.Max(1f, px * shortSide / reference);
+            }
+
             private void SetKeyword(string k, bool v) { if (v) material.EnableKeyword(k); else material.DisableKeyword(k); }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -270,6 +281,7 @@ namespace ZombieWar.Rendering.BillSSOutline
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                material.SetFloat(ThicknessID, ScaledThickness(cameraData));
                 if (resourceData.isActiveTargetBackBuffer) return;
 
                 TextureHandle source = resourceData.activeColorTexture;
