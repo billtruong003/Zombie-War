@@ -66,16 +66,29 @@ namespace ZombieWar.WorldNav
             int count = Physics.OverlapBoxNonAlloc(boxCentre, new Vector3(half, 50f, half), _hits, Quaternion.identity, _mask, QueryTriggerInteraction.Ignore);
             for (int h = 0; h < count; h++)
             {
-                // Obstacle boxes are axis-aligned in the world (tiles bake their rotation in), so the
-                // bounds are the box.
-                Bounds b = _hits[h].bounds;
+                var col = _hits[h];
+                Bounds b = col.bounds;
                 int i0 = Mathf.Max(0, Mathf.FloorToInt((b.min.x - Origin.x) / CellSize + 0.01f));
                 int i1 = Mathf.Min(Size - 1, Mathf.CeilToInt((b.max.x - Origin.x) / CellSize - 0.01f) - 1);
                 int j0 = Mathf.Max(0, Mathf.FloorToInt((b.min.z - Origin.z) / CellSize + 0.01f));
                 int j1 = Mathf.Min(Size - 1, Mathf.CeilToInt((b.max.z - Origin.z) / CellSize - 0.01f) - 1);
+                // Axis-aligned boxes (the water and lava obstacles) fill their bounds. Capsules and
+                // turned boxes (props, 02/10) fill only the cells they really touch: their bounds
+                // would block the corners around a round rock or a fence set at 45°.
+                bool exact = col is BoxCollider && col.transform.rotation == Quaternion.identity;
+                float reach = CellSize * 0.5f;
                 for (int j = j0; j <= j1; j++)
                     for (int i = i0; i <= i1; i++)
+                    {
+                        if (!exact)
+                        {
+                            var c = new Vector3(Origin.x + (i + 0.5f) * CellSize, b.center.y, Origin.z + (j + 0.5f) * CellSize);
+                            var q = col.ClosestPoint(c);
+                            float dx = q.x - c.x, dz = q.z - c.z;
+                            if (dx * dx + dz * dz > reach * reach) continue;
+                        }
                         _blocked[j * Size + i] = true;
+                    }
             }
 
             // Bank cost: 1.5 m of margin, highest right at the edge.

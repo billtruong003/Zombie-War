@@ -26,7 +26,10 @@ namespace ZombieWar.EditorTools
         const float ChunkSize = 32f;
         const float Cell = 0.5f;               // walk grid
         const float FieldStep = 0.25f;         // basin field sample spacing
-        const float BlockAt = 0.12f;           // basin value from which a cell is not walkable
+        // Basin value from which a cell is not walkable: where the fluid surface shows (it sits at 35 %
+        // of the basin depth, which the ground passes at a basin value of ~0.25). It was 0.12, which
+        // blocked a 1-2 m band of dry bank round every river and pool (found 02/10, ColliderAudit).
+        const float BlockAt = 0.24f;
         const float BridgeWidth = 2.6f;
         const float MapSpacing = 300f, MapZ = 170f;
         const int NavObstacleLayer = 10;       // ProjectSettings/TagManager.asset: "NavObstacle"

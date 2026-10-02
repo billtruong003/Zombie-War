@@ -18,7 +18,15 @@ namespace ZombieWar.EditorTools
     /// </summary>
     public static partial class EnvSandboxBuilder
     {
-        sealed class Footprint { public float baseR, canopyR, height; public int tris; public bool tall, blocks; }
+        sealed class Footprint
+        {
+            public float baseR, canopyR, height; public int tris; public bool tall, blocks;
+            // What stands on the ground (vertices within 0.5 m of the lowest point), seen from above,
+            // in the piece's own frame (placed, before its yaw): the blocker is fitted to this, not
+            // to the pivot, which sits off the base on many vendor pieces.
+            public Vector2 lo, hi;
+            public float midR;   // farthest footprint point from the middle of lo..hi
+        }
 
         static readonly Dictionary<string, Footprint> Footprints = new();
 
@@ -53,19 +61,35 @@ namespace ZombieWar.EditorTools
                 if (pts.Count > 0)
                 {
                     float baseR = 0f, canopyR = 0f;
+                    var lo = new Vector2(float.MaxValue, float.MaxValue); var hi = new Vector2(float.MinValue, float.MinValue);
                     foreach (var p in pts)
                     {
                         float d = new Vector2(p.x, p.z).magnitude;
                         canopyR = Mathf.Max(canopyR, d);
-                        if (p.y < minY + 0.5f) baseR = Mathf.Max(baseR, d);
+                        if (p.y < minY + 0.5f)
+                        {
+                            baseR = Mathf.Max(baseR, d);
+                            lo = Vector2.Min(lo, new Vector2(p.x, p.z)); hi = Vector2.Max(hi, new Vector2(p.x, p.z));
+                        }
                     }
+                    f.lo = lo; f.hi = hi;
+                    var mid = (lo + hi) * 0.5f;
+                    foreach (var p in pts) if (p.y < minY + 0.5f) f.midR = Mathf.Max(f.midR, (new Vector2(p.x, p.z) - mid).magnitude);
                     f.height = maxY - Mathf.Max(0f, minY);
                     f.canopyR = Mathf.Max(0.2f, canopyR);
                     // Trees: the trunk is what stands on the ground; a flared root or a low branch
                     // should not count as the whole base.
                     f.baseR = Mathf.Clamp(baseR, 0.15f, f.canopyR);
                     f.tall = f.height > 2.5f;
-                    f.blocks = f.height > 0.9f && f.baseR > 0.3f;
+                    // Tall pieces with a real trunk or base, and anything knee high that is over 0.6 m
+                    // across (crates, baskets, logs, low rocks, snowball piles): the player sees
+                    // those as solid. Before 02/10 only the first rule existed and players walked
+                    // through crates and logs.
+                    float across = Mathf.Max(hi.x - lo.x, hi.y - lo.y);
+                    string k = key.ToLowerInvariant();
+                    bool soft = IsSoftPlant(k);
+                    // Soft plants never block: the player walks through ferns and grass.
+                    f.blocks = !soft && ((f.height > 0.9f && f.baseR > 0.3f) || (f.height > 0.4f && across > 0.6f));
                 }
                 Object.DestroyImmediate(go);
             }
@@ -427,6 +451,15 @@ namespace ZombieWar.EditorTools
         }
 
         /// Props of one chunk, under one object per group (grove, vignette, singles, cover), with a
+        /// Plants the player walks through (ferns, grass, flowers); bushes and trees are solid even
+        /// when their name mentions flowers ("Bush_Common_Flowers").
+        public static bool IsSoftPlant(string key)
+        {
+            string k = key.ToLowerInvariant();
+            if (k.Contains("bush") || k.Contains("tree")) return false;
+            return k.Contains("fern") || k.Contains("grass") || k.Contains("flower") || k.Contains("clover") || k.Contains("plant") || k.Contains("petal");
+        }
+
         /// NavObstacle collider on every blocking piece.
         static void PlaceChunkProps(Transform parent, List<PropSpot> props, Vector2 corner, Vector2 centre, string meshPath)
         {
@@ -451,9 +484,29 @@ namespace ZombieWar.EditorTools
                 var holder = new GameObject("Block");
                 holder.transform.SetParent(go.transform.parent, false);
                 holder.transform.localPosition = go.transform.localPosition;
+                holder.transform.localRotation = Quaternion.Euler(0f, s.yaw, 0f);
                 holder.layer = NavObstacleLayer;
-                var cap = holder.AddComponent<CapsuleCollider>();
-                cap.radius = s.baseR; cap.height = 2f; cap.center = new Vector3(0f, 1f, 0f);
+                // Fitted to the footprint: long pieces (fences, logs, rubble rows) get a box turned
+                // with them, round ones a capsule on the footprint's centre.
+                var fp = FootprintOf(s.key);
+                var size = (fp.hi - fp.lo) * s.scale;
+                var mid = (fp.hi + fp.lo) * 0.5f * s.scale;
+                if (size.x <= 0f || size.y <= 0f) { size = Vector2.one * s.baseR * 2f; mid = Vector2.zero; }
+                float longSide = Mathf.Max(size.x, size.y), shortSide = Mathf.Max(0.1f, Mathf.Min(size.x, size.y));
+                if (longSide / shortSide > 1.5f)
+                {
+                    var box = holder.AddComponent<BoxCollider>();
+                    box.center = new Vector3(mid.x, 1f, mid.y);
+                    box.size = new Vector3(Mathf.Max(0.3f, size.x), 2f, Mathf.Max(0.3f, size.y));
+                }
+                else
+                {
+                    var cap = holder.AddComponent<CapsuleCollider>();
+                    // Reaches the farthest point of the footprint: half the long side left the
+                    // corners of square pieces (towers, rocks set diagonally) outside.
+                    cap.radius = Mathf.Max(0.25f, (fp.midR > 0f ? fp.midR * s.scale : longSide * 0.5f));
+                    cap.height = 2f; cap.center = new Vector3(mid.x, 1f, mid.y);
+                }
                 entry.blocker = holder;
                 index.Add(entry);
             }

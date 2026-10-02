@@ -712,6 +712,14 @@ namespace ZombieWar
         private void AddMapList()
         {
             AddSection(_content, $"PLAYING: {PlayingMapId().ToUpperInvariant()} · NEXT RUN: {World.MapTheme.CurrentId.ToUpperInvariant()}");
+            AddSection(_content, "DEBUG");
+            AddAction(_content, "COLLIDERS ON / OFF", () =>
+            {
+                Dev.ColliderDebugView.Toggle();
+                SetStatus(Dev.ColliderDebugView.On
+                    ? "Colliders: blue water/lava, orange props, green player, red enemies, yellow other, cyan triggers"
+                    : "Colliders off");
+            });
             AddSection(_content, "TAP TO LOAD NOW (THE RUN RESTARTS)");
             var themes = Resources.LoadAll<World.MapTheme>(World.MapTheme.ResourceFolder.TrimEnd('/'));
             Array.Sort(themes, (a, b) => string.CompareOrdinal(a.id, b.id));
