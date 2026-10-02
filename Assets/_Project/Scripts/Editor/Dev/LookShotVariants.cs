@@ -33,7 +33,7 @@ namespace ZombieWar.EditorTools
                 if (theme == "volcano")
                 {
                     applied.Add(new Variant("applied_crust", "Lava kiểu 2: vỏ nguội, khe sáng", () => { if (Ctx.Fluid != null) MapLooks.LavaCrust(Ctx.Fluid); }));
-                    applied.Add(new Variant("applied_rough", "Đất than không nứt, sần", () => { if (Ctx.Ground != null) MapLooks.CharcoalRough(Ctx.Ground); }));
+                    applied.Add(new Variant("applied_cracked", "Đất than nứt sáng (bản cũ)", () => { if (Ctx.Ground != null) MapLooks.Charcoal(Ctx.Ground); }));
                 }
                 return applied;
             }
@@ -88,10 +88,10 @@ namespace ZombieWar.EditorTools
         {
             string pick = theme switch
             {
-                "forest" => "teal",          // owner pick P3, 02/10
-                "swamp" => "gloomy",         // owner pick P1, 02/10
+                "forest" => "deep",          // owner pick P1 (02/10, replaces P3 teal)
+                "swamp" => "dusk",           // owner pick P3 (02/10, replaces P1 gloomy)
                 "meadow" => "sky_pastel",    // owner pick P3, 02/10
-                "desert" => "dusty_haze",    // owner pick P2, 02/10
+                "desert" => "warm_sun",      // owner pick P1 (02/10, replaces P2 dusty haze)
                 "tundra" => "cold",          // not picked yet
                 _ => null,
             };

@@ -81,7 +81,7 @@ namespace BillGameCore.BillFav
             var evt = fi_Event_s_Current?.GetValue(null) as Event;
             if (evt == null) return false;
 
-            switch (BillFavPrefs.ActivationKey)
+            switch (_prefsKey)
             {
                 case BillFavPrefs.KeyCombination.Alt:
                     return evt.alt && !evt.shift && !evt.control && !evt.command;
@@ -98,9 +98,23 @@ namespace BillGameCore.BillFav
         // Update loop — wrap/unwrap
         // ───────────────────────────────────────────
 
+        // EditorPrefs reads go to the registry on Windows; Tick runs on every editor update, so the
+        // switches are re-read twice a second instead of three registry reads per update.
+        static double _prefsReadAt = -1;
+        static bool _prefsActive;
+        static BillFavPrefs.KeyCombination _prefsKey;
+
         static void Tick()
         {
-            if (!_initOk || BillFavPrefs.PluginDisabled || !BillFavPrefs.OverlayEnabled) return;
+            if (!_initOk) return;
+            double now = EditorApplication.timeSinceStartup;
+            if (now - _prefsReadAt > 0.5)
+            {
+                _prefsReadAt = now;
+                _prefsActive = !BillFavPrefs.PluginDisabled && BillFavPrefs.OverlayEnabled;
+                _prefsKey = BillFavPrefs.ActivationKey;
+            }
+            if (!_prefsActive) return;
 
             _shortcutHeld = IsShortcutHeld();
             bool mouseOverBrowser = EditorWindow.mouseOverWindow != null &&

@@ -110,21 +110,22 @@ namespace ZombieWar.EditorTools
             m.SetFloat("_FoamNoise", noise); m.SetFloat("_FoamNoiseScale", scale); m.SetFloat("_FoamNoiseDist", reach);
         }
 
-        /// <summary>MinionsArt's lava: a glowing orange body sinking to deep red in patches, a network
-        /// of yellow-white veins drifting with the flow, brighter up the bank, slow bubbles.</summary>
+        /// <summary>MinionsArt's lava: a glowing body, a network of white-hot veins drifting with the
+        /// flow, brighter up the bank, small bubbles. Values tuned by the owner in the editor (02/10).</summary>
         public static void LavaMolten(Material m)
         {
             m.SetFloat("_Lava", 0f); m.EnableKeyword("_LAVA_MOLTEN"); m.DisableKeyword("_LAVA_CRUST");
-            m.SetColor("_CrustColor", C(0.035f, 0.025f, 0.025f));
-            m.SetColor("_RimColor", C(0.72f, 0.12f, 0.02f));
-            m.SetColor("_HotColor", C(1f, 0.42f, 0.05f));
-            m.SetColor("_CoreColor", new Color(1.7f, 1.25f, 0.45f, 1f));
-            m.SetFloat("_CrustCut", 0.45f); m.SetFloat("_Scale", 6f);
-            m.SetFloat("_VeinScale", 1.3f); m.SetFloat("_VeinWidth", 0.07f); m.SetFloat("_BankGlow", 0.5f);
-            m.SetFloat("_EdgeWidth", 0.04f); m.SetFloat("_RimWidth", 0.03f);
-            m.SetColor("_EdgeColor", new Color(1.7f, 1.2f, 0.4f, 1f));
-            m.SetFloat("_BubbleAmount", 0.3f); m.SetFloat("_BubbleScale", 1.6f);
-            m.SetVector("_Flow", new Vector4(0.2f, 0.1f, 0.025f, 0f));
+            m.SetColor("_CrustColor", C(1f, 0f, 0f));
+            m.SetColor("_RimColor", C(1f, 0.248f, 0f));
+            m.SetColor("_HotColor", C(1f, 1f, 0f));
+            m.SetColor("_CoreColor", new Color(5.211f, 4.971f, 0.383f, 1f));
+            m.SetColor("_EdgeColor", new Color(1.848f, 1.497f, 0f, 1f));
+            m.SetFloat("_Scale", 6f); m.SetFloat("_DistortScale", 3f); m.SetFloat("_Distortion", 1f);
+            m.SetVector("_Flow", new Vector4(0.5f, 0.2f, 0.025f, 0f));
+            m.SetFloat("_CrustCut", 0.643f); m.SetFloat("_CoreCut", 0.425f);
+            m.SetFloat("_RimWidth", 0.069f); m.SetFloat("_EdgeWidth", 0.056f); m.SetFloat("_Pulse", 0f);
+            m.SetFloat("_VeinScale", 1.3f); m.SetFloat("_VeinWidth", 0.09f); m.SetFloat("_BankGlow", 0.34f);
+            m.SetFloat("_BubbleAmount", 0.293f); m.SetFloat("_BubbleScale", 0.5f); m.SetFloat("_BubbleRate", 0.5f);
         }
 
         /// <summary>Skinned-over lava: black plates, white-hot seams, boiling vents.</summary>
@@ -171,8 +172,9 @@ namespace ZombieWar.EditorTools
                     m.SetFloat("_MossAmount", 0.5f); m.SetColor("_MossColor", C(0.2f, 0.27f, 0.1f));
                     return true;
                 case "volcano":
+                    // Owner pick 02/10: plain charcoal, no cracks, a rough normal.
                     Use(m, "HordeCall/Map/Volcano Ground");
-                    Charcoal(m);
+                    CharcoalRough(m);
                     return true;
                 case "desert":
                     // Owner pick D3: plain sand (no cracks), clay paths, a sandy bed under the oases.
@@ -208,7 +210,7 @@ namespace ZombieWar.EditorTools
 
         /// <summary>Deep charcoal, no grey; thin hard cracks, lava glowing through near the basins and
         /// faintly everywhere.</summary>
-        static void Charcoal(Material m)
+        public static void Charcoal(Material m)
         {
             Color a = C(0.07f, 0.06f, 0.06f), b = C(0.055f, 0.05f, 0.05f);
             m.SetColor("_DryDebugColor", a); m.SetColor("_GrassDebugColor", b);
@@ -267,10 +269,9 @@ namespace ZombieWar.EditorTools
                     string dir = Art + "Maps/volcano/Options/";
                     System.IO.Directory.CreateDirectory(dir);
                     var crust = Variant(Art + "Materials/M_Fluid_volcano.mat", dir + "M_Fluid_volcano_crust.mat", LavaCrust);
-                    var rough = Variant(Art + "Maps/volcano/M_MapGround_volcano.mat", dir + "M_MapGround_volcano_rough.mat", CharcoalRough);
+                    var cracked = Variant(Art + "Maps/volcano/M_MapGround_volcano.mat", dir + "M_MapGround_volcano_cracked.mat", Charcoal);
                     looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Lava kiểu 2 · vỏ nguội", fluid = crust });
-                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Đất than không nứt, sần", ground = rough });
-                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Không nứt + lava vỏ nguội", ground = rough, fluid = crust });
+                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Đất than nứt sáng (bản cũ)", ground = cracked });
                 }
                 theme.devLooks = looks.ToArray();
                 EditorUtility.SetDirty(theme);

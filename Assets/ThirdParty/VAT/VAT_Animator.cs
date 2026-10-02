@@ -327,8 +327,16 @@ public class VAT_Animator : MonoBehaviour
         _lastEditorUpdateTime = currentTime;
 
         Tick(deltaTime);
-        SceneView.RepaintAll();
+        // Every visible instance used to repaint every scene view on every editor update; one
+        // repaint at about 30 Hz covers them all.
+        if (currentTime - s_lastRepaint > 1.0 / 30.0)
+        {
+            s_lastRepaint = currentTime;
+            SceneView.RepaintAll();
+        }
     }
+
+    private static double s_lastRepaint;
 
     private void OnDrawGizmosSelected()
     {

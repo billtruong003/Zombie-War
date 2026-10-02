@@ -16,7 +16,7 @@ namespace ZombieWar.EditorTools
     [InitializeOnLoad]
     public static class EnvSandboxPlayCapture
     {
-        const string Flag = "zw.env.capture", Prev = "zw.env.capture.prev", OutDir = "Review/M8/env_sandbox/";
+        const string Flag = "zw.env.capture", Phase = "zw.env.capture.phase", Prev = "zw.env.capture.prev", OutDir = "Review/M8/env_sandbox/";
         // A shot: which camera, the file, and (for the pathing demo) how many seconds after the
         // demo restarts it is taken.
         struct Shot { public Camera cam; public string file; public float at; }
@@ -46,14 +46,15 @@ namespace ZombieWar.EditorTools
 
         static void Tick()
         {
-            int phase = SessionState.GetInt(Flag + ".phase", 0);
+            // Runs on every editor update: the cheap flag first, and no string built per call.
             if (!SessionState.GetBool(Flag, false)) return;
+            int phase = SessionState.GetInt(Phase, 0);
             if (!EditorApplication.isPlaying)
             {
                 if (phase != 2 || EditorApplication.isPlayingOrWillChangePlaymode) return;
                 // Back in Edit mode after the run: restore the scene that was open.
                 SessionState.SetBool(Flag, false);
-                SessionState.SetInt(Flag + ".phase", 0);
+                SessionState.SetInt(Phase, 0);
                 string prev = SessionState.GetString(Prev, "");
                 if (!string.IsNullOrEmpty(prev) && File.Exists(prev)) EditorSceneManager.OpenScene(prev, OpenSceneMode.Single);
                 Debug.Log("[EnvCapture] done");
@@ -84,7 +85,7 @@ namespace ZombieWar.EditorTools
             if (Time.frameCount < _waitUntil) return;
             if (_index >= _cams.Count)
             {
-                SessionState.SetInt(Flag + ".phase", 2);
+                SessionState.SetInt(Phase, 2);
                 _cams = null;
                 EditorApplication.ExitPlaymode();
                 return;

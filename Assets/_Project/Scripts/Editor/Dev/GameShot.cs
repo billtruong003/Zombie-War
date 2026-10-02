@@ -24,13 +24,22 @@ namespace ZombieWar.EditorTools
         static float _startedAt = -1f, _shotAt = -1f;
         static int _step;
 
-        static GameShot() => EditorApplication.update += Tick;
+        // Mirrored from SessionState so the idle Tick allocates nothing (see LookShot).
+        static string _queue;
+
+        static GameShot()
+        {
+            _queue = SessionState.GetString(Key, "");
+            EditorApplication.update += Tick;
+        }
+
+        static void SetQueue(string q) { _queue = q; SessionState.SetString(Key, q); }
 
         public static string Run(params string[] themes)
         {
             if (EditorApplication.isPlaying) return "already playing";
             Directory.CreateDirectory(Out);
-            SessionState.SetString(Key, string.Join(",", themes));
+            SetQueue(string.Join(",", themes));
             SessionState.SetBool(DebugKey, false);
             File.WriteAllText(Out + "stats.csv", "theme,batches,setpass,triangles,renderMs,enemies\n");
             Begin();
@@ -46,7 +55,7 @@ namespace ZombieWar.EditorTools
             return r;
         }
 
-        static List<string> Queue() => new(SessionState.GetString(Key, "").Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
+        static List<string> Queue() => new(_queue.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
 
         static void Begin()
         {
@@ -60,6 +69,7 @@ namespace ZombieWar.EditorTools
 
         static void Tick()
         {
+            if (string.IsNullOrEmpty(_queue)) return;
             var q = Queue();
             if (q.Count == 0) return;
             if (!EditorApplication.isPlaying)
@@ -102,7 +112,7 @@ namespace ZombieWar.EditorTools
                     }
                     File.AppendAllText(Out + "stats.csv", $"{q[0]},{UnityEditor.UnityStats.batches},{UnityEditor.UnityStats.setPassCalls},{UnityEditor.UnityStats.triangles},{UnityEditor.UnityStats.renderTime * 1000f:F1},{PlanarSteeringWorld.AgentCount}\n");
                     q.RemoveAt(0);
-                    SessionState.SetString(Key, string.Join(",", q));
+                    SetQueue(string.Join(",", q));
                     _step = 4;
                     EditorApplication.ExitPlaymode();
                     if (q.Count == 0) Debug.Log("[GameShot] done");

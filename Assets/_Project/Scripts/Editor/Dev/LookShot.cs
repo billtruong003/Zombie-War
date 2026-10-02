@@ -23,13 +23,24 @@ namespace ZombieWar.EditorTools
         static int _step, _variant, _view;
         static float _at;
 
-        static LookShot() => EditorApplication.update += Tick;
+        // The queue lives in SessionState (it must survive the domain reloads of entering and leaving
+        // Play) and is mirrored here: Tick runs on every editor update, idle or not, and reading
+        // SessionState and splitting the string there made garbage a few hundred times a second.
+        static string _queue;
+
+        static LookShot()
+        {
+            _queue = SessionState.GetString(Key, "");
+            EditorApplication.update += Tick;
+        }
+
+        static void SetQueue(string q) { _queue = q; SessionState.SetString(Key, q); }
 
         /// <summary>Shoots every listed theme with its variant list.</summary>
         public static string Run(params string[] themes)
         {
             if (EditorApplication.isPlaying) return "already playing";
-            SessionState.SetString(Key, string.Join(",", themes));
+            SetQueue(string.Join(",", themes));
             SessionState.SetBool(LinesKey, false);
             SessionState.SetBool(ShadowsKey, false);
             SessionState.SetBool(AppliedKey, false);
@@ -38,7 +49,7 @@ namespace ZombieWar.EditorTools
             return "running " + string.Join(",", themes);
         }
 
-        static List<string> Queue() => new(SessionState.GetString(Key, "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+        static List<string> Queue() => new(_queue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
 
         static void Begin()
         {
@@ -52,6 +63,7 @@ namespace ZombieWar.EditorTools
 
         static void Tick()
         {
+            if (string.IsNullOrEmpty(_queue)) return;
             var q = Queue();
             if (q.Count == 0) return;
             if (!EditorApplication.isPlaying)
@@ -96,7 +108,7 @@ namespace ZombieWar.EditorTools
                     if (_view < 2) { _step = 3; return; }
                     File.WriteAllText($"{Out}{theme}/variants.txt", string.Join("\n", variants.ConvertAll(v => v.name + "\t" + v.label)));
                     Ctx.Reset();
-                    q.RemoveAt(0); SessionState.SetString(Key, string.Join(",", q));
+                    q.RemoveAt(0); SetQueue(string.Join(",", q));
                     _step = 9; EditorApplication.ExitPlaymode();
                     if (q.Count == 0) Debug.Log("[LookShot] done");
                     return;
