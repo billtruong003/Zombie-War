@@ -94,6 +94,11 @@ Shader "HordeCall/Map/Swamp Ground"
         _LitterColor2 ("Leaf second colour", Color) = (0.42,0.4,0.14,1)
         _MossAmount ("Moss patches", Range(0,1)) = 0
         _MossColor ("Moss colour", Color) = (0.22,0.36,0.12,1)
+        // 2026-10-02 snow (tundra).
+        _SnowTrailColor ("Snow trail tint", Color) = (0.62,0.72,0.95,1)
+        _SnowTrailDepth ("Snow trail relief", Range(0,8)) = 3
+        _SparkleAmount ("Snow sparkles", Range(0,4)) = 0
+        _SparkleScale ("Sparkle cell (m)", Float) = 0.35
     }
 
     SubShader

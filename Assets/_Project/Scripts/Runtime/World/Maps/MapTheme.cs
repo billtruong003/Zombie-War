@@ -36,6 +36,8 @@ namespace ZombieWar.World
         public Vector3 sunEuler = new(50f, 60f, 0f);
         [Tooltip("What sunlight drops to in the baked shadows and the hero's shadow (toon tint, not black).")]
         public Color shadowTint = new(0.56f, 0.58f, 0.76f);
+        [Tooltip("Set on snow maps: walkers leave trails in the snow (SnowTrails, Hidden/HordeCall/SnowTrail).")]
+        public Shader snowTrails;
         [Tooltip("Baked by MapLightBaker: R sun, G ambient occlusion, B caster height, A ground height.")]
         public Texture2D mapLight;
 

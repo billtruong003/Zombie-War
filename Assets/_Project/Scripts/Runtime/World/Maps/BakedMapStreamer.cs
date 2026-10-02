@@ -69,7 +69,8 @@ namespace ZombieWar.World
             // Benders (grass) and the see-through dither both run off GrassBenders; enemies only submit
             // themselves on maps that have grass.
             GrassBenders.Active = true;
-            GrassBenders.EnemiesBendGrass = Theme.hasFoliage;
+            GrassBenders.EnemiesBendGrass = Theme.hasFoliage || Theme.snowTrails != null;   // the same feet press the snow
+            if (Theme.snowTrails != null) SnowTrails.Create(transform, Theme.snowTrails);
             GrassBenders.EnsureRunner();
 
             // The chunks around the spawn exist before the player does.

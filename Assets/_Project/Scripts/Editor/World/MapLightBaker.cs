@@ -31,7 +31,7 @@ namespace ZombieWar.EditorTools
         public static string BakeAll()
         {
             var log = new System.Text.StringBuilder();
-            foreach (var id in new[] { "meadow", "forest", "swamp", "volcano", "tundra" }) log.Append(Bake(id)).Append("; ");
+            foreach (var id in new[] { "meadow", "forest", "swamp", "volcano", "tundra", "desert" }) log.Append(Bake(id)).Append("; ");
             return log.ToString();
         }
 

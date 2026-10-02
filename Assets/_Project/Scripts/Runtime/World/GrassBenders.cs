@@ -22,6 +22,11 @@ namespace ZombieWar.World
         static GrassBenders _runner;
 
         public static float PlayerRadius = 1.1f;
+
+        /// The walkers sent to the shaders last frame (position, radius), the player first: snow
+        /// trails press the same feet into the snow.
+        public static Vector4[] LastFrame => Upload;
+        public static int LastCount { get; private set; }
         /// Set by the map streamer when the map has grass: enemies then submit themselves.
         public static bool Active;
         /// Enemies submit themselves only when the map has grass.
@@ -93,6 +98,7 @@ namespace ZombieWar.World
             for (int i = n; i < Max; i++) Upload[i] = Vector4.zero;
             Shader.SetGlobalVectorArray(BendersId, Upload);
             Shader.SetGlobalFloat(CountId, n);
+            LastCount = n;
         }
 
         void OnDestroy()

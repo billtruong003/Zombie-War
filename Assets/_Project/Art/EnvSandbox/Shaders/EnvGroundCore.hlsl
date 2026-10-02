@@ -6,6 +6,7 @@
 //   GROUND_LITTER      forest floor: moss patches and fallen leaves
 //   GROUND_CRACK_TEX   painted crack mask, glowing near basins
 //   GROUND_CRACK_PROC  procedural volcanic cracks: thin, exact, lava glowing through
+//   GROUND_SNOW        trails pressed into the snow (SnowTrails) and sparkles
 #ifndef ENV_GROUND_CORE_INCLUDED
 #define ENV_GROUND_CORE_INCLUDED
 
@@ -27,6 +28,11 @@ TEXTURE2D(_SandNormal);  SAMPLER(sampler_SandNormal);
 TEXTURE2D(_RockNormal);  SAMPLER(sampler_RockNormal);
 TEXTURE2D(_BasinMask);   SAMPLER(sampler_BasinMask);
 TEXTURE2D(_CrackTex);    SAMPLER(sampler_CrackTex);
+#if defined(GROUND_SNOW)
+TEXTURE2D(_ZWSnowTrail); SAMPLER(sampler_ZWSnowTrail);
+float4 _ZWSnowTrailST;      // x = 1 / window (m), y = 1 / texels, z = window
+float4 _ZWSnowTrailCentre;  // xy = player XZ, z = radius the trails show in, w = on
+#endif
 
 CBUFFER_START(UnityPerMaterial)
     float4 _DryTint;
@@ -82,6 +88,10 @@ CBUFFER_START(UnityPerMaterial)
     float  _LitterAmount;
     float  _LitterScale;
     float  _MossAmount;
+    float4 _SnowTrailColor;
+    float  _SnowTrailDepth;
+    float  _SparkleAmount;
+    float  _SparkleScale;
 CBUFFER_END
 
 struct Attributes
@@ -290,6 +300,38 @@ half4 GroundFragment(Varyings input) : SV_Target
         normalWS = normalize(float3(nts.x, nts.z, nts.y));
     #endif
 
+    half3 sparkle = 0;
+#if defined(GROUND_SNOW)
+    // Trails: the pressed depth darkens toward a cold blue, and its slope tilts the normal so the toon
+    // light shades one wall of every footprint and lights the other (no vertices move).
+    float trail = 0;
+    if (_ZWSnowTrailCentre.w > 0.5)
+    {
+        float2 tuv = worldXZ * _ZWSnowTrailST.x;
+        float2 tx = float2(_ZWSnowTrailST.y * 1.5, 0);
+        float c = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv).r;
+        float gx = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv + tx).r - SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv - tx).r;
+        float gz = SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv + tx.yx).r - SAMPLE_TEXTURE2D(_ZWSnowTrail, sampler_ZWSnowTrail, tuv - tx.yx).r;
+        float reach = saturate((_ZWSnowTrailCentre.z - distance(worldXZ, _ZWSnowTrailCentre.xy)) / 4.0);
+        trail = c * reach;
+        normalWS = normalize(normalWS + float3(gx, 0, gz) * reach * _SnowTrailDepth);
+        albedo = lerp(albedo, albedo * _SnowTrailColor.rgb, smoothstep(0.15, 0.9, trail));
+    }
+    // Sparkles: one glint in a few cells, lit only from some view angles, so they twinkle as the
+    // camera follows the player.
+    if (_SparkleAmount > 0.001)
+    {
+        float2 sp = worldXZ / _SparkleScale;
+        float2 cell = floor(sp);
+        float h = EnvHash21(cell);
+        float2 f = frac(sp) - 0.5 - (EnvHash22(cell) - 0.5) * 0.6;
+        float3 V = normalize(GetWorldSpaceViewDir(input.positionWS));
+        float tw = frac(h * 13.7 + dot(V, float3(5.3, 3.1, 7.9)) * 1.5);
+        float glint = step(0.93, h) * smoothstep(0.8, 1.0, tw) * (1.0 - smoothstep(0.03, 0.09, length(f)));
+        sparkle = glint * _SparkleAmount * (1.0 - smoothstep(0.1, 0.4, trail));
+    }
+#endif
+
     // --- Anh sang ---------------------------------------------------------------------
     // M4.5: nguon sang lay tu hop dong toon dung chung, KHONG phai GetMainLight().
     // Ca nam map deu tat directional light that (ToonLightRig moi la nguon sang), nen
@@ -309,7 +351,7 @@ half4 GroundFragment(Varyings input) : SV_Target
     half3 lighting = (lightColor * toonLight + ambient) * ZW_ShadowTint(mapLight.x);
     lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.25h) * mapLight.y;
 
-    return half4(albedo * lighting + glow, 1.0h);
+    return half4(albedo * lighting + glow + sparkle * lighting, 1.0h);
 }
 
 #endif

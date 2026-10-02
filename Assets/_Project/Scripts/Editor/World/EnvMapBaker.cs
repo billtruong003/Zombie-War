@@ -45,6 +45,8 @@ namespace ZombieWar.EditorTools
             public Vector2 groveRadius = new(4f, 7f);
             public float loneTrees = 0.3f, vignettes = 0.6f, singles = 1.5f;   // per 1 000 m²
             public float coverPer100 = 2f, coverPatch = 0.5f;                   // tries per 100 m², patch noise cut
+            // Winding paths painted into the ground's path layer (desert clay paths): 0 = none.
+            public float pathBands;
         }
 
         static readonly MapDef[] Maps =
@@ -64,6 +66,11 @@ namespace ZombieWar.EditorTools
             new MapDef { id = "tundra", pools = 7, poolRadius = new Vector2(5f, 8f),
                 canopyOverlap = 1f, groveNoise = 0.5f, groveSpacing = 24f, groveRadius = new Vector2(4f, 7f),
                 loneTrees = 0.3f, vignettes = 0.5f, singles = 1.5f, coverPer100 = 2f, coverPatch = 0.5f },
+            // Desert (owner pick D3, 02/10): plain sand with winding clay paths, a few oasis pools, no
+            // Tiny Teacup cliff walls (the map streams without edges now).
+            new MapDef { id = "desert", pools = 4, poolRadius = new Vector2(3f, 5f),
+                canopyOverlap = 1f, groveNoise = 0.6f, groveSpacing = 30f, groveRadius = new Vector2(3f, 5f),
+                loneTrees = 0.35f, vignettes = 1.1f, singles = 3.2f, coverPer100 = 9f, coverPatch = 0.45f, pathBands = 1f },
         };
 
         /// One generated map: its features and the sampled basin field (wraps with period M).
@@ -426,6 +433,7 @@ namespace ZombieWar.EditorTools
             ["swamp"]   = (new Color(0.68f, 0.76f, 0.64f), new Color(0.54f, 0.60f, 0.48f), new Color(0.36f, 0.38f, 0.28f), new Color(0.96f, 1f, 0.86f), 1.05f),
             ["volcano"] = (new Color(0.84f, 0.70f, 0.64f), new Color(0.74f, 0.58f, 0.50f), new Color(0.62f, 0.40f, 0.30f), new Color(1f, 0.88f, 0.76f), 1.18f),
             ["tundra"]  = (new Color(0.58f, 0.64f, 0.76f), new Color(0.48f, 0.54f, 0.64f), new Color(0.38f, 0.42f, 0.50f), new Color(0.92f, 0.95f, 1f), 0.9f),   // snow is bright already
+            ["desert"]  = (new Color(0.74f, 0.74f, 0.78f), new Color(0.64f, 0.58f, 0.5f), new Color(0.5f, 0.4f, 0.3f), new Color(1f, 0.92f, 0.8f), 1f),
         };
 
         public static void ApplyThemeLight(ZombieWar.World.MapTheme theme)
@@ -494,6 +502,7 @@ namespace ZombieWar.EditorTools
             ["swamp"] = (new[] { "BlobFish", "BlobGreen", "BlobPink" }, new[] { "BlobWizard" }, new[] { "BlobSpiky" }),
             ["volcano"] = (new[] { "BlobCactoro", "BlobAlien", "BlobNinja" }, new[] { "BlobOrc" }, new[] { "BlobSpiky" }),
             ["tundra"] = (new[] { "BlobYeti", "BlobPigeon" }, new[] { "BlobWizard" }, new[] { "BlobMushnub" }),
+            ["desert"] = (new[] { "BlobCactoro", "BlobAlien", "BlobChicken" }, new[] { "BlobNinja" }, new[] { "BlobSpiky" }),
         };
 
         public static void ApplyMonsterRoster(ZombieWar.World.MapTheme theme)
@@ -518,6 +527,7 @@ namespace ZombieWar.EditorTools
                 "volcano" => env + "Fireflies/FireFliesRed.prefab",
                 "forest" => env + "Weather/Wind & Leaves/FallingLeaves.prefab",
                 "swamp" => env + "Fireflies/FireFliesGreen.prefab",
+                "desert" => env + "Dust/DustMotesCalm.prefab",
                 _ => null,
             };
             return path == null ? null : AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -643,6 +653,13 @@ namespace ZombieWar.EditorTools
                     w[z.secondary] += Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.45f, 0.72f, PNoise(p, d.M, 0.07f, 3.1f, 7.7f)));
                     w[z.outerCh] += Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 0.8f, PNoise(p, d.M, 0.045f, 17.2f, 2.9f))) * 0.8f;
                     w[z.bankChannel] += Mathf.InverseLerp(0f, 0.3f, basin) * 3f;
+                    if (d.def.pathBands > 0f)
+                    {
+                        // A path where a slow noise crosses its middle value: thin lines that wind and
+                        // join up, and wrap with the map like everything else.
+                        float band = Mathf.Abs(PNoise(p, d.M, 0.028f, 41.3f, 13.7f) - 0.5f);
+                        w[z.path] += Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.05f, 0.025f, band)) * 3f * d.def.pathBands * (1f - Mathf.InverseLerp(0f, 0.2f, basin));
+                    }
                     float sum = w[0] + w[1] + w[2] + w[3];
                     cols[k] = new Color(w[0] / sum, w[1] / sum, w[2] / sum, w[3] / sum);
                 }

@@ -118,13 +118,16 @@ namespace ZombieWar.EditorTools
                 pools = new[] { new Vector3(9f, -10f, 5f) }, rivers = new[] { new[] { V(-20, 13), V(-8, 7), V(2, -3), V(9, -10) } }, riverWidth = 1.7f,
                 fluid = "water", bankChannel = 0, basinDepth = 0.9f },
 
-            new Zone { id = "desert", layerColor = new[] { Col(0.78f, 0.6f, 0.4f), Col(0.93f, 0.8f, 0.55f), Col(0.97f, 0.87f, 0.64f), Col(0.78f, 0.42f, 0.27f) }, name = "Tiền đồn sa mạc", col = 1, row = 0,
+            // Owner pick D3 (02/10): sand with clay paths (the clay is the path layer).
+            new Zone { id = "desert", layerColor = new[] { Col(0.68f, 0.4f, 0.27f), Col(0.84f, 0.66f, 0.44f), Col(0.86f, 0.7f, 0.47f), Col(0.78f, 0.6f, 0.4f) }, name = "Tiền đồn sa mạc", col = 1, row = 0,
                 tex = new[] { C + "DIRT/Dirt_Path/Textures/Dirt_Path_Basecolor.png", C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png",
-                              C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png", C + "ROCKS/ROCKS_Cliff/Textures/Rocks_Cliff_A_Basecolor_A.png" },
-                tint = new[] { Col(1.1f, 0.9f, 0.72f), Col(1.08f, 0.96f, 0.8f), Col(1.15f, 1.02f, 0.85f), Col(1.2f, 0.72f, 0.5f) }, primary = 1, secondary = 2, path = 0,
-                mid = new[] { "TT/Cactus_02", "TT/Cactus_01", "TT/Rock_01", "TT/Rock_02", "TT/Rock_05", "TT/Barrel2", "TT/Barrel4", "KK/Fuel_B_Jerrycan", "KK/Fuel_A_Barrel_Dirty" },
-                outer = new[] { "TT/CliffCorner_01", "TT/CliffCorner_02", "TT/Cliff_01", "TT/Rock_04", "TT/Cactus_03", "TT/Container1", "TT/Container4", "TT/Block2" },
-                landmark = new[] { "TT/Tower1" }, scatter = new[] { "TT/Rock_05", "SN/Grass_Wispy_Short" }, scatterCount = 18, crack = 0.35f,
+                              C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png", C + "SAND/SAND_Beach/Textures/Sand_Beach_Base_Basecolor.png" },
+                tint = new[] { Col(1f, 0.92f, 0.82f), Color.white, Col(1.04f, 1f, 0.92f), Col(0.96f, 0.9f, 0.82f) }, primary = 2, secondary = 1, path = 0, outerCh = 3,
+                fluid = "water", bankChannel = 2, basinDepth = 0.8f,
+                mid = new[] { "TT/Cactus_02", "TT/Cactus_01", "TT/Rock_01", "TT/Rock_02", "TT/Rock_05", "TT/Barrel2", "TT/Barrel4", "KK/Fuel_B_Jerrycan", "KK/Fuel_A_Barrel_Dirty", "KH/skull", "KD/rubble_half" },
+                // Owner 02/10 (D3): no Tiny Teacup cliff walls; dead trees and big cacti stand at the edges.
+                outer = new[] { "TT/Rock_04", "TT/Cactus_03", "TT/Cactus_02", "SN/DeadTree_2", "SN/DeadTree_4", "KD/pillar", "KD/rubble_large", "TT/Container1" },
+                landmark = new[] { "TT/Tower1" }, scatter = new[] { "SN/Grass_Wispy_Short", "SN/Pebble_Round_1", "SN/Pebble_Square_3", "KH/bone_A", "SN/Grass_Wispy_Short" }, scatterCount = 18, crack = 0f,
                 midPts = new[] { V(-8, 7), V(9, 9), V(-10, -7), V(7, -10) }, outerPts = new[] { V(-17, 16), V(-18, -2), V(-15, -16), V(16, -15), V(18, 2) }, landmarkPts = new[] { V(14, 15) },
                 paths = new[] { new[] { V(-20, -12), V(20, -16) } } },
 

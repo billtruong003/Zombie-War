@@ -76,6 +76,21 @@ namespace ZombieWar.EditorTools
                     m.SetFloat("_CrackAmount", 0.7f); m.SetFloat("_CrackTiling", 5f);
                     Foam(m, C(0.97f, 0.98f, 1f), line: 0.05f, noise: 0.7f, scale: 0.8f, reach: 0.3f);
                     return true;
+                case "desert":
+                    // Oasis pools: the meadow's clear turquoise water, a touch greener.
+                    Use(m, "HordeCall/Map/Meadow Water");
+                    m.SetColor("_ShallowColor", C(0.14f, 0.8f, 0.6f));
+                    m.SetColor("_DeepColor", C(0.06f, 0.48f, 0.72f));
+                    m.SetFloat("_DepthRange", 1f);
+                    m.SetFloat("_Clarity", 1.1f); m.SetFloat("_MinAlpha", 0.45f);
+                    m.SetFloat("_Caustics", 0.6f); m.SetFloat("_CausticScale", 1.4f);
+                    m.SetColor("_CausticColor", C(0.85f, 1f, 0.95f));
+                    m.SetColor("_StreakColor", C(0.78f, 0.97f, 1f));
+                    m.SetFloat("_StreakScale", 4.5f); m.SetFloat("_StreakCut", 0.66f); m.SetFloat("_StreakAlpha", 0.5f);
+                    m.SetVector("_Flow", new Vector4(0.3f, 0.15f, 0.03f, 0f));
+                    m.SetFloat("_WaveHeight", 0.03f);
+                    Foam(m, C(0.98f, 0.97f, 0.92f), line: 0.03f, noise: 1f, scale: 1.4f, reach: 0.8f);
+                    return true;
                 case "volcano":
                     // Crust type by default (black plates, white-hot seams, boiling vents); the molten
                     // type is the other option.
@@ -152,9 +167,22 @@ namespace ZombieWar.EditorTools
                     Use(m, "HordeCall/Map/Volcano Ground");
                     Charcoal(m);
                     return true;
+                case "desert":
+                    // Owner pick D3: plain sand (no cracks), clay paths, a sandy bed under the oases.
+                    Use(m, "HordeCall/Map/Desert Ground");
+                    Bed(m, C(0.86f, 0.74f, 0.52f), C(0.74f, 0.64f, 0.48f), 1f);
+                    m.SetFloat("_CrackStrength", 0f);
+                    m.SetFloat("_MacroStrength", 0.12f); m.SetFloat("_MacroScale", 26f);
+                    return true;
                 case "tundra":
+                    // MinionsArt's snow: trails pressed by every walker, sparkles; the painted fissures
+                    // are kept faint (strong, they read as paving).
                     Use(m, "HordeCall/Map/Tundra Ground");
                     Bed(m, C(0.42f, 0.55f, 0.66f), C(0.3f, 0.42f, 0.55f), 0.8f);
+                    m.SetFloat("_CrackStrength", 0.05f);
+                    m.SetFloat("_MacroStrength", 0.22f); m.SetFloat("_MacroScale", 30f);
+                    m.SetColor("_SnowTrailColor", C(0.74f, 0.82f, 0.98f)); m.SetFloat("_SnowTrailDepth", 3.5f);
+                    m.SetFloat("_SparkleAmount", 2.5f); m.SetFloat("_SparkleScale", 0.35f);
                     return true;
             }
             return false;
@@ -206,7 +234,7 @@ namespace ZombieWar.EditorTools
 
         // ── apply to what is baked ──────────────────────────────────────────────────────
 
-        static readonly string[] MapIds = { "meadow", "forest", "volcano", "swamp", "tundra" };
+        static readonly string[] MapIds = { "meadow", "forest", "volcano", "swamp", "tundra", "desert" };
 
         [MenuItem("HordeCall/World/Apply Map Looks (ground + fluid)")]
         public static string ApplyAll()
@@ -222,6 +250,9 @@ namespace ZombieWar.EditorTools
                 var f = AssetDatabase.LoadAssetAtPath<Material>(Art + "Materials/M_Fluid_" + id + ".mat");
                 if (f != null && Fluid(f, id)) { EditorUtility.SetDirty(f); log.Append(f.name).Append(' '); }
             }
+            // Snow maps press trails (SnowTrails reads the shader from the theme so it ships in builds).
+            var tundra = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_tundra.asset");
+            if (tundra != null) { tundra.snowTrails = Shader.Find("Hidden/HordeCall/SnowTrail"); EditorUtility.SetDirty(tundra); }
             AssetDatabase.SaveAssets();
             Debug.Log("[MapLooks] applied: " + log);
             return log.ToString();

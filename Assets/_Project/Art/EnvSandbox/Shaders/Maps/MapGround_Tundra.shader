@@ -1,4 +1,5 @@
-// Tundra ground (2026-10-02): snow layers, cold blue fissures, an ice-blue bed under the ice.
+// Tundra ground (2026-10-02): snow layers, faint cold fissures, an ice-blue bed under the ice,
+// trails pressed by every walker (SnowTrails, after MinionsArt's interactive snow) and sparkles.
 // Body: EnvGroundCore.hlsl; only the features below are compiled in.
 Shader "HordeCall/Map/Tundra Ground"
 {
@@ -94,6 +95,11 @@ Shader "HordeCall/Map/Tundra Ground"
         _LitterColor2 ("Leaf second colour", Color) = (0.42,0.4,0.14,1)
         _MossAmount ("Moss patches", Range(0,1)) = 0
         _MossColor ("Moss colour", Color) = (0.22,0.36,0.12,1)
+        // 2026-10-02 snow (tundra).
+        _SnowTrailColor ("Snow trail tint", Color) = (0.62,0.72,0.95,1)
+        _SnowTrailDepth ("Snow trail relief", Range(0,8)) = 3
+        _SparkleAmount ("Snow sparkles", Range(0,4)) = 0
+        _SparkleScale ("Sparkle cell (m)", Float) = 0.35
     }
 
     SubShader
@@ -119,6 +125,7 @@ Shader "HordeCall/Map/Tundra Ground"
             #pragma target 3.0
             #define GROUND_BED
             #define GROUND_CRACK_TEX
+            #define GROUND_SNOW
             #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvGroundCore.hlsl"
             ENDHLSL
         }
