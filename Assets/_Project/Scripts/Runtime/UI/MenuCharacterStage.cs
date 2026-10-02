@@ -35,6 +35,11 @@ namespace ZombieWar.UI
             if (previewCamera.targetTexture != previewTexture)
                 previewCamera.targetTexture = previewTexture;
             modularApplier.EnsureBoneMap(true);
+            modularApplier.OutlineAsPlayer = true;   // the menu hero gets the in-game outline
+            // The preview texture is drawn smaller than it renders (short side 900 px, shown at about
+            // 74 %): widen its line so it reads as thick as the in-run 3 px line.
+            if (!previewCamera.TryGetComponent(out OutlineCameraWidth width)) width = previewCamera.gameObject.AddComponent<OutlineCameraWidth>();
+            width.multiplier = 1.75f;
             modularApplier.ApplySavedParts();
             if (animator != null)
                 (GetComponent<MenuGunShowcase>() ?? gameObject.AddComponent<MenuGunShowcase>()).Init(animator, characterRoot, previewCamera);

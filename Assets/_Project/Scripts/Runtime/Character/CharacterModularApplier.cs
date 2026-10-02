@@ -34,6 +34,29 @@ namespace ZombieWar
 
         public ModularCostumeCatalog Catalog => catalog;
 
+        private bool _outlineAsPlayer;
+
+        /// <summary>
+        /// A preview character (menu stage, costume screen) opts in to the hero's outline (02/10: the
+        /// menu hero looked flat without it). The in-run player always has it; off by default.
+        /// </summary>
+        public bool OutlineAsPlayer
+        {
+            get => _outlineAsPlayer;
+            set
+            {
+                _outlineAsPlayer = value;
+                foreach (var smr in _active.Values)
+                    if (smr != null) TagOutline(smr);
+            }
+        }
+
+        private void TagOutline(SkinnedMeshRenderer smr)
+        {
+            if (_outlineAsPlayer || GetComponentInParent<PlayerMovement>() != null)
+                smr.renderingLayerMask |= OutlineLayers.PlayerBit;
+        }
+
         /// <summary>Gan catalog o runtime (dung khi spawn preview tu prefab base khong co catalog).</summary>
         public void SetCatalog(ModularCostumeCatalog c)
         {
@@ -109,8 +132,7 @@ namespace ZombieWar
             smr.sharedMesh = entry.skinnedMesh;
             smr.sharedMaterials = entry.materials;
             smr.bones = bones;
-            if (GetComponentInParent<PlayerMovement>() != null)
-                smr.renderingLayerMask |= OutlineLayers.PlayerBit;
+            TagOutline(smr);
             if (!string.IsNullOrEmpty(entry.rootBoneName) && _boneMap.TryGetValue(entry.rootBoneName, out var rb))
                 smr.rootBone = rb;
             smr.updateWhenOffscreen = false;

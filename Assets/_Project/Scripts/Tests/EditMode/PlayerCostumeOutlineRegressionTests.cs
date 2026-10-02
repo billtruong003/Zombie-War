@@ -159,6 +159,21 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void PreviewCharacter_OptedIn_GetsTheHeroOutline_BeforeAndAfterApply()
+        {
+            // 02/10: the menu stage opts its preview hero in to the outline.
+            CharacterModularApplier applier = BuildCharacter(isPlayer: false, out _);
+            applier.Apply("Chest", MakePart("chest_a"));
+            applier.OutlineAsPlayer = true;
+            Assert.AreNotEqual(0u, FindCostume(applier, "Chest").renderingLayerMask & PlayerBit,
+                "A part worn before opting in was not retagged.");
+
+            applier.Apply("Chest", MakePart("chest_b"));
+            Assert.AreNotEqual(0u, FindCostume(applier, "Chest").renderingLayerMask & PlayerBit,
+                "A part worn after opting in has no outline.");
+        }
+
+        [Test]
         public void AuthoredPlayerPrefab_ShadowBlob_CarriesNoSelectionBits()
         {
             var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(

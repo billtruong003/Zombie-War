@@ -270,7 +270,8 @@ namespace ZombieWar.Rendering.BillSSOutline
                 if (reference <= 0f) return px;
                 var d = cameraData.cameraTargetDescriptor;
                 float shortSide = Mathf.Min(d.width, d.height);
-                return Mathf.Max(1f, px * shortSide / reference);
+                float perCamera = cameraData.camera != null && cameraData.camera.TryGetComponent(out ZombieWar.OutlineCameraWidth w) ? w.multiplier : 1f;
+                return Mathf.Max(1f, px * shortSide / reference * perCamera);
             }
 
             private void SetKeyword(string k, bool v) { if (v) material.EnableKeyword(k); else material.DisableKeyword(k); }
