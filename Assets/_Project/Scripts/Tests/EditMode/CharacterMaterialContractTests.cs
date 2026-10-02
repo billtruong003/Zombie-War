@@ -293,10 +293,15 @@ namespace ZombieWar.Tests
             var shader = Shader.Find("ZombieWar/Character/Toon");
             Assert.IsNotNull(shader, "missing production shader: ZombieWar/Character/Toon");
             Assert.AreEqual(0, ShaderUtil.GetShaderMessageCount(shader), "ZombieWar/Character/Toon has shader messages");
-            Assert.AreEqual(2, shader.passCount,
-                "ZombieWar/Character/Toon must have exactly ForwardLit + DepthOnly. ShadowCaster is " +
-                "deliberately absent: the URP asset disables shadow maps and every Player renderer has " +
-                "cast/receive off.");
+            // ForwardLit + DepthOnly + DepthNormals (2026-10-02: the hero must reach the camera normals
+            // texture too). ShadowCaster is deliberately absent: the URP asset disables shadow maps and
+            // every Player renderer has cast/receive off.
+            var modes = new System.Collections.Generic.HashSet<string>();
+            var lightMode = new UnityEngine.Rendering.ShaderTagId("LightMode");
+            for (int i = 0; i < shader.passCount; i++) modes.Add(shader.FindPassTagValue(i, lightMode).name);
+            CollectionAssert.AreEquivalent(new[] { "UniversalForward", "DepthOnly", "DepthNormals" }, modes,
+                "ZombieWar/Character/Toon pass structure changed: " + string.Join(", ", modes));
+            Assert.AreEqual(3, shader.passCount);
         }
 
         [Test]

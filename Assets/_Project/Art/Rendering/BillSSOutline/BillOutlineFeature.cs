@@ -16,13 +16,12 @@ namespace ZombieWar.Rendering.BillSSOutline
 
         class LayerMaskPass : ScriptableRenderPass
         {
-            // Rendering layer 2 is reserved for VAT enemies by GameplayOutlineLayerTool.
+            // The "Outline Enemy" rendering layer holds the VAT enemies (GameplayOutlineLayerTool).
             // They cannot use the generic override material: replacing their material also
             // replaces VATPosition(), which freezes the selection silhouette in bind pose.
-            private const uint VatRenderingLayerMask = 1u << 2;
             // Only VAT requires its authored material pass. Regular Unity SkinnedMeshRenderers
             // keep their animated vertex stream when rendered with an override material.
-            private const uint MaterialDrivenRenderingLayerMask = VatRenderingLayerMask;
+            private static uint MaterialDrivenRenderingLayerMask => ZombieWar.OutlineLayers.EnemyBit;
             private static readonly ShaderTagId MaterialMaskShaderTag = new ShaderTagId("OutlineSelectionMask");
 
             private Material maskMaterial;
@@ -101,8 +100,9 @@ namespace ZombieWar.Rendering.BillSSOutline
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 TextureHandle depthTexture = resourceData.activeDepthTexture;
 
-                uint materialDrivenMask = renderingLayerMask & MaterialDrivenRenderingLayerMask;
-                uint genericMask = renderingLayerMask & ~MaterialDrivenRenderingLayerMask;
+                uint vatBit = MaterialDrivenRenderingLayerMask;
+                uint materialDrivenMask = renderingLayerMask & vatBit;
+                uint genericMask = renderingLayerMask & ~vatBit;
 
                 RendererListHandle genericRendererList = default;
                 if (genericMask != 0)
@@ -247,7 +247,7 @@ namespace ZombieWar.Rendering.BillSSOutline
 
                 SetKeyword("USE_DISTANCE_FADE", volumeSettings.useDistanceFade.value);
                 SetKeyword("USE_HEIGHT_FADE", volumeSettings.useHeightFade.value);
-                SetKeyword("USE_OCCLUSION_MASK", volumeSettings.occlusionLayer.value != 0);
+                SetKeyword("USE_OCCLUSION_MASK", volumeSettings.occlusionLayer.value.value != 0u);
 
                 var mode = volumeSettings.mode.value;
                 SetKeyword("OUTLINE_FULL", mode == OutlineVolume.OutlineMode.FullScreen);
@@ -339,15 +339,15 @@ namespace ZombieWar.Rendering.BillSSOutline
                 // that actually consumes the selection mask is active. Stock enqueued it even in
                 // FullScreen mode, re-rendering every selected-layer object into an unused mask.
                 bool wantsSelection = settings.mode.value != OutlineVolume.OutlineMode.FullScreen
-                                      && settings.selectionLayer.value != 0;
+                                      && settings.selectionLayer.value.value != 0u;
                 if (wantsSelection)
                 {
-                    selectionPass.Setup(unchecked((uint)settings.selectionLayer.value.value));
+                    selectionPass.Setup(settings.selectionLayer.value.value);
                     renderer.EnqueuePass(selectionPass);
                 }
-                if (settings.occlusionLayer.value != 0)
+                if (settings.occlusionLayer.value.value != 0u)
                 {
-                    occlusionPass.Setup(unchecked((uint)settings.occlusionLayer.value.value));
+                    occlusionPass.Setup(settings.occlusionLayer.value.value);
                     renderer.EnqueuePass(occlusionPass);
                 }
 

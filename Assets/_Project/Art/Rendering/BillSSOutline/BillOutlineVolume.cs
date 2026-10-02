@@ -19,10 +19,13 @@ namespace ZombieWar.Rendering.BillSSOutline
         public EnumParameter<OutlineMode> mode = new EnumParameter<OutlineMode>(OutlineMode.FullScreen);
 
         [Header("Masking")]
+        // Rendering layers (renderer.renderingLayerMask), shown by name in the inspector.
+        // 2026-10-02: these were GameObject LayerMasks; Unity strips the bit of every unnamed
+        // GameObject layer on load, which silently removed the player (bit 3) from the outline.
         // Optimization over stock (2acf5b7): default Nothing, not Everything - stock's -1 made
         // every camera redraw the whole scene into the selection mask by default.
-        public LayerMaskParameter selectionLayer = new LayerMaskParameter(0);
-        public LayerMaskParameter occlusionLayer = new LayerMaskParameter(0); // Objects that hide outline
+        public RenderingLayerMaskParameter selectionLayer = new RenderingLayerMaskParameter(0u);
+        public RenderingLayerMaskParameter occlusionLayer = new RenderingLayerMaskParameter(0u); // Objects that hide outline
 
         [Header("Settings")]
         public EnumParameter<DebugMode> debugMode = new EnumParameter<DebugMode>(DebugMode.None);
@@ -49,5 +52,13 @@ namespace ZombieWar.Rendering.BillSSOutline
 
         public bool IsActive() => isActive.value;
         public bool IsTileCompatible() => false;
+    }
+
+    /// <summary>A volume parameter holding a rendering-layer mask (no interpolation: it switches).</summary>
+    [Serializable]
+    public sealed class RenderingLayerMaskParameter : VolumeParameter<RenderingLayerMask>
+    {
+        public RenderingLayerMaskParameter(uint value, bool overrideState = false)
+            : base(new RenderingLayerMask { value = value }, overrideState) { }
     }
 }

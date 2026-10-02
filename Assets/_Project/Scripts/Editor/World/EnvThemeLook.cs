@@ -28,6 +28,10 @@ namespace ZombieWar.EditorTools
             public float warmHue = -1f, warmS = 1f, warmV = 1f;
             public float otherS = 1f, otherV = 1f;
             public bool tealFix = true;
+            // Desert (02/10): blue-grey stones up to this saturation still count as stone, and bright
+            // warm solids (Tiny Teacup's orange cliffs) follow the warm hue instead of staying as shipped.
+            public float greySatMax = 0.28f;
+            public bool warmSolids;
         }
 
         static readonly Dictionary<string, Look> Looks = new()
@@ -46,6 +50,12 @@ namespace ZombieWar.EditorTools
             // Tundra: cold blue-grey stone, weathered wood, frosted pine needles.
             ["tundra"] = new Look { stoneHue = 212f, stoneSat = 0.12f, stoneV = 0.95f, woodS = 0.55f, woodV = 0.9f,
                                     leafHue = 160f, leafS = 0.42f, leafV = 0.78f, warmHue = 30f, warmS = 0.4f, warmV = 0.8f, otherS = 0.85f, tealFix = false },
+            // Desert (concept 02/10): sandstone, sun-bleached wood, dry olive leaves.
+            ["desert"] = new Look { stoneHue = 34f, stoneSat = 0.32f, stoneV = 1.4f, woodS = 0.7f, woodV = 1.05f,
+                                    leafHue = 62f, leafS = 0.6f, leafV = 0.88f, warmHue = 30f, warmS = 0.48f, warmV = 0.95f,
+                                    greySatMax = 0.45f, warmSolids = true },
+            // City (concept 02/10): cool concrete greys, everything else as authored.
+            ["city"] = new Look { stoneHue = 220f, stoneSat = 0.05f, stoneV = 0.96f },
         };
 
         static float Band(float h, float lo, float hi, float soft) =>
@@ -64,14 +74,14 @@ namespace ZombieWar.EditorTools
         {
             Color.RGBToHSV(c, out float h01, out float s, out float v);
             float h = h01 * 360f;
-            float grey = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.1f, 0.28f, s));
+            float grey = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.1f, k.greySatMax, s));
             float green = Band(h, 65f, 200f, 15f) * (1f - grey);
             float warm = Band(h, 8f, 48f, 8f) * (1f - grey);
             // Wood is the dark end of the warm hues on solids; in the atlas the saturated warm hues
             // are leaves (autumn canopies), the rest of the warm hues stay wood-like bark and twigs.
             float wood = foliage ? warm * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.4f, 0.6f, s)))
                                  : warm * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.72f, 0.92f, v)));
-            float warmLeaf = foliage ? warm - wood : 0f;
+            float warmLeaf = foliage || k.warmSolids ? warm - wood : 0f;
             float other = Mathf.Max(0f, 1f - grey - green - wood - warmLeaf);
 
             var stone = HsvDeg(k.stoneHue, k.stoneSat * (0.6f + s * 2.5f), v * k.stoneV);
@@ -116,6 +126,7 @@ namespace ZombieWar.EditorTools
             int size = srcTex.width;
             var px = ReadTexture(srcTex, size, out _);
             for (int i = 0; i < px.Length; i++) px[i] = Restyle(px[i], look, foliage);
+            if (foliage) EnvSandboxBuilder.BleedIntoTransparent(px, size, size);
             string outTex = Pal + "Themes/" + Path.GetFileNameWithoutExtension(texPath) + "_" + id + ".png";
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             tex.SetPixels(px); tex.Apply();

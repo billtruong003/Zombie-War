@@ -347,6 +347,7 @@ namespace ZombieWar.EditorTools
                     r.sharedMaterials = mats.ToArray();
                 }
                 inst.name = key.Replace("/", "_");
+                SetEnvironmentOutline(inst, key);
                 PrefabUtility.SaveAsPrefabAsset(inst, ConvertedPrefabPath(key));
                 Object.DestroyImmediate(inst);
                 prefabs++;
@@ -627,6 +628,7 @@ namespace ZombieWar.EditorTools
                     }
                 GrassSlot = new Rect(sx * SlotSize / (float)AtlasSize, sy * SlotSize / (float)AtlasSize, SlotSize / (float)AtlasSize, SlotSize / (float)AtlasSize);
             }
+            BleedIntoTransparent(px, AtlasSize, AtlasSize);
             string path = Pal + "T_EnvFoliage.png";
             var tex = new Texture2D(AtlasSize, AtlasSize, TextureFormat.RGBA32, false);
             tex.SetPixels(px); tex.Apply();
@@ -647,6 +649,52 @@ namespace ZombieWar.EditorTools
             EditorUtility.SetDirty(material);
             if (rejected.Count > 0) Debug.Log("[EnvPalette] foliage kept on its own material (tiling UVs): " + string.Join(", ", rejected));
             return slots;
+        }
+
+        /// <summary>
+        /// Gives every pixel that is not fully solid the colour of the nearest solid leaf pixel
+        /// (alpha untouched). MegaKit leaves are matted on white: their soft edge pixels (alpha
+        /// 0.5–0.95) still pass the alpha clip but are blended toward white, which drew a 1-px light
+        /// rim around every leaf in game (02/10: 354 rim pixels on one plant, 23 after). Leaf colour
+        /// grows outwards ring by ring from pixels at or above <paramref name="solid"/>; what is still
+        /// unreached after <paramref name="rings"/> rings takes the average leaf colour.
+        /// </summary>
+        internal static void BleedIntoTransparent(Color[] px, int w, int h, int rings = 16, float solid = 0.98f)
+        {
+            var filled = new bool[px.Length];
+            double sr = 0, sg = 0, sb = 0; int n = 0;
+            for (int i = 0; i < px.Length; i++)
+                if (px[i].a >= solid) { filled[i] = true; sr += px[i].r; sg += px[i].g; sb += px[i].b; n++; }
+            if (n == 0) return;
+            var next = new List<int>();
+            for (int ring = 0; ring < rings; ring++)
+            {
+                next.Clear();
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        int i = y * w + x;
+                        if (filled[i]) continue;
+                        float r = 0, g = 0, b = 0; int k = 0;
+                        for (int dy = -1; dy <= 1; dy++)
+                            for (int dx = -1; dx <= 1; dx++)
+                            {
+                                int xx = x + dx, yy = y + dy;
+                                if ((dx | dy) == 0 || xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+                                int j = yy * w + xx;
+                                if (!filled[j]) continue;
+                                r += px[j].r; g += px[j].g; b += px[j].b; k++;
+                            }
+                        if (k == 0) continue;
+                        px[i] = new Color(r / k, g / k, b / k, px[i].a);
+                        next.Add(i);
+                    }
+                if (next.Count == 0) break;
+                foreach (int i in next) filled[i] = true;
+            }
+            var mean = new Color((float)(sr / n), (float)(sg / n), (float)(sb / n));
+            for (int i = 0; i < px.Length; i++)
+                if (!filled[i]) px[i] = new Color(mean.r, mean.g, mean.b, px[i].a);
         }
 
         /// MegaKit leaf colours are authored for a strongly lit engine: the pine is (51, 88, 0), almost
@@ -722,6 +770,60 @@ namespace ZombieWar.EditorTools
         }
 
         /// The sandbox builder places the converted prefab when one exists.
+        /// <summary>
+        /// Which decoration pieces get the gameplay outline (owner, 02/10): rocks and hard props do;
+        /// trees, bushes, grass, flowers, ferns, pebbles and every leafy piece do not. The outline mask
+        /// draws a renderer without its alpha clip, so a leaf card would outline as a full square.
+        /// </summary>
+        internal static bool OutlinedInGame(string key)
+        {
+            string pack = key.Substring(0, 2), name = key.Substring(3).ToLowerInvariant();
+            string[] soft = { "tree", "bush", "grass", "flower", "plant", "fern", "clover", "petal", "pebble", "mushroom", "leaf", "leaves",
+                              "floor", "road", "tile", "garden", "parking" };   // ground-level MegaCity tiles are ground, not props
+            foreach (var w in soft) if (name.Contains(w)) return false;
+            switch (pack)
+            {
+                case "SN": case "KF": return name.StartsWith("rock");          // nature kits: only the rocks
+                case "KK": case "KH": case "KX": case "KD": case "TT": case "MC": return true;   // props
+                default: return false;                                         // legacy kits (Synty, Lux, EP)
+            }
+        }
+
+        /// <summary>Adds or clears the "Outline Environment" rendering layer on a piece's renderers.
+        /// Pieces with a foliage sub-mesh never get it (see <see cref="OutlinedInGame"/>).</summary>
+        static bool SetEnvironmentOutline(GameObject root, string key)
+        {
+            uint bit = OutlineLayers.EnvironmentBit;
+            bool changed = false;
+            foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+            {
+                bool leafy = System.Array.Exists(r.sharedMaterials, m => m != null && IsFoliage(m));
+                bool on = OutlinedInGame(key) && !leafy;
+                uint mask = on ? r.renderingLayerMask | bit : r.renderingLayerMask & ~bit;
+                if (mask != r.renderingLayerMask) { r.renderingLayerMask = mask; changed = true; }
+            }
+            return changed;
+        }
+
+        /// <summary>Re-applies <see cref="OutlinedInGame"/> to every converted piece already on disk —
+        /// the baked map chunks hold them as nested prefabs, so no rebake is needed.</summary>
+        public static string ApplyEnvironmentOutlines()
+        {
+            int on = 0, changed = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { Pal + "Prefabs" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = Path.GetFileNameWithoutExtension(path);
+                if (file.Length < 4 || file[2] != '_') continue;
+                string key = file.Substring(0, 2) + "/" + file.Substring(3);
+                var root = PrefabUtility.LoadPrefabContents(path);
+                if (SetEnvironmentOutline(root, key)) { PrefabUtility.SaveAsPrefabAsset(root, path); changed++; }
+                if (OutlinedInGame(key)) on++;
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+            return $"outlined kinds={on} prefabs changed={changed}";
+        }
+
         static GameObject ConvertedPrefab(string key) => AssetDatabase.LoadAssetAtPath<GameObject>(ConvertedPrefabPath(key));
 
         // ── before / after sheets

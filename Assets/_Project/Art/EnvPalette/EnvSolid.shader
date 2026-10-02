@@ -333,8 +333,47 @@ Shader "HordeCall/Env/Solid"
             {
                 STW_SETUP_INSTANCE_FRAG(IN);
                 ZW_SeeThroughClip(IN.positionWS, IN.positionCS);
-                float3 n = NormalizeNormalPerPixel(IN.normalWS);
-                return half4(n * 0.5 + 0.5, 0);
+                // Signed world normal, like URP Lit and every other shader here: the
+                // normals texture is read back with SampleSceneNormals (no unpack).
+                return half4(NormalizeNormalPerPixel(IN.normalWS), 0);
+            }
+            ENDHLSL
+        }
+
+        // ---------------------------------------------------------------------
+        //  PASS 4 — DepthOnly (depth prepass: water edges, soft particles)
+        //  Without it the depth prepass fell back to URP/Lit, which knows nothing of
+        //  the see-through cut-out around the hero.
+        // ---------------------------------------------------------------------
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode"="DepthOnly" }
+            ZWrite On ColorMask R Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma vertex   doVert
+            #pragma fragment doFrag
+            #pragma multi_compile_instancing
+
+            struct AttributesDO { float4 positionOS:POSITION; STW_VERTEX_INPUT_INSTANCE_ID };
+            struct VaryingsDO   { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; STW_VERTEX_OUTPUT_STEREO };
+
+            VaryingsDO doVert(AttributesDO IN)
+            {
+                VaryingsDO OUT = (VaryingsDO)0;
+                STW_SETUP_INSTANCE_VERT(IN, OUT);
+                VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
+                OUT.positionCS = pos.positionCS;
+                OUT.positionWS = pos.positionWS;
+                return OUT;
+            }
+
+            half4 doFrag(VaryingsDO IN) : SV_Target
+            {
+                STW_SETUP_INSTANCE_FRAG(IN);
+                ZW_SeeThroughClip(IN.positionWS, IN.positionCS);
+                return 0;
             }
             ENDHLSL
         }

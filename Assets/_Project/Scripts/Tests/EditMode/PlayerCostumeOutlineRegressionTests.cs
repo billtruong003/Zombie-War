@@ -17,9 +17,9 @@ namespace ZombieWar.Tests
     /// kiểm prefab tác giả — làm vậy thì đúng cái đường đã hỏng lại không được kiểm.
     public class PlayerCostumeOutlineRegressionTests
     {
-        private const uint WeaponBit = 1u << 1;   // 2
-        private const uint EnemyBit = 1u << 2;    // 4
-        private const uint PlayerBit = 1u << 3;   // 8
+        private static uint WeaponBit => OutlineLayers.WeaponBit;
+        private static uint EnemyBit => OutlineLayers.EnemyBit;
+        private static uint PlayerBit => OutlineLayers.PlayerBit;
 
         private readonly List<GameObject> _spawned = new List<GameObject>();
 

@@ -14,7 +14,12 @@ namespace ZombieWar.EditorTools
     [InitializeOnLoad]
     public static class GameShot
     {
-        const string Key = "zw.gameshot.queue", Out = "Review/M8/game_shots/";
+        const string Key = "zw.gameshot.queue", DebugKey = "zw.gameshot.debug", Out = "Review/M8/game_shots/";
+        // Outline debug views shot after the plain frame when RunDebug started the queue:
+        // depth, normals (normal prepass forced on), selection mask, edge only.
+        static readonly (string name, int mode, bool normals)[] DebugViews =
+            { ("depth", 1, false), ("normals", 2, true), ("mask", 5, false), ("edges", 4, false) };
+        static int _view;
         const float SettleSeconds = 14f;
         static float _startedAt = -1f, _shotAt = -1f;
         static int _step;
@@ -26,9 +31,19 @@ namespace ZombieWar.EditorTools
             if (EditorApplication.isPlaying) return "already playing";
             Directory.CreateDirectory(Out);
             SessionState.SetString(Key, string.Join(",", themes));
+            SessionState.SetBool(DebugKey, false);
             File.WriteAllText(Out + "stats.csv", "theme,batches,setpass,triangles,renderMs,enemies\n");
             Begin();
             return "running " + string.Join(",", themes);
+        }
+
+        /// <summary>Same as <see cref="Run"/>, plus the outline debug views of each theme
+        /// (&lt;theme&gt;_depth/_normals/_mask/_edges.png) for checking what reaches each buffer.</summary>
+        public static string RunDebug(params string[] themes)
+        {
+            string r = Run(themes);
+            SessionState.SetBool(DebugKey, true);
+            return r;
         }
 
         static List<string> Queue() => new(SessionState.GetString(Key, "").Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
@@ -70,11 +85,21 @@ namespace ZombieWar.EditorTools
                     KeepPlaying();
                     if (now - _startedAt < SettleSeconds) return;
                     ScreenCapture.CaptureScreenshot(Out + q[0] + ".png");
-                    _shotAt = now; _step = 3;
+                    _shotAt = now; _step = 3; _view = 0;
                     return;
                 case 3:
                     KeepPlaying();
                     if (now - _shotAt < 0.5f) return;
+                    // Even ticks switch the view, odd ticks shoot it: the capture lands at the end of
+                    // the frame, so switching in the same tick would shoot the next view instead.
+                    if (SessionState.GetBool(DebugKey, false) && _view <= DebugViews.Length * 2)
+                    {
+                        int i = _view / 2;
+                        if (_view % 2 == 1) ScreenCapture.CaptureScreenshot($"{Out}{q[0]}_{DebugViews[i].name}.png");
+                        else SetOutlineDebug(i < DebugViews.Length ? DebugViews[i] : ("", 0, false));
+                        _view++; _shotAt = now;
+                        return;
+                    }
                     File.AppendAllText(Out + "stats.csv", $"{q[0]},{UnityEditor.UnityStats.batches},{UnityEditor.UnityStats.setPassCalls},{UnityEditor.UnityStats.triangles},{UnityEditor.UnityStats.renderTime * 1000f:F1},{PlanarSteeringWorld.AgentCount}\n");
                     q.RemoveAt(0);
                     SessionState.SetString(Key, string.Join(",", q));
@@ -83,6 +108,29 @@ namespace ZombieWar.EditorTools
                     if (q.Count == 0) Debug.Log("[GameShot] done");
                     return;
             }
+        }
+
+        // Writes only to the play-session clone of each volume profile (OutlineProfileRuntimeGuard),
+        // so the outline asset on disk never changes. Reflection: the outline lives in Assembly-CSharp,
+        // which this editor assembly cannot reference.
+        static bool? _origNormals;
+        static void SetOutlineDebug((string name, int mode, bool normals) v)
+        {
+            foreach (var vol in Object.FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsSortMode.None))
+            {
+                if (!vol.HasInstantiatedProfile()) continue;
+                var o = vol.profile.components.Find(c => c != null && c.GetType().Name == "OutlineVolume");
+                if (o == null) continue;
+                var t = o.GetType();
+                var dbg = t.GetField("debugMode").GetValue(o);
+                var norm = (UnityEngine.Rendering.VolumeParameter<bool>)t.GetField("useNormals").GetValue(o);
+                _origNormals ??= norm.value;
+                var dbgType = dbg.GetType();
+                dbgType.GetMethod("Override", new[] { dbgType.GetGenericArguments()[0] })
+                       .Invoke(dbg, new[] { System.Enum.ToObject(dbgType.GetGenericArguments()[0], v.mode) });
+                norm.Override(v.normals || _origNormals.Value);
+            }
+            if (v.mode == 0) _origNormals = null;
         }
 
         static void KeepPlaying()

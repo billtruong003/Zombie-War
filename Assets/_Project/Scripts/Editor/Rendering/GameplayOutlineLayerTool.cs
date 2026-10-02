@@ -20,30 +20,45 @@ namespace ZombieWar.Editor
     /// </summary>
     public static class GameplayOutlineLayerTool
     {
-        /// <summary>Bit 1 — nhân vật. Bit 0 (giá trị 1) là mặc định của mọi renderer, không được đụng.</summary>
-        public const uint WeaponRenderingBit = 1u << 1;
+        // Bits come from the NAMED rendering layers (Tags and Layers ▸ Rendering Layers) through
+        // OutlineLayers; nothing here hard-codes a bit number.
+        public static uint WeaponRenderingBit => OutlineLayers.WeaponBit;
+        public static uint EnemyRenderingBit => OutlineLayers.EnemyBit;
+        public static uint PlayerRenderingBit => OutlineLayers.PlayerBit;
 
-        /// <summary>Bit 2 — quái.</summary>
-        public const uint EnemyRenderingBit = 1u << 2;
+        /// <summary>Mặt nạ chọn lọc của NHÂN VẬT (vũ khí, quái, người chơi).</summary>
+        public static uint SelectionRenderingMask => OutlineLayers.CharacterMask;
 
-        /// <summary>Bit 3 — skinned player body rendered by Toon Lit's material-owned mask pass.</summary>
-        public const uint PlayerRenderingBit = 1u << 3;
+        /// <summary>Viền cảnh vật rắn của môi trường ("Outline Environment").</summary>
+        public static uint EnvironmentOutlineRenderingBit => OutlineLayers.EnvironmentBit;
 
-        /// <summary>Mặt nạ chọn lọc của NHÂN VẬT. Test đọc lại đúng hằng số này.</summary>
-        public const uint SelectionRenderingMask = WeaponRenderingBit | EnemyRenderingBit | PlayerRenderingBit;
+        /// <summary>Mặt nạ ghi vào Volume của production: nhân vật cộng cảnh vật rắn.</summary>
+        public static uint ProductionSelectionMask => OutlineLayers.SelectionMask;
 
-        /// <summary>
-        /// Bit 4 — viền cảnh vật môi trường (M4.6CD.1). Chỉ `SolidDecorMeshRenderer` mang bit này.
-        ///
-        /// Giá trị phải khớp <c>ZombieWar.WorldStreaming.ChunkInstance.EnvironmentOutlineRenderingBit</c>;
-        /// hai hằng số nằm ở hai assembly khác nhau nên có test canh chúng bằng nhau.
-        /// </summary>
-        public const uint EnvironmentOutlineRenderingBit = 1u << 4;
+        public const string ProductionProfilePath = "Assets/Settings/SampleSceneProfile.asset";
 
         /// <summary>
-        /// Mặt nạ ghi vào Volume của production: nhân vật CỘNG cảnh vật rắn = <c>14 | 16 = 30</c>.
+        /// Writes <see cref="ProductionSelectionMask"/> into the production outline profile, resolved
+        /// from the layer names. Run after renaming or moving an outline rendering layer.
         /// </summary>
-        public const uint ProductionSelectionMask = SelectionRenderingMask | EnvironmentOutlineRenderingBit;
+        [MenuItem("ZombieWar/Rendering/Apply Outline Selection To Profile")]
+        public static string ApplyProductionSelection()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(ProductionProfilePath);
+            if (profile == null) return "profile missing";
+            var outline = profile.components.Find(c => c != null && c.GetType().Name == "OutlineVolume");
+            if (outline == null) return "OutlineVolume missing";
+            var so = new SerializedObject(outline);
+            var bits = so.FindProperty("selectionLayer.m_Value.m_Bits");
+            var over = so.FindProperty("selectionLayer.m_OverrideState");
+            if (bits == null) return "selectionLayer.m_Value.m_Bits not found";
+            bits.uintValue = ProductionSelectionMask;
+            over.boolValue = true;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssetIfDirty(profile);
+            return "selection=" + ProductionSelectionMask;
+        }
 
         private const string PrefabFolder = "Assets/_Project/Prefabs";
 

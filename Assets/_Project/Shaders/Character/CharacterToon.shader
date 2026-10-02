@@ -191,6 +191,37 @@ Shader "ZombieWar/Character/Toon"
             half4 depthFrag (DVary IN) : SV_Target { return 0; }
             ENDHLSL
         }
+
+        // DepthNormals: puts the hero into the camera normals texture (normal-based outline,
+        // SSAO, debug views). Signed world normal, same encoding as the other project shaders.
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+            ZWrite On
+
+            HLSLPROGRAM
+            #pragma vertex dnVert
+            #pragma fragment dnFrag
+            #pragma multi_compile_instancing
+            #pragma target 3.0
+
+            struct NAttr { float4 positionOS : POSITION; float3 normalOS : NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct NVary { float4 positionCS : SV_POSITION; float3 normalWS : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
+
+            NVary dnVert (NAttr IN)
+            {
+                NVary OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
+                return OUT;
+            }
+
+            half4 dnFrag (NVary IN) : SV_Target { return half4(NormalizeNormalPerPixel(IN.normalWS), 0); }
+            ENDHLSL
+        }
     }
 
     Fallback Off

@@ -50,16 +50,10 @@ namespace ZombieWar.WorldStreaming
 
         public MeshFilter GroundFilter => groundFilter;
         /// <summary>
-        /// Bit rendering-layer dành cho viền CẢNH VẬT MÔI TRƯỜNG (M4.6CD.1).
-        ///
-        /// Bit 0–3 đã có chủ theo hợp đồng viền nhân vật: 1 = mặc định, 2 = vũ khí, 4 = quái, 8 = người
-        /// chơi (mặt nạ chọn 14). Bit 4 là bit thấp nhất còn trống, đã kiểm trong phiên gameplay thật.
-        /// Mặt nạ chọn của production do đó thành <c>14 | 16 = 30</c>.
-        ///
-        /// Đây là kênh THUẦN HÌNH ẢNH (<c>Renderer.renderingLayerMask</c>), không phải layer vật lý của
-        /// GameObject — nên nó không đụng tới va chạm, raycast hay ma trận va chạm.
+        /// Bit of the "Outline Environment" rendering layer (looked up by name, see
+        /// <see cref="OutlineLayers"/>). A purely visual channel: it never touches physics layers.
         /// </summary>
-        public const uint EnvironmentOutlineRenderingBit = 1u << 4;
+        public static uint EnvironmentOutlineRenderingBit => OutlineLayers.EnvironmentBit;
 
         public MeshRenderer GroundRenderer => groundRenderer;
         public MeshFilter SolidDecorFilter => solidDecorFilter;

@@ -19,7 +19,7 @@ namespace ZombieWar.Tests
     {
         // Hai bai kiem HANG SO va PROFILE nam o bo EditMode (`GameplayOutlineContractTests`):
         // asmdef cua PlayMode khong tham chieu duoc assembly Editor lan URP.
-        private const uint EnvironmentBit = 1u << 4;
+        private static uint EnvironmentBit => OutlineLayers.EnvironmentBit;
         private const uint CharacterSelectionMask = 14;   // vũ khí 2 | quái 4 | người chơi 8
 
         private WorldStreamingConfig _config;

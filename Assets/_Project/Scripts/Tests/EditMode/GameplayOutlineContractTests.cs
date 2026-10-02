@@ -14,26 +14,30 @@ namespace ZombieWar.Tests
         const string ToonShader = "StylizedToonWorldKit/Toon/Toon Lit";
 
         [Test]
-        public void SelectionBits_SeparateGenericWeaponsFromDeformedCharacters()
+        public void OutlineLayers_AreNamedRenderingLayers_WithDistinctBits()
         {
-            Assert.AreEqual(2u, GameplayOutlineLayerTool.WeaponRenderingBit);
-            Assert.AreEqual(4u, GameplayOutlineLayerTool.EnemyRenderingBit);
-            Assert.AreEqual(8u, GameplayOutlineLayerTool.PlayerRenderingBit);
-            Assert.AreEqual(14u, GameplayOutlineLayerTool.SelectionRenderingMask);
+            // Bits are looked up by name; every outline layer must exist and own its own bit,
+            // and none may be bit 0 (the default every renderer carries).
+            var seen = 0u;
+            foreach (string name in OutlineLayers.Selected)
+            {
+                int index = RenderingLayerMask.NameToRenderingLayer(name);
+                Assert.Greater(index, 0, $"Rendering layer '{name}' is missing (Tags and Layers ▸ Rendering Layers).");
+                uint bit = 1u << index;
+                Assert.AreEqual(0u, seen & bit, $"'{name}' shares a bit with another outline layer.");
+                seen |= bit;
+            }
+            Assert.AreEqual(OutlineLayers.SelectionMask, seen);
+            Assert.AreEqual(OutlineLayers.WeaponBit | OutlineLayers.EnemyBit | OutlineLayers.PlayerBit,
+                GameplayOutlineLayerTool.SelectionRenderingMask);
         }
 
         [Test]
-        public void EnvironmentOutlineBit_IsBitFour_AndDoesNotCollideWithCharacterBits()
+        public void EnvironmentOutlineBit_MatchesAcrossAssemblies()
         {
-            // M4.6CD.1 them vien cho canh vat ran. Bit 0-3 da co chu (mac dinh / vu khi / quai / nguoi
-            // choi), nen bit 4 la bit thap nhat con trong — da kiem trong phien gameplay that.
-            Assert.AreEqual(16u, GameplayOutlineLayerTool.EnvironmentOutlineRenderingBit);
             Assert.AreEqual(0u,
                 GameplayOutlineLayerTool.EnvironmentOutlineRenderingBit & GameplayOutlineLayerTool.SelectionRenderingMask,
                 "Bit vien moi truong chong len mat na chon cua nhan vat.");
-            Assert.AreEqual(30u, GameplayOutlineLayerTool.ProductionSelectionMask);
-
-            // Hai hang so nam o hai assembly khac nhau; lech nhau thi vien im lang khong hien.
             Assert.AreEqual(GameplayOutlineLayerTool.EnvironmentOutlineRenderingBit,
                 ZombieWar.WorldStreaming.ChunkInstance.EnvironmentOutlineRenderingBit);
         }
@@ -41,10 +45,8 @@ namespace ZombieWar.Tests
         [Test]
         public void ProductionVolumeProfile_SelectsBothCharacterAndEnvironment()
         {
-            // Doc thang YAML cua asset thay vi nap `VolumeProfile`: ca hai asmdef test deu KHONG tham
-            // chieu duoc URP lan assembly `ZombieWar.Rendering`, nen day la duong duy nhat kiem duoc
-            // gia tri that ma khong phai noi long kien truc assembly chi de chieu mot bai test.
-            const string ProfilePath = "Assets/Settings/SampleSceneProfile.asset";
+            // Doc thang YAML cua asset: ca hai asmdef test deu KHONG tham chieu URP.
+            const string ProfilePath = GameplayOutlineLayerTool.ProductionProfilePath;
             Assert.IsTrue(System.IO.File.Exists(ProfilePath), "Thieu profile outline cua production.");
 
             string yaml = System.IO.File.ReadAllText(ProfilePath);
@@ -57,7 +59,22 @@ namespace ZombieWar.Tests
 
             uint mask = uint.Parse(match.Groups[1].Value);
             Assert.AreEqual(GameplayOutlineLayerTool.ProductionSelectionMask, mask,
-                $"Mat na chon cua production la {mask}, phai la 30 (nhan vat 14 + moi truong 16).");
+                $"Mat na chon cua production la {mask}, phai la {GameplayOutlineLayerTool.ProductionSelectionMask}.");
+        }
+
+        [Test]
+        public void ProductionVolumeProfile_KeepsThePlayerBit_AfterLoading()
+        {
+            // Regression 2026-10-02: the mask was a GameObject LayerMask, and Unity stripped the
+            // player's bit (an unnamed GameObject layer) on load — 30 on disk, 22 in memory.
+            AssetDatabase.ImportAsset(GameplayOutlineLayerTool.ProductionProfilePath, ImportAssetOptions.ForceUpdate);
+            Object outline = AssetDatabase.LoadAllAssetsAtPath(GameplayOutlineLayerTool.ProductionProfilePath)
+                .FirstOrDefault(o => o != null && o.GetType().Name == "OutlineVolume");
+            Assert.IsNotNull(outline, "Profile has no OutlineVolume.");
+            var bits = new SerializedObject(outline).FindProperty("selectionLayer.m_Value.m_Bits");
+            Assert.IsNotNull(bits, "selectionLayer is no longer a rendering-layer mask.");
+            Assert.AreNotEqual(0u, bits.uintValue & OutlineLayers.PlayerBit, $"Loaded mask {bits.uintValue} lost the player.");
+            Assert.AreEqual(GameplayOutlineLayerTool.ProductionSelectionMask, bits.uintValue);
         }
 
         [Test]
