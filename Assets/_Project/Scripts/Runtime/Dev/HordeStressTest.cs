@@ -145,11 +145,14 @@ namespace ZombieWar
 
             StartMeasuring($"stress {StressTargetAlive} alive");
 
-            var wait = new WaitForSeconds(TopUpInterval);
+            // Real time: a level-up card sets the time scale to 0, and a scaled wait would never
+            // come back to close it.
+            var wait = new WaitForSecondsRealtime(TopUpInterval);
             float until = Time.unscaledTime + StressDuration;
 
             while (Time.unscaledTime < until)
             {
+                CloseLevelUp();
                 int want = Mathf.Min(TopUpBatch, StressTargetAlive - ZombieManager.AliveCount);
                 if (want > 0)
                 {
@@ -166,6 +169,25 @@ namespace ZombieWar
             Bill.Pool?.ReturnAll(ZombieSpawner.KeyFor(data));
             if (director != null) director.enabled = true;
             _stress = null;
+        }
+
+        private RunOverlays _overlays;
+
+        // Kills earn XP, and a level-up card pauses the game for up to 30 s: the 02/10 volcano run
+        // held 61 alive instead of 100 because the window spent most of its time paused. Close the
+        // card without a pick, as the skill sandbox does, so the window measures a moving horde.
+        private void CloseLevelUp()
+        {
+            if (_overlays == null) _overlays = FindFirstObjectByType<RunOverlays>(FindObjectsInactive.Include);
+            if (_overlays == null) return;
+            const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var t = typeof(RunOverlays);
+            var root = t.GetField("levelUpRoot", F)?.GetValue(_overlays) as GameObject;
+            if (root == null || !root.activeSelf) return;
+            t.GetField("_pendingLevelUps", F)?.SetValue(_overlays, 0);
+            t.GetField("_skillOffer", F)?.SetValue(_overlays, null);
+            root.SetActive(false);
+            Time.timeScale = 1f;
         }
 
         private void Report()

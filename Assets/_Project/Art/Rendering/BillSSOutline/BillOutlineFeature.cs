@@ -244,7 +244,7 @@ namespace ZombieWar.Rendering.BillSSOutline
                 ));
 
                 SetKeyword("USE_DEPTH", volumeSettings.useDepth.value);
-                SetKeyword("USE_NORMALS", volumeSettings.useNormals.value);
+                SetKeyword("USE_NORMALS", UseNormals(volumeSettings));
                 SetKeyword("USE_COLOR", volumeSettings.useColor.value);
                 SetKeyword("ALGO_SOBEL", volumeSettings.algorithm.value == OutlineVolume.OutlineAlgorithm.Sobel);
                 SetKeyword("ALGO_ROBERTS", volumeSettings.algorithm.value == OutlineVolume.OutlineAlgorithm.RobertsCross);
@@ -332,6 +332,13 @@ namespace ZombieWar.Rendering.BillSSOutline
         private LayerMaskPass occlusionPass;
         private OutlinePass outlinePass;
 
+        /// <summary>Normal edges only at the High graphics tier (03/10). They need URP's DepthNormals
+        /// prepass, which draws every opaque object a second time: with 100 enemies on the meadow it
+        /// was 1.05M triangles and 266 batches with it, 664k and 177 without, and side-by-side shots
+        /// showed almost no difference (the selection mask and depth edges draw the outline).</summary>
+        internal static bool UseNormals(OutlineVolume settings) =>
+            settings.useNormals.value && ZombieWar.GraphicsTier.Current == ZombieWar.GraphicsTier.Level.High;
+
         public override void Create()
         {
             selectionPass = new LayerMaskPass("Outline Selection Mask", "_SelectionMaskTexture");
@@ -386,7 +393,7 @@ namespace ZombieWar.Rendering.BillSSOutline
                 var inputs = ScriptableRenderPassInput.Color;
                 if (settings.useDepth.value || settings.useDistanceFade.value || settings.useHeightFade.value)
                     inputs |= ScriptableRenderPassInput.Depth;
-                if (settings.useNormals.value)
+                if (UseNormals(settings))
                     inputs |= ScriptableRenderPassInput.Normal;
                 outlinePass.ConfigureInput(inputs);
 
