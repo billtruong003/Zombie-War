@@ -33,6 +33,7 @@ namespace ZombieWar.EditorTools
             SessionState.SetBool(LinesKey, false);
             SessionState.SetBool(ShadowsKey, false);
             SessionState.SetBool(AppliedKey, false);
+            SessionState.SetBool(PostKey, false);
             Begin();
             return "running " + string.Join(",", themes);
         }
@@ -131,12 +132,19 @@ namespace ZombieWar.EditorTools
             static object _outline; static Color _outlineColor;
 
             static float _mapLightOn = -1f, _planarOn;
+            static bool _postWas;
+            static Volume _mapPost;
+            static VolumeProfile _mapPostProfile;
 
             public static void Capture(string theme)
             {
                 _mapLightOn = Shader.GetGlobalFloat("_ZWMapLightOn");
                 _planarOn = Shader.GetGlobalFloat("_ZWPlanarShadowOn");
                 Cam = Camera.main;
+                _postWas = Cam.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing;
+                _mapPost = null; _mapPostProfile = null;
+                foreach (var v in Object.FindObjectsByType<Volume>(FindObjectsSortMode.None))
+                    if (v.name == "MapPost") { _mapPost = v; _mapPostProfile = v.profile; }   // the runtime clone the game renders with
                 // The gameplay volume is the one holding the outline: the menu's volume can still be
                 // loaded next to it, and editing that one changed nothing on screen.
                 Volume vol = null;
@@ -213,9 +221,10 @@ namespace ZombieWar.EditorTools
                 if (Cam != null)
                 {
                     var acd = Cam.GetComponent<UniversalAdditionalCameraData>();
-                    acd.renderPostProcessing = false;
+                    acd.renderPostProcessing = _postWas;   // as the game had it (GameSettings preset)
                     acd.requiresColorOption = CameraOverrideOption.UsePipelineSettings;
                 }
+                if (_mapPost != null) _mapPost.profile = _mapPostProfile;
                 if (Ground != null) { Ground.CopyPropertiesFromMaterial(_groundSrc); Ground.shaderKeywords = _groundSrc.shaderKeywords; }
                 if (Fluid != null) { Fluid.CopyPropertiesFromMaterial(_fluidSrc); Fluid.shaderKeywords = _fluidSrc.shaderKeywords; }
             }
@@ -238,6 +247,23 @@ namespace ZombieWar.EditorTools
             }
 
             public static void Post(bool on) => Cam.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing = on;
+
+            /// <summary>A grade in the map's own post volume (a fresh runtime profile), post on.</summary>
+            public static void MapPost(Grade g)
+            {
+                Post(true);
+                if (_mapPost == null)
+                {
+                    var go = new GameObject("MapPost");
+                    _mapPost = go.AddComponent<Volume>();
+                    _mapPost.isGlobal = true; _mapPost.priority = 50f;
+                }
+                var p = ScriptableObject.CreateInstance<VolumeProfile>();
+                WriteGrade(p, g);
+                // The game clones every volume's profile at run time and renders the clone, so a new
+                // shared profile would be ignored: replace the clone.
+                _mapPost.profile = p;
+            }
             public static void OpaqueTexture(bool on) => Cam.GetComponent<UniversalAdditionalCameraData>().requiresColorOption = on ? CameraOverrideOption.On : CameraOverrideOption.UsePipelineSettings;
         }
 
@@ -280,6 +306,25 @@ namespace ZombieWar.EditorTools
                 vg.intensity.Override(g.vignette); vg.smoothness.Override(0.45f);
                 vg.color.Override(g.vignetteColor == default ? new Color(0.1f, 0.08f, 0.2f) : g.vignetteColor);
             }
+        }
+
+        /// <summary>A grade into a volume profile, without bloom (the game has its own toon bloom).</summary>
+        public static void WriteGrade(VolumeProfile p, Grade g)
+        {
+            T Get<T>() where T : VolumeComponent { if (!p.TryGet(out T c)) c = p.Add<T>(); c.active = true; return c; }
+            var ca = Get<ColorAdjustments>();
+            ca.postExposure.Override(g.exposure); ca.contrast.Override(g.contrast); ca.saturation.Override(g.saturation);
+            ca.hueShift.Override(g.hue); ca.colorFilter.Override(g.filter == default ? Color.white : g.filter);
+            var wb = Get<WhiteBalance>();
+            wb.temperature.Override(g.temperature); wb.tint.Override(g.tint);
+            var smh = Get<ShadowsMidtonesHighlights>();
+            smh.shadows.Override(ToSmh(g.shadows)); smh.midtones.Override(ToSmh(g.midtones)); smh.highlights.Override(ToSmh(g.highlights));
+            var st = Get<SplitToning>();
+            st.shadows.Override(g.splitShadow == default ? Color.grey : g.splitShadow);
+            st.highlights.Override(g.splitHigh == default ? Color.grey : g.splitHigh);
+            var vg = Get<Vignette>();
+            vg.intensity.Override(g.vignette); vg.smoothness.Override(0.45f);
+            vg.color.Override(g.vignetteColor == default ? new Color(0.1f, 0.08f, 0.2f) : g.vignetteColor);
         }
 
         // SMH takes (r, g, b, offset); a colour of (1,1,1) means untouched.

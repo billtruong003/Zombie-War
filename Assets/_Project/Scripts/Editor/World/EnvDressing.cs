@@ -247,13 +247,14 @@ namespace ZombieWar.EditorTools
             for (int t = 0; t < coverTries && coverKit.Count > 0; t++)
             {
                 var p = new Vector2(R() * d.M, R() * d.M);
-                if (PNoise(p, d.M, 0.06f, 23.1f, 71.9f) < def.coverPatch) continue;
+                if (PNoise(p, d.M, def.coverNoise, 23.1f, 71.9f) < def.coverPatch) continue;
                 string k = coverKit[rng.Next(coverKit.Count)];
                 var f = FootprintOf(k);
-                float r = Mathf.Max(0.2f, f.canopyR * 0.6f);
-                if (!occ.Free(p, Mathf.Min(r, 0.4f)) || !cover.Clear(p, r, 0.7f)) continue;
+                float sc = Mathf.Lerp(def.coverScale.x, def.coverScale.y, R());
+                float r = Mathf.Max(0.2f, f.canopyR * 0.6f) * sc;
+                if (!occ.Free(p, Mathf.Min(r, 0.4f)) || !cover.Clear(p, r, def.coverSpacing)) continue;
                 cover.Add(p, r);
-                list.Add(new PropSpot { key = k, p = p, yaw = R() * 360f, scale = 1f, group = "Cover" });
+                list.Add(new PropSpot { key = k, p = p, yaw = R() * 360f, scale = sc, group = "Cover" });
                 rep.cover++;
             }
 

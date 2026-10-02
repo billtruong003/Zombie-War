@@ -38,6 +38,22 @@ namespace ZombieWar.World
         public Color shadowTint = new(0.56f, 0.58f, 0.76f);
         [Tooltip("Set on snow maps: walkers leave trails in the snow (SnowTrails, Hidden/HordeCall/SnowTrail).")]
         public Shader snowTrails;
+        [Tooltip("The map's colour grade (owner picks per map, 02/10): a global volume above the gameplay one.")]
+        public UnityEngine.Rendering.VolumeProfile post;
+
+        /// <summary>A look on trial (QA panel, LOOK tab): another grade, or other ground / fluid
+        /// materials. Empty fields leave that part as it is.</summary>
+        [System.Serializable]
+        public struct LookOption
+        {
+            public string name;
+            public UnityEngine.Rendering.VolumeProfile post;
+            public Material ground;
+            public Material fluid;
+        }
+
+        [Tooltip("Looks the owner can switch to live while testing (written by MapLooks).")]
+        public LookOption[] devLooks = new LookOption[0];
         [Tooltip("Baked by MapLightBaker: R sun, G ambient occlusion, B caster height, A ground height.")]
         public Texture2D mapLight;
 

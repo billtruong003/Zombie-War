@@ -92,12 +92,12 @@ namespace ZombieWar.EditorTools
                     Foam(m, C(0.98f, 0.97f, 0.92f), line: 0.03f, noise: 1f, scale: 1.4f, reach: 0.8f);
                     return true;
                 case "volcano":
-                    // Crust type by default (black plates, white-hot seams, boiling vents); the molten
-                    // type is the other option.
+                    // MinionsArt's glowing lava by default (owner 02/10: the black crust type sank into
+                    // the charcoal ground); the crust type is a trial look.
                     var noise = m.GetTexture("_NoiseTex");
                     Use(m, "HordeCall/Map/Volcano Lava");
                     m.SetTexture("_NoiseTex", noise);
-                    LavaCrust(m);
+                    LavaMolten(m);
                     return true;
             }
             return false;
@@ -110,24 +110,29 @@ namespace ZombieWar.EditorTools
             m.SetFloat("_FoamNoise", noise); m.SetFloat("_FoamNoiseScale", scale); m.SetFloat("_FoamNoiseDist", reach);
         }
 
-        /// <summary>Liquid lava: crust slabs with a red rim float on orange, yellow veins, boiling.</summary>
+        /// <summary>MinionsArt's lava: a glowing orange body sinking to deep red in patches, a network
+        /// of yellow-white veins drifting with the flow, brighter up the bank, slow bubbles.</summary>
         public static void LavaMolten(Material m)
         {
             m.SetFloat("_Lava", 0f); m.EnableKeyword("_LAVA_MOLTEN"); m.DisableKeyword("_LAVA_CRUST");
             m.SetColor("_CrustColor", C(0.035f, 0.025f, 0.025f));
-            m.SetColor("_RimColor", C(0.45f, 0.05f, 0.02f));
-            m.SetColor("_HotColor", C(1f, 0.3f, 0.03f));
-            m.SetColor("_CoreColor", new Color(1.6f, 1.05f, 0.3f, 1f));
-            m.SetFloat("_CrustCut", 0.4f); m.SetFloat("_CoreCut", 0.6f); m.SetFloat("_Scale", 4f);
+            m.SetColor("_RimColor", C(0.72f, 0.12f, 0.02f));
+            m.SetColor("_HotColor", C(1f, 0.42f, 0.05f));
+            m.SetColor("_CoreColor", new Color(1.7f, 1.25f, 0.45f, 1f));
+            m.SetFloat("_CrustCut", 0.45f); m.SetFloat("_Scale", 6f);
+            m.SetFloat("_VeinScale", 1.3f); m.SetFloat("_VeinWidth", 0.07f); m.SetFloat("_BankGlow", 0.5f);
             m.SetFloat("_EdgeWidth", 0.04f); m.SetFloat("_RimWidth", 0.03f);
-            m.SetColor("_EdgeColor", new Color(1.6f, 0.62f, 0.08f, 1f));
-            m.SetFloat("_BubbleAmount", 0.45f); m.SetFloat("_BubbleScale", 1.3f);
+            m.SetColor("_EdgeColor", new Color(1.7f, 1.2f, 0.4f, 1f));
+            m.SetFloat("_BubbleAmount", 0.3f); m.SetFloat("_BubbleScale", 1.6f);
+            m.SetVector("_Flow", new Vector4(0.2f, 0.1f, 0.025f, 0f));
         }
 
         /// <summary>Skinned-over lava: black plates, white-hot seams, boiling vents.</summary>
         public static void LavaCrust(Material m)
         {
             m.SetFloat("_Lava", 1f); m.EnableKeyword("_LAVA_CRUST"); m.DisableKeyword("_LAVA_MOLTEN");
+            m.SetColor("_HotColor", C(1f, 0.3f, 0.03f));
+            m.SetColor("_CoreColor", new Color(1.6f, 1.05f, 0.3f, 1f));
             m.SetColor("_CrustColor", C(0.04f, 0.03f, 0.03f));
             m.SetColor("_RimColor", C(0.4f, 0.04f, 0.02f));
             m.SetFloat("_PlateScale", 1.5f); m.SetFloat("_SeamWidth", 0.08f); m.SetFloat("_VentCut", 0.66f);
@@ -154,7 +159,9 @@ namespace ZombieWar.EditorTools
                     m.SetFloat("_LitterAmount", 0.35f); m.SetFloat("_LitterScale", 0.42f);
                     m.SetColor("_LitterColor", C(0.5f, 0.3f, 0.12f)); m.SetColor("_LitterColor2", C(0.4f, 0.37f, 0.15f));
                     m.SetFloat("_MossAmount", 0.6f); m.SetColor("_MossColor", C(0.2f, 0.34f, 0.12f));
-                    Darken(m, 0.82f);
+                    // The zone palette (EnvSandboxBuilder, forest) at 82 %: set, never multiplied, so
+                    // applying twice gives the same ground.
+                    Palette(m, C(0.295f, 0.213f, 0.148f), C(0.164f, 0.303f, 0.164f), C(0.23f, 0.353f, 0.18f), C(0.279f, 0.312f, 0.271f));
                     return true;
                 case "swamp":
                     Use(m, "HordeCall/Map/Swamp Ground");
@@ -193,13 +200,10 @@ namespace ZombieWar.EditorTools
             m.SetColor("_BedColor", a); m.SetColor("_BedColor2", b); m.SetFloat("_BedStrength", strength);
         }
 
-        static void Darken(Material m, float k)
+        static void Palette(Material m, Color dry, Color grass, Color sand, Color rock)
         {
-            foreach (var p in new[] { "_DryDebugColor", "_GrassDebugColor", "_SandDebugColor", "_RockDebugColor" })
-            {
-                var c = m.GetColor(p);
-                m.SetColor(p, new Color(c.r * k, c.g * k, c.b * k, 1f));
-            }
+            m.SetColor("_DryDebugColor", dry); m.SetColor("_GrassDebugColor", grass);
+            m.SetColor("_SandDebugColor", sand); m.SetColor("_RockDebugColor", rock);
         }
 
         /// <summary>Deep charcoal, no grey; thin hard cracks, lava glowing through near the basins and
@@ -223,6 +227,67 @@ namespace ZombieWar.EditorTools
             m.SetFloat("_CrackGlowFlicker", 0.35f);
             m.SetColor("_CrackGlow", C(1f, 0.18f, 0.02f));
             m.SetColor("_CrackGlowCore", new Color(1.6f, 0.55f, 0.06f, 1f));
+            m.SetFloat("_BumpStrength", 0f);
+        }
+
+        /// <summary>Trial (owner 02/10): charcoal without cracks, a rough normal instead.</summary>
+        public static void CharcoalRough(Material m)
+        {
+            Charcoal(m);
+            m.SetColor("_DryDebugColor", C(0.11f, 0.1f, 0.1f)); m.SetColor("_GrassDebugColor", C(0.09f, 0.085f, 0.085f));
+            m.SetColor("_SandDebugColor", C(0.12f, 0.11f, 0.105f)); m.SetColor("_RockDebugColor", C(0.08f, 0.075f, 0.075f));
+            m.SetFloat("_CrackStrength", 0f);
+            m.SetFloat("_CrackGlowBase", 0f); m.SetFloat("_CrackGlowReach", 0f);
+            m.SetFloat("_BumpStrength", 1.2f); m.SetFloat("_BumpScale", 2.5f);
+        }
+
+        /// <summary>The trial looks the QA panel switches between: every grade of the map, and on the
+        /// volcano the other lava type and the charcoal without cracks.</summary>
+        static void WriteDevLooks(System.Text.StringBuilder log)
+        {
+            const string optDir = "Assets/Settings/MapPost/Options/";
+            System.IO.Directory.CreateDirectory(optDir);
+            foreach (var id in MapIds)
+            {
+                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + id + ".asset");
+                if (theme == null) continue;
+                var looks = new System.Collections.Generic.List<ZombieWar.World.MapTheme.LookOption>();
+                foreach (var (name, label, grade) in LookShot.GradeOptions(id))
+                {
+                    string path = optDir + "Post_" + id + "_" + name + ".asset";
+                    var profile = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(path);
+                    if (profile == null) { profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>(); AssetDatabase.CreateAsset(profile, path); }
+                    LookShot.WriteGrade(profile, grade);
+                    foreach (var c in profile.components) if (!AssetDatabase.Contains(c)) AssetDatabase.AddObjectToAsset(c, profile);
+                    EditorUtility.SetDirty(profile);
+                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = label, post = profile });
+                }
+                if (id == "volcano")
+                {
+                    string dir = Art + "Maps/volcano/Options/";
+                    System.IO.Directory.CreateDirectory(dir);
+                    var crust = Variant(Art + "Materials/M_Fluid_volcano.mat", dir + "M_Fluid_volcano_crust.mat", LavaCrust);
+                    var rough = Variant(Art + "Maps/volcano/M_MapGround_volcano.mat", dir + "M_MapGround_volcano_rough.mat", CharcoalRough);
+                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Lava kiểu 2 · vỏ nguội", fluid = crust });
+                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Đất than không nứt, sần", ground = rough });
+                    looks.Add(new ZombieWar.World.MapTheme.LookOption { name = "Không nứt + lava vỏ nguội", ground = rough, fluid = crust });
+                }
+                theme.devLooks = looks.ToArray();
+                EditorUtility.SetDirty(theme);
+                log.Append("looks_").Append(id).Append('(').Append(looks.Count).Append(") ");
+            }
+        }
+
+        static Material Variant(string srcPath, string path, System.Action<Material> look)
+        {
+            var src = AssetDatabase.LoadAssetAtPath<Material>(srcPath);
+            if (src == null) return null;
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null) { m = new Material(src); AssetDatabase.CreateAsset(m, path); }
+            else { m.shader = src.shader; m.CopyPropertiesFromMaterial(src); }
+            look(m);
+            EditorUtility.SetDirty(m);
+            return m;
         }
 
         static void Use(Material m, string shader)
@@ -250,6 +315,28 @@ namespace ZombieWar.EditorTools
                 var f = AssetDatabase.LoadAssetAtPath<Material>(Art + "Materials/M_Fluid_" + id + ".mat");
                 if (f != null && Fluid(f, id)) { EditorUtility.SetDirty(f); log.Append(f.name).Append(' '); }
             }
+            WriteDevLooks(log);
+
+            // Each map's colour grade (the owner's pick, or the first option until one is picked).
+            const string postDir = "Assets/Settings/MapPost/";
+            System.IO.Directory.CreateDirectory(postDir);
+            foreach (var id in MapIds)
+            {
+                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + id + ".asset");
+                if (theme == null) continue;
+                var grade = LookShot.PickedGrade(id);
+                if (grade == null) { theme.post = null; EditorUtility.SetDirty(theme); continue; }
+                string path = postDir + "Post_" + id + ".asset";
+                var profile = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(path);
+                if (profile == null) { profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>(); AssetDatabase.CreateAsset(profile, path); }
+                LookShot.WriteGrade(profile, grade.Value);
+                foreach (var c in profile.components) if (!AssetDatabase.Contains(c)) AssetDatabase.AddObjectToAsset(c, profile);
+                EditorUtility.SetDirty(profile);
+                theme.post = profile;
+                EditorUtility.SetDirty(theme);
+                log.Append("Post_").Append(id).Append(' ');
+            }
+
             // Snow maps press trails (SnowTrails reads the shader from the theme so it ships in builds).
             var tundra = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_tundra.asset");
             if (tundra != null) { tundra.snowTrails = Shader.Find("Hidden/HordeCall/SnowTrail"); EditorUtility.SetDirty(tundra); }

@@ -45,6 +45,9 @@ namespace ZombieWar.EditorTools
             public Vector2 groveRadius = new(4f, 7f);
             public float loneTrees = 0.3f, vignettes = 0.6f, singles = 1.5f;   // per 1 000 m²
             public float coverPer100 = 2f, coverPatch = 0.5f;                   // tries per 100 m², patch noise cut
+            public float coverNoise = 0.06f;      // patch noise frequency: higher = smaller, more clumps
+            public float coverSpacing = 0.7f;     // tuft spacing factor: lower = tufts packed closer
+            public Vector2 coverScale = Vector2.one;   // tuft size range: big tufts fill a clump with fewer triangles
             // Winding paths painted into the ground's path layer (desert clay paths): 0 = none.
             public float pathBands;
         }
@@ -53,7 +56,8 @@ namespace ZombieWar.EditorTools
         {
             new MapDef { id = "meadow", riversH = 1, pools = 5, poolRadius = new Vector2(3.5f, 6f),
                 canopyOverlap = 1f, groveNoise = 0.55f, groveSpacing = 26f, groveRadius = new Vector2(5f, 8f),
-                loneTrees = 0.25f, vignettes = 1.2f, singles = 1.5f, coverPer100 = 80f, coverPatch = 0.3f },
+                // Owner 02/10: grass dense in clumps, bare between them, so the meadow reads and sways.
+                loneTrees = 0.25f, vignettes = 1.2f, singles = 1.5f, coverPer100 = 95f, coverPatch = 0.44f, coverNoise = 0.16f, coverSpacing = 0.3f, coverScale = new Vector2(1.35f, 1.85f) },
             new MapDef { id = "forest", riversH = 1, riversV = 1, pools = 3, poolRadius = new Vector2(3f, 5f),
                 canopyOverlap = 0.75f, groveNoise = 0.35f, groveSpacing = 16f, groveRadius = new Vector2(6f, 10f),
                 loneTrees = 0.6f, vignettes = 0.8f, singles = 1.5f, coverPer100 = 30f, coverPatch = 0.45f },

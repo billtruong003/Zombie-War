@@ -7,6 +7,7 @@
 //   GROUND_CRACK_TEX   painted crack mask, glowing near basins
 //   GROUND_CRACK_PROC  procedural volcanic cracks: thin, exact, lava glowing through
 //   GROUND_SNOW        trails pressed into the snow (SnowTrails) and sparkles
+//   GROUND_BUMP        a rough normal from the noise (volcanic charcoal without cracks)
 #ifndef ENV_GROUND_CORE_INCLUDED
 #define ENV_GROUND_CORE_INCLUDED
 
@@ -92,6 +93,8 @@ CBUFFER_START(UnityPerMaterial)
     float  _SnowTrailDepth;
     float  _SparkleAmount;
     float  _SparkleScale;
+    float  _BumpStrength;
+    float  _BumpScale;
 CBUFFER_END
 
 struct Attributes
@@ -300,6 +303,18 @@ half4 GroundFragment(Varyings input) : SV_Target
         normalWS = normalize(float3(nts.x, nts.z, nts.y));
     #endif
 
+#if defined(GROUND_BUMP)
+    // Rough ground: two octaves of the noise as a height field, its slope tilts the normal, so the
+    // toon light breaks the flat charcoal into lit and shaded lumps.
+    if (_BumpStrength > 0.001)
+    {
+        float s = _BumpScale, e = s * 0.04;
+        float h0 = SampleNoise(worldXZ, s) + 0.5 * SampleNoise(worldXZ + 7.1, s * 0.37);
+        float hx = SampleNoise(worldXZ + float2(e, 0), s) + 0.5 * SampleNoise(worldXZ + float2(e, 0) + 7.1, s * 0.37);
+        float hz = SampleNoise(worldXZ + float2(0, e), s) + 0.5 * SampleNoise(worldXZ + float2(0, e) + 7.1, s * 0.37);
+        normalWS = normalize(normalWS + float3(h0 - hx, 0, h0 - hz) / e * _BumpStrength);
+    }
+#endif
     half3 sparkle = 0;
 #if defined(GROUND_SNOW)
     // Trails: the pressed depth darkens toward a cold blue, and its slope tilts the normal so the toon

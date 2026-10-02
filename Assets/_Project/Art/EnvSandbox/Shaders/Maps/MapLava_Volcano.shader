@@ -1,8 +1,9 @@
-// Volcano lava (2026-10-02, owner round 2: two lava types after MinionsArt, hard contrast, no orange
-// haze). Flat toon bands instead of gradients: black crust → deep red cooling rim → orange → yellow
-// core, each step a hard edge, so the lava reads at a glance from the game camera.
-//  - Molten (default): the basin is liquid; dark crust floats on it in drifting slabs with a red rim,
-//    yellow-hot veins run through, bubbles swell and pop.
+// Volcano lava (2026-10-02, owner round 2: two lava types after MinionsArt; the lava must stand out
+// hard against the charcoal ground).
+//  - Molten (default), after MinionsArt's stylized lava: the whole surface glows. An orange body that
+//    sinks to deep red in slow noise patches, a network of yellow-white veins (cell edges of a
+//    distorted, scrolling cell field, two scales crossing), a soft glow round the veins, brighter where
+//    the lava climbs the bank and the rocks, and slow bubbles.
 //  - Crust (_LAVA_CRUST): the basin has skinned over; black plates with thin white-hot seams, and
 //    vents where the noise melts through, boiling.
 // The bank where lava meets ground or rock is a thin hot line (camera depth texture).
@@ -36,6 +37,10 @@ Shader "HordeCall/Map/Volcano Lava"
         _SeamWidth ("Plate seam width (crust)", Range(0.01,0.4)) = 0.08
         _VentCut ("Vents above (crust)", Range(0,1)) = 0.66
 
+        _VeinScale ("Vein cell size (m, molten)", Float) = 1.3
+        _VeinWidth ("Vein width (molten)", Range(0.01,0.3)) = 0.07
+        _BankGlow ("Glow up the bank (m of lava)", Range(0,1.5)) = 0.5
+
         _BubbleAmount ("Boiling bubbles", Range(0,1)) = 0.45
         _BubbleScale ("Bubble spacing (m)", Float) = 1.3
         _BubbleRate ("Bubble lives per second", Float) = 0.45
@@ -65,6 +70,7 @@ Shader "HordeCall/Map/Volcano Lava"
                 float  _CrustCut, _CoreCut, _RimWidth, _EdgeWidth, _Pulse;
                 float  _PlateScale, _SeamWidth, _VentCut;
                 float  _BubbleAmount, _BubbleScale, _BubbleRate;
+                float  _VeinScale, _VeinWidth, _BankGlow;
             CBUFFER_END
 
             struct A { float4 pos : POSITION; };
@@ -137,15 +143,19 @@ Shader "HordeCall/Map/Volcano Lava"
                 col = lerp(col, Molten(v, _VentCut + 0.08), vent);
                 col = Boil(col, xz + distort * 0.3, vent);
             #else
-                // Liquid basin: slabs of crust float where the noise is low, a red cooling rim around
-                // each, molten orange elsewhere with yellow veins.
-                float crust = 1.0 - Step(_CrustCut, v);
-                float rim = (1.0 - Step(_CrustCut + _RimWidth, v)) * (1.0 - crust);
-                float slab = 0.85 + 0.3 * N(xz * 3.1 - drift, 2.0, 0);
-                col = Molten(v, _CoreCut);
-                col = lerp(col, _RimColor.rgb, rim);
-                col = lerp(col, _CrustColor.rgb * slab, crust);
-                col = Boil(col, xz + distort * 0.3, 1.0 - crust);
+                // MinionsArt: body orange, sinking to deep red where the slow noise is low.
+                col = lerp(_RimColor.rgb, _HotColor.rgb, smoothstep(_CrustCut - 0.12, _CrustCut + 0.12, v));
+                // Veins: edges of a cell field bent by the distortion and drifting, plus a finer field
+                // crossing the other way; a soft glow round them, a white-hot thin core.
+                float a1, b1, a2, b2; float2 cid, ctc;
+                EnvVoronoi((xz + distort * 0.6 + drift * 0.5) / _VeinScale, 1.0, a1, b1, cid, ctc);
+                EnvVoronoi((xz - distort * 0.4 - drift * 0.3) / (_VeinScale * 0.55) + 5.7, 1.0, a2, b2, cid, ctc);
+                float e1 = b1 - a1, e2 = b2 - a2;
+                float vein = max(1.0 - smoothstep(_VeinWidth * 0.4, _VeinWidth, e1), (1.0 - smoothstep(_VeinWidth * 0.25, _VeinWidth * 0.7, e2)) * 0.8);
+                float halo = max(1.0 - smoothstep(0.0, _VeinWidth * 4.0, e1), (1.0 - smoothstep(0.0, _VeinWidth * 3.0, e2)) * 0.6);
+                col = lerp(col, _HotColor.rgb * 1.25, halo * 0.55);
+                col = lerp(col, _CoreColor.rgb, vein);
+                col = Boil(col, xz + distort * 0.3, 0.6);
             #endif
 
                 // Hot parts breathe a little; the crust stays put.
@@ -156,6 +166,10 @@ Shader "HordeCall/Map/Volcano Lava"
                 float2 suv = i.screen.xy / i.screen.w;
                 float depth = max(0.0, LinearEyeDepth(SampleSceneDepth(suv), _ZBufferParams) - i.screen.w);
                 float wob = (N(xz, 2.0, drift) - 0.5) * 0.08;
+            #if !defined(_LAVA_CRUST)
+                // Molten lava brightens as it climbs the bank and the rocks (MinionsArt's edge glow).
+                col = lerp(col, _CoreColor.rgb * 0.85, (1.0 - smoothstep(0.0, _BankGlow, depth + wob)) * 0.6);
+            #endif
                 col = lerp(col, _EdgeColor.rgb, 1.0 - Step(_EdgeWidth + wob, depth));
                 col = lerp(col, _RimColor.rgb, (1.0 - Step(_EdgeWidth * 1.8 + wob, depth)) * Step(_EdgeWidth + wob, depth));
                 return half4(col, 1.0h);

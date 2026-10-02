@@ -71,6 +71,16 @@ namespace ZombieWar.World
             GrassBenders.Active = true;
             GrassBenders.EnemiesBendGrass = Theme.hasFoliage || Theme.snowTrails != null;   // the same feet press the snow
             if (Theme.snowTrails != null) SnowTrails.Create(transform, Theme.snowTrails);
+            // The map's own grade over the gameplay volume (which keeps the outline and the bloom).
+            if (Theme.post != null)
+            {
+                var post = new GameObject("MapPost");
+                post.transform.SetParent(transform, false);
+                var v = post.AddComponent<UnityEngine.Rendering.Volume>();
+                v.isGlobal = true;
+                v.priority = 50f;
+                v.sharedProfile = Theme.post;
+            }
             GrassBenders.EnsureRunner();
 
             // The chunks around the spawn exist before the player does.
@@ -222,6 +232,46 @@ namespace ZombieWar.World
             MapNavigator.MarkDirty();
         }
 
+        // ── looks on trial (QA panel) ─────────────────────────────────────────────────────
+
+        Material _groundTry, _fluidTry;
+        readonly Dictionary<Renderer, Material> _baseMats = new();
+
+        /// <summary>Puts a trial look on the running map (null fields: back to the map's own).</summary>
+        public void TryLook(UnityEngine.Rendering.VolumeProfile post, Material ground, Material fluid)
+        {
+            var v = transform.Find("MapPost")?.GetComponent<UnityEngine.Rendering.Volume>();
+            if (v == null && post != null)
+            {
+                var go = new GameObject("MapPost");
+                go.transform.SetParent(transform, false);
+                v = go.AddComponent<UnityEngine.Rendering.Volume>();
+                v.isGlobal = true; v.priority = 50f;
+            }
+            // The game clones every volume's profile and renders the clone: replace the clone.
+            if (v != null) v.profile = post != null ? post : Theme.post;
+            _groundTry = ground; _fluidTry = fluid;
+            foreach (var go in _live.Values) if (go != null) Retexture(go);
+            foreach (var s in _pool.Values) foreach (var go in s) if (go != null) Retexture(go);
+        }
+
+        void Retexture(GameObject chunk)
+        {
+            foreach (var r in chunk.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (!_baseMats.TryGetValue(r, out var baseMat))
+                {
+                    baseMat = r.sharedMaterial;
+                    if (baseMat == null) continue;
+                    bool ground = baseMat.name.StartsWith("M_MapGround_"), fluid = baseMat.name.StartsWith("M_Fluid_");
+                    if (!ground && !fluid) continue;
+                    _baseMats[r] = baseMat;
+                }
+                var tryMat = baseMat.name.StartsWith("M_MapGround_") ? _groundTry : _fluidTry;
+                r.sharedMaterial = tryMat != null ? tryMat : baseMat;
+            }
+        }
+
         void Show(Vector2Int c)
         {
             if (_live.ContainsKey(c)) return;
@@ -231,6 +281,7 @@ namespace ZombieWar.World
             if (_pool.TryGetValue(prefab, out var stack) && stack.Count > 0) go = stack.Pop();
             else { go = Instantiate(prefab, _root); go.name = prefab.name; }
             go.transform.position = ChunkCentre(c);
+            if (_groundTry != null || _fluidTry != null) Retexture(go);
             go.SetActive(true);
             _live[c] = go;
             MapNavigator.MarkDirty();

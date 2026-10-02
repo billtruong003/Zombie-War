@@ -14,11 +14,27 @@ namespace ZombieWar.EditorTools
     {
         static List<Variant> Variants(string theme)
         {
+            if (SessionState.GetBool(PostKey, false))
+            {
+                // The map's own grade now (its post volume) against each of its five grades.
+                var posts = new List<Variant> { new("post_now", "Post đang áp", () => Ctx.Post(true)) };
+                int k = 1;
+                foreach (var (name, label, grade) in Grades(theme))
+                {
+                    var g = grade;
+                    posts.Add(new Variant($"post{k++}_{name}", label, () => Ctx.MapPost(g)));
+                }
+                return posts;
+            }
             if (SessionState.GetBool(AppliedKey, false))
             {
                 // The looks written into the map materials (MapLooks), plus the second lava type.
                 var applied = new List<Variant> { new("applied", "Đã áp vào material map", () => { }) };
-                if (theme == "volcano") applied.Add(new Variant("applied_molten", "Lava kiểu 2: sôi, mảng vỏ trôi", () => { if (Ctx.Fluid != null) MapLooks.LavaMolten(Ctx.Fluid); }));
+                if (theme == "volcano")
+                {
+                    applied.Add(new Variant("applied_crust", "Lava kiểu 2: vỏ nguội, khe sáng", () => { if (Ctx.Fluid != null) MapLooks.LavaCrust(Ctx.Fluid); }));
+                    applied.Add(new Variant("applied_rough", "Đất than không nứt, sần", () => { if (Ctx.Ground != null) MapLooks.CharcoalRough(Ctx.Ground); }));
+                }
                 return applied;
             }
             var list = new List<Variant> { new("now", "Hiện tại", () => { }) };
@@ -56,6 +72,33 @@ namespace ZombieWar.EditorTools
         }
 
         const string AppliedKey = "zw.lookshot.applied";
+        const string PostKey = "zw.lookshot.post";
+
+        /// <summary>Shoots each map's grade now and its five grade options.</summary>
+        public static string RunPost(params string[] themes)
+        {
+            string r = Run(themes);
+            SessionState.SetBool(PostKey, true);
+            return r;
+        }
+
+        /// <summary>The grade a map's post profile is written with: the owner's pick, or the first
+        /// option until one is picked. Null: the map has no grade yet (volcano: owner, later).</summary>
+        public static Grade? PickedGrade(string theme)
+        {
+            string pick = theme switch
+            {
+                "forest" => "teal",          // owner pick P3, 02/10
+                "swamp" => "gloomy",         // owner pick P1, 02/10
+                "meadow" => "sky_pastel",    // owner pick P3, 02/10
+                "desert" => "dusty_haze",    // owner pick P2, 02/10
+                "tundra" => "cold",          // not picked yet
+                _ => null,
+            };
+            if (pick == null) return null;
+            foreach (var (name, _, grade) in Grades(theme)) if (name == pick) return grade;
+            return null;
+        }
 
         /// <summary>Shoots the looks now written into the map materials.</summary>
         public static string RunApplied(params string[] themes)
@@ -196,16 +239,27 @@ namespace ZombieWar.EditorTools
 
         static Color C(float r, float g, float b) => new(r, g, b, 1f);
 
+        /// <summary>A map's five grades (name, label, values).</summary>
+        public static IEnumerable<(string, string, Grade)> GradeOptions(string theme) => Grades(theme);
+
         static IEnumerable<(string, string, Grade)> Grades(string theme)
         {
             switch (theme)
             {
                 case "meadow":
-                    yield return ("sunny", "Post 1 · Nắng trong", new Grade { exposure = 0.05f, contrast = 12, saturation = 15, temperature = 5, bloomThreshold = 0.85f, bloomIntensity = 0.35f, vignette = 0.2f });
-                    yield return ("pastel", "Post 2 · Pastel mềm", new Grade { exposure = 0.15f, contrast = -8, saturation = -5, temperature = 3, shadows = C(1.05f, 1.02f, 1.1f), bloomThreshold = 0.9f, bloomIntensity = 0.2f, vignette = 0.12f });
-                    yield return ("vivid", "Post 3 · Rực rỡ", new Grade { exposure = 0.05f, contrast = 20, saturation = 32, bloomThreshold = 0.8f, bloomIntensity = 0.45f, vignette = 0.25f });
-                    yield return ("golden", "Post 4 · Chiều vàng", new Grade { contrast = 12, saturation = 12, temperature = 22, tint = -4, splitShadow = C(0.45f, 0.4f, 0.6f), splitHigh = C(0.65f, 0.55f, 0.4f), bloomThreshold = 0.8f, bloomIntensity = 0.5f, vignette = 0.28f });
-                    yield return ("cool", "Post 5 · Sáng mát", new Grade { exposure = 0.1f, contrast = 10, saturation = 10, temperature = -12, bloomThreshold = 0.85f, bloomIntensity = 0.3f, vignette = 0.15f });
+                    // Round 2 (owner 02/10): the cool, bright, pastel family.
+                    yield return ("cool_clear", "Post 1 · Mát trong", new Grade { exposure = 0.1f, contrast = 8, saturation = 12, temperature = -14, tint = -2, vignette = 0.12f });
+                    yield return ("pastel_mint", "Post 2 · Pastel bạc hà", new Grade { exposure = 0.18f, contrast = -10, saturation = -6, temperature = -8, shadows = C(1.02f, 1.06f, 1.1f), vignette = 0.1f });
+                    yield return ("sky_pastel", "Post 3 · Pastel trời xanh", new Grade { exposure = 0.15f, contrast = -4, saturation = 4, temperature = -10, filter = C(0.97f, 1f, 1.03f), splitShadow = C(0.45f, 0.5f, 0.62f), splitHigh = C(0.6f, 0.6f, 0.55f), vignette = 0.1f });
+                    yield return ("fresh_cool", "Post 4 · Tươi mát đậm", new Grade { exposure = 0.08f, contrast = 14, saturation = 18, temperature = -10, tint = -4, vignette = 0.15f });
+                    yield return ("soft_morning", "Post 5 · Sáng sớm dịu", new Grade { exposure = 0.2f, contrast = -6, saturation = 6, temperature = -4, highlights = C(1.02f, 1.02f, 1.06f), vignette = 0.08f });
+                    break;
+                case "desert":
+                    yield return ("warm_sun", "Post 1 · Nắng ấm", new Grade { exposure = 0.02f, contrast = 12, saturation = 10, temperature = 10, vignette = 0.18f });
+                    yield return ("dusty_haze", "Post 2 · Bụi mờ", new Grade { exposure = 0.08f, contrast = -6, saturation = -8, temperature = 14, filter = C(1.02f, 0.99f, 0.95f), vignette = 0.2f });
+                    yield return ("golden_hour", "Post 3 · Giờ vàng", new Grade { contrast = 14, saturation = 14, temperature = 22, splitShadow = C(0.44f, 0.42f, 0.6f), splitHigh = C(0.66f, 0.56f, 0.4f), vignette = 0.25f });
+                    yield return ("clear_noon", "Post 4 · Trưa trong", new Grade { exposure = 0.05f, contrast = 16, saturation = 16, temperature = -2, vignette = 0.12f });
+                    yield return ("pastel_sand", "Post 5 · Cát pastel", new Grade { exposure = 0.15f, contrast = -8, saturation = -4, temperature = 6, shadows = C(1.04f, 1.02f, 1.08f), vignette = 0.08f });
                     break;
                 case "forest":
                     yield return ("deep", "Post 1 · Rừng xanh đậm", new Grade { contrast = 15, saturation = 15, temperature = -4, shadows = C(0.95f, 1.02f, 1.05f), bloomThreshold = 0.85f, bloomIntensity = 0.35f, vignette = 0.28f });

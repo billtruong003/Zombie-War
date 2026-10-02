@@ -304,9 +304,33 @@ namespace ZombieWar
             AddAction(_content, "MID", () => SetTier(GraphicsTier.Level.Mid));
             AddAction(_content, "HIGH", () => SetTier(GraphicsTier.Level.High));
             AddAction(_content, "DEVICE DEFAULT", () => { GraphicsTier.ResetToDetected(); SetStatus("Tier: " + GraphicsTier.Current + " (detected)"); ShowTab(9); });
+            AddMapLooks();
             AddSection(_content, "POINT LIGHTS");
             AddAction(_content, "TEST LAMPS AROUND HERO", SpawnTestLamps);
             AddAction(_content, "REMOVE TEST LAMPS", ClearTestLamps);
+        }
+
+        /// The playing map's trial looks (02/10): its five colour grades and other ground / fluid
+        /// options, switched live; MAP DEFAULT puts the map's own look back.
+        private void AddMapLooks()
+        {
+            var streamer = World.BakedMapStreamer.Active;
+            if (streamer == null || streamer.Theme == null) return;
+            var theme = streamer.Theme;
+            AddSection(_content, "MAP LOOK · " + theme.id.ToUpperInvariant());
+            AddAction(_content, "MAP DEFAULT", () => { streamer.TryLook(null, null, null); SetStatus("Map look: default"); });
+            if (theme.devLooks == null) return;
+            foreach (var o in theme.devLooks)
+            {
+                var opt = o;
+                if (string.IsNullOrEmpty(opt.name)) continue;
+                AddAction(_content, opt.name.ToUpperInvariant(), () => { streamer.TryLook(opt.post, opt.ground, opt.fluid); SetStatus("Map look: " + opt.name); }, false, 22);
+            }
+            AddAction(_content, "POST ON / OFF", () =>
+            {
+                var cam = Camera.main;
+                if (cam != null && cam.TryGetComponent(out UnityEngine.Rendering.Universal.UniversalAdditionalCameraData d)) { d.renderPostProcessing = !d.renderPostProcessing; SetStatus("Post " + (d.renderPostProcessing ? "on" : "off")); }
+            });
         }
 
         private void SetTier(GraphicsTier.Level level)

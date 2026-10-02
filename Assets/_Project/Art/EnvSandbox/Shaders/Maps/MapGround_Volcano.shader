@@ -100,6 +100,8 @@ Shader "HordeCall/Map/Volcano Ground"
         _SnowTrailDepth ("Snow trail relief", Range(0,8)) = 3
         _SparkleAmount ("Snow sparkles", Range(0,4)) = 0
         _SparkleScale ("Sparkle cell (m)", Float) = 0.35
+        _BumpStrength ("Rough normal", Range(0,2)) = 0
+        _BumpScale ("Rough scale (m)", Float) = 2.5
     }
 
     SubShader
@@ -124,6 +126,7 @@ Shader "HordeCall/Map/Volcano Ground"
             #pragma fragment GroundFragment
             #pragma target 3.0
             #define GROUND_CRACK_PROC
+            #define GROUND_BUMP
             #include "Assets/_Project/Art/EnvSandbox/Shaders/EnvGroundCore.hlsl"
             ENDHLSL
         }
