@@ -116,6 +116,7 @@ namespace ZombieWar.World
         static readonly int MapLightSTId = Shader.PropertyToID("_ZWMapLightST");
         static readonly int MapLightOnId = Shader.PropertyToID("_ZWMapLightOn");
         static readonly int SunDirId = Shader.PropertyToID("_ZWSunDir");
+        static readonly int ShadowTintId = Shader.PropertyToID("_ZWShadowTint");
         static readonly int PlanarShadowOnId = Shader.PropertyToID("_ZWPlanarShadowOn");
         static readonly int ShadowPlaneYId = Shader.PropertyToID("_ZWShadowPlaneY");
 
@@ -126,6 +127,7 @@ namespace ZombieWar.World
             Shader.SetGlobalFloat(MapLightOnId, on ? 1f : 0f);
             Vector3 sunTravel = Quaternion.Euler(Theme.sunEuler) * Vector3.forward;
             Shader.SetGlobalVector(SunDirId, sunTravel);
+            Shader.SetGlobalColor(ShadowTintId, Theme.shadowTint);
             Shader.SetGlobalFloat(PlanarShadowOnId, 1f);     // the hero's planar shadow (CharacterToon)
             Shader.SetGlobalFloat(ShadowPlaneYId, 0.02f);
             if (!on) return;

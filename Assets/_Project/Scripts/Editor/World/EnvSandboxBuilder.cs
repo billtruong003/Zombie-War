@@ -112,7 +112,7 @@ namespace ZombieWar.EditorTools
                 tint = new[] { Color.white, Color.white, Color.white, Color.white }, primary = 1, secondary = 0, path = 0, outerCh = 1,
                 mid = new[] { "KK/Food_Crate_Large_Apples", "KK/Food_Barrel_Empty", "KK/Food_Basket_A_Berries", "KK/Containers_Box_Large", "KK/Wood_Log_A", "KK/Wood_Log_Stack", "KK/Pallet_Wood_Covered_A", "KF/Rock_1_E_Color1", "KF/Rock_2_C_Color1", "SN/Rock_Medium_2", "SN/Bush_Common_Flowers", "KH/pumpkin_orange", "SN/Clover_2" },
                 outer = new[] { "SN/CommonTree_1", "SN/CommonTree_2", "SN/CommonTree_3", "SN/CommonTree_4", "SN/CommonTree_4", "SN/CommonTree_1", "SN/Bush_Common_Flowers", "KH/fence_seperate" },
-                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "SN/Grass_Wispy_Short", "SN/Grass_Common_Short", "SN/Grass_Common_Short", "SN/Clover_1", "SN/Clover_2", "SN/Plant_7", "SN/Flower_3_Group", "SN/Flower_3_Group", "SN/Flower_3_Single", "SN/Petal_1", "SN/Plant_7", "SN/Pebble_Round_2" },
+                landmark = new[] { "KK/Food_Pile_Large" }, scatter = new[] { "SN/Grass_Wispy_Short", "SN/Grass_Common_Short", "SN/Grass_Common_Short", "SN/Grass_Wispy_Short", "SN/Grass_Common_Short", "SN/Grass_Common_Short", "SN/Grass_Wispy_Short", "SN/Clover_1", "SN/Clover_2", "SN/Grass_Common_Short", "SN/Flower_3_Single", "SN/Pebble_Round_2" },   // owner 02/10: dense grass everywhere, few flowers
                 midPts = new[] { V(-9, 8), V(-12, -6), V(8, -9), V(11, 5) }, outerPts = new[] { V(-16, 14), V(-17, -13), V(15, 15), V(17, -12), V(0, 18) }, landmarkPts = new[] { V(13, 13) },
                 paths = new[] { new[] { V(-20, -4), V(20, 6) } }, gridStep = 4.5f, scatterCount = 170,
                 pools = new[] { new Vector3(9f, -10f, 5f) }, rivers = new[] { new[] { V(-20, 13), V(-8, 7), V(2, -3), V(9, -10) } }, riverWidth = 1.7f,
@@ -218,7 +218,7 @@ namespace ZombieWar.EditorTools
 
                 var root = new GameObject("EnvSandbox");
                 var rig = new GameObject("ToonLightRig");
-                rig.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+                rig.transform.rotation = Quaternion.Euler(50f, 60f, 0f);   // the maps' sun (MapTheme.sunEuler)
                 rig.AddComponent<ToonLightRig>();
 
                 foreach (var z in Zones()) log.Append(BuildZone(z, root.transform)).Append("; ");
@@ -501,6 +501,7 @@ namespace ZombieWar.EditorTools
                         break;
                 }
             }
+            MapLooks.Fluid(m, z.id);   // the five maps: their own shader and the locked look
             EditorUtility.SetDirty(m);
             return m;
         }
@@ -649,6 +650,7 @@ namespace ZombieWar.EditorTools
                 m.SetFloat(tileProps[i], z.tiling[i]);
                 if (z.layerColor != null) m.SetColor(paletteProps[i], z.layerColor[i]);
             }
+            MapLooks.Ground(m, z.id);
             EditorUtility.SetDirty(m);
             return m;
         }

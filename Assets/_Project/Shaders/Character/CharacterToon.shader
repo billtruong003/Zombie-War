@@ -243,7 +243,7 @@ Shader "ZombieWar/Character/Toon"
             Name "PlanarShadow"
             Tags { "LightMode" = "ZWPlanarShadow" }
             ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend DstColor Zero      // multiplies the ground by the map's shadow tint, like the baked shadows
             Offset -1, -1
             Stencil { Ref 128 ReadMask 128 WriteMask 128 Comp NotEqual Pass Replace }
 
@@ -265,9 +265,9 @@ Shader "ZombieWar/Character/Toon"
                 SVary OUT = (SVary)0;
                 UNITY_SETUP_INSTANCE_ID(IN);
                 float3 w = TransformObjectToWorld(IN.positionOS.xyz);
-                // Along the sun, but with most of its run away from the camera (+z) taken out: a shadow
-                // falling straight behind the hero hides behind its own body from this top-down view.
-                float3 L = normalize(float3(_ZWSunDir.x, _ZWSunDir.y - 1e-4, _ZWSunDir.z * 0.25));
+                // Straight along the sun, the same way the baked tree shadows fall (the maps' sun is set
+                // to throw shadows sideways, where the body does not hide them).
+                float3 L = normalize(float3(_ZWSunDir.x, min(_ZWSunDir.y, -0.2), _ZWSunDir.z));
                 float h = w.y - _ZWShadowPlaneY;
                 float3 g = w + L * (h / max(-L.y, 0.2));
                 g.y = _ZWShadowPlaneY;
@@ -279,8 +279,9 @@ Shader "ZombieWar/Character/Toon"
 
             half4 shadowFrag (SVary IN) : SV_Target
             {
+                // Already in a tree's shadow: nothing more to darken.
                 half sun = ZW_MapLight(IN.groundWS).x;
-                return half4(0.1h, 0.09h, 0.18h, 0.45h * sun * lerp(0.6h, 1.0h, IN.fade));
+                return half4(lerp(half3(1, 1, 1), _ZWShadowTint.rgb, sun * lerp(0.8h, 1.0h, IN.fade)), 1.0h);
             }
             ENDHLSL
         }

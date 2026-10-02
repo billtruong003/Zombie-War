@@ -196,9 +196,10 @@ namespace ZombieWar.EditorTools
             }
             float Wrap(float a) => Mathf.Repeat(a, mapSize);
 
-            var dirs = new Vector2[8];
-            for (int d = 0; d < 8; d++) dirs[d] = new Vector2(Mathf.Cos(d * Mathf.PI / 4f), Mathf.Sin(d * Mathf.PI / 4f));
-            float[] radii = { 0.3f, 0.7f, 1.2f, 2f, 3f };
+            // Sixteen directions, turned by a different angle at every pixel and sampled at radii that
+            // drift with it: eight fixed rays drew a star around every small prop.
+            const int Dirs = 16;
+            float[] radii = { 0.25f, 0.55f, 0.95f, 1.45f, 2.1f, 3f };
 
             for (int j = 0; j < Size; j++)
                 for (int i = 0; i < Size; i++)
@@ -228,31 +229,45 @@ namespace ZombieWar.EditorTools
                     sun[k] = lit / (float)taps;
                     hit[k] = top;
 
-                    // AO: how high the surroundings rise above this spot, in eight directions.
+                    // AO: how high the props around rise above this spot. Props only: the ground's own
+                    // slope into a basin is not occlusion in this style (it ringed every pond with a dark
+                    // band), and a rise under 0.15 m is a plank or a pebble, not a wall.
                     float occl = 0f;
-                    for (int d = 0; d < 8; d++)
+                    float spin = Hash(i, j) * Mathf.PI * 2f / Dirs;
+                    float jitter = 0.85f + 0.3f * Hash(j, i);
+                    for (int d = 0; d < Dirs; d++)
                     {
+                        float ang = spin + d * Mathf.PI * 2f / Dirs;
+                        float dx = Mathf.Cos(ang), dz = Mathf.Sin(ang);
                         float horizon = 0f;
-                        foreach (float r in radii)
+                        foreach (float r0 in radii)
                         {
-                            float sx = Wrap(wx + dirs[d].x * r), sz = Wrap(wz + dirs[d].y * r);
-                            float h = Mathf.Max(TopSample(topCasters, sx, sz), TopSample(topGround, sx, sz)) - gy;
-                            if (h > 0.05f) horizon = Mathf.Max(horizon, h / Mathf.Sqrt(h * h + r * r));
+                            float r = r0 * jitter;
+                            float sx = Wrap(wx + dx * r), sz = Wrap(wz + dz * r);
+                            float h = TopSample(topCasters, sx, sz) - gy;
+                            if (h > 0.15f) horizon = Mathf.Max(horizon, h / Mathf.Sqrt(h * h + r * r));
                         }
                         occl += horizon;
                     }
-                    float a = 1f - occl / 8f * 0.85f;
+                    float a = 1f - occl / Dirs * 0.85f;
                     float above = TopSample(topCasters, wx, wz) - gy;          // under a canopy or an overhang
                     if (above > 0.05f) a *= Mathf.Lerp(0.7f, 0.92f, Mathf.Clamp01(above / 8f));
                     ao[k] = Mathf.Clamp(a, 0.3f, 1f);
                 }
 
-            Blur(sun); Blur(ao);
+            Blur(sun); Blur(ao); Blur(ao);
             var px = new Color32[Size * Size];
             for (int k = 0; k < px.Length; k++)
                 px[k] = new Color32((byte)(sun[k] * 255f), (byte)(ao[k] * 255f),
                                     (byte)(Mathf.Clamp01(hit[k] / CasterTop) * 255f), (byte)(Mathf.Clamp01((gyArr[k] + 4f) / 8f) * 255f));
             return px;
+        }
+
+        static float Hash(int x, int y)
+        {
+            uint h = (uint)(x * 374761393 + y * 668265263);
+            h = (h ^ (h >> 13)) * 1274126177u;
+            return ((h ^ (h >> 16)) & 0xFFFF) / 65535f;
         }
 
         // 3x3 box blur, wrapping (the map tiles).

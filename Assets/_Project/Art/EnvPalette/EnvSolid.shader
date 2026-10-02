@@ -245,7 +245,7 @@ Shader "HordeCall/Env/Solid"
                 // Baked map shadow (sun) and occlusion: in shadow the toon colour drops toward its shadow
                 // tint instead of black.
                 half2 mapLight = ZW_MapLight(IN.positionWS);
-                color *= lerp(lerp(p.shadowTint, half3(1, 1, 1), 0.3h), half3(1, 1, 1), mapLight.x) * mapLight.y;
+                color *= ZW_ShadowTint(mapLight.x) * mapLight.y;
                 color += s.albedo * ZW_ToonPointLights(IN.positionWS, s.normalWS, 0.15h) * mapLight.y;
                 color = STW_ApplyFog(color, IN.fogCoord);
                 return half4(color, baseTex.a * _BaseColor.a);

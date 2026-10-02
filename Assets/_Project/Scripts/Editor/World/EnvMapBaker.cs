@@ -51,7 +51,7 @@ namespace ZombieWar.EditorTools
         {
             new MapDef { id = "meadow", riversH = 1, pools = 5, poolRadius = new Vector2(3.5f, 6f),
                 canopyOverlap = 1f, groveNoise = 0.55f, groveSpacing = 26f, groveRadius = new Vector2(5f, 8f),
-                loneTrees = 0.25f, vignettes = 1.2f, singles = 1.5f, coverPer100 = 40f, coverPatch = 0.42f },
+                loneTrees = 0.25f, vignettes = 1.2f, singles = 1.5f, coverPer100 = 80f, coverPatch = 0.3f },
             new MapDef { id = "forest", riversH = 1, riversV = 1, pools = 3, poolRadius = new Vector2(3f, 5f),
                 canopyOverlap = 0.75f, groveNoise = 0.35f, groveSpacing = 16f, groveRadius = new Vector2(6f, 10f),
                 loneTrees = 0.6f, vignettes = 0.8f, singles = 1.5f, coverPer100 = 30f, coverPatch = 0.45f },

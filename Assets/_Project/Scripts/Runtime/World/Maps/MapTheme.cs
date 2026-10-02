@@ -33,7 +33,9 @@ namespace ZombieWar.World
         public Color sunColor = new(1f, 0.97f, 0.92f);
         public float sunIntensity = 1.1f;
         [Tooltip("Where the sun stands (toon light rig rotation). The baked shadows use the same angle.")]
-        public Vector3 sunEuler = new(50f, -30f, 0f);
+        public Vector3 sunEuler = new(50f, 60f, 0f);
+        [Tooltip("What sunlight drops to in the baked shadows and the hero's shadow (toon tint, not black).")]
+        public Color shadowTint = new(0.56f, 0.58f, 0.76f);
         [Tooltip("Baked by MapLightBaker: R sun, G ambient occlusion, B caster height, A ground height.")]
         public Texture2D mapLight;
 

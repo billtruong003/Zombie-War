@@ -68,6 +68,7 @@ namespace ZombieWar
 
         public static CharacterContactShadows Instance { get; private set; }
 
+        private static readonly int PlanarShadowOnId = Shader.PropertyToID("_ZWPlanarShadowOn");
         private int _playerHandle = -1;
         private Transform _playerTransform;
 
@@ -323,6 +324,9 @@ namespace ZombieWar
             if (_entries == null) return;
 
             SyncPlayerRegistration();
+            // A map with baked light gives the hero a real planar shadow (CharacterToon): the round
+            // contact mark under it would just smudge that shadow.
+            if (_playerHandle >= 0) _entries[_playerHandle].Visible = Shader.GetGlobalFloat(PlanarShadowOnId) < 0.5f;
             RecentreOnPlayer();
             RebuildNow();
         }

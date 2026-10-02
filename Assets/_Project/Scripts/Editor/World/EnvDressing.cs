@@ -82,6 +82,9 @@ namespace ZombieWar.EditorTools
             public bool Free(Vector2 p, float r)
             {
                 int ci = Mathf.FloorToInt(p.x / Cell), cj = Mathf.FloorToInt(p.y / Cell), n = Mathf.CeilToInt(r / Cell);
+                // The cell under the point itself always counts: with a radius under half a cell no
+                // cell centre is in reach, and grass grew on the water and the bridge decks.
+                if (cell[Index(ci, cj)] != 0) return false;
                 for (int dj = -n; dj <= n; dj++)
                     for (int di = -n; di <= n; di++)
                     {
@@ -313,11 +316,12 @@ namespace ZombieWar.EditorTools
             public readonly List<Vector2> uv = new(); public readonly List<Vector2> uv1 = new(); public readonly List<int> t = new();
         }
 
-        /// Ground cover of one chunk merged into one mesh per 8 m cell and material: 16 renderers a
-        /// chunk at most, each culled by its own bounds. Every clump keeps its own wind phase.
+        /// Ground cover of one chunk merged into one mesh per 8 m cell, material and graphics tier, each
+        /// culled by its own bounds. Every clump keeps its own wind phase. Each tuft is dealt to a tier
+        /// (CoverTiers): low phones draw the base share, mid adds the next, high draws everything.
         static void BakeCover(Transform parent, List<PropSpot> props, Vector2 corner, Vector2 centre, string meshPath)
         {
-            var builds = new Dictionary<(int, int, Material), MeshBuild>();
+            var builds = new Dictionary<(int, int, Material, int), MeshBuild>();
             var rng = new System.Random(meshPath.GetHashCode());
             foreach (var s in props)
             {
@@ -332,6 +336,8 @@ namespace ZombieWar.EditorTools
                 var lod0 = new HashSet<Renderer>();
                 if (lod != null && lod.GetLODs().Length > 0) foreach (var r in lod.GetLODs()[0].renderers) lod0.Add(r);
                 float phase = (float)rng.NextDouble();
+                double deal = rng.NextDouble();
+                int tier = deal < CoverShareLow ? 0 : deal < CoverShareMid ? 1 : 2;
                 var cellKey = (Mathf.Clamp(Mathf.FloorToInt((local.x + ChunkSize * 0.5f) / CoverCell), 0, 3), Mathf.Clamp(Mathf.FloorToInt((local.y + ChunkSize * 0.5f) / CoverCell), 0, 3));
                 foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
                 {
@@ -348,7 +354,8 @@ namespace ZombieWar.EditorTools
                     {
                         var mat = r.sharedMaterials[sub];
                         if (mat == null) continue;
-                        if (!builds.TryGetValue((cellKey.Item1, cellKey.Item2, mat), out var b)) builds[(cellKey.Item1, cellKey.Item2, mat)] = b = new MeshBuild();
+                        var bk = (cellKey.Item1, cellKey.Item2, mat, tier);
+                        if (!builds.TryGetValue(bk, out var b)) builds[bk] = b = new MeshBuild();
                         var remap = new Dictionary<int, int>();
                         foreach (int i in mesh.GetTriangles(sub))
                         {
@@ -370,10 +377,12 @@ namespace ZombieWar.EditorTools
             var root = new GameObject("CoverClusters").transform;
             root.SetParent(parent, false);
             int idx = 0;
+            var tierRenderers = new List<Renderer>();
+            var tierOf = new List<int>();
             foreach (var kv in builds)
             {
                 var b = kv.Value;
-                var mesh = new Mesh { name = $"Cover_{kv.Key.Item1}_{kv.Key.Item2}_{idx++}" };
+                var mesh = new Mesh { name = $"Cover_{kv.Key.Item1}_{kv.Key.Item2}_{idx++}_t{kv.Key.Item4}" };
                 if (b.v.Count > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
                 mesh.SetVertices(b.v); mesh.SetNormals(b.n); mesh.SetColors(b.c); mesh.SetUVs(0, b.uv); mesh.SetUVs(1, b.uv1);
                 mesh.SetTriangles(b.t, 0); mesh.RecalculateBounds();
@@ -381,9 +390,15 @@ namespace ZombieWar.EditorTools
                 var go = new GameObject(mesh.name);
                 go.transform.SetParent(root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = kv.Key.Item3;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = kv.Key.Item3;
+                tierRenderers.Add(mr); tierOf.Add(kv.Key.Item4);
             }
+            root.gameObject.AddComponent<ZombieWar.World.CoverTiers>().Set(tierRenderers.ToArray(), tierOf.ToArray());
         }
+
+        // Share of the cover every device draws, and the share mid phones draw (the rest is high only).
+        const double CoverShareLow = 0.35, CoverShareMid = 0.65;
 
         static int[] Components(MapData d, out int main)
         {

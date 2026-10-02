@@ -8,10 +8,11 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Fluid_volcano
-  m_Shader: {fileID: 4800000, guid: ae93d3ab90a2cdc49b383102fd74e158, type: 3}
+  m_Shader: {fileID: 4800000, guid: aa6a1f64f2117de46b7846380552d0be, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _LAVA_CRUST
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -34,19 +35,31 @@ Material:
     m_Ints: []
     m_Floats:
     - _Brightness: 1.2
+    - _BubbleAmount: 0.6
+    - _BubbleRate: 0.45
+    - _BubbleScale: 1.1
+    - _CoreCut: 0.6
     - _CrackCut: 0.55
     - _CrackSoft: 0.08
+    - _CrustCut: 0.4
     - _DistortScale: 4
     - _Distortion: 0.35
-    - _EdgeWidth: 0.38
+    - _EdgeWidth: 0.04
+    - _Lava: 1
+    - _PlateScale: 1.5
+    - _Plates: 0
     - _Pulse: 0.25
-    - _Scale: 7
+    - _RimWidth: 0.03
+    - _Scale: 4
+    - _SeamWidth: 0.08
+    - _VentCut: 0.66
     m_Colors:
-    - _CoreColor: {r: 1, g: 0.85, b: 0.29999998, a: 1}
-    - _CrustColor: {r: 0.15999997, g: 0.049999982, b: 0.04, a: 1}
-    - _EdgeColor: {r: 1, g: 0.6, b: 0.14999998, a: 1}
+    - _CoreColor: {r: 1.6, g: 1.05, b: 0.3, a: 1}
+    - _CrustColor: {r: 0.04, g: 0.03, b: 0.03, a: 1}
+    - _EdgeColor: {r: 1.6, g: 0.62, b: 0.08, a: 1}
     - _Flow: {r: 0.2, g: 0.1, b: 0.03, a: 0}
-    - _HotColor: {r: 1, g: 0.34999996, b: 0.049999982, a: 1}
+    - _HotColor: {r: 1, g: 0.3, b: 0.03, a: 1}
+    - _RimColor: {r: 0.4, g: 0.04, b: 0.02, a: 1}
     - _ZoneRect: {r: 600, g: 170, b: 40, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

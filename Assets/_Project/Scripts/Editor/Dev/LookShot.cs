@@ -32,6 +32,7 @@ namespace ZombieWar.EditorTools
             SessionState.SetString(Key, string.Join(",", themes));
             SessionState.SetBool(LinesKey, false);
             SessionState.SetBool(ShadowsKey, false);
+            SessionState.SetBool(AppliedKey, false);
             Begin();
             return "running " + string.Join(",", themes);
         }

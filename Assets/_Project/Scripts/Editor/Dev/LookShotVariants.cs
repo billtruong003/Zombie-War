@@ -14,6 +14,13 @@ namespace ZombieWar.EditorTools
     {
         static List<Variant> Variants(string theme)
         {
+            if (SessionState.GetBool(AppliedKey, false))
+            {
+                // The looks written into the map materials (MapLooks), plus the second lava type.
+                var applied = new List<Variant> { new("applied", "Đã áp vào material map", () => { }) };
+                if (theme == "volcano") applied.Add(new Variant("applied_molten", "Lava kiểu 2: sôi, mảng vỏ trôi", () => { if (Ctx.Fluid != null) MapLooks.LavaMolten(Ctx.Fluid); }));
+                return applied;
+            }
             var list = new List<Variant> { new("now", "Hiện tại", () => { }) };
             if (SessionState.GetBool(ShadowsKey, false))
             {
@@ -46,6 +53,16 @@ namespace ZombieWar.EditorTools
                 list.Add(new Variant($"post{n++}_{name}", label, () => { pick(); ApplyGrade(g); }));
             }
             return list;
+        }
+
+        const string AppliedKey = "zw.lookshot.applied";
+
+        /// <summary>Shoots the looks now written into the map materials.</summary>
+        public static string RunApplied(params string[] themes)
+        {
+            string r = Run(themes);
+            SessionState.SetBool(AppliedKey, true);
+            return r;
         }
 
         const string LinesKey = "zw.lookshot.lines";

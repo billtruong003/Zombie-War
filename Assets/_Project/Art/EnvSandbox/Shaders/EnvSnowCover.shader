@@ -101,7 +101,7 @@ Shader "HordeCall/EnvSandbox/Snow Cover"
                 float ndotl = saturate(dot(n, lightDir));
                 float wrapped = lerp(ndotl, ndotl * 0.5 + 0.5, _LightWrap);
                 half2 mapLight = ZW_MapLight(i.w);
-                half3 lighting = lightColor * ((directional ? ToonBand(wrapped) : 1.0) * mapLight.x) + SampleSH(n) * _AmbientBoost * mapLight.y;
+                half3 lighting = (lightColor * (directional ? ToonBand(wrapped) : 1.0) + SampleSH(n) * _AmbientBoost * mapLight.y) * ZW_ShadowTint(mapLight.x);
                 lighting += ZW_ToonPointLights(i.w, n, 0.25h) * mapLight.y;
 
                 float3 viewDir = normalize(GetWorldSpaceViewDir(i.w));

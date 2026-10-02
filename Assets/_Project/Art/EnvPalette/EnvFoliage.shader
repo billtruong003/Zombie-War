@@ -155,7 +155,7 @@ Shader "HordeCall/Env/Foliage"
                 ndotl = lerp(saturate(ndotl), abs(ndotl), _BacklightWrap);
                 float wrapped = lerp(ndotl, ndotl * 0.5 + 0.5, _LightWrap);
                 half2 mapLight = ZW_MapLight(input.positionWS);
-                half3 lighting = lightColor * ((directional ? ToonBand(wrapped) : 1.0) * mapLight.x) + SampleSH(normalWS) * _AmbientBoost * mapLight.y;
+                half3 lighting = (lightColor * (directional ? ToonBand(wrapped) : 1.0) + SampleSH(normalWS) * _AmbientBoost * mapLight.y) * ZW_ShadowTint(mapLight.x);
                 lighting += ZW_ToonPointLights(input.positionWS, normalWS, 0.35h) * mapLight.y;   // leaves are thin: lit from behind too
                 return half4(albedo.rgb * lighting, 1.0h);
             }
