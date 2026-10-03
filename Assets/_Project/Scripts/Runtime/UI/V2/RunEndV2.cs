@@ -86,6 +86,7 @@ namespace ZombieWar.UI
 
         Health _player;
         Coroutine _count;
+        bool _freeRevive;
         long _banked;
         bool _doubled;
         RenderTexture _blur, _still;
@@ -94,7 +95,12 @@ namespace ZombieWar.UI
         {
             if (reviveRoot != null) reviveRoot.SetActive(false);
             if (resultRoot != null) resultRoot.SetActive(false);
-            On(adButton, () => RewardedAds.Show("revive", () => { ReviveRules.UseAd(); GetUp(); }));
+            On(adButton, () =>
+            {
+                // FTUE v2: the first revive ever needs no ad.
+                if (_freeRevive) { _freeRevive = false; ReviveRules.UseFree(); Ftue.Complete(Ftue.Revive); GetUp(); return; }
+                RewardedAds.Show("revive", () => { ReviveRules.UseAd(); GetUp(); });
+            });
             On(coinButton, () =>
             {
                 if (ReviveRules.TryPayCoin()) GetUp();
@@ -159,7 +165,14 @@ namespace ZombieWar.UI
             }
             Set(costNote, cost > carry ? $"Coin price doubles each revive · you carry {carry:N0}" : "Coin price doubles each revive");
             Set(coinLabel, cost.ToString("N0"));
-            if (adButton != null) adButton.gameObject.SetActive(ReviveRules.AdAvailable);
+            _freeRevive = !Ftue.Done(Ftue.Revive);
+            if (_freeRevive) Set(costNote, "Your first revive is free, no ad. Later: one ad per run, then coins.");
+            if (adButton != null)
+            {
+                adButton.gameObject.SetActive(_freeRevive || ReviveRules.AdAvailable);
+                adButton.transform.Find("Face/Video")?.gameObject.SetActive(!_freeRevive);
+                adButton.transform.Find("FtueTag")?.gameObject.SetActive(_freeRevive);
+            }
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
             if (_count != null) StopCoroutine(_count);
             _count = StartCoroutine(Countdown());

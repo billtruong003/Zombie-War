@@ -36,6 +36,10 @@ namespace ZombieWar
 
         public static void UseAd() { Sync(); _adUsed = true; _used++; }
 
+        /// <summary>FTUE v2: the first revive ever is free. It counts toward the three revives of the
+        /// run but leaves the ad revive available.</summary>
+        public static void UseFree() { Sync(); _used++; }
+
         public static bool TryPayCoin()
         {
             Sync();

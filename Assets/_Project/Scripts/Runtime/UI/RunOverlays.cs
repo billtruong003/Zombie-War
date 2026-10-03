@@ -409,8 +409,11 @@ namespace ZombieWar
                 BindCardVisuals(i, def, nextRank);
             }
             ShowOfferButtons(_skillOffer.Count);
+            // FTUE v2: the first level-up ever has no timer and points at one power card.
+            _ftueCard = !Ftue.Done(Ftue.Card);
             var sub = levelUpRoot.transform.Find("Sub/Label")?.GetComponent<TMP_Text>();
-            if (sub != null) sub.text = $"Level {run.Level} · choose one";
+            if (sub != null) sub.text = _ftueCard ? $"Level {run.Level} · choose one · no timer" : $"Level {run.Level} · choose one";
+            ShowFtueCard(_ftueCard ? SuggestedCard(_skillOffer) : -1);
             BindBuildStrip(skills);
             _shownAutoPickSeconds = -1;
 
@@ -440,6 +443,7 @@ namespace ZombieWar
             TickChest();
             if (levelUpRoot == null || !levelUpRoot.activeSelf) return;
             if (_skillOffer == null || _skillOffer.Count == 0) return;
+            if (_ftueCard) return;   // the first level-up ever waits for the player
             float waited = Time.realtimeSinceStartup - _levelUpShownAtRealtime;
             int left = Mathf.CeilToInt(LevelUpTimeoutSeconds - waited);
             if (left != _shownAutoPickSeconds)
@@ -612,8 +616,50 @@ namespace ZombieWar
             return $"<color=#{hex}>{def.displayName}</color> <size=70%>{tag}</size>";
         }
 
+        // ------------------------------------------------------------ ftue v2: first card
+        private bool _ftueCard;
+
+        /// The card to point at on the first level-up: a power (it does something you can see),
+        /// else the first card.
+        private static int SuggestedCard(List<ZombieWar.Skills.SkillDef> offer)
+        {
+            for (int i = 0; i < offer.Count; i++)
+                if (offer[i].layer == ZombieWar.Skills.SkillLayer.Autonomous) return i;
+            return 0;
+        }
+
+        /// Places the ring and the TRY THIS tag on card <paramref name="slot"/> (-1 hides them) and
+        /// swaps the countdown line for the one-line rule.
+        private void ShowFtueCard(int slot)
+        {
+            var lu = levelUpRoot.transform;
+            var ring = lu.Find("FtueRing") as RectTransform;
+            var tag = lu.Find("FtueTag") as RectTransform;
+            var coach = lu.Find("FtueCoach");
+            var hint = lu.Find("Hint");
+            var perk = slot >= 0 ? lu.Find($"Perk{slot}") as RectTransform : null;
+            bool on = perk != null;
+            if (ring != null)
+            {
+                ring.gameObject.SetActive(on);
+                if (on) { ring.anchorMin = perk.anchorMin; ring.anchorMax = perk.anchorMax; ring.pivot = perk.pivot; ring.anchoredPosition = perk.anchoredPosition; ring.sizeDelta = perk.sizeDelta + new Vector2(28f, 28f); }
+            }
+            if (tag != null)
+            {
+                tag.gameObject.SetActive(on);
+                if (on)
+                {
+                    tag.anchorMin = perk.anchorMin; tag.anchorMax = perk.anchorMax; tag.pivot = new Vector2(1f, 0.5f);
+                    tag.anchoredPosition = perk.anchoredPosition + new Vector2(perk.sizeDelta.x * (1f - perk.pivot.x) - 24f, perk.sizeDelta.y * (1f - perk.pivot.y));
+                }
+            }
+            if (coach != null) coach.gameObject.SetActive(on);
+            if (hint != null) hint.gameObject.SetActive(!on);
+        }
+
         private void PickPerk(int slot)
         {
+            if (_ftueCard) { _ftueCard = false; Ftue.Complete(Ftue.Card); ShowFtueCard(-1); }
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             if (skills != null && _skillOffer != null && slot >= 0 && slot < _skillOffer.Count)
             {

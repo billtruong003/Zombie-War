@@ -74,6 +74,7 @@ namespace ZombieWar
             cheat.Register("zw.tickets", () => AddTickets(10), "Add 10 gacha tickets");
             cheat.Register("zw.pity.edge", () => SetPityEdge(1), "Every banner one pull from its guarantee");
             cheat.Register("zw.newday", ResetDaily, "Free pull, stamp, welcome and missions fresh again");
+            cheat.Register("zw.ftue.reset", Ftue.ResetAll, "Forget every FTUE step: the first-time hints play again");
             cheat.Register("zw.unlock.weapons", UnlockWeapons, "Unlock every authored weapon");
             cheat.Register("zw.unlock.costumes", UnlockCostumes, "Unlock every authored costume");
             cheat.Register("zw.heal", HealPlayer, "Restore player HP");

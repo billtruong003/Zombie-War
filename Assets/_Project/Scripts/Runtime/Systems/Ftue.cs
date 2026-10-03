@@ -18,6 +18,23 @@ namespace ZombieWar
         public const string Move = "move";       // the in-run "drag to move" overlay was done
         public const string Reveal = "reveal";   // the after-first-run Arsenal + Shop reveal was seen
 
+        // FTUE v2 (owner-approved mockup 03/10, canvas page "FTUE v2").
+        public const string XpGlow = "xp";       // the XP bar glowed on the first kills
+        public const string Card = "card";       // the first level-up ever: no timer, one card suggested
+        public const string Chest = "chest";     // the first chest ever: no timer, how evolutions work
+        public const string Revive = "revive";   // the first revive ever was free
+        public const string Gift = "gift";       // the first result topped coins up to the cheapest gun
+        public const string Gun = "gun";         // the Arsenal pointed at the first gun to buy
+
+        /// <summary>The first time each station kind is met (a callout with its name and use).</summary>
+        public static string Station(ZombieWar.Stations.StationKind kind) => "station." + kind;
+
+        /// <summary>The first pickup of each mechanic item (a toast with what it did).</summary>
+        public static string Item(PickupEffect effect) => "item." + effect;
+
+        /// <summary>The account-level feature unlock popup (LV2 missions + pass, LV3 gacha, LV5 stars).</summary>
+        public static string Unlock(int level) => "unlock." + level;
+
         static readonly Dictionary<string, string> LegacyKeys = new()
         {
             [Move] = "ftue_done",
@@ -35,6 +52,13 @@ namespace ZombieWar
                 return true;
             }
             return false;
+        }
+
+        /// <summary>QA (cheat zw.ftue.reset): every step plays again, legacy keys included.</summary>
+        public static void ResetAll()
+        {
+            PlayerProfile.ClearFtueSteps();
+            foreach (var key in LegacyKeys.Values) PlayerPrefs.DeleteKey(key);
         }
 
         public static void Complete(string step)

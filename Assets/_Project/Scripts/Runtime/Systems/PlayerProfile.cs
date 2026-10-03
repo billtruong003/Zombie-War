@@ -260,6 +260,13 @@ namespace ZombieWar
             Data.ftueSteps.Add(step);
             SaveNow();
         }
+
+        /// <summary>QA: forget every first-time step so the FTUE plays again.</summary>
+        public static void ClearFtueSteps()
+        {
+            Data.ftueSteps?.Clear();
+            SaveNow();
+        }
         public static long TotalKills => Data.totalKills;
         public static int PeakThreat => Data.peakThreat;
         public static float TotalSeconds => Data.totalSeconds;

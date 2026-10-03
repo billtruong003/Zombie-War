@@ -62,6 +62,10 @@ namespace ZombieWar
             BindChest(_chest, skills);
             _chestShownAt = Time.realtimeSinceStartup;
             _chestShownLeft = -1;
+            // FTUE v2: the first chest ever has no timer and says how evolutions come about.
+            _ftueChest = !Ftue.Done(Ftue.Chest);
+            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(_ftueChest);
+            if (_ftueChest) SetText(ChestRoot.transform, "Hint", "No timer on your first chest");
             Time.timeScale = 0f;
             Show(ChestRoot, true);
 
@@ -122,9 +126,11 @@ namespace ZombieWar
             if (t != null) t.text = value;
         }
 
+        bool _ftueChest;
+
         void TickChest()
         {
-            if (!ChestOpen) return;
+            if (!ChestOpen || _ftueChest) return;
             float waited = Time.realtimeSinceStartup - _chestShownAt;
             int left = Mathf.CeilToInt(ChestTimeoutSeconds - waited);
             if (left != _chestShownLeft)
@@ -148,6 +154,8 @@ namespace ZombieWar
                 float bonus = skills.ConsumeMaxHealthBonus();   // a chest can rank up Max Health
                 if (bonus > 0f) PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(1f + bonus);
             }
+            if (_ftueChest) { _ftueChest = false; Ftue.Complete(Ftue.Chest); }
+            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(false);
             Show(ChestRoot, false);
             Time.timeScale = 1f;
             TryShowChest();
