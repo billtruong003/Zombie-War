@@ -13,7 +13,7 @@ namespace ZombieWar.Rendering.BillSSOutline
     {
         public enum OutlineMode { FullScreen, SelectionOnly, Mixed }
         public enum OutlineAlgorithm { RobertsCross, Sobel }
-        public enum DebugMode { None, Depth, Normals, Color, EdgeOnly, MaskOnly, Occlusion }
+        public enum DebugMode { None, Depth, Normals, Color, EdgeOnly, MaskOnly, Occlusion, SceneAlpha }
 
         public BoolParameter isActive = new BoolParameter(false);
         public EnumParameter<OutlineMode> mode = new EnumParameter<OutlineMode>(OutlineMode.FullScreen);

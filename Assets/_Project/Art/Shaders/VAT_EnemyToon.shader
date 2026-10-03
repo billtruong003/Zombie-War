@@ -229,8 +229,11 @@ Shader "ZombieWar/VAT/EnemyToon"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma instancing_options renderinglayer
             #pragma multi_compile_fog
             #pragma target 3.5
+
+            #include "Assets/_Project/Art/Rendering/BillSSOutline/OutlineAlphaMask.hlsl"
 
             struct AppData
             {
@@ -326,7 +329,7 @@ Shader "ZombieWar/VAT/EnemyToon"
                 result = lerp(result, _HitFlashColor.rgb, saturate(flash));
 
                 result = MixFog(result, i.fogFactor);
-                return half4(result, albedo.a);
+                return half4(result, ZWOutlineAlpha(albedo.a));   // outline mask (OutlineAlphaMask.hlsl)
             }
             ENDHLSL
         }

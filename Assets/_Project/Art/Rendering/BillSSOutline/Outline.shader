@@ -63,6 +63,16 @@ Shader "Hidden/FullScreen/Outline"
             float4 _FadeParams;
             float _TintAmount;
             float _TintDarken;
+            // 1 when the outline mask also rides in the scene colour's alpha (OutlineAlphaMask.hlsl):
+            // the outlined crowd writes alpha 0 instead of being redrawn into the mask texture.
+            float _AlphaMask;
+
+            float SelMask(float2 uv)
+            {
+                float m = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv).r;
+                if (_AlphaMask > 0.5) m = max(m, 1.0 - SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv).a);
+                return m;
+            }
 
             // 2026-10-02 cartoon line: the colour of the selected object next to this edge pixel,
             // darkened and a little more saturated (green leaf -> moss line, red -> maroon line).
@@ -72,7 +82,7 @@ Shader "Hidden/FullScreen/Outline"
                 float best = 0; float2 off = 0;
                 [unroll] for (int i = 0; i < 4; i++)
                 {
-                    float m = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + dirs[i] * delta).r;
+                    float m = SelMask(uv + dirs[i] * delta);
                     if (m > best) { best = m; off = dirs[i]; }
                 }
                 half3 c = SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv + off * delta * 1.5).rgb;
@@ -167,10 +177,10 @@ Shader "Hidden/FullScreen/Outline"
 
             float CalculateSelectionEdge(float2 uv, float2 delta, float centerMask)
             {
-                float s1 = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + float2(delta.x, 0)).r;
-                float s2 = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + float2(-delta.x, 0)).r;
-                float s3 = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + float2(0, delta.y)).r;
-                float s4 = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv + float2(0, -delta.y)).r;
+                float s1 = SelMask(uv + float2(delta.x, 0));
+                float s2 = SelMask(uv + float2(-delta.x, 0));
+                float s3 = SelMask(uv + float2(0, delta.y));
+                float s4 = SelMask(uv + float2(0, -delta.y));
                 float diff = abs(centerMask - s1) + abs(centerMask - s2) + abs(centerMask - s3) + abs(centerMask - s4);
                 return step(0.1, diff);
             }
@@ -195,8 +205,9 @@ Shader "Hidden/FullScreen/Outline"
                 }
                     if (_DebugMode == 2) return float4(SampleSceneNormals(uv) * 0.5 + 0.5, 1);
                     if (_DebugMode == 3) return SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv);
-                    if (_DebugMode == 5) return SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv);
+                    if (_DebugMode == 5) return SelMask(uv).xxxx;
                     if (_DebugMode == 6) return SAMPLE_TEXTURE2D(_OcclusionMaskTexture, sampler_LinearClamp, uv);
+                    if (_DebugMode == 7) return SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv).aaaa;
 
                 float2 delta = _BlitTexture_TexelSize.xy * _Thickness;
                 float edge = 0;
@@ -210,7 +221,7 @@ Shader "Hidden/FullScreen/Outline"
                 #endif
 
                 #if defined(OUTLINE_SELECTION) || defined(OUTLINE_MIXED)
-                    centerMask = SAMPLE_TEXTURE2D(_SelectionMaskTexture, sampler_LinearClamp, uv).r;
+                    centerMask = SelMask(uv);
                 #endif
 
                 #if defined(OUTLINE_FULL) || defined(OUTLINE_MIXED)

@@ -212,12 +212,20 @@ namespace ZombieWar.Rendering.BillSSOutline
                 public TextureHandle occlusion;
             }
 
-            public OutlinePass() { renderPassEvent = RenderPassEvent.AfterRenderingTransparents; }
+            // Before the transparents (03/10): with the mask in the colour alpha, particles, blob
+            // shadows and other blended passes would write into that alpha. The lines now sit under
+            // the effects instead of on top of them.
+            public OutlinePass() { renderPassEvent = RenderPassEvent.BeforeRenderingTransparents; }
 
-            public void SetupReference(LayerMaskPass selectPass, LayerMaskPass occludePass)
+            private bool alphaMask;
+            private static readonly int AlphaMaskID = Shader.PropertyToID("_AlphaMask");
+
+            /// <param name="selectPass">Null when no layer is left for the mask texture this frame.</param>
+            public void SetupReference(LayerMaskPass selectPass, LayerMaskPass occludePass, bool alphaMaskOn)
             {
                 this.selectionMaskPass = selectPass;
                 this.occlusionMaskPass = occludePass;
+                this.alphaMask = alphaMaskOn;
             }
 
             private bool UpdateMaterial()
@@ -233,6 +241,7 @@ namespace ZombieWar.Rendering.BillSSOutline
                 material.SetFloat(NormalThresholdID, volumeSettings.normalThreshold.value);
                 material.SetFloat(ColorThresholdID, volumeSettings.colorThreshold.value);
                 material.SetInt(DebugModeID, (int)volumeSettings.debugMode.value);
+                material.SetFloat(AlphaMaskID, alphaMask ? 1f : 0f);
                 material.SetFloat(TintAmountID, ZombieWar.OutlineLook.Tint?.x ?? volumeSettings.tintAmount.value);
                 material.SetFloat(TintDarkenID, ZombieWar.OutlineLook.Tint?.y ?? volumeSettings.tintDarken.value);
 
@@ -316,6 +325,7 @@ namespace ZombieWar.Rendering.BillSSOutline
                     builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                     {
                         if (data.mask.IsValid()) data.material.SetTexture(SelectionMaskID, data.mask);
+                        else data.material.SetTexture(SelectionMaskID, Texture2D.blackTexture);
                         if (data.occlusion.IsValid()) data.material.SetTexture(OcclusionMaskID, data.occlusion);
                         else data.material.SetTexture(OcclusionMaskID, Texture2D.blackTexture);
 
@@ -336,6 +346,16 @@ namespace ZombieWar.Rendering.BillSSOutline
         /// prepass, which draws every opaque object a second time: with 100 enemies on the meadow it
         /// was 1.05M triangles and 266 batches with it, 664k and 177 without, and side-by-side shots
         /// showed almost no difference (the selection mask and depth edges draw the outline).</summary>
+        private static readonly int AlphaLayersID = Shader.PropertyToID("_ZWOutlineAlphaLayers");
+
+        /// <summary>Rendering layers whose shaders write the outline mask into the colour alpha
+        /// (VAT_EnemyToon, EnvSolid via OutlineAlphaMask.hlsl). The player and weapons use package
+        /// shaders and stay in the mask texture; they are a handful of renderers.</summary>
+        private static uint AlphaCapableLayers => AlphaMaskEnabled ? ZombieWar.OutlineLayers.EnemyBit | ZombieWar.OutlineLayers.EnvironmentBit : 0u;
+
+        /// <summary>False sends every outlined layer back through the mask redraw (A/B comparisons).</summary>
+        public static bool AlphaMaskEnabled = true;
+
         internal static bool UseNormals(OutlineVolume settings) =>
             settings.useNormals.value && ZombieWar.GraphicsTier.Current == ZombieWar.GraphicsTier.Level.High;
 
@@ -349,6 +369,8 @@ namespace ZombieWar.Rendering.BillSSOutline
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             CameraData cameraData = renderingData.cameraData;
+            // Every camera sets the alpha path for its own frame: off unless this one turns it on.
+            Shader.SetGlobalFloat(AlphaLayersID, 0f);
             if (cameraData.cameraType != CameraType.Game ||
                 cameraData.renderType != CameraRenderType.Base)
                 return;
@@ -358,18 +380,30 @@ namespace ZombieWar.Rendering.BillSSOutline
 
             if (settings != null && settings.IsActive())
             {
-                outlinePass.SetupReference(selectionPass, occlusionPass);
-
                 // Optimization over stock (2acf5b7): the selection redraw only runs when a mode
                 // that actually consumes the selection mask is active. Stock enqueued it even in
                 // FullScreen mode, re-rendering every selected-layer object into an unused mask.
                 bool wantsSelection = settings.mode.value != OutlineVolume.OutlineMode.FullScreen
                                       && settings.selectionLayer.value.value != 0u;
-                if (wantsSelection)
+                uint selection = wantsSelection ? settings.selectionLayer.value.value : 0u;
+
+                // 03/10: the layers whose shaders write the mask into the colour alpha skip the
+                // mask redraw (OutlineAlphaMask.hlsl). Only on the game view itself: a capture into
+                // a texture keeps its real alpha, and an HDR colour format without alpha cannot
+                // carry it.
+                uint alphaLayers = 0u;
+                if (selection != 0u && cameraData.targetTexture == null &&
+                    UnityEngine.Experimental.Rendering.GraphicsFormatUtility.HasAlphaChannel(cameraData.cameraTargetDescriptor.graphicsFormat))
+                    alphaLayers = selection & AlphaCapableLayers;
+                Shader.SetGlobalFloat(AlphaLayersID, alphaLayers);
+
+                uint maskLayers = selection & ~alphaLayers;
+                if (maskLayers != 0u)
                 {
-                    selectionPass.Setup(settings.selectionLayer.value.value);
+                    selectionPass.Setup(maskLayers);
                     renderer.EnqueuePass(selectionPass);
                 }
+                outlinePass.SetupReference(maskLayers != 0u ? selectionPass : null, occlusionPass, alphaLayers != 0u);
                 if (settings.occlusionLayer.value.value != 0u)
                 {
                     occlusionPass.Setup(settings.occlusionLayer.value.value);

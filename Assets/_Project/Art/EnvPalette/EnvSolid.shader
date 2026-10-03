@@ -128,6 +128,7 @@ Shader "HordeCall/Env/Solid"
             #include "Packages/com.billtruong.stylized-toon-world-kit/Core/StylizedLighting.hlsl"
             #include "Assets/_Project/Art/Shaders/ToonPointLights.hlsl"
             #include "Assets/_Project/Art/Shaders/MapLight.hlsl"
+            #include "Assets/_Project/Art/Rendering/BillSSOutline/OutlineAlphaMask.hlsl"
 
             TEXTURE2D(_BaseMap);      SAMPLER(sampler_BaseMap);
             TEXTURE2D(_BumpMap);      SAMPLER(sampler_BumpMap);
@@ -248,7 +249,7 @@ Shader "HordeCall/Env/Solid"
                 color *= ZW_ShadowTint(mapLight.x) * mapLight.y;
                 color += s.albedo * ZW_ToonPointLights(IN.positionWS, s.normalWS, 0.15h) * mapLight.y;
                 color = STW_ApplyFog(color, IN.fogCoord);
-                return half4(color, baseTex.a * _BaseColor.a);
+                return half4(color, ZWOutlineAlpha(baseTex.a * _BaseColor.a));   // outline mask (OutlineAlphaMask.hlsl)
             }
             ENDHLSL
         }
