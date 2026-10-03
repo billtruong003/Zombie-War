@@ -17,12 +17,13 @@ namespace ZombieWar.EditorTools
         const string PlayerPrefab = "Assets/_Project/Prefabs/Player.prefab";
         const string IdleController = "Assets/_Project/Animation/MenuIdle.controller";
         const string Catalog = "Assets/_Project/Data/Character/CasualCostumeCatalog.asset";
-        const string Economy = "Assets/_Project/Data/Economy/EconomyConfig.asset";
+        const string Premade = "Assets/ThirdParty/Layer Lab/3D CharactersCasual/3D Characters Pro-Casual/Prefabs/Characters/Characters_";
         const string Enemies = "Assets/_Project/Prefabs/Enemies/";
 
         sealed class Cast
         {
-            public string id, set, prefab;
+            public string id, prefab;
+            public int preset;   // Layer Lab premade character: the whole outfit, as designed
             public (string slot, string item)[] extra = new (string, string)[0];
             public float scale = 1f, x, z;
             public bool crown;
@@ -30,13 +31,16 @@ namespace ZombieWar.EditorTools
 
         static readonly Cast[] Roster =
         {
-            new Cast { id = "finn", set = "casual.pro.set.011", x = -1.6f },
-            new Cast { id = "hana", set = "casual.pro.set.017", extra = new[] { ("Head", "casual.pro.headgear.060") }, scale = 1.08f, x = 0f },
-            new Cast { id = "granny_bea", set = "casual.pro.set.016", extra = new[] { ("Head", "casual.pro.headgear.007") }, scale = 0.94f, x = 1.6f },
-            new Cast { id = "rex", set = "casual.pro.set.025", extra = new[] { ("Head", "casual.pro.headgear.033") }, x = -3.2f },
-            new Cast { id = "kiki", set = "casual.pro.set.008", scale = 0.96f, x = 3.2f },
+            new Cast { id = "finn", preset = 111, x = -1.6f },
+            new Cast { id = "hana", preset = 113, scale = 1.08f, x = 0f },
+            new Cast { id = "granny_bea", preset = 15, scale = 0.94f, x = 1.6f },
+            new Cast { id = "rex", preset = 62, x = -3.2f },
+            new Cast { id = "kiki", preset = 64, scale = 0.96f, x = 3.2f },
+            // The one outfit put together by hand (owner 03/10): #55's white hair, respirator and
+            // black streetwear, plus thick black glasses and an earring.
+            new Cast { id = "jay", preset = 55, extra = new[] { ("Eyewear", "casual.pro.eyewear.002"), ("Earring", "casual.pro.earring.011") }, scale = 1.06f, x = 4.8f },
             new Cast { id = "gloop", prefab = "ENM_BlobPink_VAT", x = -5.2f },
-            new Cast { id = "king_blobert", prefab = "ENM_BlobOrc_VAT", scale = 1.7f, crown = true, x = 6.0f },
+            new Cast { id = "king_blobert", prefab = "ENM_BlobOrc_VAT", scale = 1.7f, crown = true, x = 7.2f },
             new Cast { id = "sir_prickles", prefab = "ENM_CactusBoss_VAT", x = -4.5f, z = 5.5f },
             new Cast { id = "duke_diggs", prefab = "ENM_MoleRatKing_VAT", x = 0f, z = 6.5f },
             new Cast { id = "mc_bones", prefab = "ENM_SkeletonGiant_VAT", x = 4.8f, z = 5.5f },
@@ -94,8 +98,7 @@ namespace ZombieWar.EditorTools
                 if (!(mb is CharacterModularApplier)) Object.DestroyImmediate(mb);
             var applier = go.GetComponentInChildren<CharacterModularApplier>(true);
             var catalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(Catalog);
-            var econ = AssetDatabase.LoadAssetAtPath<EconomyConfig>(Economy);
-            if (applier == null || catalog == null || econ == null) return go;
+            if (applier == null || catalog == null) return go;
             applier.SetCatalog(catalog);
             applier.EnsureBoneMap(true);
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
@@ -104,7 +107,17 @@ namespace ZombieWar.EditorTools
             foreach (var def in catalog.slotDefinitions)
                 if (def.required && catalog.TryFindByItemId(def.defaultItemId, out var ds, out var de)) applier.Apply(ds, de);
             var items = new List<string>();
-            foreach (var s in econ.costumeSets) if (s.setId == c.set) items.AddRange(s.itemIds);
+            // The premade prefab's own materials are not URP; its meshes name the catalog parts.
+            var preset = AssetDatabase.LoadAssetAtPath<GameObject>(Premade + c.preset + ".prefab");
+            if (preset != null)
+            {
+                var byMesh = new Dictionary<Mesh, string>();
+                foreach (var slot in catalog.slots)
+                    foreach (var part in slot.parts)
+                        if (part.skinnedMesh != null && !byMesh.ContainsKey(part.skinnedMesh)) byMesh[part.skinnedMesh] = part.itemId;
+                foreach (var smr in preset.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    if (smr.gameObject.activeSelf && smr.sharedMesh != null && byMesh.TryGetValue(smr.sharedMesh, out var itemId)) items.Add(itemId);
+            }
             bool gloves = false, shoes = false;
             foreach (var id in items)
                 if (catalog.TryFindByItemId(id, out var slot, out var entry)) { applier.Apply(slot, entry); gloves |= slot == "Hands"; shoes |= slot == "Feet"; }
