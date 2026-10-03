@@ -34,15 +34,17 @@ namespace ZombieWar.EditorTools
             // Agents (owner 03/10): chibi operatives. The recruit wears only the starter parts, as a
             // new player does; every other agent is one whole premade outfit.
             new Cast { id = "recruit", preset = 0, x = 0f },
-            new Cast { id = "finn", preset = 111, x = -1.6f },
-            new Cast { id = "hana", preset = 113, scale = 1.08f, x = 1.6f },
-            new Cast { id = "rex", preset = 62, x = -3.2f },
-            new Cast { id = "kiki", preset = 64, scale = 0.96f, x = 3.2f },
+            // One agent per launch market (owner 03/10): JP, US, EU, VN, KR, CN.
+            new Cast { id = "kaito", preset = 111, x = -1.6f },
+            new Cast { id = "riley", preset = 113, scale = 1.08f, x = 1.6f },
+            new Cast { id = "lukas", preset = 62, x = -3.2f },
+            new Cast { id = "mai", preset = 64, scale = 0.96f, x = 3.2f },
+            new Cast { id = "chen", preset = 65, x = -4.8f },
             // The one outfit put together by hand: #55's white hair, respirator and black
             // streetwear, plus thick black glasses and an earring.
-            new Cast { id = "jay", preset = 55, extra = new[] { ("Eyewear", "casual.pro.eyewear.002"), ("Earring", "casual.pro.earring.011") }, scale = 1.06f, x = 4.8f },
+            new Cast { id = "jiho", preset = 55, extra = new[] { ("Eyewear", "casual.pro.eyewear.002"), ("Earring", "casual.pro.earring.011") }, scale = 1.06f, x = 4.8f },
             // Mutants
-            new Cast { id = "mutant_swarm", prefab = "ENM_BlobGreen_VAT", x = -5.4f },
+            new Cast { id = "mutant_swarm", prefab = "ENM_BlobGreen_VAT", x = -6.6f },
             new Cast { id = "mutant_elite", prefab = "ENM_BlobOrc_VAT", scale = 1.45f, x = 7.0f },
             new Cast { id = "thornback", prefab = "ENM_CactusBoss_VAT", x = -4.5f, z = 5.5f },
             new Cast { id = "burrow_king", prefab = "ENM_MoleRatKing_VAT", x = 0f, z = 6.5f },
