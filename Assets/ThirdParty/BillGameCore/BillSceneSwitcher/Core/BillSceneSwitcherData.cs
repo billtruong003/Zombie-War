@@ -101,6 +101,92 @@ namespace BillGameCore.BillSceneSwitcher
             return paths;
         }
 
+        /// <summary>Reorders pinned scenes (drag to reorder). Pins missing from <paramref name="paths"/>
+        /// (e.g. a pinned bootstrap scene, which the list does not show) keep their place at the end.</summary>
+        public void SetPinOrder(IList<string> paths)
+        {
+            var ordered = paths.Select(AssetDatabase.AssetPathToGUID).Where(g => _pinnedSceneGUIDs.Contains(g)).ToList();
+            ordered.AddRange(_pinnedSceneGUIDs.Where(g => !ordered.Contains(g)));
+            _pinnedSceneGUIDs.Clear();
+            _pinnedSceneGUIDs.AddRange(ordered);
+            SetDirty();
+        }
+
+        // ───────────────────────────────────────────
+        // Recent scenes
+        // ───────────────────────────────────────────
+
+        // Recent scenes are per person and per machine, so they live in EditorPrefs (keyed by
+        // project), not in this shared asset: opening a scene must not dirty a tracked file.
+        const int RecentKept = 12;
+        static string RecentKey => "BillSceneSwitcher.Recent." + Application.dataPath.GetHashCode();
+
+        public static void AddRecent(string path)
+        {
+            var guid = AssetDatabase.AssetPathToGUID(path);
+            if (string.IsNullOrEmpty(guid)) return;
+            var list = EditorPrefs.GetString(RecentKey, "").Split(';').Where(g => g.Length > 0 && g != guid).ToList();
+            list.Insert(0, guid);
+            EditorPrefs.SetString(RecentKey, string.Join(";", list.Take(RecentKept)));
+        }
+
+        public static List<string> GetRecentScenePaths()
+        {
+            var paths = new List<string>();
+            foreach (var guid in EditorPrefs.GetString(RecentKey, "").Split(';'))
+            {
+                if (guid.Length == 0) continue;
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path) && path.EndsWith(".unity")) paths.Add(path);
+            }
+            return paths;
+        }
+
+        // ───────────────────────────────────────────
+        // Build settings (with one level of undo)
+        // ───────────────────────────────────────────
+
+        static EditorBuildSettingsScene[] _undoBuild;
+        public static bool CanUndoBuild => _undoBuild != null;
+
+        static void Snapshot() => _undoBuild = EditorBuildSettings.scenes.Select(s => new EditorBuildSettingsScene(s.path, s.enabled)).ToArray();
+
+        public static int AddToBuild(string path)
+        {
+            var scenes = EditorBuildSettings.scenes.ToList();
+            int i = scenes.FindIndex(s => s.path == path);
+            if (i >= 0) return i;
+            Snapshot();
+            scenes.Add(new EditorBuildSettingsScene(path, true));
+            EditorBuildSettings.scenes = scenes.ToArray();
+            return scenes.Count - 1;
+        }
+
+        public static void RemoveFromBuild(string path)
+        {
+            var scenes = EditorBuildSettings.scenes.ToList();
+            if (!scenes.Any(s => s.path == path)) return;
+            Snapshot();
+            EditorBuildSettings.scenes = scenes.Where(s => s.path != path).ToArray();
+        }
+
+        public static void SetBuildEnabled(string path, bool enabled)
+        {
+            var scenes = EditorBuildSettings.scenes;
+            int i = Array.FindIndex(scenes, s => s.path == path);
+            if (i < 0 || scenes[i].enabled == enabled) return;
+            Snapshot();
+            scenes[i].enabled = enabled;
+            EditorBuildSettings.scenes = scenes;
+        }
+
+        public static void UndoBuild()
+        {
+            if (_undoBuild == null) return;
+            EditorBuildSettings.scenes = _undoBuild;
+            _undoBuild = null;
+        }
+
         // ───────────────────────────────────────────
         // Persistence
         // ───────────────────────────────────────────
@@ -154,6 +240,19 @@ namespace BillGameCore.BillSceneSwitcher
 
                 return _instance;
             }
+        }
+    }
+
+    /// <summary>Feeds the "recent" list: every scene opened in the editor, newest first.</summary>
+    [InitializeOnLoad]
+    static class BillSceneRecentTracker
+    {
+        static BillSceneRecentTracker()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.sceneOpened += (scene, _) =>
+            {
+                if (!string.IsNullOrEmpty(scene.path)) BillSceneSwitcherData.AddRecent(scene.path);
+            };
         }
     }
 }
