@@ -31,19 +31,22 @@ namespace ZombieWar.EditorTools
 
         static readonly Cast[] Roster =
         {
+            // Agents (owner 03/10): chibi operatives. The recruit wears only the starter parts, as a
+            // new player does; every other agent is one whole premade outfit.
+            new Cast { id = "recruit", preset = 0, x = 0f },
             new Cast { id = "finn", preset = 111, x = -1.6f },
-            new Cast { id = "hana", preset = 113, scale = 1.08f, x = 0f },
-            new Cast { id = "granny_bea", preset = 15, scale = 0.94f, x = 1.6f },
+            new Cast { id = "hana", preset = 113, scale = 1.08f, x = 1.6f },
             new Cast { id = "rex", preset = 62, x = -3.2f },
             new Cast { id = "kiki", preset = 64, scale = 0.96f, x = 3.2f },
-            // The one outfit put together by hand (owner 03/10): #55's white hair, respirator and
-            // black streetwear, plus thick black glasses and an earring.
+            // The one outfit put together by hand: #55's white hair, respirator and black
+            // streetwear, plus thick black glasses and an earring.
             new Cast { id = "jay", preset = 55, extra = new[] { ("Eyewear", "casual.pro.eyewear.002"), ("Earring", "casual.pro.earring.011") }, scale = 1.06f, x = 4.8f },
-            new Cast { id = "gloop", prefab = "ENM_BlobPink_VAT", x = -5.2f },
-            new Cast { id = "king_blobert", prefab = "ENM_BlobOrc_VAT", scale = 1.7f, crown = true, x = 7.2f },
-            new Cast { id = "sir_prickles", prefab = "ENM_CactusBoss_VAT", x = -4.5f, z = 5.5f },
-            new Cast { id = "duke_diggs", prefab = "ENM_MoleRatKing_VAT", x = 0f, z = 6.5f },
-            new Cast { id = "mc_bones", prefab = "ENM_SkeletonGiant_VAT", x = 4.8f, z = 5.5f },
+            // Mutants
+            new Cast { id = "mutant_swarm", prefab = "ENM_BlobGreen_VAT", x = -5.4f },
+            new Cast { id = "mutant_elite", prefab = "ENM_BlobOrc_VAT", scale = 1.45f, x = 7.0f },
+            new Cast { id = "thornback", prefab = "ENM_CactusBoss_VAT", x = -4.5f, z = 5.5f },
+            new Cast { id = "burrow_king", prefab = "ENM_MoleRatKing_VAT", x = 0f, z = 6.5f },
+            new Cast { id = "bone_colossus", prefab = "ENM_SkeletonGiant_VAT", x = 4.8f, z = 5.5f },
         };
 
         [MenuItem("HordeCall/Dev/Lore Lineup/Build Scene")]
