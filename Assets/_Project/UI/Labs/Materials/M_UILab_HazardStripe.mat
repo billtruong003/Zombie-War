@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_UILab_Hologram
-  m_Shader: {fileID: 4800000, guid: 0c9c4944571423e48b6e49461443fb5e, type: 3}
+  m_Name: M_UILab_HazardStripe
+  m_Shader: {fileID: 4800000, guid: 341a33af54b831b408218667cb7f59e0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -27,21 +27,11 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _NoiseTex:
-        m_Texture: {fileID: 2800000, guid: 517dab4bcc57f7c4285a8f341d753b5c, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _Fade: 0.12
-    - _Flicker: 0.1
-    - _Glitch: 0.014
-    - _GlitchSpeed: 0.9
-    - _HoloMix: 0.3
-    - _LineSpeed: 1.5
-    - _LineStrength: 0.16
-    - _Lines: 90
+    - _Period: 28
+    - _Scroll: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -49,7 +39,7 @@ Material:
     - _StencilWriteMask: 255
     - _UseUIAlphaClip: 0
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _HoloColor: {r: 0.54999995, g: 1, b: 0.72, a: 1}
+    - _Color: {r: 1, g: 0.76, b: 0.15999997, a: 1}
+    - _ColorB: {r: 0.059999965, g: 0.079999976, b: 0.11999995, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

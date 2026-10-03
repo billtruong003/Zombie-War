@@ -56,10 +56,11 @@ namespace ZombieWar.EditorTools
         {
             if (Application.isPlaying) { Debug.LogWarning("[Lore] exit Play first"); return; }
             // Additive, so whatever scene is open (saved or not) is left exactly as it was.
+            // New scene first: the old copy may be the only open scene, which cannot be closed alone.
             var old = SceneManager.GetSceneByPath(ScenePath);
-            if (old.IsValid() && old.isLoaded) EditorSceneManager.CloseScene(old, true);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
+            if (old.IsValid()) EditorSceneManager.CloseScene(old, true);
 
             var chunk = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/EnvSandbox/Maps/meadow/Chunk_meadow_2_2.prefab");
             if (chunk != null) PrefabUtility.InstantiatePrefab(chunk, scene);
@@ -99,8 +100,9 @@ namespace ZombieWar.EditorTools
             var go = (GameObject)PrefabUtility.InstantiatePrefab(pf, SceneManager.GetActiveScene());
             PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             // Only the look is needed: gameplay components would run their editor hooks for nothing.
+            // Disabled, not destroyed: gameplay components depend on each other (RequireComponent).
             foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
-                if (!(mb is CharacterModularApplier)) Object.DestroyImmediate(mb);
+                if (!(mb is CharacterModularApplier)) mb.enabled = false;
             var applier = go.GetComponentInChildren<CharacterModularApplier>(true);
             var catalog = AssetDatabase.LoadAssetAtPath<ModularCostumeCatalog>(Catalog);
             if (applier == null || catalog == null) return go;
@@ -142,7 +144,7 @@ namespace ZombieWar.EditorTools
             PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             // VAT_Animator stays: it runs in the editor and feeds the vertex animation to the shader.
             foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
-                if (!(mb is VAT_Animator)) Object.DestroyImmediate(mb);
+                if (!(mb is VAT_Animator)) mb.enabled = false;
             foreach (var col in go.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(col);
             return go;
         }
@@ -272,6 +274,79 @@ namespace ZombieWar.EditorTools
                 Object.DestroyImmediate(camGo);
             }
             Debug.Log("[Lore] captured " + cast.Count + " characters to " + OutDir);
+        }
+
+        /// Head-and-shoulders of each agent on a transparent background: the stand-in for the radio's
+        /// live RenderTexture portrait in UI Labs.
+        [MenuItem("HordeCall/Dev/Lore Lineup/Capture Agent Portraits")]
+        public static void CapturePortraits()
+        {
+            var root = GameObject.Find("Cast");
+            if (root == null) { Debug.LogWarning("[Lore] open " + ScenePath + " first"); return; }
+            const string dir = "Assets/_Project/UI/Labs/Textures/Portraits";
+            Directory.CreateDirectory(dir);
+            Pose(root.transform);
+            var cast = new List<GameObject>();
+            foreach (Transform t in root.transform) cast.Add(t.gameObject);
+            var env = new List<Renderer>();
+            foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                if (r.enabled && !r.transform.IsChildOf(root.transform) && r.gameObject.scene == root.scene) { r.enabled = false; env.Add(r); }
+
+            var camGo = new GameObject("PortraitCam") { hideFlags = HideFlags.HideAndDontSave };
+            var cam = camGo.AddComponent<Camera>();
+            cam.enabled = false;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0, 0, 0, 0);
+            cam.fieldOfView = 19f;
+            try
+            {
+                foreach (var who in cast)
+                {
+                    if (who.GetComponentInChildren<CharacterModularApplier>() == null) continue;   // agents only
+                    foreach (var o in cast) o.SetActive(o == who);
+                    var anim = who.GetComponentInChildren<Animator>();
+                    var head = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.Head) : null;
+                    var target = head != null ? head.position + Vector3.down * 0.02f : Bounds(who).center + Vector3.up * 0.3f;
+                    camGo.transform.position = target + new Vector3(0.35f, 0.25f, -3.4f);
+                    camGo.transform.LookAt(target);
+                    var path = $"{dir}/T_Agent_{who.name}.png";
+                    ShootAlpha(cam, 512, 512, path);
+                }
+            }
+            finally
+            {
+                foreach (var o in cast) o.SetActive(true);
+                foreach (var r in env) r.enabled = true;
+                Object.DestroyImmediate(camGo);
+            }
+            AssetDatabase.Refresh();
+            foreach (var f in Directory.GetFiles(dir, "*.png"))
+                if (AssetImporter.GetAtPath(f.Replace('\\', '/')) is TextureImporter ti)
+                {
+                    ti.textureType = TextureImporterType.Sprite;
+                    ti.spriteImportMode = SpriteImportMode.Single;
+                    ti.alphaIsTransparency = true;
+                    ti.SaveAndReimport();
+                }
+            Debug.Log("[Lore] agent portraits written to " + dir);
+        }
+
+        static void ShootAlpha(Camera cam, int w, int h, string path)
+        {
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { antiAliasing = 8 };
+            cam.targetTexture = rt;
+            cam.Render();
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            cam.targetTexture = null;
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            rt.Release();
+            Object.DestroyImmediate(rt);
         }
 
         static void Shoot(Camera cam, int w, int h, string path)

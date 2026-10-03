@@ -1,19 +1,20 @@
-// UIShine.shader — a slanted light band crossing a button, card or rarity frame every few seconds.
-// Cost: 1 texture sample (the sprite), the band is a distance in pixels: one frac, one abs, one
-// smoothstep. Needs UIRectUV on the graphic (uv1 = rect 0..1, uv2 = rect size), so it follows the
-// rect, not the sprite UVs: correct on 9-sliced and atlased sprites at any size.
-Shader "ZombieWar/UI/Shine"
+// UISpotlight.shader — dims the screen except a rounded hole around the target (first gun cell,
+// a button), with a soft edge and a thin bright rim that breathes.
+// Cost: no texture, one rounded-box distance per pixel. Full-screen, so it is the most expensive
+// FTUE effect by area; keep it on screen only while the step is active. Needs UIRectUV; the hole
+// (centre and size in the overlay's pixels) is written by UISpotlightHole.
+Shader "ZombieWar/UI/Spotlight"
 {
     Properties
     {
-        [PerRendererData] _MainTex ("Sprite", 2D) = "white" {}
-        _Color ("Tint", Color) = (1,1,1,1)
-        _ShineColor ("Shine Colour", Color) = (1,1,1,1)
-        _Intensity ("Intensity", Range(0,1.5)) = 0.45
-        _Width ("Band Width (px)", Float) = 26
-        _Slant ("Slant", Range(-1.5,1.5)) = 0.7
-        _Period ("Period (s)", Float) = 2.8
-        _Sweep ("Sweep Share of Period", Range(0.1,1)) = 0.35
+        [PerRendererData] _MainTex ("Sprite (unused)", 2D) = "white" {}
+        _Color ("Dim Colour", Color) = (0.03,0.05,0.09,0.88)
+        _RimColor ("Rim Colour", Color) = (1,0.82,0.24,1)
+        _Hole ("Hole (centre xy, size zw, px)", Vector) = (540,960,320,280)
+        _Radius ("Corner Radius (px)", Float) = 26
+        _Feather ("Feather (px)", Float) = 14
+        _Rim ("Rim Width (px)", Float) = 4
+        _Speed ("Rim Pulse Speed", Float) = 3
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -51,12 +52,11 @@ Shader "ZombieWar/UI/Shine"
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
 
             struct appdata { float4 vertex : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 rect : TEXCOORD1; float2 size : TEXCOORD2; };
-            struct v2f { float4 pos : SV_POSITION; fixed4 color : COLOR; float2 uv : TEXCOORD0; float2 px : TEXCOORD1; float2 size : TEXCOORD2; float4 world : TEXCOORD3; };
+            struct v2f { float4 pos : SV_POSITION; fixed4 color : COLOR; float2 px : TEXCOORD0; float4 world : TEXCOORD1; };
 
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            fixed4 _Color, _ShineColor;
-            half _Intensity, _Width, _Slant, _Period, _Sweep;
+            fixed4 _Color, _RimColor;
+            float4 _Hole;
+            half _Radius, _Feather, _Rim, _Speed;
             float4 _ClipRect;
 
             v2f vert (appdata v)
@@ -64,23 +64,21 @@ Shader "ZombieWar/UI/Shine"
                 v2f o;
                 o.world = v.vertex;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                o.size = max(v.size, 1);
-                o.px = v.rect * o.size;
+                o.px = v.rect * max(v.size, 1);
                 o.color = v.color * _Color;
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
-                // The band crosses during the first _Sweep of each period, then waits off the rect.
-                float travel = i.size.x + abs(_Slant) * i.size.y + 2 * _Width;
-                float ph = frac(_Time.y / max(_Period, 0.1)) / _Sweep;
-                float pos = ph * travel - _Width - max(_Slant, 0) * i.size.y;
-                float d = abs(i.px.x + i.px.y * _Slant - pos);
-                half band = 1 - smoothstep(0, _Width, d);
-                col.rgb += _ShineColor.rgb * band * _Intensity;
+                // Signed distance to the rounded hole: negative inside.
+                float2 q = abs(i.px - _Hole.xy) - (_Hole.zw * 0.5 - _Radius);
+                float sd = length(max(q, 0)) + min(max(q.x, q.y), 0) - _Radius;
+                half dim = smoothstep(0, _Feather, sd);
+                half rim = (1 - smoothstep(0, _Rim, abs(sd - _Rim))) * (0.65 + 0.35 * sin(_Time.y * _Speed));
+                fixed4 col = i.color;
+                col.a *= dim;
+                col = lerp(col, _RimColor, rim * _RimColor.a);
 
                 #ifdef UNITY_UI_CLIP_RECT
                 col.a *= UnityGet2DClipping(i.world.xy, _ClipRect);

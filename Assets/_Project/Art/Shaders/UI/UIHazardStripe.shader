@@ -1,19 +1,15 @@
-// UIShine.shader — a slanted light band crossing a button, card or rarity frame every few seconds.
-// Cost: 1 texture sample (the sprite), the band is a distance in pixels: one frac, one abs, one
-// smoothstep. Needs UIRectUV on the graphic (uv1 = rect 0..1, uv2 = rect size), so it follows the
-// rect, not the sprite UVs: correct on 9-sliced and atlased sprites at any size.
-Shader "ZombieWar/UI/Shine"
+// UIHazardStripe.shader — the yellow and black stripe on top of the radio card.
+// Cost: no texture; one frac and one smoothstep on a thin strip. Needs UIRectUV (pixel-true
+// stripes on any width). _Scroll > 0 makes the stripes crawl while a line is incoming.
+Shader "ZombieWar/UI/HazardStripe"
 {
     Properties
     {
-        [PerRendererData] _MainTex ("Sprite", 2D) = "white" {}
-        _Color ("Tint", Color) = (1,1,1,1)
-        _ShineColor ("Shine Colour", Color) = (1,1,1,1)
-        _Intensity ("Intensity", Range(0,1.5)) = 0.45
-        _Width ("Band Width (px)", Float) = 26
-        _Slant ("Slant", Range(-1.5,1.5)) = 0.7
-        _Period ("Period (s)", Float) = 2.8
-        _Sweep ("Sweep Share of Period", Range(0.1,1)) = 0.35
+        [PerRendererData] _MainTex ("Sprite (unused)", 2D) = "white" {}
+        _Color ("Stripe A", Color) = (1,0.76,0.16,1)
+        _ColorB ("Stripe B", Color) = (0.06,0.08,0.12,1)
+        _Period ("Period (px)", Float) = 28
+        _Scroll ("Scroll (px/s)", Float) = 0
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -51,12 +47,10 @@ Shader "ZombieWar/UI/Shine"
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
 
             struct appdata { float4 vertex : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 rect : TEXCOORD1; float2 size : TEXCOORD2; };
-            struct v2f { float4 pos : SV_POSITION; fixed4 color : COLOR; float2 uv : TEXCOORD0; float2 px : TEXCOORD1; float2 size : TEXCOORD2; float4 world : TEXCOORD3; };
+            struct v2f { float4 pos : SV_POSITION; fixed4 color : COLOR; float2 px : TEXCOORD0; float4 world : TEXCOORD1; };
 
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            fixed4 _Color, _ShineColor;
-            half _Intensity, _Width, _Slant, _Period, _Sweep;
+            fixed4 _Color, _ColorB;
+            half _Period, _Scroll;
             float4 _ClipRect;
 
             v2f vert (appdata v)
@@ -64,23 +58,16 @@ Shader "ZombieWar/UI/Shine"
                 v2f o;
                 o.world = v.vertex;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                o.size = max(v.size, 1);
-                o.px = v.rect * o.size;
-                o.color = v.color * _Color;
+                o.px = v.rect * max(v.size, 1);
+                o.color = v.color;
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv) * i.color;
-                // The band crosses during the first _Sweep of each period, then waits off the rect.
-                float travel = i.size.x + abs(_Slant) * i.size.y + 2 * _Width;
-                float ph = frac(_Time.y / max(_Period, 0.1)) / _Sweep;
-                float pos = ph * travel - _Width - max(_Slant, 0) * i.size.y;
-                float d = abs(i.px.x + i.px.y * _Slant - pos);
-                half band = 1 - smoothstep(0, _Width, d);
-                col.rgb += _ShineColor.rgb * band * _Intensity;
+                float s = frac((i.px.x - i.px.y + _Time.y * _Scroll) / max(_Period, 1));
+                fixed4 col = lerp(_Color, _ColorB, step(0.5, s));
+                col *= i.color;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 col.a *= UnityGet2DClipping(i.world.xy, _ClipRect);
