@@ -324,7 +324,7 @@ namespace ZombieWar.EditorTools
 
                 var tag = Rect(card, "Tag", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -52), new Vector2(300, 56));
                 Img(tag, "pill", gold, true);
-                Label(tag, "Label", "EVOLUTION", 30, UITheme.M8OnYellow);
+                Label(tag, "Label", "EVOLUTION", 30, UITheme.M8Ink);
 
                 Tile(card, "Icon", new Vector2(0, -195), 180, 56);
                 var name = Rect(card, "Name", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -330), new Vector2(860, 80));
@@ -356,7 +356,7 @@ namespace ZombieWar.EditorTools
                 var face = Rect(claim, "Face", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
                 var faceImg = Img(face, "rounded_32", UITheme.M8Yellow, true);
                 faceImg.raycastTarget = true;
-                Label(face, "Label", "CLAIM", 64, UITheme.M8OnYellow);
+                Label(face, "Label", "CLAIM", 64, UITheme.M8Ink);
                 var btn = claim.GetComponent<Button>() ?? claim.gameObject.AddComponent<Button>();
                 btn.targetGraphic = faceImg; btn.transition = Selectable.Transition.None;
                 if (claim.GetComponent<UIFxPress>() == null) claim.gameObject.AddComponent<UIFxPress>();
