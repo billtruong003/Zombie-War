@@ -83,6 +83,8 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text unlockNextLabel;
         [SerializeField] private Button unlockTry;
         [SerializeField] private SkillIconSet skillIcons;
+        [Tooltip("FTUE v2: icons of the features LV2 (missions + pass), LV3 (gacha) and LV5 (gun stars) open.")]
+        [SerializeField] private Sprite[] featureIcons = new Sprite[3];
 
         Health _player;
         Coroutine _count;
@@ -108,11 +110,16 @@ namespace ZombieWar.UI
             });
             On(noButton, GiveUp);
             On(doubleButton, () => RewardedAds.Show("double_coins", DoubleCoins));
-            On(shopLink, () => { MenuIntent.Next = MenuIntent.Shop; Leave(GameFlow.ReturnToMenu); });
+            // FTUE v2: guns are bought in the Arsenal now, so the affordable-gun row goes there.
+            On(shopLink, () => { MenuIntent.Next = MenuIntent.Arsenal; Leave(GameFlow.ReturnToMenu); });
             On(playAgain, () => Leave(GameFlow.RestartGameplay));
             On(home, () => Leave(GameFlow.ReturnToMenu));
             On(unlockNext, ShowNextUnlock);
-            On(unlockTry, () => Leave(GameFlow.RestartGameplay));
+            On(unlockTry, () =>
+            {
+                if (_featureIntent != null) { MenuIntent.Next = _featureIntent; Leave(GameFlow.ReturnToMenu); }
+                else Leave(GameFlow.RestartGameplay);
+            });
             if (unlockRoot != null) unlockRoot.SetActive(false);
         }
 
@@ -293,6 +300,7 @@ namespace ZombieWar.UI
             if (resultRoot == null) return;
             var s = result.Summary;
             _banked = result.BankedCoin; _doubled = false;
+            long gift = NewcomerGift(_banked);
             resultRoot.SetActive(true);
             resultRoot.transform.SetAsLastSibling();
             Set(banner, s.Outcome == RunOutcome.Died ? "THE HORDE GOT YOU" : "YOU WALKED AWAY");
@@ -304,7 +312,7 @@ namespace ZombieWar.UI
                 ThemeTint.Set(img, result.NewSurvivalRecord ? ThemeRole.Primary : ThemeRole.Card);
                 ThemeTint.Set(bestLabel, result.NewSurvivalRecord ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
             }
-            Set(bestLabel, result.NewSurvivalRecord ? "NEW BEST" : "BEST " + HudController.FormatClock(Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds)));
+            Set(bestLabel, gift > 0 ? "FIRST RUN" : result.NewSurvivalRecord ? "NEW BEST" : "BEST " + HudController.FormatClock(Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds)));
             UIFx.CountUp(kills, s.Kills, 0.6f, v => $"{v:N0}", 0.25f);
             Set(level, s.Level.ToString());
             Set(threat, s.PeakThreatTier.ToString());
@@ -318,19 +326,43 @@ namespace ZombieWar.UI
                 .Where(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id)).Take(2).ToList();
             for (int i = 0; i < progressRows.Length; i++) if (progressRows[i] != null) progressRows[i].SetActive(false);
             int row = 0;
-            foreach (var m in done) SetRow(row++, m.title, $"DONE +{m.passXp} XP");
+            if (gift > 0) SetRow(row++, $"Newcomer gift +{gift:N0} · total {_banked + gift:N0}", "FIRST RUN");
+            foreach (var m in done) { if (row >= progressRows.Length - 1) break; SetRow(row++, m.title, $"DONE +{m.passXp} XP"); }
             var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
             var next = guns?.Where(w => w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId) && w.price <= PlayerProfile.Coin)
                             .OrderByDescending(w => w.price).FirstOrDefault();
-            // The last row is the next-buy row; it carries the Shop link.
+            // The last row is the next-buy row; its link goes to the Arsenal, where guns are bought.
             if (next != null) SetRow(progressRows.Length - 1, $"{next.weaponName} now affordable", "");
-            if (progressCard != null) progressCard.SetActive(done.Count > 0 || next != null);
+            if (shopLink != null) Set(shopLink.transform.Find("T")?.GetComponent<TMP_Text>(), "Arsenal ›");
+            if (progressCard != null) progressCard.SetActive(gift > 0 || done.Count > 0 || next != null);
             Time.timeScale = 0f;
             QueueUnlocks(result.AccountLevelsGained);
         }
 
+        /// FTUE v2: the first run tops the coins it kept up to the price of the cheapest gun
+        /// ("Newcomer gift", owner 01/10), so the first visit to the Arsenal can buy one. Once only.
+        static long NewcomerGift(long banked)
+        {
+            if (Ftue.Done(Ftue.Gift)) return 0;
+            Ftue.Complete(Ftue.Gift);
+            if (PlayerProfile.RunsPlayed > 1) return 0;   // a player from before FTUE v2 gets nothing
+            var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
+            var cheapest = guns?.Where(w => w != null && w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId)).OrderBy(w => w.price).FirstOrDefault();
+            long gift = cheapest != null ? cheapest.price - banked : 0;
+            if (gift <= 0) return 0;
+            PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, gift);
+            return gift;
+        }
+
         // ------------------------------------------------------------ unlocks
-        readonly System.Collections.Generic.List<(int level, ZombieWar.Skills.SkillDef def)> _unlocks = new();
+        /// An entry is a card that level unlocked, or (feature >= 0) a feature popup: 0 missions +
+        /// pass (LV2), 1 gacha (LV3), 2 gun stars (LV5).
+        readonly System.Collections.Generic.List<(int level, ZombieWar.Skills.SkillDef def, int feature)> _unlocks = new();
+        string _featureIntent;
+
+        static int FeatureAt(int level) => level == AccountProgress.RequiredLevel(AccountProgress.Feature.Pass) ? 0
+            : level == AccountProgress.RequiredLevel(AccountProgress.Feature.Gacha) ? 1
+            : level == AccountProgress.RequiredLevel(AccountProgress.Feature.GunStars) ? 2 : -1;
 
         /// Cards the levels just reached unlocked, shown one at a time over the result.
         void QueueUnlocks(int levelsGained)
@@ -341,8 +373,10 @@ namespace ZombieWar.UI
             var at = new System.Collections.Generic.List<ZombieWar.Skills.SkillDef>();
             for (int lv = now - levelsGained + 1; lv <= now; lv++)
             {
+                int feature = FeatureAt(lv);
+                if (feature >= 0 && !Ftue.Done(Ftue.Unlock(lv))) _unlocks.Add((lv, null, feature));
                 ZombieWar.Skills.SkillCatalogDefs.UnlockedAt(lv, at);
-                foreach (var d in at) _unlocks.Add((lv, d));
+                foreach (var d in at) _unlocks.Add((lv, d, -1));
             }
             ShowNextUnlock();
         }
@@ -350,10 +384,24 @@ namespace ZombieWar.UI
         void ShowNextUnlock()
         {
             if (_unlocks.Count == 0) { if (unlockRoot != null) unlockRoot.SetActive(false); return; }
-            var (lv, def) = _unlocks[0];
+            var (lv, def, feature) = _unlocks[0];
             _unlocks.RemoveAt(0);
             unlockRoot.SetActive(true);
             unlockRoot.transform.SetAsLastSibling();
+            if (unlockDesc != null)
+            {
+                // A feature's description runs to two or three lines; the prefab's text is single-line.
+                unlockDesc.textWrappingMode = TextWrappingModes.Normal;
+                unlockDesc.enableAutoSizing = true;
+                unlockDesc.fontSizeMin = 26f;
+                unlockDesc.fontSizeMax = 39f;
+            }
+            if (feature >= 0) { ShowFeature(lv, feature); return; }
+            _featureIntent = null;
+            Set(unlockRoot.transform.Find("Safe/Col/Sub")?.GetComponent<TMP_Text>(), "New skill unlocked!");
+            Set(unlockRoot.transform.Find("Safe/Col/Try/Face/Label")?.GetComponent<TMP_Text>(), "TRY IT NOW");
+            unlockRoot.transform.Find("Safe/Col/Collection/Bar")?.gameObject.SetActive(true);
+            Set(unlockRoot.transform.Find("Safe/Col/Collection/L")?.GetComponent<TMP_Text>(), "SKILL COLLECTION");
 
             Set(unlockLevel, $"ACCOUNT LEVEL {lv}");
             var color = ZombieWar.Skills.SkillDescriptions.LayerColor(def);
@@ -392,6 +440,41 @@ namespace ZombieWar.UI
             UIFeedback.LevelUp();
         }
 
+        /// FTUE v2 (mockup FTUE2_10..12): the same popup names the feature the level opened, with a
+        /// button that goes straight to it.
+        void ShowFeature(int lv, int feature)
+        {
+            Ftue.Complete(Ftue.Unlock(lv));
+            var (name, desc, panel, cta, intent, color) = feature switch
+            {
+                0 => ("MISSIONS + PASS", "Daily and weekly missions give Pass XP. Pass levels give guns, skins and gems.",
+                      "Your missions are waiting", "SEE MISSIONS", MenuIntent.Pass, new Color(0.11f, 0.84f, 0.66f)),
+                1 => ("GACHA", "Your first pull is free. Duplicate guns turn into shards; a Legendary comes within 90 pulls.",
+                      "1 free pull ready", "FREE PULL", MenuIntent.Gacha, new Color(0.66f, 0.45f, 1f)),
+                _ => ("GUN STARS", "Spend shards and coins to add stars to a gun: more damage, faster fire.",
+                      "Stars open on every gun you own", "UPGRADE MY GUN", MenuIntent.Arsenal, new Color(1f, 0.69f, 0.16f)),
+            };
+            _featureIntent = intent;
+            var col = unlockRoot.transform.Find("Safe/Col");
+            Set(unlockLevel, $"ACCOUNT LEVEL {lv}");
+            Set(col?.Find("Sub")?.GetComponent<TMP_Text>(), "New feature unlocked!");
+            Set(unlockTag, "NEW FEATURE");
+            if (unlockTagBg != null) unlockTagBg.color = color;
+            if (unlockFrame != null) unlockFrame.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), color, 0.35f);
+            var sprite = featureIcons != null && feature < featureIcons.Length ? featureIcons[feature] : null;
+            if (unlockIcon != null) { unlockIcon.enabled = sprite != null; unlockIcon.sprite = sprite; }
+            if (unlockBadge != null) unlockBadge.enabled = false;
+            Set(unlockName, name);
+            Set(unlockDesc, desc);
+            Set(unlockHint, "");
+            Set(col?.Find("Collection/L")?.GetComponent<TMP_Text>(), panel);
+            Set(unlockCount, "NEW");
+            col?.Find("Collection/Bar")?.gameObject.SetActive(false);
+            Set(col?.Find("Try/Face/Label")?.GetComponent<TMP_Text>(), cta);
+            Set(unlockNextLabel, "LATER");
+            UIFeedback.LevelUp();
+        }
+
         void SetRow(int i, string text, string tag)
         {
             if (i >= progressRows.Length) return;
@@ -424,6 +507,7 @@ namespace ZombieWar.UI
     public static class MenuIntent
     {
         public const string Shop = "shop";
+        public const string Arsenal = "arsenal", Pass = "pass", Gacha = "gacha";
         public static string Next;
         public static string Take() { var n = Next; Next = null; return n; }
     }

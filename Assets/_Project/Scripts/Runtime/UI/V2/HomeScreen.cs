@@ -137,7 +137,7 @@ namespace ZombieWar.UI
             On(settingsButton, () => Open(settingsScreen));
             On(coinPlus, () => { if (!GateFirstRun()) Open(shopScreen); });
             On(gemPlus, () => { if (!GateFirstRun()) Open(shopScreen); });
-            On(daily?.button, () => Open(dailyScreen));
+            On(daily?.button, () => { if (!GateFirstRun()) Open(dailyScreen); });
             On(events?.button, () => OpenGated(gachaScreen, AccountProgress.Feature.Events));
             On(gacha?.button, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(pass?.button, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
@@ -147,7 +147,7 @@ namespace ZombieWar.UI
             On(gunCard, () => { if (!GateFirstRun()) Open(arsenalScreen); });
             On(revealOpen, () => { CloseReveal(); Open(arsenalScreen); });
             On(revealLater, () => { UIFeedback.Back(); CloseReveal(); });
-            On(stripDaily, () => Open(dailyScreen));
+            On(stripDaily, () => { if (!GateFirstRun()) Open(dailyScreen); });
             On(stripGacha, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(stripPass, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
             On(missionsCard, () => OpenGated(passScreen, AccountProgress.Feature.Missions));
@@ -177,8 +177,13 @@ namespace ZombieWar.UI
         {
             Refresh();
             MaybeReveal();
-            // The run result's Shop link lands here first, then goes on to the Shop.
-            if (MenuIntent.Take() == MenuIntent.Shop && shopScreen != null) UIManager.Instance?.Push(shopScreen);
+            // A link from the run result or an unlock popup lands here first, then goes on.
+            var intent = MenuIntent.Take();
+            var go = intent == MenuIntent.Shop ? shopScreen
+                : intent == MenuIntent.Arsenal ? arsenalScreen
+                : intent == MenuIntent.Pass ? passScreen
+                : intent == MenuIntent.Gacha ? gachaScreen : null;
+            if (go != null) UIManager.Instance?.Push(go);
         }
         protected override void OnFocus() => Refresh();
         public override bool OnEscape()
@@ -275,7 +280,7 @@ namespace ZombieWar.UI
             int claimable = ClaimableMissions();
             int today = DailyRewards.Today;
             int dailyCount = DailyRewards.ClaimableCount(today);
-            RailState(daily, true, dailyCount, "", "");
+            RailState(daily, !FirstRunPending, dailyCount, "", "AFTER RUN 1");
             RailState(events, AccountProgress.IsUnlocked(AccountProgress.Feature.Events), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Events));
             RailState(gacha, AccountProgress.IsUnlocked(AccountProgress.Feature.Gacha), 0, "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Gacha));
             RailState(pass, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass), claimable + PassRewards.ClaimableCount(), "", "LV " + AccountProgress.RequiredLevel(AccountProgress.Feature.Pass));
@@ -297,7 +302,7 @@ namespace ZombieWar.UI
             if (starter?.button != null) starter.button.gameObject.SetActive(!firstRun);
             if (events?.button != null) events.button.gameObject.SetActive(!firstRun);
             nav?.Refresh();
-            Set(playSub, best > 0 ? $"Beat your best {HudController.FormatClock(best)}" : "Survive as long as you can");
+            Set(playSub, firstRun ? "Your first run" : best > 0 ? $"Beat your best {HudController.FormatClock(best)}" : "Survive as long as you can");
             if (nav != null) nav.SetDot(4, claimable + PassRewards.ClaimableCount() > 0 && AccountProgress.IsUnlocked(AccountProgress.Feature.Pass));
         }
 

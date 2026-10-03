@@ -49,6 +49,55 @@ namespace ZombieWar.EditorTools
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
+        const string ArsenalPath = "Assets/_Project/UI/Prefabs/V2/UI_V2_Arsenal.prefab";
+        const string ItemIcons = "Assets/ThirdParty/Layer Lab/GUI Pro-SuperCasual/ResourcesData/Sprites/Components/Icon_ItemIcons/128/";
+
+        /// After the run: the Arsenal's first-gun spotlight (mockup FTUE2_09) and the icons of the
+        /// LV2 / LV3 / LV5 feature popups (FTUE2_10..12).
+        [MenuItem("HordeCall/UI/FTUE/Build After-Run")]
+        public static void BuildAfterRun()
+        {
+            ImportIcons();
+            var root = PrefabUtility.LoadPrefabContents(ArsenalPath);
+            try
+            {
+                var spot = Rect(root.transform, "FtueGun", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                spot.SetAsLastSibling();
+                var dim = Rect(spot, "Dim", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                var dimImg = dim.GetComponent<Image>() ?? dim.gameObject.AddComponent<Image>();
+                dimImg.sprite = null; dimImg.color = new Color(0.03f, 0.05f, 0.09f, 0.45f); dimImg.raycastTarget = false;
+                foreach (var ring in new[] { "CellRing", "ButtonRing" })
+                {
+                    var r = Rect(spot, ring, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300, 300));
+                    Img(r, "frame_32", Yellow, true);
+                }
+                var coach = Panel(spot, "Coach", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(880, 250), Yellow);
+                Text(coach, "Title", "YOUR FIRST NEW GUN", 54, Ink, false, new Vector2(0, -26), new Vector2(-56, 66), TextAlignmentOptions.Left);
+                var body = Text(coach, "Body", "You have 400 coins.", 33, Ink, true, new Vector2(0, -100), new Vector2(-56, 120), TextAlignmentOptions.TopLeft, wrap: true);
+                body.rectTransform.anchorMin = new Vector2(0, 1); body.rectTransform.anchorMax = new Vector2(1, 1);
+                var hand = Rect(spot, "Hand", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.2f, 1f), Vector2.zero, new Vector2(104, 152));
+                Icon(hand, "ftue.hand.png");
+                spot.gameObject.SetActive(false);
+                PrefabUtility.SaveAsPrefabAsset(root, ArsenalPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+
+            var hud = PrefabUtility.LoadPrefabContents(HudPath);
+            try
+            {
+                var end = hud.GetComponentInChildren<ZombieWar.UI.RunEndV2>(true);
+                var so = new SerializedObject(end);
+                var p = so.FindProperty("featureIcons");
+                var files = new[] { "ItemIcon_Calendar_Check.Png", "ItemIcon_Ticket_Gold.Png", "ItemIcon_Star_Gold.Png" };
+                p.arraySize = files.Length;
+                for (int i = 0; i < files.Length; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(ItemIcons + files[i]);
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(hud, HudPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(hud); }
+            Debug.Log("[FTUE UI] after-run widgets built (Arsenal spotlight, unlock icons).");
+        }
+
         static void ImportIcons()
         {
             foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { IconDir.TrimEnd('/') }))

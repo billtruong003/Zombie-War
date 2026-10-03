@@ -97,7 +97,54 @@ namespace ZombieWar.UI
                 .Where(w => w != null)
                 .OrderByDescending(w => PlayerProfile.IsWeaponOwned(w.WeaponId)).ThenBy(w => w.tier).ThenBy(w => w.price).ToList();
             _selected = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, _guns);
+            // FTUE v2 (mockup FTUE2_09): the first visit after the first run points at the gun the
+            // newcomer gift paid for.
+            _ftueGun = !Ftue.Done(Ftue.Gun) && !HomeScreen.FirstRunPending ? FirstAffordable() : null;
+            if (_ftueGun != null) _selected = _ftueGun;
             Refresh();
+            ShowFtueGun(_ftueGun != null);
+        }
+
+        // ------------------------------------------------------------ ftue v2: first gun
+        WeaponData _ftueGun;
+
+        WeaponData FirstAffordable() => _guns.Where(w => w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId) && w.price <= PlayerProfile.Coin)
+                                             .OrderBy(w => w.price).FirstOrDefault();
+
+        /// Dims the screen around the gun's cell and the buy button, with the coach card.
+        void ShowFtueGun(bool on)
+        {
+            var spot = transform.Find("FtueGun") as RectTransform;
+            if (spot == null) return;
+            spot.gameObject.SetActive(on);
+            if (!on) return;
+            Canvas.ForceUpdateCanvases();   // the grid lays its cells out late; the rings read their corners
+            int i = _guns.IndexOf(_ftueGun);
+            var cell = i >= 0 && i < cells.Length && cells[i]?.button != null ? cells[i].button.transform as RectTransform : null;
+            Cover(spot.Find("CellRing") as RectTransform, cell, 14f);
+            Cover(spot.Find("ButtonRing") as RectTransform, starButton != null ? starButton.transform as RectTransform : null, 14f);
+            var coach = spot.Find("Coach/Body")?.GetComponent<TMP_Text>();
+            if (coach != null) coach.text = $"You have {PlayerProfile.Coin:N0} coins. {_ftueGun.weaponName} hits harder and fires faster than your starter gun.";
+            var hand = spot.Find("Hand") as RectTransform;
+            var btn = spot.Find("ButtonRing") as RectTransform;
+            if (hand != null && btn != null) hand.position = btn.TransformPoint(new Vector3(btn.rect.xMax - 90f, btn.rect.yMin + 10f, 0f));
+        }
+
+        /// Puts <paramref name="ring"/> over <paramref name="target"/> (any parent), grown by
+        /// <paramref name="pad"/> px on each side.
+        static void Cover(RectTransform ring, RectTransform target, float pad)
+        {
+            if (ring == null) return;
+            ring.gameObject.SetActive(target != null);
+            if (target == null) return;
+            var c = new Vector3[4];
+            target.GetWorldCorners(c);
+            var parent = ring.parent as RectTransform;
+            Vector2 a = parent.InverseTransformPoint(c[0]), b = parent.InverseTransformPoint(c[2]);
+            ring.anchorMin = ring.anchorMax = new Vector2(0.5f, 0.5f);
+            ring.pivot = new Vector2(0.5f, 0.5f);
+            ring.anchoredPosition = (a + b) * 0.5f - parent.rect.center;
+            ring.sizeDelta = new Vector2(Mathf.Abs(b.x - a.x) + pad * 2f, Mathf.Abs(b.y - a.y) + pad * 2f);
         }
 
         protected override void OnFocus() => Refresh();
@@ -140,6 +187,20 @@ namespace ZombieWar.UI
             if (_selected == null) return;
             if (!PlayerProfile.IsWeaponOwned(_selected.WeaponId))
             {
+                // FTUE v2: a gun the player can afford is bought right here.
+                if (_selected.price > 0 && PlayerProfile.Coin >= _selected.price)
+                {
+                    if (PlayerProfile.TryPurchaseWeapon(_selected.WeaponId, _selected.price) == PlayerProfile.PurchaseResult.Purchased)
+                    {
+                        PlayerProfile.SetEquippedWeapon(_selected.WeaponId);
+                        UIFeedback.Purchase();
+                        Toast.Show($"{_selected.weaponName} is yours");
+                        if (_ftueGun != null) { _ftueGun = null; Ftue.Complete(Ftue.Gun); ShowFtueGun(false); }
+                        Refresh();
+                    }
+                    else { UIFeedback.Error(); Toast.Show("Could not buy"); }
+                    return;
+                }
                 UIFeedback.Tap();
                 if (shopScreen != null) UIManager.Instance?.Push(shopScreen); else Toast.Show("Get it in the Shop");
                 return;
@@ -197,7 +258,8 @@ namespace ZombieWar.UI
             UIBarClip.Set(rateBar, Mathf.Clamp01(WeaponUpgradeMath.EffectiveFireRate(d, level) / maxRate));
             if (dmgBonus != null) { dmgBonus.gameObject.SetActive(bonus > 0f); dmgBonus.text = $"+{bonus * 100f:0}%"; }
 
-            if (!owned) Set(starLabel, d.price > 0 ? $"GET IN SHOP · {d.price:N0}" : "GET IN SHOP");
+            if (!owned) Set(starLabel, d.price > 0 && PlayerProfile.Coin >= d.price ? $"BUY {d.weaponName.ToUpperInvariant()} · {d.price:N0}"
+                                     : d.price > 0 ? $"GET IN SHOP · {d.price:N0}" : "GET IN SHOP");
             else if (level >= 3) Set(starLabel, "MAX STARS");
             else
             {
