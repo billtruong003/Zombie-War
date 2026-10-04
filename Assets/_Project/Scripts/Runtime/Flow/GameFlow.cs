@@ -55,11 +55,13 @@ namespace ZombieWar
                 _menuRoots.Clear();
                 foreach (var root in scene.GetRootGameObjects())
                     if (root.activeSelf) { _menuRoots.Add(root); root.SetActive(false); }
+                AudioListenerGuard.Refresh();   // the menu camera's listener just went away
                 return;
             }
             foreach (var root in _menuRoots)
                 if (root != null) root.SetActive(true);
             _menuRoots.Clear();
+            AudioListenerGuard.Refresh();       // the menu camera's listener is back
         }
 
         /// Hub PLAY -> unload menu, additive-load the world, make it the active scene (so runtime

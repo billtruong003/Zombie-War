@@ -256,6 +256,9 @@ namespace ZombieWar
 
         private void Start()
         {
+            // Radio subtitles hide while any of these is up (owner decision 04/10).
+            foreach (var m in new[] { pauseRoot, confirmRoot, settingsRoot, levelUpRoot, reviveRoot, ChestRoot }) FtueRadio.RegisterModal(m);
+
             if (!Ftue.Done(Ftue.Move))
             {
                 Show(ftueRoot, true);

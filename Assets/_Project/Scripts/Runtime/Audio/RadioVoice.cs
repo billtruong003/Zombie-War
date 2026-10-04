@@ -28,13 +28,25 @@ namespace ZombieWar.Audio
     public sealed class RadioVoice : MonoBehaviour
     {
         const string Folder = "VO/";
-        const int MaxQueued = 3;
+        const int MaxQueuedBlocks = 3;
+
+        /// What wins when the queue is full: a first-time FTUE line beats a conversation, which beats
+        /// chatter. A conversation is one block, so a full queue drops whole blocks, never its first line
+        /// (the old 3-line cap silently lost line 1 of every 4-line conversation).
+        public enum Priority { Chatter = 0, Conversation = 1, Ftue = 2 }
+
+        sealed class Block
+        {
+            public readonly List<string> Lines;
+            public readonly Priority Priority;
+            public Block(List<string> lines, Priority priority) { Lines = lines; Priority = priority; }
+        }
         const float Gap = 0.25f, MusicDuck = 0.35f, SfxDuck = 0.6f;
 
         static RadioVoice _instance;
 
         AudioSource _source;
-        readonly List<string> _queue = new();
+        readonly List<Block> _queue = new();
         string _current;
         bool _loading;
         float _nextAt;
@@ -74,10 +86,44 @@ namespace ZombieWar.Audio
         public static void Say(string id)
         {
             if (string.IsNullOrEmpty(id)) return;
+            Enqueue(new List<string>(1) { id }, id.Contains("_ftue_") ? Priority.Ftue : Priority.Chatter);
+        }
+
+        /// <summary>Queue a conversation: its lines play back to back and are kept or dropped together.</summary>
+        public static void SayAll(IReadOnlyList<string> ids)
+        {
+            if (ids == null || ids.Count == 0) return;
+            Enqueue(new List<string>(ids), Priority.Conversation);
+        }
+
+        static void Enqueue(List<string> lines, Priority priority)
+        {
             var v = Instance;
-            if (v._current == id || v._queue.Contains(id)) return;
-            if (v._queue.Count >= MaxQueued) v._queue.RemoveAt(0);   // stale lines go first
-            v._queue.Add(id);
+            for (int i = lines.Count - 1; i >= 0; i--)
+                if (string.IsNullOrEmpty(lines[i]) || v._current == lines[i] || v.IsQueued(lines[i])) lines.RemoveAt(i);
+            if (lines.Count == 0) return;
+
+            if (v._queue.Count >= MaxQueuedBlocks)
+            {
+                // Drop the oldest block of the lowest priority; if every queued block outranks the
+                // new one, the new one is the one that goes.
+                int drop = -1;
+                for (int i = 0; i < v._queue.Count; i++)
+                    if (v._queue[i].Priority <= priority && (drop < 0 || v._queue[i].Priority < v._queue[drop].Priority)) drop = i;
+                if (drop < 0) return;
+                v._queue.RemoveAt(drop);
+            }
+
+            // Higher priority plays sooner: insert after every block at the same or higher priority.
+            int at = v._queue.Count;
+            while (at > 0 && v._queue[at - 1].Priority < priority) at--;
+            v._queue.Insert(at, new Block(lines, priority));
+        }
+
+        bool IsQueued(string id)
+        {
+            for (int i = 0; i < _queue.Count; i++) if (_queue[i].Lines.Contains(id)) return true;
+            return false;
         }
 
         /// <summary>Queue a line the first time ever; false if it was already used.</summary>
@@ -95,7 +141,23 @@ namespace ZombieWar.Audio
         {
             if (Said(id)) return;
             var v = Instance;
-            v.StartCoroutine(v.CoNudge(id, seconds, stillNeeded));
+            v.StartTimer(id, v.CoNudge(id, seconds, stillNeeded));
+        }
+
+        // One pending timer per key: asking again (Home shown again) restarts it instead of stacking
+        // another 20-120 s coroutine that held the old screen's closure.
+        readonly Dictionary<string, Coroutine> _timers = new();
+
+        void StartTimer(string key, IEnumerator routine)
+        {
+            if (_timers.TryGetValue(key, out var old) && old != null) StopCoroutine(old);
+            _timers[key] = StartCoroutine(Timed(key, routine));
+        }
+
+        IEnumerator Timed(string key, IEnumerator routine)
+        {
+            yield return routine;
+            _timers.Remove(key);
         }
 
         IEnumerator CoNudge(string id, float seconds, Func<bool> stillNeeded)
@@ -105,10 +167,11 @@ namespace ZombieWar.Audio
 
         /// <summary>After <paramref name="seconds"/> of real time and a quiet radio, run
         /// <paramref name="act"/> if <paramref name="stillNeeded"/> still holds.</summary>
-        public static void After(float seconds, Func<bool> stillNeeded, Action act)
+        /// <param name="key">Timers with the same key replace each other.</param>
+        public static void After(string key, float seconds, Func<bool> stillNeeded, Action act)
         {
             var v = Instance;
-            v.StartCoroutine(v.CoAfter(seconds, stillNeeded, act));
+            v.StartTimer(key, v.CoAfter(seconds, stillNeeded, act));
         }
 
         IEnumerator CoAfter(float seconds, Func<bool> stillNeeded, Action act)
@@ -129,8 +192,10 @@ namespace ZombieWar.Audio
                 Finish();
             }
             if (_queue.Count == 0 || Time.unscaledTime < _nextAt) return;
-            var id = _queue[0];
-            _queue.RemoveAt(0);
+            var block = _queue[0];
+            var id = block.Lines[0];
+            block.Lines.RemoveAt(0);
+            if (block.Lines.Count == 0) _queue.RemoveAt(0);
             StartCoroutine(CoPlay(id));
         }
 

@@ -9,7 +9,9 @@ namespace BillGameCore
         public virtual void Enter() { }
         public virtual void Tick(float dt) { }
         public virtual void Exit() { }
-        public virtual string Name => GetType().Name.Replace("State", "");
+        string _name;
+        // Cached: CurrentName is polled every frame (audio, UI) and Replace allocated a new string each call.
+        public virtual string Name => _name ??= GetType().Name.Replace("State", "");
     }
 
     public class GameStateMachine : IService, IInitializable, ITickable, IDisposableService

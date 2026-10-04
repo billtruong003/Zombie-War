@@ -126,8 +126,10 @@ namespace ZombieWar
                 return;
             }
             Station best = null; float bestD = float.MaxValue;
-            foreach (var s in FindObjectsByType<Station>(FindObjectsSortMode.None))
+            var stations = Station.Active;
+            for (int i = 0; i < stations.Count; i++)
             {
+                var s = stations[i];
                 if (s == null || s.Finished || s.Gone || Ftue.Done(Ftue.Station(s.Anchor.kind))) continue;
                 if (!OnScreen(s.transform.position)) continue;
                 float d = (s.transform.position - player.transform.position).sqrMagnitude;

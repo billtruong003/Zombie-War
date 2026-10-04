@@ -49,6 +49,14 @@ namespace ZombieWar
             if (_instance == this) _instance = null;
         }
 
+        /// <summary>Re-picks the one listener. Call after switching scene roots on or off: the menu
+        /// is hidden/shown with SetActive (no scene event), which left two listeners after Home and
+        /// none while the world loaded.</summary>
+        public static void Refresh()
+        {
+            if (_instance != null) _instance.Resolve();
+        }
+
         void OnSceneLoaded(Scene s, LoadSceneMode m) => Resolve();
         void OnSceneUnloaded(Scene s) => Resolve();
 

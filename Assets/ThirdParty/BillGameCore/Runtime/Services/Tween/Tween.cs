@@ -89,6 +89,14 @@ namespace BillGameCore
             if (State == TweenState.Complete || State == TweenState.Idle)
                 return false;
 
+            // The target died with its scene (HUD on returning to the menu) without anyone calling
+            // KillTarget: drop the tween quietly instead of throwing every frame until it ends.
+            if (Owner is UnityEngine.Object target && target == null)
+            {
+                State = TweenState.Idle;
+                return false;
+            }
+
             float delta = UseUnscaled ? Time.unscaledDeltaTime : dt;
 
             // Delay phase

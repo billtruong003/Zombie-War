@@ -16,7 +16,10 @@ namespace ZombieWar.Editor.Audio
         {
             if (!assetPath.StartsWith(Folder)) return;
             var importer = (AudioImporter)assetImporter;
-            importer.forceToMono = true;
+            // The WAVs are already mono. Force To Mono must stay OFF: Unity applies its peak
+            // "Normalize" only together with it, and that pushed every line to 0 dBFS peak, undoing
+            // the -18 LUFS loudness matching (lines played louder/quieter than each other again).
+            importer.forceToMono = false;
             importer.loadInBackground = true;
             importer.ambisonic = false;
             var s = importer.defaultSampleSettings;

@@ -132,7 +132,7 @@ namespace ZombieWar.Audio
             string flag = $"vo.dlg.{n:00}";
             if (PlayerProfile.HasFtueStep(flag) || RadioVoice.Busy) return false;
             PlayerProfile.MarkFtueStep(flag);
-            foreach (var id in Dialogues[n - 1]) RadioVoice.Say(id);
+            RadioVoice.SayAll(Dialogues[n - 1]);
             _lastLineAt = Time.unscaledTime;
             return true;
         }
@@ -155,7 +155,7 @@ namespace ZombieWar.Audio
             if (Random.value < 0.06f && (d.SayOnce("vo_riley_lore_why_us") || d.SayOnce("vo_riley_lore_nightfin"))) return;
             if (Random.value < 0.35f) d.Say(Pick("vo_riley_meta_home_01", "vo_riley_meta_home_02"), 30f);
             // Idle on Home: the mask conversation at 20 s, Ji-ho at 60 s, Kaito's egg at 2 min.
-            RadioVoice.After(20f, stillOnHome, () => d.Converse(4));
+            RadioVoice.After("home.dlg04", 20f, stillOnHome, () => d.Converse(4));
             RadioVoice.Nudge("vo_jiho_sit_afk_home", 60f, stillOnHome);
             RadioVoice.Nudge("vo_kaito_egg_idle_2m", 120f, stillOnHome);
         }

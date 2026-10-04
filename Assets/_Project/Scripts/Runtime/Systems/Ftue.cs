@@ -27,10 +27,24 @@ namespace ZombieWar
         public const string Gun = "gun";         // the Arsenal pointed at the first gun to buy
 
         /// <summary>The first time each station kind is met (a callout with its name and use).</summary>
-        public static string Station(ZombieWar.Stations.StationKind kind) => "station." + kind;
+        public static string Station(ZombieWar.Stations.StationKind kind) => StationKeys[(int)kind];
 
         /// <summary>The first pickup of each mechanic item (a toast with what it did).</summary>
-        public static string Item(PickupEffect effect) => "item." + effect;
+        public static string Item(PickupEffect effect) => ItemKeys[(int)effect];
+
+        // Built once: these keys are asked for several times a second while a run is live.
+        static readonly string[] StationKeys = BuildKeys<ZombieWar.Stations.StationKind>("station.");
+        static readonly string[] ItemKeys = BuildKeys<PickupEffect>("item.");
+
+        static string[] BuildKeys<T>(string prefix) where T : System.Enum
+        {
+            var values = (T[])System.Enum.GetValues(typeof(T));
+            int max = 0;
+            foreach (var v in values) max = System.Math.Max(max, System.Convert.ToInt32(v));
+            var keys = new string[max + 1];
+            foreach (var v in values) keys[System.Convert.ToInt32(v)] = prefix + v;
+            return keys;
+        }
 
         /// <summary>The account-level feature unlock popup (LV2 missions + pass, LV3 gacha, LV5 stars).</summary>
         public static string Unlock(int level) => "unlock." + level;

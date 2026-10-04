@@ -33,6 +33,12 @@ namespace ZombieWar.Audio
 
         static string Line(string agent, string key) => $"vo_{agent}_ftue_{key}";
 
+        // Ids read by the 4 Hz poll, built once instead of four interpolations per poll.
+        static readonly string RelayDone = Line("jiho", "relay_done"), RelayOut = Line("jiho", "relay_out"),
+            CacheDone = Line("mai", "cache_done"), CachePoor = Line("mai", "cache_poor"),
+            MoveLine = Line("riley", "move"), MoveNudge = Line("riley", "move_nudge");
+        bool _pollFinished;
+
         // ------------------------------------------------------------ calls from screens
         /// <summary>Home is on screen. First launch: Riley clears the recruit, then nudges toward PLAY.
         /// After the first run: Mai opens the daily gifts.</summary>
@@ -179,6 +185,7 @@ namespace ZombieWar.Audio
         // ------------------------------------------------------------ polled run steps
         void Poll()
         {
+            if (_pollFinished) return;
             var run = RunState.Current;
             if (run == null || run.IsOver || Time.timeScale <= 0f) { _moveSince = -1f; return; }
 
@@ -186,8 +193,8 @@ namespace ZombieWar.Audio
             if (!Ftue.Done(Ftue.Move))
             {
                 // The nudge clock only runs while the radio is quiet.
-                if (RadioVoice.SayOnce(Line("riley", "move")) || _moveSince < 0f || RadioVoice.Busy) _moveSince = Time.unscaledTime;
-                else if (Time.unscaledTime - _moveSince > MoveNudgeAfter) RadioVoice.SayOnce(Line("riley", "move_nudge"));
+                if (RadioVoice.SayOnce(MoveLine) || _moveSince < 0f || RadioVoice.Busy) _moveSince = Time.unscaledTime;
+                else if (Time.unscaledTime - _moveSince > MoveNudgeAfter) RadioVoice.SayOnce(MoveNudge);
             }
 
             var player = PlayerMovement.Instance;
@@ -195,18 +202,26 @@ namespace ZombieWar.Audio
             var pos = player.transform.position;
 
             // The first relay: stepped in, then out before it filled.
-            bool relayStarted = Ftue.Done(Ftue.Station(StationKind.SignalRelay)) && !RadioVoice.Said(Line("jiho", "relay_done"));
+            bool relayStarted = Ftue.Done(Ftue.Station(StationKind.SignalRelay)) && !RadioVoice.Said(RelayDone);
             // The first cache: standing on it without the coins to pay.
-            bool cacheStarted = Ftue.Done(Ftue.Station(StationKind.SupplyCache)) && !RadioVoice.Said(Line("mai", "cache_done"));
-            if (!relayStarted && !cacheStarted) return;
-            foreach (var s in FindObjectsByType<Station>(FindObjectsSortMode.None))
+            bool cacheStarted = Ftue.Done(Ftue.Station(StationKind.SupplyCache)) && !RadioVoice.Said(CacheDone);
+            if (!relayStarted && !cacheStarted)
             {
+                // Every polled line is spent for good once both stations had their outcome: stop polling.
+                if (Ftue.Done(Ftue.Move) && (RadioVoice.Said(RelayDone) || RadioVoice.Said(RelayOut))
+                    && (RadioVoice.Said(CacheDone) || RadioVoice.Said(CachePoor))) _pollFinished = true;
+                return;
+            }
+            var stations = Station.Active;
+            for (int i = 0; i < stations.Count; i++)
+            {
+                var s = stations[i];
                 if (s == null || s.Finished || s.Gone || s.Signal == null) continue;
                 bool inside = s.Signal.Contains(pos);
                 if (relayStarted && s.Anchor.kind == StationKind.SignalRelay && !inside && s.Progress01 > 0.05f)
-                    RadioVoice.SayOnce(Line("jiho", "relay_out"));
+                    RadioVoice.SayOnce(RelayOut);
                 if (cacheStarted && s.Anchor.kind == StationKind.SupplyCache && inside && run.Coin < s.CachePrice)
-                    RadioVoice.SayOnce(Line("mai", "cache_poor"));
+                    RadioVoice.SayOnce(CachePoor);
             }
         }
     }

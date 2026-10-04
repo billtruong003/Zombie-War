@@ -76,6 +76,8 @@ namespace ZombieWar.UI
         bool _subscribed;
         RadioCallView _card;
         CanvasGroup _cardGroup, _subGroup;
+        CanvasGroup[] _stepGroups;     // cached: this runs every frame for the whole session
+        RadioCallView[] _stepViews;
         Rect _lastSafe;
 
         // ------------------------------------------------------------ public API
@@ -100,11 +102,34 @@ namespace ZombieWar.UI
 
         public static bool Showing(string id) => _instance != null && _instance._call != null && _instance._call.Id == id;
 
+        // Owner decision 04/10 (A): radio subtitles stay hidden while a modal is up (revive, level-up,
+        // chest, pause, unlock popups) — the voice still plays. Modal owners register their root once;
+        // the radio checks activeInHierarchy, so no show/hide bookkeeping can be forgotten.
+        static readonly List<GameObject> Modals = new();
+
+        public static void RegisterModal(GameObject root)
+        {
+            if (root != null && !Modals.Contains(root)) Modals.Add(root);
+        }
+
+        static bool AnyModalOpen()
+        {
+            for (int i = Modals.Count - 1; i >= 0; i--)
+            {
+                var m = Modals[i];
+                if (m == null) { Modals.RemoveAt(i); continue; }
+                if (m.activeInHierarchy) return true;
+            }
+            return false;
+        }
+
+        static readonly Vector3[] Corners = new Vector3[4];
+
         /// Screen rect of a UI element (any canvas), or null when it is missing or hidden.
         public static Rect? ScreenRect(RectTransform rt)
         {
             if (rt == null || !rt.gameObject.activeInHierarchy) return null;
-            var c = new Vector3[4];
+            var c = Corners;
             rt.GetWorldCorners(c);
             var canvas = rt.GetComponentInParent<Canvas>()?.rootCanvas;
             var cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
@@ -137,7 +162,7 @@ namespace ZombieWar.UI
 
         // ------------------------------------------------------------ lifetime
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => _instance = null;
+        static void ResetStatics() { _instance = null; Modals.Clear(); }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot() => Ensure();
@@ -161,6 +186,8 @@ namespace ZombieWar.UI
             if (json != null) foreach (var l in JsonUtility.FromJson<Catalog>(json.text).lines) _lines[l.id] = l;
             foreach (var v in new[] { cardNormal, cardSmall, cardItem, cardSub }) if (v != null) Group(v).alpha = 0f;
             _subGroup = cardSub != null ? Group(cardSub) : null;
+            _stepGroups = new[] { cardNormal != null ? Group(cardNormal) : null, cardSmall != null ? Group(cardSmall) : null, cardItem != null ? Group(cardItem) : null };
+            _stepViews = new[] { cardNormal, cardSmall, cardItem };
             HideMarkers();
             ApplySafeArea();
         }
@@ -265,13 +292,18 @@ namespace ZombieWar.UI
                 if (top == null || (p.Modal && (!top.Modal || p.Seq > top.Seq)) || (!p.Modal && !top.Modal && p.Seq < top.Seq)) top = p;
             if (top == null) { if (_call != null) End(); }
             else if (top != _call) Begin(top);
-            foreach (var v in new[] { cardNormal, cardSmall, cardItem })
+            for (int i = 0; i < _stepGroups.Length; i++)
             {
-                if (v == null) continue;
-                var g = Group(v);
-                g.alpha = Mathf.MoveTowards(g.alpha, _call != null && v == _card ? 1f : 0f, dt);
+                var g = _stepGroups[i];
+                if (g == null) continue;
+                float to = _call != null && _stepViews[i] == _card ? 1f : 0f;
+                if (g.alpha != to) g.alpha = Mathf.MoveTowards(g.alpha, to, dt);
             }
-            if (_subGroup != null) _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, Time.unscaledTime < _subUntil ? 1f : 0f, dt);
+            if (_subGroup != null)
+            {
+                float to = Time.unscaledTime < _subUntil && !AnyModalOpen() ? 1f : 0f;
+                if (_subGroup.alpha != to) _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, to, dt);
+            }
             if (_call != null) Track(_call);
         }
 

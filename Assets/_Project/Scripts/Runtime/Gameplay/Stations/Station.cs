@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -63,6 +64,17 @@ namespace ZombieWar.Stations
         bool _healing;
 
         public bool Finished => _finished;
+
+        /// <summary>Stations alive in the world. Readers (FTUE coach, radio) iterate this instead of
+        /// searching the scene several times a second.</summary>
+        public static IReadOnlyList<Station> Active => _active;
+        static readonly List<Station> _active = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _active.Clear();
+
+        void OnEnable() => _active.Add(this);
+        void OnDisable() => _active.Remove(this);
 
         public int CachePrice => cachePriceCoin + cachePriceStep * StationDirector.CachePurchasesThisRun;
         public float Progress01 => Signal != null ? Signal.Progress01 : 0f;
