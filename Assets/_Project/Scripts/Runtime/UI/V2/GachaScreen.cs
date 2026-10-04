@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -178,6 +178,7 @@ namespace ZombieWar.UI
             _skip = false;
             if (resultsOk != null) resultsOk.gameObject.SetActive(false);
             if (resultsSkip != null) resultsSkip.gameObject.SetActive(true);
+            if (resultsTitle != null) resultsTitle.gameObject.SetActive(true);   // a reveal cut short leaves it hidden
             if (resultsTitle != null) resultsTitle.text = results.Count > 1 ? "OPENING 10 + 1 BONUS" : "OPENING";
             for (int i = 0; i < resultTiles.Length; i++)
             {
@@ -211,7 +212,12 @@ namespace ZombieWar.UI
                     int tier = Mathf.Clamp((int)r.tier, 0, 4);
                     var chestSprite = chests != null && tier < chests.Length ? chests[tier] : null;
                     var prize = PrizeSprite(r);
+                    // The spotlight's backdrop is see-through: the sheet's "OPENING" title, its skip
+                    // hint and the still-closed box would show behind the card (QA 04/10 #11). The
+                    // spotlight takes its own taps.
+                    SetSheetChrome(false, resultTiles[best]);
                     yield return spotlight.Play(tier, chestSprite, prize, r.label, NoteFor(r), () => _skip);
+                    SetSheetChrome(true, resultTiles[best]);
                 }
                 Open(resultTiles[best], r);
                 if (!_skip) spotlight.MiniBurst((RectTransform)resultTiles[best].root.transform, (int)r.tier);
@@ -220,6 +226,13 @@ namespace ZombieWar.UI
             if (resultsSkip != null) resultsSkip.gameObject.SetActive(false);
             if (resultsOk != null) { resultsOk.gameObject.SetActive(true); UIFx.PopIn(resultsOk.transform); }
             _reveal = null;
+        }
+
+        void SetSheetChrome(bool on, Tile spotlit)
+        {
+            if (resultsTitle != null) resultsTitle.gameObject.SetActive(on);
+            if (resultsSkip != null) resultsSkip.gameObject.SetActive(on);
+            if (spotlit?.root != null) spotlit.root.SetActive(on);
         }
 
         void Closed(Tile t, GachaBanners.Result r)
@@ -411,9 +424,7 @@ namespace ZombieWar.UI
             var rates = GachaBanners.RatesFor(B, economy);
             if (ratesText != null)
                 ratesText.text = string.Join("\n", rates.Select(r => $"{r.percent:0.##}%   {r.label}")) +
-                                 (B.kind == GachaBanners.Kind.Event
-                                     ? $"\n\nA Legendary is certain by pull {B.hardPity}. It is the featured prize 50% of the time; if not, the next Legendary is. Pity carries over.\nx10 opens 10 boxes + 1 bonus box. Duplicates turn into tickets."
-                                     : "\n\nx10 opens 10 boxes + 1 bonus box. Duplicate outfits turn into tickets; duplicate guns into shards.");
+                                 $"\n\n{GachaBanners.PityRule(B, economy)}\n{GachaBanners.MultiRule} {GachaBanners.DuplicateRule(B)}";
             if (ratesSheet != null) ratesSheet.SetActive(true);
         }
 
@@ -482,7 +493,7 @@ namespace ZombieWar.UI
             {
                 var pool = GachaBanners.PoolFor(bn, economy);
                 int th = pool != null ? Mathf.Max(1, pool.pityThreshold) : 30;
-                if (pityLabel != null) pityLabel.text = $"EPIC OR BETTER IN {Mathf.Max(0, th - pity)}";
+                if (pityLabel != null) pityLabel.text = $"EPIC OR BETTER IN {GachaBanners.PullsToPoolPity(bn, economy)}";
                 UIBarClip.Set(pityBar, pity / (float)th);
             }
 
@@ -501,8 +512,7 @@ namespace ZombieWar.UI
                 if (t.note != null) t.note.text = TileNote(rates[i].label);
             }
             _rateIcons = false; _rateIconsAt = 0.5f; _rateTries = 0; _skinShotId = null;
-            if (note != null) note.text = evt ? "Duplicates turn into tickets. Pity carries over to the next Neon banner."
-                                              : "Duplicate outfits turn into tickets, duplicate guns into shards.";
+            if (note != null) note.text = GachaBanners.DuplicateRule(bn);
             _tick = 0f; Update();
         }
     }

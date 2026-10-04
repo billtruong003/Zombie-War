@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -109,7 +109,7 @@ namespace ZombieWar.UI
         void BuyPremium()
         {
             if (PassRewards.IsPremium) { Toast.Show("Premium is active"); return; }
-            Purchases.Buy(PassRewards.PremiumProductId, "$4.99", () => { PassRewards.UnlockPremium(); Refresh(); });
+            Purchases.Buy(PassRewards.PremiumProductId, PassRewards.PremiumPrice, () => { PassRewards.UnlockPremium(); Refresh(); });
         }
 
         void ScrollToLevel()
@@ -146,9 +146,7 @@ namespace ZombieWar.UI
                 ThemeTint.Set(c.node, reached ? ThemeRole.Claim : ThemeRole.Edge);
             }
 
-            var active = PassMissions.ActiveFor(GameClock.UtcNow)
-                .OrderBy(m => PlayerProfile.IsMissionClaimed(m.id) ? 2 : PlayerProfile.IsMissionComplete(m) ? 0 : 1)
-                .ThenBy(m => m.scope).ToList();
+            var active = PassMissions.Listed(GameClock.UtcNow);
             _missionIds = active.Select(m => m.id).ToArray();
             for (int i = 0; i < missions.Length; i++)
             {
@@ -157,7 +155,7 @@ namespace ZombieWar.UI
                 if (!has) continue;
                 var m = active[i];
                 bool done = PlayerProfile.IsMissionComplete(m), claimed = PlayerProfile.IsMissionClaimed(m.id);
-                Set(card.title, (m.scope == MissionScope.Weekly ? "WEEKLY · " : "") + m.title);
+                Set(card.title, $"{(m.scope == MissionScope.Weekly ? "WEEKLY · " : "")}{m.title} · {PassMissions.ProgressText(m)}");
                 UIBarClip.Set(card.bar, Mathf.Clamp01(PlayerProfile.GetMissionProgress(m.id) / (float)Mathf.Max(1, m.target)));
                 ThemeTint.Set(card.barFill, done ? ThemeRole.Claim : m.scope == MissionScope.Weekly ? ThemeRole.Rarity3 : ThemeRole.Info);
                 if (card.claimButton != null) card.claimButton.gameObject.SetActive(done && !claimed);

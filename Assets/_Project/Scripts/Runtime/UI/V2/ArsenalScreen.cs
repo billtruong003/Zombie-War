@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -235,7 +235,7 @@ namespace ZombieWar.UI
                 case PlayerProfile.WeaponUpgradeResult.MaxLevel: Toast.Show("Max stars"); break;
                 case PlayerProfile.WeaponUpgradeResult.Locked:
                     UIFeedback.Error();
-                    Toast.Show($"Stars unlock at level {AccountProgress.RequiredLevel(AccountProgress.Feature.GunStars)}");
+                    Toast.Show(AccountProgress.LockedMessage(AccountProgress.Feature.GunStars));
                     break;
                 case PlayerProfile.WeaponUpgradeResult.InsufficientShards: UIFeedback.Error(); Toast.Show("Need more shards · Gacha gives shards"); break;
                 case PlayerProfile.WeaponUpgradeResult.InsufficientGold: UIFeedback.Error(); Toast.Show("Not enough coins"); break;
@@ -284,6 +284,8 @@ namespace ZombieWar.UI
             if (!owned) Set(starLabel, d.price > 0 && PlayerProfile.Coin >= d.price ? $"BUY {d.weaponName.ToUpperInvariant()} · {d.price:N0}"
                                      : d.price > 0 ? $"GET IN SHOP · {d.price:N0}" : "GET IN SHOP");
             else if (level >= 3) Set(starLabel, "MAX STARS");
+            else if (!AccountProgress.IsUnlocked(AccountProgress.Feature.GunStars))
+                Set(starLabel, $"STARS · UNLOCK AT LV {AccountProgress.RequiredLevel(AccountProgress.Feature.GunStars)}");
             else
             {
                 var (need, coin) = StarCost(d, level);
@@ -339,6 +341,6 @@ namespace ZombieWar.UI
         }
 
         static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
-        static void Star(Image i, bool lit) { if (lit) ThemeTint.Clear(i, Color.white); else ThemeTint.Set(i, ThemeRole.Edge); }
+        static void Star(Image i, bool lit) => StarPips.Paint(i, lit);
     }
 }

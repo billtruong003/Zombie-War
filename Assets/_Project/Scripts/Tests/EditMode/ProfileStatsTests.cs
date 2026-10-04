@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BillGameCore;
 using NUnit.Framework;
 using UnityEngine;
@@ -150,8 +150,11 @@ namespace ZombieWar.Tests
         public void Formatting()
         {
             Assert.AreEqual("4821 3390", ProfileScreen.FormatId("48213390"));
-            Assert.AreEqual("45M", ProfileScreen.PlayTime(45 * 60f));
-            Assert.AreEqual("31H", ProfileScreen.PlayTime(31 * 3600f + 50));
+            Assert.AreEqual("45m", ProfileScreen.PlayTime(45 * 60f));
+            Assert.AreEqual("1m 15s", ProfileScreen.PlayTime(75f));
+            Assert.AreEqual("31h", ProfileScreen.PlayTime(31 * 3600f + 50));
+            Assert.AreEqual("2h 5m", ProfileScreen.PlayTime(2 * 3600f + 5 * 60f + 9f));
+            Assert.AreEqual("0s", ProfileScreen.PlayTime(0f));
         }
     }
 }

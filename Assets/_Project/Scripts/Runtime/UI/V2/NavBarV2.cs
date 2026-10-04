@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace ZombieWar.UI
@@ -36,14 +36,7 @@ namespace ZombieWar.UI
         {
             var ui = UIManager.Instance;
             if (ui == null || index < 0 || index >= targets.Length) return;
-            if (index != 0 && HomeScreen.GateFirstRun()) return;
-            var gate = Gates[index];
-            if (gate.HasValue && !AccountProgress.IsUnlocked(gate.Value))
-            {
-                UIFeedback.Error();
-                Toast.Show($"Unlocks at level {AccountProgress.RequiredLevel(gate.Value)}");
-                return;
-            }
+            if (index != 0 && HomeScreen.Gate(Gates[index])) return;
             UIFeedback.Tap();
             var target = targets[index];
             ui.PopTo<HomeScreen>();

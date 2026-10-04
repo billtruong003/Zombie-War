@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,7 +35,7 @@ namespace ZombieWar.EditorTools.V2
                 Missions(safe, s);
 
                 var pb = BottomBand(Node(safe, "Premium"), 64 + 10, 50, 14, 14);
-                Wire(s, "premiumButton", Button(pb, "UNLOCK PREMIUM · $4.99", Role.Primary, 17f));
+                Wire(s, "premiumButton", Button(pb, $"UNLOCK PREMIUM · {PassRewards.PremiumPrice}", Role.Primary, 17f));
                 Wire(s, "premiumLabel", pb.Find("Face/Label").GetComponent<TextMeshProUGUI>());
 
                 var buttons = NavBar(safe, 4, out var dots);

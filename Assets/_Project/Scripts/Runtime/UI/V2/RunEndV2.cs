@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Linq;
 using TMPro;
@@ -482,7 +482,7 @@ namespace ZombieWar.UI
             {
                 0 => ("MISSIONS + PASS", "Daily and weekly missions give Pass XP. Pass levels give guns, skins and gems.",
                       "Your missions are waiting", "SEE MISSIONS", MenuIntent.Pass, new Color(0.11f, 0.84f, 0.66f)),
-                1 => ("GACHA", "Your first pull is free. Duplicate guns turn into shards; a Legendary comes within 90 pulls.",
+                1 => ("GACHA", GachaBanners.IntroLine(),
                       "1 free pull ready", "FREE PULL", MenuIntent.Gacha, new Color(0.66f, 0.45f, 1f)),
                 _ => ("GUN STARS", "Spend shards and coins to add stars to a gun: more damage, faster fire.",
                       "Stars open on every gun you own", "UPGRADE MY GUN", MenuIntent.Arsenal, new Color(1f, 0.69f, 0.16f)),

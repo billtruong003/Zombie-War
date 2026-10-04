@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ZombieWar
 {
@@ -11,7 +11,7 @@ namespace ZombieWar
     public static class PassRewards
     {
         public const int MaxLevel = 30, XpPerLevel = 750, SeasonDays = 28;
-        public const string PremiumProductId = "pass.premium.s1";
+        public const string PremiumProductId = "pass.premium.s1", PremiumPrice = "$4.99";
 
         public enum Kind { Coin, Gem, Ticket, Skin, Frame }
 

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ZombieWar
 {
@@ -55,5 +55,19 @@ namespace ZombieWar
 
         public static bool IsUnlocked(Feature f, int accountLevel) => accountLevel >= RequiredLevel(f);
         public static bool IsUnlocked(Feature f) => IsUnlocked(f, PlayerProfile.AccountLevel);
+
+        /// <summary>
+        /// The one lock line for every locked button (QA 04/10: the nav said "Play your first run",
+        /// the rail said "Unlocks at level 3" for the same Gacha). A feature behind a level names
+        /// the level; anything else waits for the first run. Null when open.
+        /// </summary>
+        public static string LockedMessage(Feature? f, int accountLevel, bool firstRunPending)
+        {
+            if (f.HasValue && !IsUnlocked(f.Value, accountLevel)) return $"Unlocks at account level {RequiredLevel(f.Value)}";
+            return firstRunPending ? "Play your first run to unlock" : null;
+        }
+
+        public static string LockedMessage(Feature? f) =>
+            LockedMessage(f, PlayerProfile.AccountLevel, PlayerProfile.RunsPlayed == 0);
     }
 }

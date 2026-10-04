@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace ZombieWar
@@ -105,6 +105,29 @@ namespace ZombieWar
             result.AddRange(Rotate(MissionScope.Weekly, WeekKey(utcNow), WeeklyCount));
             return result;
         }
+
+        /// <summary>
+        /// The order every screen lists missions in (Home card, Pass, run result): ready to claim,
+        /// then in progress, then claimed; daily before weekly. Home and Pass used to sort
+        /// differently, so the Home card showed weekly goals while Pass led with the dailies.
+        /// </summary>
+        public static List<PassMission> Listed(DateTime utcNow)
+        {
+            var list = ActiveFor(utcNow);
+            list.Sort((a, b) =>
+            {
+                int c = Rank(a).CompareTo(Rank(b));
+                return c != 0 ? c : a.scope.CompareTo(b.scope);
+            });
+            return list;
+        }
+
+        static int Rank(PassMission m) =>
+            PlayerProfile.IsMissionClaimed(m.id) ? 2 : PlayerProfile.IsMissionComplete(m) ? 0 : 1;
+
+        /// <summary>"12/50": the progress count shown next to every mission bar.</summary>
+        public static string ProgressText(PassMission m) =>
+            $"{Math.Min(PlayerProfile.GetMissionProgress(m.id), m.target):N0}/{m.target:N0}";
 
         static IEnumerable<PassMission> Rotate(MissionScope scope, int key, int count)
         {

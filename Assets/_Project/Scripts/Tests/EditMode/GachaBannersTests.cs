@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BillGameCore;
 using NUnit.Framework;
 using UnityEngine;
@@ -121,6 +121,80 @@ namespace ZombieWar.Tests
         {
             float sum = 0f; foreach (var r in GachaBanners.RatesFor(Event, null)) sum += r.percent;
             Assert.AreEqual(100f, sum, 0.01f);
+        }
+
+        // ---- G11 (04/10): first free pull, and copy built from the rules
+
+        static WeaponData Gun(string id, WeaponTier tier, int price)
+        {
+            var w = ScriptableObject.CreateInstance<WeaponData>();
+            w.weaponName = id;
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            typeof(WeaponData).GetField("weaponId", flags).SetValue(w, id);
+            typeof(WeaponData).GetField("tier", flags)?.SetValue(w, tier);
+            typeof(WeaponData).GetField("price", flags)?.SetValue(w, price);
+            return w;
+        }
+
+        [Test]
+        public void FirstFreePull_IsTheCheapestUnownedGun_ThenPullsRollAsUsual()
+        {
+            var guns = new List<WeaponData> { Gun("t.common", WeaponTier.Common, 10), Gun("t.rare", WeaponTier.Rare, 900), Gun("t.unc", WeaponTier.Uncommon, 300) };
+            var first = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Free, Day0, null, guns, new FixedRng(9999));
+            Assert.AreEqual(1, first.Count);
+            Assert.AreEqual(GachaBanners.Prize.Gun, first[0].prize);
+            Assert.AreEqual("t.unc", first[0].id, "cheapest Uncommon-or-better gun");
+            Assert.IsTrue(PlayerProfile.IsWeaponOwned("t.unc"));
+            Assert.IsFalse(GachaBanners.CanPay(Event, 1, GachaBanners.Pay.Free, Day0), "the gift spends the daily free pull");
+
+            var second = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Free, Day0 + 1, null, guns, new FixedRng(99999));
+            Assert.AreEqual(GachaBanners.Prize.Coin, second[0].prize, "the next free pull rolls the banner");
+        }
+
+        [Test]
+        public void PaidPull_NeverTakesTheFirstPullGift()
+        {
+            PlayerProfile.AddTickets(1);
+            var guns = new List<WeaponData> { Gun("t.unc", WeaponTier.Uncommon, 300) };
+            var r = GachaBanners.Pull(Event, 1, GachaBanners.Pay.Tickets, Day0, null, guns, new FixedRng(99999));
+            Assert.AreNotEqual(GachaBanners.Prize.Gun, r[0].prize);
+            Assert.IsFalse(PlayerProfile.IsWeaponOwned("t.unc"));
+        }
+
+        [Test]
+        public void DuplicateCopy_NamesTheTicketsTheGrantGives()
+        {
+            PlayerProfile.AddSkin(Event.featuredSkin);
+            long before = PlayerProfile.Tickets;
+            PlayerProfile.SetPityInMemory(Event.pityKey, Event.hardPity - 1);
+            PlayerProfile.SetPityInMemory(Event.GuaranteeKey, 1);
+            PlayerProfile.AddTickets(1);
+            GachaBanners.Pull(Event, 1, GachaBanners.Pay.Tickets, Day0, null, null, new FixedRng(99999));
+            long got = PlayerProfile.Tickets - before;
+            Assert.AreEqual(GachaBanners.FeaturedDupeTickets, got);
+            StringAssert.Contains($"{got} tickets", GachaBanners.DuplicateRule(Event));
+            StringAssert.Contains("gun turns into shards", GachaBanners.DuplicateRule(GachaBanners.All[2]));
+            StringAssert.Contains("ticket", GachaBanners.DuplicateRule(GachaBanners.All[1]));
+        }
+
+        [Test]
+        public void PoolPityCountdown_EndsOnTheForcedPull()
+        {
+            var econ = ScriptableObject.CreateInstance<EconomyConfig>();
+            var shards = GachaBanners.All[2];
+            int th = econ.weaponPool.pityThreshold;
+            Assert.AreEqual(th + 1, GachaBanners.PullsToPoolPity(shards, econ), "fresh: the forced pull is number threshold + 1");
+            PlayerProfile.SetPityInMemory(shards.pityKey, th);
+            Assert.AreEqual(1, GachaBanners.PullsToPoolPity(shards, econ), "pity == threshold: the next pull is forced");
+            StringAssert.Contains($"by pull {th + 1}", GachaBanners.PityRule(shards, econ));
+            Object.DestroyImmediate(econ);
+        }
+
+        [Test]
+        public void EventRateLabels_UseTheGrantAmounts()
+        {
+            StringAssert.Contains(GachaBanners.EventShards.ToString(), Event.rates[2].label);
+            StringAssert.Contains(GachaBanners.EventCoins.ToString(), Event.rates[4].label);
         }
     }
 }

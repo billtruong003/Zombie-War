@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace ZombieWar.Tests
 {
@@ -55,6 +55,17 @@ namespace ZombieWar.Tests
             Assert.IsTrue(AccountProgress.IsUnlocked(AccountProgress.Feature.Gacha, 3));
             Assert.IsFalse(AccountProgress.IsUnlocked(AccountProgress.Feature.GunStars, 4));
             Assert.IsTrue(AccountProgress.IsUnlocked(AccountProgress.Feature.GunStars, 5));
+        }
+
+        [Test]
+        public void LockedMessage_NamesTheRealGate()
+        {
+            var gacha = AccountProgress.Feature.Gacha;
+            Assert.AreEqual($"Unlocks at account level {AccountProgress.RequiredLevel(gacha)}",
+                AccountProgress.LockedMessage(gacha, 1, firstRunPending: true), "a level gate wins over the first-run gate");
+            Assert.AreEqual("Play your first run to unlock", AccountProgress.LockedMessage(null, 1, true));
+            Assert.IsNull(AccountProgress.LockedMessage(null, 1, false));
+            Assert.IsNull(AccountProgress.LockedMessage(gacha, AccountProgress.RequiredLevel(gacha), false));
         }
     }
 }

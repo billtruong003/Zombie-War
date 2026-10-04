@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -117,14 +117,19 @@ namespace ZombieWar.UI
         /// opens after the first run.
         public static bool FirstRunPending => PlayerProfile.RunsPlayed == 0;
 
-        /// Blocks a tap while the first run is pending. True = blocked (toast shown).
-        public static bool GateFirstRun()
+        /// Blocks a tap on something locked (<see cref="AccountProgress.LockedMessage(AccountProgress.Feature?)"/>).
+        /// True = blocked (toast shown).
+        public static bool Gate(AccountProgress.Feature? feature = null)
         {
-            if (!FirstRunPending) return false;
+            string locked = AccountProgress.LockedMessage(feature);
+            if (locked == null) return false;
             UIFeedback.Error();
-            Toast.Show("Play your first run to unlock");
+            Toast.Show(locked);
             return true;
         }
+
+        /// Blocks a tap while the first run is pending. True = blocked (toast shown).
+        public static bool GateFirstRun() => Gate();
 
         protected override void Awake()
         {
@@ -226,12 +231,7 @@ namespace ZombieWar.UI
 
         void OpenGated(UIScreen s, AccountProgress.Feature f)
         {
-            if (!AccountProgress.IsUnlocked(f))
-            {
-                UIFeedback.Error();
-                Toast.Show($"Unlocks at level {AccountProgress.RequiredLevel(f)}");
-                return;
-            }
+            if (Gate(f)) return;
             Open(s);
         }
 
@@ -259,10 +259,10 @@ namespace ZombieWar.UI
             RailState(starter, true, 0, "OFFER", "");
 
             RefreshGun();
-            RefreshMissions(claimable);
+            RefreshMissions();
             RefreshNextBuy();
             Set(stripDailyText, DailyRewards.CanStamp(today) ? $"Stamp day {DailyRewards.Stamps + 1}" : DailyRewards.Stamps >= DailyRewards.CardDays ? "Card complete" : "Back tomorrow");
-            Set(stripPassText, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass) ? $"PASS LV {PassLevel()}" : "LV 2 UNLOCKS");
+            Set(stripPassText, AccountProgress.IsUnlocked(AccountProgress.Feature.Pass) ? $"PASS LV {PassLevel()}" : $"LV {AccountProgress.RequiredLevel(AccountProgress.Feature.Pass)} UNLOCKS");
             RefreshGachaStrip(today);
 
             bool firstRun = FirstRunPending;
@@ -307,7 +307,7 @@ namespace ZombieWar.UI
             if (gunIcon != null) { gunIcon.enabled = icon != null; if (icon != null) { gunIcon.sprite = icon; gunIcon.preserveAspect = true; } }
             int stars = Mathf.Clamp(PlayerProfile.GetWeaponLevel(d.WeaponId), 1, 3);
             for (int i = 0; i < gunStars.Length; i++)
-                if (i < stars) ThemeTint.Clear(gunStars[i], Color.white); else ThemeTint.Set(gunStars[i], ThemeRole.Edge);
+                StarPips.Paint(gunStars[i], i < stars);
             int power = Mathf.RoundToInt(CombatPower.WeaponPower(d, stars) * (1f + Skins.WeaponSkins.DamageBonus(PlayerProfile.GetEquippedSkin(d.WeaponId))));
             Set(gunMeta, $"{HubScreen.FamilyName(d.weaponClass)} · POWER {power:N0}");
         }
@@ -315,14 +315,15 @@ namespace ZombieWar.UI
         static int ClaimableMissions() =>
             PassMissions.ActiveFor(GameClock.UtcNow).Count(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id));
 
-        void RefreshMissions(int claimable)
+        void RefreshMissions()
         {
             bool unlocked = AccountProgress.IsUnlocked(AccountProgress.Feature.Missions);
-            Set(missionsHeader, unlocked ? (claimable > 0 ? $"MISSIONS · {claimable} READY" : "MISSIONS") : "MISSIONS · LV 2");
-            var list = PassMissions.ActiveFor(GameClock.UtcNow)
-                .Where(m => !PlayerProfile.IsMissionClaimed(m.id))
-                .OrderByDescending(m => PlayerProfile.IsMissionComplete(m) ? 2f : PlayerProfile.GetMissionProgress(m.id) / (float)m.target)
-                .Take(missionRows.Length).ToList();
+            // The day's missions, as the Pass lists them (owner 04/10: Home shows the dailies).
+            var daily = PassMissions.Listed(GameClock.UtcNow).Where(m => m.scope == MissionScope.Daily && !PlayerProfile.IsMissionClaimed(m.id)).ToList();
+            int ready = daily.Count(PlayerProfile.IsMissionComplete);
+            Set(missionsHeader, unlocked ? (ready > 0 ? $"DAILY MISSIONS · {ready} READY" : "DAILY MISSIONS")
+                                         : $"MISSIONS · LV {AccountProgress.RequiredLevel(AccountProgress.Feature.Missions)}");
+            var list = daily.Take(missionRows.Length).ToList();
             for (int i = 0; i < missionRows.Length; i++)
             {
                 var row = missionRows[i];

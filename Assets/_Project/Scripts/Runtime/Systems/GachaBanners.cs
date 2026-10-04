@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -38,6 +38,9 @@ namespace ZombieWar
         /// <summary>Boxes in a multi pull: ten paid plus one bonus.</summary>
         public const int MultiPaid = 10, MultiBoxes = 11;
 
+        /// <summary>Event-banner prizes below Epic: the rate labels and the grants read the same numbers.</summary>
+        public const int EventShards = 10, EventTickets = 1, EventCoins = 300, NoGunCoins = 600;
+
         /// <summary>Season 1 banners. Order = tab order.</summary>
         public static readonly Banner[] All =
         {
@@ -49,9 +52,9 @@ namespace ZombieWar
                 {
                     new Rate { label = "Legendary: Neon Circuit skin set (50%)", percent = 0.6f, tier = WeaponTier.Legendary, icon = "Gear_Sword" },
                     new Rate { label = "Epic outfit piece", percent = 5.1f, tier = WeaponTier.Epic, icon = "Gear_Armor_Top" },
-                    new Rate { label = "Gun shards ×10", percent = 13f, tier = WeaponTier.Rare, icon = "Chest_Gold" },
+                    new Rate { label = $"Gun shards ×{EventShards}", percent = 13f, tier = WeaponTier.Rare, icon = "Chest_Gold" },
                     new Rate { label = "Gacha ticket", percent = 25f, tier = WeaponTier.Uncommon, icon = "Ticket_Gold" },
-                    new Rate { label = "300 coins", percent = 56.3f, tier = WeaponTier.Common, icon = "Money_Coin" },
+                    new Rate { label = $"{EventCoins} coins", percent = 56.3f, tier = WeaponTier.Common, icon = "Money_Coin" },
                 },
             },
             new() { id = "outfits", title = "STREET", subtitle = "OUTFITS", kind = Kind.Outfits, days = 28, pityKey = "gacha.costume" },
@@ -137,6 +140,14 @@ namespace ZombieWar
                                           IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
         {
             if (b == null || (count != 1 && count != MultiPaid)) return null;
+            if (count == 1 && pay == Pay.Free && FirstPullGun(guns) is { } gift)
+            {
+                if (!CanPay(b, 1, pay, today) || !Spend(b, 1, pay, today)) return null;
+                PlayerProfile.AddOwnedWeapon(gift.WeaponId);
+                Ftue.Complete(Ftue.FirstPull);
+                PlayerProfile.SaveDaily();
+                return new List<Result> { new(gift.weaponName, gift.tier, true, 0, "Gear_Sword", p: Prize.Gun, itemId: gift.WeaponId) };
+            }
             if (b.kind != Kind.Event) return PullPool(b, count, pay, today, econ, guns, rng);
             if (!CanPay(b, count, pay, today) || !Spend(b, count, pay, today)) return null;
 
@@ -169,6 +180,64 @@ namespace ZombieWar
             PlayerProfile.SaveDaily();
             return results;
         }
+
+        /// <summary>
+        /// The first free pull ever is a gun (owner 04/10): a ticket or coins was a flat first taste.
+        /// The cheapest Uncommon-or-better gun the player does not own; null once the step is done or
+        /// nothing is left to give, and the pull rolls as usual.
+        /// </summary>
+        public static WeaponData FirstPullGun(IReadOnlyList<WeaponData> guns)
+        {
+            if (guns == null || Ftue.Done(Ftue.FirstPull)) return null;
+            string starter = WeaponCatalog.Active?.Starter?.weaponId;
+            WeaponData pick = null;
+            foreach (var g in guns)
+            {
+                if (g == null || g.tier < WeaponTier.Uncommon || g.WeaponId == starter || PlayerProfile.IsWeaponOwned(g.WeaponId)) continue;
+                if (pick == null || g.price < pick.price) pick = g;
+            }
+            return pick;
+        }
+
+        // ------------------------------------------------------------------ copy from the rules
+        // Every sentence about what a banner gives is built here from the same constants the pulls
+        // use (QA 04/10: the LV3 popup said duplicates give shards while the Gacha said tickets).
+
+        /// <summary>What a duplicate turns into on this banner.</summary>
+        public static string DuplicateRule(Banner b) => b.kind switch
+        {
+            Kind.Event => $"A duplicate skin set turns into {FeaturedDupeTickets} tickets, a duplicate outfit into {Tickets(OutfitDupeTickets)}.",
+            Kind.Outfits => $"A duplicate outfit turns into {Tickets(OutfitDupeTickets)}.",
+            _ => "A duplicate gun turns into shards.",
+        };
+
+        /// <summary>How the banner's guarantee works, in one sentence.</summary>
+        public static string PityRule(Banner b, EconomyConfig econ)
+        {
+            if (b.kind == Kind.Event)
+                return $"A Legendary is certain by pull {b.hardPity}. It is the featured prize 50% of the time; if not, the next Legendary is. Pity carries over.";
+            var pool = PoolFor(b, econ);
+            return pool == null ? "" : $"An {pool.pityMinRarity} or better is certain by pull {PityThreshold(pool) + 1}.";
+        }
+
+        /// <summary>Pulls until a pool banner's Epic-or-better is certain (the forced pull included).</summary>
+        public static int PullsToPoolPity(Banner b, EconomyConfig econ)
+        {
+            var pool = PoolFor(b, econ);
+            if (pool == null) return 0;
+            // GachaService forces the rarity on the pull made with pity == threshold.
+            return Mathf.Max(1, PityThreshold(pool) + 1 - PlayerProfile.GetPity(b.pityKey));
+        }
+
+        static int PityThreshold(EconomyConfig.GachaPool pool) => Mathf.Max(0, pool.pityThreshold);
+
+        public static string MultiRule => $"x{MultiPaid} opens {MultiPaid} boxes + {MultiBoxes - MultiPaid} bonus box.";
+
+        /// <summary>The LV3 unlock popup's line about the Gacha.</summary>
+        public static string IntroLine() =>
+            $"Your first pull is free and always a gun. {DuplicateRule(All[All.Length - 1])} A Legendary is certain within {All[0].hardPity} pulls.";
+
+        static string Tickets(int n) => n == 1 ? "a ticket" : $"{n} tickets";
 
         static int Roll(Banner b, GachaService.IRng rng)
         {
@@ -229,15 +298,15 @@ namespace ZombieWar
                     return new Result(set.displayName, rate.tier, true, 0, rate.icon, p: Prize.CostumeSet, itemId: set.setId);
                 case 2:
                     var owned = guns?.Where(g => g != null && PlayerProfile.IsWeaponOwned(g.WeaponId)).ToList();
-                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 600); return new Result("600 coins", rate.tier, true, 0, "Money_Coin", p: Prize.Coin); }
+                    if (owned == null || owned.Count == 0) { PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, NoGunCoins); return new Result($"{NoGunCoins} coins", rate.tier, true, 0, "Money_Coin", p: Prize.Coin); }
                     var gun = owned[rng.Range(owned.Count)];
-                    PlayerProfile.AddWeaponShards(gun.WeaponId, 10);
-                    return new Result($"{gun.weaponName} shards ×10", rate.tier, true, 0, rate.icon, p: Prize.Gun, itemId: gun.WeaponId);
+                    PlayerProfile.AddWeaponShards(gun.WeaponId, EventShards);
+                    return new Result($"{gun.weaponName} shards ×{EventShards}", rate.tier, true, 0, rate.icon, p: Prize.Gun, itemId: gun.WeaponId);
                 case 3:
-                    PlayerProfile.AddTickets(1);
+                    PlayerProfile.AddTickets(EventTickets);
                     return new Result(rate.label, rate.tier, true, 0, rate.icon, p: Prize.Ticket);
                 default:
-                    PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, 300);
+                    PlayerProfile.Add(PlayerProfile.CurrencyKind.Coin, EventCoins);
                     return new Result(rate.label, rate.tier, true, 0, rate.icon, p: Prize.Coin);
             }
         }

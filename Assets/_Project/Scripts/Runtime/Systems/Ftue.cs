@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
 
@@ -26,6 +26,7 @@ namespace ZombieWar
         public const string Gift = "gift";       // the first result topped coins up to the cheapest gun
         public const string Gun = "gun";         // the Arsenal pointed at the first gun to buy
         public const string StarGift = "stars";  // LV5: the equipped gun got the shards for its first star
+        public const string FirstPull = "pull1"; // the first free gacha pull ever gave a gun
 
         /// <summary>The first time each station kind is met (a callout with its name and use).</summary>
         public static string Station(ZombieWar.Stations.StationKind kind) => StationKeys[(int)kind];

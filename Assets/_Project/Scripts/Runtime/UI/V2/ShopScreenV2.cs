@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -251,7 +251,7 @@ namespace ZombieWar.UI
                 {
                     ShopOffers.SkinSource.Gems => $"{ShopOffers.BiohazardGems} GEMS",
                     ShopOffers.SkinSource.Gacha => "IN GACHA",
-                    _ => "LEGEND PACK $9.99",
+                    _ => $"LEGEND PACK {ShopOffers.FindPack("pack.legend")?.price}",
                 });
                 if (c.done != null) c.done.SetActive(owned);
             }

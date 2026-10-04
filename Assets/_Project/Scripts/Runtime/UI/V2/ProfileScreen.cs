@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -214,10 +214,14 @@ namespace ZombieWar.UI
         public static string FormatId(string id) =>
             string.IsNullOrEmpty(id) || id.Length != 8 ? id : id.Substring(0, 4) + " " + id.Substring(4);
 
+        /// "1m 15s", "45m", "31h 2m" (QA 04/10: "1M" read as a million).
         public static string PlayTime(float seconds)
         {
-            int m = Mathf.FloorToInt(seconds / 60f);
-            return m >= 60 ? (m / 60) + "H" : m + "M";
+            int total = Mathf.Max(0, Mathf.FloorToInt(seconds));
+            int h = total / 3600, m = total / 60 % 60, s = total % 60;
+            if (h > 0) return m > 0 ? $"{h}h {m}m" : $"{h}h";
+            if (m > 0) return s > 0 ? $"{m}m {s}s" : $"{m}m";
+            return $"{s}s";
         }
 
         static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }

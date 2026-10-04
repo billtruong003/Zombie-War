@@ -75,7 +75,7 @@ namespace ZombieWar.Audio
         private void OnDestroy()
         {
             AddressableAudioRuntime.Ready -= OnAudioReady;
-            if (_subscribed && Bill.Events != null)
+            if (_subscribed && Bill.IsReady)   // Bill.Events on a torn-down locator logs SERVICE NOT FOUND
             {
                 Bill.Events.Unsubscribe<StateChangedEvent>(OnStateChanged);
                 Bill.Events.Unsubscribe<Threat.ThreatTierChangedEvent>(OnThreatTierChanged);

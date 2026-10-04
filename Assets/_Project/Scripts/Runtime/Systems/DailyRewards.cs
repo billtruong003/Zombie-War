@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using UnityEngine;
 
@@ -6,7 +6,7 @@ namespace ZombieWar
 {
     /// <summary>
     /// M10 Daily (owner decisions 2026-09-27): a 7-day welcome check-in for new players and a
-    /// 28-day stamp card for everyone. One claim per local calendar day each. Missed stamp days can
+    /// 28-day stamp card for everyone. One claim per game day (GameClock) each. Missed stamp days can
     /// be made up, at most <see cref="MakeUpsPerCycle"/> per cycle, for gems (or a rewarded ad once
     /// ads ship in M11). Days are passed in so the rules are testable; the UI uses <see cref="Today"/>.
     /// </summary>
@@ -19,8 +19,15 @@ namespace ZombieWar
 
         public readonly struct Reward
         {
-            public readonly Kind kind; public readonly int amount; public readonly string label;
-            public Reward(Kind k, int a, string l) { kind = k; amount = a; label = l; }
+            public readonly Kind kind; public readonly int amount;
+            public Reward(Kind k, int a) { kind = k; amount = a; }
+            /// <summary>The tile text, built from the reward itself so the two cannot disagree.</summary>
+            public string label => kind switch
+            {
+                Kind.Gun => "Rare gun",
+                Kind.Frame => "Stamp Master frame",
+                _ => amount >= 1000 && amount % 1000 == 0 ? $"{amount / 1000}K" : amount.ToString(),
+            };
             /// <summary>Icon name in the Layer Lab item icon set.</summary>
             public string Icon => kind switch
             {
@@ -31,8 +38,8 @@ namespace ZombieWar
 
         static readonly Reward[] Welcome =
         {
-            new(Kind.Coin, 500, "500"), new(Kind.Gem, 10, "10"), new(Kind.Ticket, 1, "1"), new(Kind.Gem, 20, "20"),
-            new(Kind.Coin, 1000, "1K"), new(Kind.Ticket, 2, "2"), new(Kind.Gun, 1, "Rare gun"),
+            new(Kind.Coin, 500), new(Kind.Gem, 10), new(Kind.Ticket, 1), new(Kind.Gem, 20),
+            new(Kind.Coin, 1000), new(Kind.Ticket, 2), new(Kind.Gun, 1),
         };
 
         /// <summary>Gems paid instead when every rare-or-better gun is already owned.</summary>
@@ -42,16 +49,15 @@ namespace ZombieWar
 
         public static Reward StampReward(int stamp1to28) => stamp1to28 switch
         {
-            7 => new Reward(Kind.Gem, 50, "50"),
-            14 => new Reward(Kind.Ticket, 3, "3"),
-            21 => new Reward(Kind.Gem, 40, "40"),
-            28 => new Reward(Kind.Frame, 1, "Stamp Master frame"),
-            _ => new Reward(Kind.Coin, 100, "100"),
+            7 => new Reward(Kind.Gem, 50),
+            14 => new Reward(Kind.Ticket, 3),
+            21 => new Reward(Kind.Gem, 40),
+            28 => new Reward(Kind.Frame, 1),
+            _ => new Reward(Kind.Coin, 100),
         };
 
         public static bool IsMilestone(int stamp) => stamp % 7 == 0;
 
-        /// <summary>Local calendar day number (days since 2000-01-01).</summary>
         /// <summary>The game day (GameClock: UTC with one reset hour, never runs backwards).</summary>
         public static int Today => GameClock.Today;
 
