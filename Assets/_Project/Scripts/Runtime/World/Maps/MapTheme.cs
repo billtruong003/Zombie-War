@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ZombieWar.World
 {
@@ -24,6 +24,14 @@ namespace ZombieWar.World
         [Tooltip("Follows the player (weather), optional.")]
         public GameObject ambientFx;
         public bool hasFoliage = true;
+
+        [Header("Voice and music (G10: each map carries its own, no id switches elsewhere)")]
+        [Tooltip("Run music cue (music.run.<theme>); empty plays the shared run bed.")]
+        public string musicKey = "";
+        [Tooltip("Radio line played the first time the player deploys to this sector; empty = none.")]
+        public string briefingLine = "";
+        [Tooltip("Radio dialogue that follows the briefing (RadioDirector dialogue number); -1 = none.")]
+        public int briefingDialogue = -1;
 
         [Header("Light (2026-10-01: the scene's default ambient was a dark grey sky on every map)")]
         [Tooltip("Ambient from above, the horizon and below: lights the shaded side of everything.")]
@@ -90,5 +98,14 @@ namespace ZombieWar.World
         }
 
         public static MapTheme Load(string id) => Resources.Load<MapTheme>(ResourceFolder + "MapTheme_" + id);
+
+        public const string SharedRunMusic = "music.run.stage1";
+
+        /// The music of the map being played (or about to be); the shared bed without a baked map.
+        public static string RunMusicKey()
+        {
+            var theme = BakedMapStreamer.Active != null ? BakedMapStreamer.Active.Theme : null;
+            return theme != null && !string.IsNullOrEmpty(theme.musicKey) ? theme.musicKey : SharedRunMusic;
+        }
     }
 }

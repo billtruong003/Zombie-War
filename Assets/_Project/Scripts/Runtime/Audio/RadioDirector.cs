@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
@@ -81,16 +81,6 @@ namespace ZombieWar.Audio
             new[] { "vo_dlg_17_1_kaito", "vo_dlg_17_2_riley", "vo_dlg_17_3_kaito", "vo_dlg_17_4_riley" },
             new[] { "vo_dlg_18_1_mai", "vo_dlg_18_2_chen", "vo_dlg_18_3_mai", "vo_dlg_18_4_chen" },
             new[] { "vo_dlg_19_1_kaito", "vo_dlg_19_2_lukas", "vo_dlg_19_3_chen", "vo_dlg_19_4_lukas" },
-        };
-
-        /// <summary>Map theme id → (sector briefing line). Greenbelt, Deepwood, Blackmire, Cinder Ridge, Whiteout.</summary>
-        static readonly Dictionary<string, string> Briefings = new()
-        {
-            ["meadow"] = "vo_riley_lore_s1_brief",
-            ["forest"] = "vo_kaito_lore_s2_brief",
-            ["swamp"] = "vo_jiho_lore_s3_brief",
-            ["volcano"] = "vo_lukas_lore_s4_brief",
-            ["tundra"] = "vo_riley_lore_s5_brief",
         };
 
         // ------------------------------------------------------------ helpers
@@ -461,9 +451,9 @@ namespace ZombieWar.Audio
             if (run == null || FtueActive) return;
             // The first deployment to each sector gets its briefing; otherwise a deploy line.
             var theme = ZombieWar.World.BakedMapStreamer.Active != null ? ZombieWar.World.BakedMapStreamer.Active.Theme : null;
-            if (theme != null && Briefings.TryGetValue(theme.id ?? "", out var brief) && SayOnce(brief))
+            if (theme != null && !string.IsNullOrEmpty(theme.briefingLine) && SayOnce(theme.briefingLine))
             {
-                if (theme.id == "tundra") Converse(6);
+                if (theme.briefingDialogue >= 0) Converse(theme.briefingDialogue);
                 return;
             }
             // The hoarder and the pistol loyalist, once a day each.

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using ZombieWar.WorldNav;
 
@@ -86,6 +86,7 @@ namespace ZombieWar.World
 
             // The chunks around the spawn exist before the player does.
             Refresh(spawn, int.MaxValue);
+            Prewarm();
             gameObject.AddComponent<MapNavigator>();
             RegisterCheats();
         }
@@ -230,7 +231,6 @@ namespace ZombieWar.World
                 }
             _pending.Sort((a, b) => (a - _center).sqrMagnitude.CompareTo((b - _center).sqrMagnitude));
             for (int i = 0; i < immediate && _pending.Count > 0; i++) { Show(_pending[0]); _pending.RemoveAt(0); }
-            MapNavigator.MarkDirty();
         }
 
         // ── looks on trial (QA panel) ─────────────────────────────────────────────────────
@@ -273,6 +273,39 @@ namespace ZombieWar.World
             }
         }
 
+        /// Builds, during loading, every chunk the ring can still need, so walking never instantiates
+        /// a 32 m chunk mid-run. The ring is smaller than the map, so the map's own chunk count
+        /// (one instance per entry) is all that can ever be live at once.
+        void Prewarm()
+        {
+            var need = new Dictionary<GameObject, int>();
+            foreach (var prefab in Theme.chunks)
+                if (prefab != null) need[prefab] = need.TryGetValue(prefab, out int n) ? n + 1 : 1;
+            foreach (var c in _live.Keys)
+            {
+                var prefab = Theme.ChunkAt(c.x, c.y);
+                if (prefab != null && need.ContainsKey(prefab)) need[prefab]--;
+            }
+
+            // Built under an inactive holder so no chunk wakes (registers its decor, enables
+            // colliders) before it is shown.
+            var holder = new GameObject("ChunkWarm");
+            holder.SetActive(false);
+            foreach (var kv in need)
+            {
+                if (!_pool.TryGetValue(kv.Key, out var stack)) _pool[kv.Key] = stack = new Stack<GameObject>();
+                for (int i = 0; i < kv.Value; i++)
+                {
+                    var go = Instantiate(kv.Key, holder.transform);
+                    go.name = kv.Key.name;
+                    go.SetActive(false);
+                    go.transform.SetParent(_root, false);
+                    stack.Push(go);
+                }
+            }
+            Destroy(holder);
+        }
+
         void Show(Vector2Int c)
         {
             if (_live.ContainsKey(c)) return;
@@ -285,7 +318,7 @@ namespace ZombieWar.World
             if (_groundTry != null || _fluidTry != null) Retexture(go);
             go.SetActive(true);
             _live[c] = go;
-            MapNavigator.MarkDirty();
+            MapNavigator.MarkDirty(go.transform.position, Theme.chunkSize * 0.5f);
         }
 
         void Hide(Vector2Int c)
@@ -294,6 +327,7 @@ namespace ZombieWar.World
             _live.Remove(c);
             if (go == null) return;
             go.SetActive(false);
+            MapNavigator.MarkDirty(go.transform.position, Theme.chunkSize * 0.5f);
             var prefab = Theme.ChunkAt(c.x, c.y);
             if (!_pool.TryGetValue(prefab, out var stack)) _pool[prefab] = stack = new Stack<GameObject>();
             stack.Push(go);

@@ -1,11 +1,12 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ZombieWar.WorldNav
 {
     /// <summary>
     /// The enemies' pathing on a baked map (2026-10-01): one <see cref="FlowField"/> toward the
-    /// player over a 72 m window, re-read from the NavObstacle colliders when the chunks around it
-    /// change and re-solved a few times a second. Enemies ask it which way to go and whether a step
+    /// player over a 72 m window, re-read from the NavObstacle colliders when the window moves or an
+    /// obstacle inside it appears or goes (<see cref="MarkDirty"/>), and re-solved a few times a
+    /// second. Enemies ask it which way to go and whether a step
     /// would land in an obstacle; with no navigator (procedural world, sandboxes) they behave as before.
     /// </summary>
     public sealed class MapNavigator : MonoBehaviour
@@ -23,7 +24,16 @@ namespace ZombieWar.WorldNav
         float _nextSolve;
         static bool _dirty = true;
 
-        public static void MarkDirty() => _dirty = true;
+        /// An obstacle inside the square of half-size <paramref name="halfExtent"/> around
+        /// <paramref name="centre"/> appeared or went. Only changes the window can see re-read it:
+        /// streamed chunks at the ring's edge are outside it and are read when the window moves there.
+        public static void MarkDirty(Vector3 centre, float halfExtent)
+        {
+            if (Instance == null) { _dirty = true; return; }
+            float reach = Window * 0.5f + halfExtent;
+            Vector3 d = centre - Instance._windowCentre;
+            if (Mathf.Abs(d.x) < reach && Mathf.Abs(d.z) < reach) _dirty = true;
+        }
 
         void Awake()
         {
@@ -32,6 +42,9 @@ namespace ZombieWar.WorldNav
         }
 
         void OnDestroy() { if (Instance == this) Instance = null; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _dirty = true;
 
         void LateUpdate()
         {

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using BillGameCore;
 using UnityEngine;
 
@@ -291,13 +291,8 @@ namespace ZombieWar.Audio
             if (token != 0) Bill.Audio?.Unduck(token, AudioTuning.WaveCueDuckRelease);
         }
 
-        /// One bed per baked map (2026-10-01); the procedural world and anything unknown keep the
-        /// shared run bed. The curated audio build guarantees a music.run.&lt;theme&gt; key per theme.
-        private static string RunMusicKey() => ZombieWar.World.MapTheme.CurrentId switch
-        {
-            "meadow" or "forest" or "swamp" or "volcano" or "tundra" => "music.run." + ZombieWar.World.MapTheme.CurrentId,
-            _ => "music.run.stage1",
-        };
+        /// One bed per baked map (MapTheme.musicKey); the procedural world keeps the shared run bed.
+        private static string RunMusicKey() => ZombieWar.World.MapTheme.RunMusicKey();
 
         // A short tick on the phone for each hit taken, at most a few per second so a swarm does
         // not turn it into one long buzz; a heavier one on death. Honours the Vibration toggle.

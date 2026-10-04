@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieWar
@@ -106,6 +106,12 @@ namespace ZombieWar
                 return false;
             }
 
+            // Slot already wears this exact part: rebuilding it would destroy and recreate a skinned
+            // renderer on every CostumeChanged for nothing.
+            if (_active.TryGetValue(slotName, out var worn) && worn != null && worn.gameObject.activeSelf
+                && worn.sharedMesh == entry.skinnedMesh && SameMaterials(worn, entry.materials))
+                return true;
+
             EnsureBoneMap();
 
             // Remap bones theo ten
@@ -138,6 +144,15 @@ namespace ZombieWar
             smr.updateWhenOffscreen = false;
 
             _active[slotName] = smr;
+            return true;
+        }
+
+        static bool SameMaterials(SkinnedMeshRenderer smr, Material[] mats)
+        {
+            var cur = smr.sharedMaterials;
+            int n = mats != null ? mats.Length : 0;
+            if (cur.Length != n) return false;
+            for (int i = 0; i < n; i++) if (cur[i] != mats[i]) return false;
             return true;
         }
 

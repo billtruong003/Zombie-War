@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using ZombieWar.World;
 
@@ -61,6 +61,8 @@ namespace ZombieWar.Stations
         {
             _at = transform.position;
             EnvDecorIndex.HideAround(_at, StationClearance.ClearRadius, _hidden);
+            // The hidden pieces take their blockers with them: enemies may now walk the ring.
+            if (_hidden.Count > 0) ZombieWar.WorldNav.MapNavigator.MarkDirty(_at, StationClearance.ClearRadius);
             // Grass on the ring lies flat instead of being cut to a bald patch.
             GrassBenders.AddStanding(_at, 3.2f);
         }
@@ -68,6 +70,7 @@ namespace ZombieWar.Stations
         void OnDestroy()
         {
             foreach (var go in _hidden) if (go != null) go.SetActive(true);
+            if (_hidden.Count > 0) ZombieWar.WorldNav.MapNavigator.MarkDirty(_at, StationClearance.ClearRadius);
             _hidden.Clear();
             GrassBenders.RemoveStanding(_at);
         }
