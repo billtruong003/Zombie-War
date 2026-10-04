@@ -129,6 +129,13 @@ namespace ZombieWar.UI
         {
             _speaking = v;
             if (_wave != null) _wave.SetFloat(SpeakingId, v);
+            // The card sits under a Mask: uGUI renders a stencil copy of the material, made once, so
+            // a value set on _wave alone never reached the screen (04/10: the bars never moved).
+            if (waveform != null)
+            {
+                var rendered = waveform.materialForRendering;
+                if (rendered != null && rendered != _wave) rendered.SetFloat(SpeakingId, v);
+            }
         }
     }
 }

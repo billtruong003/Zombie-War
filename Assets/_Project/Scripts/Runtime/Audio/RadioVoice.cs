@@ -212,6 +212,7 @@ namespace ZombieWar.Audio
         {
             // The waveform's input: fast up, a little slower down, so the bars bounce with the syllables.
             float target = _current != null && !_loading && _source.isPlaying ? VoiceEnvelopes.At(_current, _source.time) : 0f;
+            target *= target * Mathf.Sqrt(target);   // ^2.5: loud syllables stay up, the gaps between words drop
             _level = target > _level ? Mathf.Lerp(_level, target, 0.7f) : Mathf.MoveTowards(_level, target, Time.unscaledDeltaTime * 5f);
 
             if (_current != null)

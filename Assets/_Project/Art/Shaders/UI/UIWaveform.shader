@@ -75,8 +75,10 @@ Shader "ZombieWar/UI/Waveform"
                 float x = i.uv.x * _Bars;
                 half bar = floor(x);
                 half inBar = step(_Gap * 0.5, frac(x)) * step(frac(x), 1 - _Gap * 0.5);
-                half n = saturate((tex2D(_NoiseTex, float2(bar * 0.19 + 0.07, _Time.y * _Speed * 0.1)).r - _NoiseRange.x) / max(_NoiseRange.y - _NoiseRange.x, 0.01));
-                half h = lerp(_Idle, max(_Idle, n), _Speaking);
+                // Each bar jitters on its own (noise row scrolling fast enough to read as syllables);
+                // the voice's loudness (_Speaking) sets how high they all go.
+                half n = saturate((tex2D(_NoiseTex, float2(bar * 0.19 + 0.07, _Time.y * _Speed * 0.6)).r - _NoiseRange.x) / max(_NoiseRange.y - _NoiseRange.x, 0.01));
+                half h = _Idle + (1 - _Idle) * _Speaking * lerp(0.35, 1, n);
                 // Bars grow from the bottom.
                 fixed4 col = i.color;
                 col.a *= inBar * step(i.uv.y, h);
