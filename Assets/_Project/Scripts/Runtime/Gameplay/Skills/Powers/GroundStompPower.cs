@@ -33,7 +33,7 @@ namespace ZombieWar.Skills.Powers
             bool quake = run.IsEvolved(SkillCatalogDefs.AutoStomp);
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoStomp);
             float now = Time.time;
-            int found = TargetQuery.GatherEnemies(origin, r, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, r);
             for (int i = 0; i < found; i++)
             {
                 var e = TargetQuery.CandidateEnemy(i);

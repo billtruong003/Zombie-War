@@ -50,6 +50,9 @@ namespace ZombieWar.Skills
         // already in it just extends the timer.
         struct TintEntry { public ZombieBase enemy; public float until; }
         readonly List<TintEntry> _tints = new(128);
+        // enemy -> slot in _tints: a tint is applied to every enemy a DoT tick touches, and the linear
+        // scan over up to 192 entries ran per enemy per tick.
+        readonly Dictionary<ZombieBase, int> _tintIndex = new(192);
         readonly List<MarkInstance> _marks = new(24);
         Transform _root;
 
@@ -237,14 +240,14 @@ namespace ZombieWar.Skills
         {
             if (enemy == null) return;
             float until = Time.time + seconds;
-            for (int i = 0; i < _tints.Count; i++)
+            if (_tintIndex.TryGetValue(enemy, out int i))
             {
-                if (_tints[i].enemy != enemy) continue;
                 if (until > _tints[i].until) _tints[i] = new TintEntry { enemy = enemy, until = until };
                 enemy.SetStatusTint(tint);
                 return;
             }
             if (_tints.Count >= 192) return;   // a full list drops the visual, never allocates
+            _tintIndex[enemy] = _tints.Count;
             _tints.Add(new TintEntry { enemy = enemy, until = until });
             enemy.SetStatusTint(tint);
         }
@@ -271,6 +274,20 @@ namespace ZombieWar.Skills
             m.dieAt = Time.time + duration;
         }
 
+        // Swap-with-last removal that keeps _tintIndex in step (walked backwards by LateUpdate).
+        void RemoveTintAt(int i)
+        {
+            var gone = _tints[i].enemy;
+            int last = _tints.Count - 1;
+            if (i != last)
+            {
+                _tints[i] = _tints[last];
+                if (!ReferenceEquals(_tints[i].enemy, null)) _tintIndex[_tints[i].enemy] = i;
+            }
+            _tints.RemoveAt(last);
+            if (!ReferenceEquals(gone, null)) _tintIndex.Remove(gone);
+        }
+
         void LateUpdate()
         {
             float now = Time.time;
@@ -280,7 +297,7 @@ namespace ZombieWar.Skills
                 var t = _tints[i];
                 if (t.enemy != null && now < t.until && !t.enemy.IsDead) continue;
                 if (t.enemy != null) t.enemy.SetStatusTint(Color.clear);
-                _tints.RemoveAt(i);
+                RemoveTintAt(i);
             }
 
             for (int i = 0; i < _arcs.Count; i++)

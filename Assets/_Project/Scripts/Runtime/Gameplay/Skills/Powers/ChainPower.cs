@@ -47,7 +47,7 @@ namespace ZombieWar.Skills.Powers
             bool storm = !staticJump && run.IsEvolved(skillId);
             float damage = run.PowerDamage(a.damage, skillId);
 
-            int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.scanRadius);
             // Only the candidates THIS proc gathered: passing the whole buffer walked stale entries
             // from earlier queries (arcs to enemies long dead or already pooled).
             int hops = found == 0 ? 0 : TargetQuery.Chain(found, origin, a.jumpRange,
@@ -61,7 +61,7 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < hops; i++)
             {
                 Vector3 point = TargetQuery.CandidatePoint(Buffer[i]);
-                var col = TargetQuery.Candidate(Buffer[i]);
+                var enemy = TargetQuery.CandidateEnemy(Buffer[i]);
 
                 // The BOLT is what makes this read as a chain: one call draws glow + white core +
                 // forks, and each hop starts a beat after the last, so the eye follows it jumping.
@@ -73,7 +73,7 @@ namespace ZombieWar.Skills.Powers
                 // Thunderstorm: a bolt from the sky on every other enemy the storm jumps through.
                 if (storm && i % 2 == 0) Host.Delay(hopDelay, _skyStrike ??= SkyStrike, point);
 
-                PowerKit.Hit(col, damage, 0.3f, source);
+                PowerKit.Hit(enemy, damage, 0.3f, source);
                 // Spark at chest height where the bolt lands.
                 Host.PlayDelayed(a.sparkFx, a1, SparkScale, hopDelay);
                 from = point;                        // next hop starts where this one landed

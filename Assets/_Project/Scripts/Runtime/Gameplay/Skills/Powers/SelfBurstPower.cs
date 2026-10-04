@@ -52,7 +52,7 @@ namespace ZombieWar.Skills.Powers
             if (_frame != Time.frameCount) { _frame = Time.frameCount; _burstsThisFrame = 0; }
             if (_burstsThisFrame >= 2) return;
 
-            int found = TargetQuery.GatherEnemies(centre, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(centre, a.scanRadius);
             if (found == 0) return;
             _burstsThisFrame++;
 
@@ -66,7 +66,7 @@ namespace ZombieWar.Skills.Powers
             {
                 Vector3 p = TargetQuery.CandidatePoint(i);
                 if ((p - centre).sqrMagnitude > r2) continue;
-                PowerKit.Hit(TargetQuery.Candidate(i), damage, push, proc.skillId);
+                PowerKit.Hit(TargetQuery.CandidateEnemy(i), damage, push, proc.skillId);
             }
             // Sized to the blast but capped: a self-centred burst scaled to a 4 m radius covered the
             // whole screen and the player. The ring below still shows the true area.
@@ -114,8 +114,8 @@ namespace ZombieWar.Skills.Powers
             FxPool.Play(a.reaperFx, at + Vector3.up * 0.3f, PowerKit.Flat(a.reaperFx), 0.8f);
             Host.SoulWisp(at);
             Host.Sfx("sfx.skill.reaper", at, 0.8f, 0f);
-            int found = TargetQuery.GatherEnemies(at, 2.4f, Host.EnemyMask);
-            for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.Candidate(c), damage, 0.8f, SkillCatalogDefs.EvoReaper);
+            int found = TargetQuery.GatherEnemies(at, 2.4f);
+            for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.CandidateEnemy(c), damage, 0.8f, SkillCatalogDefs.EvoReaper);
         }
     }
 }

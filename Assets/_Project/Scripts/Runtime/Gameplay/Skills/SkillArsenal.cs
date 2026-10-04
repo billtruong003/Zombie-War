@@ -389,8 +389,8 @@ namespace ZombieWar.Skills
 
                 if (s.damage > 0f)
                 {
-                    int found = TargetQuery.GatherEnemies(s.pos, s.radius, EnemyMask);
-                    for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.Candidate(c), s.damage, s.push, s.source);
+                    int found = TargetQuery.GatherEnemies(s.pos, s.radius);
+                    for (int c = 0; c < found; c++) PowerKit.Hit(TargetQuery.CandidateEnemy(c), s.damage, s.push, s.source);
                 }
                 s.landed?.Invoke(s.pos);
             }

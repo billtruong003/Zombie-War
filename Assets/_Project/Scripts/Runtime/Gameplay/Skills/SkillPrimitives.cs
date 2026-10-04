@@ -204,51 +204,55 @@ namespace ZombieWar.Skills
     /// </summary>
     public static class TargetQuery
     {
-        public const int MaxConsidered = 128;  // M8: the crowd reaches 160-200, so powers must see more of it
+        public const int MaxConsidered = 128;  // caps the O(n^2) clustering; "every enemy" effects walk ZombieManager.Alive
         public const int MaxChain = 6;         // ≤6 arcs per proc
 
-        static readonly Collider[] Hits = new Collider[MaxConsidered];
         static readonly Vector3[] Points = new Vector3[MaxConsidered];
         static readonly int[] Ids = new int[MaxConsidered];
+        static readonly ZombieBase[] Enemies = new ZombieBase[MaxConsidered];
 
-        /// <summary>Fills the shared buffer once. Returns how many enemies were found.</summary>
-        public static int Gather(Vector3 origin, float radius, LayerMask mask)
+        /// <summary>
+        /// Fills the candidate buffers with the LIVING ENEMIES within <paramref name="radius"/> (on the
+        /// ground plane) of <paramref name="origin"/>. Returns how many.
+        ///
+        /// G8 (04/10): reads <see cref="ZombieManager.Alive"/> instead of a physics sweep. The sweep
+        /// used layer "Everything", so it returned ground, props and the player too, then resolved each
+        /// collider with GetComponentInParent - up to 128 hierarchy walks per proc - and in a dense
+        /// crowd its buffer filled with non-enemies, so "every enemy on screen" (Bomb, Freeze) missed
+        /// some. A distance check over the live list is cheaper and never misses one.
+        /// When more than <see cref="MaxConsidered"/> qualify, the nearest are kept.
+        /// </summary>
+        public static int GatherEnemies(Vector3 origin, float radius)
         {
-            int n = Physics.OverlapSphereNonAlloc(origin, radius, Hits, mask, QueryTriggerInteraction.Ignore);
-            if (n > MaxConsidered) n = MaxConsidered;
-            for (int i = 0; i < n; i++)
+            var alive = ZombieManager.Alive;
+            float r2 = radius * radius;
+            int n = 0;
+            for (int i = 0; i < alive.Count; i++)
             {
-                Points[i] = Hits[i].transform.position;
-                Ids[i] = Hits[i].transform.GetInstanceID();
+                var enemy = alive[i];
+                if (enemy == null || enemy.IsDead) continue;
+                Vector3 p = enemy.transform.position;
+                float dx = p.x - origin.x, dz = p.z - origin.z, d2 = dx * dx + dz * dz;
+                if (d2 > r2) continue;
+                if (n < MaxConsidered) { Put(n++, enemy, p); continue; }
+                // Full: replace the farthest kept candidate if this one is nearer.
+                int far = 0; float farD2 = -1f;
+                for (int k = 0; k < n; k++)
+                {
+                    float kx = Points[k].x - origin.x, kz = Points[k].z - origin.z, k2 = kx * kx + kz * kz;
+                    if (k2 > farD2) { farD2 = k2; far = k; }
+                }
+                if (d2 < farD2) Put(far, enemy, p);
             }
             return n;
         }
 
-        /// <summary>
-        /// Like <see cref="Gather"/>, but keeps only LIVING ENEMIES. Everything in the scene sits on
-        /// the Default layer, so a plain sweep also returns the player and the props — measured
-        /// 2026-09-26: the drone "nearest target" was the player's own collider (so it never fired),
-        /// an airstrike could land on the player, and a chain's first arc could hop to the player.
-        /// The kept entries are compacted to the front of the buffers.
-        /// </summary>
-        public static int GatherEnemies(Vector3 origin, float radius, LayerMask mask)
+        static void Put(int i, ZombieBase enemy, Vector3 p)
         {
-            int n = Gather(origin, radius, mask);
-            int kept = 0;
-            for (int i = 0; i < n; i++)
-            {
-                var enemy = Hits[i] != null ? Hits[i].GetComponentInParent<ZombieBase>() : null;
-                if (enemy == null || enemy.IsDead) continue;
-                Hits[kept] = Hits[i];
-                Points[kept] = Points[i];
-                Ids[kept] = Ids[i];
-                Enemies[kept] = enemy;
-                kept++;
-            }
-            return kept;
+            Points[i] = p;
+            Ids[i] = enemy.transform.GetInstanceID();
+            Enemies[i] = enemy;
         }
-
-        static readonly ZombieBase[] Enemies = new ZombieBase[MaxConsidered];
 
         /// <summary>The enemy at <paramref name="i"/> after <see cref="GatherEnemies"/>.</summary>
         public static ZombieBase CandidateEnemy(int i) => Enemies[i];
@@ -261,7 +265,7 @@ namespace ZombieWar.Skills
             for (int i = 0; i < count; i++)
             {
                 if (!keep(Points[i])) continue;
-                Hits[kept] = Hits[i]; Points[kept] = Points[i]; Ids[kept] = Ids[i]; Enemies[kept] = Enemies[i];
+                Points[kept] = Points[i]; Ids[kept] = Ids[i]; Enemies[kept] = Enemies[i];
                 kept++;
             }
             return kept;
@@ -280,14 +284,13 @@ namespace ZombieWar.Skills
             return best;
         }
 
-        public static Collider Candidate(int i) => Hits[i];
         public static Vector3 CandidatePoint(int i) => Points[i];
 
         /// <summary>
         /// Seeds the candidate buffer directly, without a physics query. This exists so the selection
         /// maths (chain / cluster / cone / priority) can be tested against exact enemy layouts, and so
         /// card logic can be exercised without a physics scene. It performs NO query, which is also
-        /// how the "one OverlapSphereNonAlloc per proc" guarantee stays checkable.
+        /// how the "one query per proc" guarantee stays checkable.
         /// </summary>
         public static int SeedForTest(Vector3[] points, int[] ids, int count)
         {
@@ -297,7 +300,7 @@ namespace ZombieWar.Skills
             {
                 Points[i] = points[i];
                 Ids[i] = ids != null && i < ids.Length ? ids[i] : i + 1;
-                Hits[i] = null;
+                Enemies[i] = null;
             }
             return count;
         }

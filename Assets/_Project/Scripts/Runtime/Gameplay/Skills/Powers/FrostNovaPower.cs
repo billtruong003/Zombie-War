@@ -37,10 +37,10 @@ namespace ZombieWar.Skills.Powers
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoFrostNova);
             string source = run.Has(SkillCatalogDefs.EvoAbsoluteZero) ? SkillCatalogDefs.EvoAbsoluteZero : SkillCatalogDefs.AutoFrostNova;
             float now = Time.time;
-            int found = TargetQuery.GatherEnemies(centre, radius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(centre, radius);
             for (int i = 0; i < found; i++)
             {
-                var enemy = PowerKit.EnemyOf(TargetQuery.Candidate(i));
+                var enemy = TargetQuery.CandidateEnemy(i);
                 if (enemy == null || enemy.IsDead) continue;
                 int id = enemy.transform.GetInstanceID();
                 if (freeze)

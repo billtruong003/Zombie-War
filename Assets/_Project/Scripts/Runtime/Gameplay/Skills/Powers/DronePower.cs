@@ -33,6 +33,11 @@ namespace ZombieWar.Skills.Powers
         readonly ParticleSystem[] _bodies = new ParticleSystem[MaxDrones];
         readonly Vector3[] _vel = new Vector3[MaxDrones];
         readonly float[] _nextShot = new float[MaxDrones];
+        // Each drone keeps its target and re-picks at most RetargetSeconds apart: the scan ran every
+        // frame per drone just to point it, the costliest query in a full build.
+        const float RetargetSeconds = 0.15f;
+        readonly ZombieBase[] _target = new ZombieBase[MaxDrones];
+        readonly float[] _retargetAt = new float[MaxDrones];
         readonly Transform[] _rigs = new Transform[MaxDrones];
         readonly Transform[] _muzzle = new Transform[MaxDrones];
         readonly List<Transform>[] _rotors = new List<Transform>[MaxDrones];
@@ -102,9 +107,16 @@ namespace ZombieWar.Skills.Powers
 
                 // Aim: turn to the nearest enemy in range, else along the flight; bank into the turn.
                 Vector3 look = vel; look.y = 0f;
-                int found = TargetQuery.GatherEnemies(rig.position, a.range, Host.EnemyMask);
-                int best = TargetQuery.Nearest(found, rig.position);
-                ZombieBase target = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
+                ZombieBase target = _target[i];
+                bool lost = target == null || target.IsDead
+                            || (target.transform.position - rig.position).sqrMagnitude > a.range * a.range;
+                if (lost || t >= _retargetAt[i])
+                {
+                    _retargetAt[i] = t + RetargetSeconds;
+                    int found = TargetQuery.GatherEnemies(rig.position, a.range);
+                    int best = TargetQuery.Nearest(found, rig.position);
+                    target = _target[i] = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
+                }
                 if (target != null) { look = target.transform.position - rig.position; look.y = 0f; }
                 if (look.sqrMagnitude > 0.001f)
                 {
@@ -237,7 +249,7 @@ namespace ZombieWar.Skills.Powers
 
                 if (t < _nextShot[i]) continue;
                 _nextShot[i] = t + interval;
-                int found = TargetQuery.GatherEnemies(d.transform.position, a.range, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(d.transform.position, a.range);
                 int best = TargetQuery.Nearest(found, d.transform.position);
                 var enemy = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
                 if (enemy != null && !enemy.IsDead) Shoot(run, d.transform.position, enemy, Colour(run));

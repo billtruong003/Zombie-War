@@ -46,7 +46,7 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null) return;
-            int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.scanRadius);
             found = TargetQuery.Compact(found, _onScreen ??= Host.OnScreen);
             int best = found > 0 ? TargetQuery.DensestCluster(found, proc.radius, out _) : -1;
             if (best < 0) { run.Refund(proc.skillId); return; }
@@ -94,7 +94,7 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < _burns.Count; i++)
             {
                 var b = _burns[i];
-                int found = TargetQuery.GatherEnemies(b.pos, b.radius, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(b.pos, b.radius);
                 for (int k = 0; k < found; k++)
                 {
                     var e = TargetQuery.CandidateEnemy(k);

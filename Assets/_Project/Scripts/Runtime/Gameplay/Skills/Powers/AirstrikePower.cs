@@ -29,7 +29,7 @@ namespace ZombieWar.Skills.Powers
             var a = Lib?.airstrike;
             if (a == null) return;
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoAirstrike);
-            int found = TargetQuery.GatherEnemies(around, 16f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(around, 16f);
             Host.Sfx("sfx.skill.airstrike.mark", around, 0.6f, 0.3f);
 
             // Only enemies the player can SEE. Measured: picking inside a 13 m sphere put most bombs

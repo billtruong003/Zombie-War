@@ -241,10 +241,14 @@ namespace ZombieWar.Tests
             string src = System.IO.File.ReadAllText(
                 Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs");
 
-            StringAssert.Contains("GetComponentInParent<ZombieBase>()", src,
-                "power damage must resolve the ENEMY type, not any IDamageable");
-            Assert.IsFalse(src.Contains("GetComponentInParent<IDamageable>()"),
-                "a generic IDamageable lookup lets a player-centred power damage the player");
+            // G8 (04/10): the guarantee is now the type itself - PowerKit.Hit takes a ZombieBase and
+            // there is no Collider/IDamageable overload a player-centred power could reach the player through.
+            StringAssert.Contains("public static void Hit(ZombieBase enemy", src,
+                "power damage must take the ENEMY type, not any IDamageable");
+            Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(src, @"IDamageable\s+\w+|<IDamageable>"),
+                "a generic IDamageable path lets a player-centred power damage the player");
+            Assert.IsFalse(src.Contains("Hit(Collider"),
+                "a Collider overload would resolve whatever it hit, the player included");
         }
 
         [Test]

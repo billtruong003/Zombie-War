@@ -93,15 +93,18 @@ namespace ZombieWar
         {
             var host = Host; var a = A;
             if (host == null) return;
-            int found = TargetQuery.GatherEnemies(at, outer, host.EnemyMask);
-            for (int i = 0; i < found; i++)
+            // "Every enemy on screen" walks the live list itself: the shared query buffer is capped
+            // (its clustering maths is O(n^2)) and a crowd can be bigger than the cap.
+            var alive = ZombieManager.Alive;
+            for (int i = alive.Count - 1; i >= 0; i--)
             {
-                var e = TargetQuery.CandidateEnemy(i);
+                var e = alive[i];
                 if (e == null || e.IsDead) continue;
                 Vector3 d = e.transform.position - at; d.y = 0f;
-                if (d.sqrMagnitude < inner * inner) continue;
+                float d2 = d.sqrMagnitude;
+                if (d2 < inner * inner || d2 > outer * outer) continue;
                 if (!host.OnScreen(e.transform.position)) continue;
-                var hp = e.GetComponent<Health>();
+                var hp = e.Life;
                 bool elite = e.Data != null && e.Data.isElite;
                 PowerKit.Hit(e, BombDamage(elite, hp != null ? hp.Max : 100f), 1.2f, BombSource);
                 if (_fxLeft-- > 0 && a?.bombHitFx != null) FxPool.Play(a.bombHitFx, PowerKit.Chest(e), PowerKit.Flat(a.bombHitFx), 0.8f);
@@ -121,11 +124,13 @@ namespace ZombieWar
             var tint = host.Library != null ? host.Library.frost.frozenTint : Ice;
             float now = Time.time;
             int budget = FxBudget;
-            int found = TargetQuery.GatherEnemies(at, Reach, host.EnemyMask);
-            for (int i = 0; i < found; i++)
+            var alive = ZombieManager.Alive;   // every enemy on screen, not the capped query buffer
+            for (int i = alive.Count - 1; i >= 0; i--)
             {
-                var e = TargetQuery.CandidateEnemy(i);
+                var e = alive[i];
                 if (e == null || e.IsDead || !host.OnScreen(e.transform.position)) continue;
+                Vector3 d = e.transform.position - at; d.y = 0f;
+                if (d.sqrMagnitude > Reach * Reach) continue;
                 float seconds = e.Data != null && e.Data.isElite ? EliteFreezeSeconds : FreezeSeconds;
                 StatusCarrier.Apply(e.transform.GetInstanceID(), StatusKind.Frozen, 1f, seconds, now);
                 SkillFxDirector.Instance?.TintEnemy(e, tint, seconds);

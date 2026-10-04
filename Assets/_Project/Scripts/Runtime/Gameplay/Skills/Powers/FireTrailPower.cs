@@ -50,7 +50,7 @@ namespace ZombieWar.Skills.Powers
             float reach = 0f;
             for (int i = 0; i < _patches.Count; i++)
                 reach = Mathf.Max(reach, (_patches[i].pos - p).magnitude);
-            int found = TargetQuery.GatherEnemies(p, reach + radius + 0.5f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, reach + radius + 0.5f);
             float damage = run.PowerDamage(run.FireTrailDps, SkillCatalogDefs.AutoFireTrail) * TickSeconds;
             float r2 = radius * radius;
 
@@ -64,7 +64,7 @@ namespace ZombieWar.Skills.Powers
                     burning = dx * dx + dz * dz <= r2;
                 }
                 if (!burning) continue;
-                var enemy = PowerKit.EnemyOf(TargetQuery.Candidate(c));
+                var enemy = TargetQuery.CandidateEnemy(c);
                 if (enemy == null || enemy.IsDead) continue;
                 PowerKit.Hit(enemy, damage, 0f, SkillCatalogDefs.AutoFireTrail);
                 SkillFxDirector.Instance?.TintEnemy(enemy, a.burnTint, 0.4f);

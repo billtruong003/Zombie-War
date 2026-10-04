@@ -60,7 +60,7 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             if (a == null) return;
             int count = proc.targets;
-            int found = TargetQuery.GatherEnemies(from, a.range + 2f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(from, a.range + 2f);
             Vector3 fallback = Host.Player.forward;
             if (found > 0) fallback = TargetQuery.CandidatePoint(TargetQuery.Nearest(found, from)) - from;
             fallback.y = 0f;
@@ -125,10 +125,10 @@ namespace ZombieWar.Skills.Powers
 
                 if (Time.time < b.nextScan) continue;
                 b.nextScan = Time.time + 0.05f;
-                int found = TargetQuery.GatherEnemies(pos, 1.3f, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(pos, 1.3f);
                 for (int i = 0; i < found; i++)
                 {
-                    var enemy = PowerKit.EnemyOf(TargetQuery.Candidate(i));
+                    var enemy = TargetQuery.CandidateEnemy(i);
                     if (enemy == null || enemy.IsDead) continue;
                     // Once on the way out and once on the way back — the fantasy is "it cuts twice".
                     int key = enemy.GetInstanceID() * 2 + (t <= 1f ? 0 : 1);

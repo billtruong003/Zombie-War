@@ -50,7 +50,7 @@ namespace ZombieWar.Skills.Powers
             if (a == null || a.model == null) return;
             _storm = run.IsEvolved(SkillCatalogDefs.AutoAxe);
             int n = _storm ? 4 : Mathf.Max(1, proc.targets);
-            int found = TargetQuery.GatherEnemies(origin, a.reach + 3f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.reach + 3f);
             Vector3 aim = found > 0 ? TargetQuery.CandidatePoint(TargetQuery.Nearest(found, origin)) - origin : Host.Player.forward;
             aim.y = 0f;
             // Lands just past the nearest enemy, so the fall cuts through the crowd, not empty ground.
@@ -129,7 +129,7 @@ namespace ZombieWar.Skills.Powers
                 // Cuts only while low enough to reach bodies.
                 if (pos.y > 2.2f) continue;
                 Vector3 ground = new(pos.x, 0f, pos.z);
-                int found = TargetQuery.GatherEnemies(ground, Contact, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(ground, Contact);
                 for (int k = 0; k < found; k++)
                 {
                     var e = TargetQuery.CandidateEnemy(k);

@@ -73,7 +73,7 @@ namespace ZombieWar.Skills.Powers
             if (d.target == null || d.target.IsDead || !d.target.isActiveAndEnabled || (d.target.transform.position - p).sqrMagnitude > a.leash * a.leash)
             {
                 d.target = null;
-                int found = TargetQuery.GatherEnemies(pos, a.leash, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(pos, a.leash);
                 int best = TargetQuery.Nearest(found, pos);
                 if (best >= 0) d.target = TargetQuery.CandidateEnemy(best);
             }

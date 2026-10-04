@@ -80,7 +80,7 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < _patches.Count; i++)
             {
                 var p = _patches[i];
-                int found = TargetQuery.GatherEnemies(p.pos, p.radius, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(p.pos, p.radius);
                 for (int c = 0; c < found; c++)
                 {
                     var e = TargetQuery.CandidateEnemy(c);

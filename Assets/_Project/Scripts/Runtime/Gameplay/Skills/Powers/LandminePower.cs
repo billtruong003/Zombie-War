@@ -76,7 +76,7 @@ namespace ZombieWar.Skills.Powers
             {
                 var m = _mines[i];
                 if (!m.live || now < m.armedAt) continue;
-                int found = TargetQuery.GatherEnemies(m.pos, a.trigger, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(m.pos, a.trigger);
                 if (found == 0) continue;
                 Detonate(run, m);
             }
@@ -124,8 +124,8 @@ namespace ZombieWar.Skills.Powers
             Host.Shake(0.08f);
             bool field = run.IsEvolved(SkillCatalogDefs.AutoLandmine);
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoLandmine);
-            int found = TargetQuery.GatherEnemies(m.pos, r, Host.EnemyMask);
-            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1.2f, field ? SkillCatalogDefs.EvoMinefield : SkillCatalogDefs.AutoLandmine);
+            int found = TargetQuery.GatherEnemies(m.pos, r);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.CandidateEnemy(k), damage, 1.2f, field ? SkillCatalogDefs.EvoMinefield : SkillCatalogDefs.AutoLandmine);
             if (!field) return;
             // Minefield: the blast sets off the mines around it, a beat later — a chain reaction.
             foreach (var other in _mines)

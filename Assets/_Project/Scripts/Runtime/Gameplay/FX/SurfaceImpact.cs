@@ -13,10 +13,10 @@ namespace ZombieWar
         const float SfxGap = 0.07f;
         static float _nextSfx;
 
-        public static SurfaceKind KindOf(Collider c)
+        public static SurfaceKind KindOf(Collider c, ZombieBase enemy = null)
         {
             if (c == null) return SurfaceKind.Ground;
-            var enemy = c.GetComponentInParent<ZombieBase>();
+            if (enemy == null) enemy = ZombieBase.FromCollider(c);
             if (enemy != null) return FromImpactKey(enemy.Data != null ? enemy.Data.impactSfxKey : null);
             var tag = c.GetComponentInParent<SurfaceMaterial>();
             return tag != null ? tag.kind : SurfaceKind.Ground;
@@ -34,10 +34,11 @@ namespace ZombieWar
 
         /// Plays the hit in the material of what was hit. False when no library entry covers it, so the
         /// caller can fall back to its own effect.
-        public static bool Play(in RaycastHit hit)
+        /// <param name="enemy">The enemy the hit already resolved, if any (saves a lookup).</param>
+        public static bool Play(in RaycastHit hit, ZombieBase enemy = null)
         {
             var lib = SurfaceImpactLibrary.Instance;
-            var kind = KindOf(hit.collider);
+            var kind = KindOf(hit.collider, enemy);
             var e = lib != null ? lib.For(kind) : null;
             if (e == null || e.fx == null) return false;
             FxPool.Play(e.fx, hit.point, Quaternion.LookRotation(hit.normal.sqrMagnitude > 0.01f ? hit.normal : Vector3.up), e.scale);

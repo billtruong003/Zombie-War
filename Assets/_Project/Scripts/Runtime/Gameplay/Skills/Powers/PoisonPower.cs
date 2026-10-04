@@ -31,6 +31,20 @@ namespace ZombieWar.Skills.Powers
         const float TickSeconds = 0.5f;
         const int MaxPuffsPerTick = 6;
         readonly List<Entry> _entries = new(MaxTracked);
+        readonly Dictionary<ZombieBase, int> _index = new(MaxTracked);   // enemy -> slot (no linear scans)
+
+        void RemoveAt(int i)
+        {
+            var gone = _entries[i].enemy;
+            int last = _entries.Count - 1;
+            if (i != last)
+            {
+                _entries[i] = _entries[last];
+                if (!ReferenceEquals(_entries[i].enemy, null)) _index[_entries[i].enemy] = i;
+            }
+            _entries.RemoveAt(last);
+            if (!ReferenceEquals(gone, null)) _index.Remove(gone);
+        }
         float _tickAt;
 
         /// <summary>Adds <paramref name="stacks"/> to <paramref name="enemy"/> (capped) and refreshes the
@@ -39,10 +53,9 @@ namespace ZombieWar.Skills.Powers
         {
             if (enemy == null || enemy.IsDead || stacks <= 0 || dpsPerStack <= 0f) return;
             float until = Time.time + seconds;
-            for (int i = 0; i < _entries.Count; i++)
+            if (_index.TryGetValue(enemy, out int i))
             {
                 var e = _entries[i];
-                if (e.enemy != enemy) continue;
                 e.stacks = Mathf.Min(SkillRuntime.PoisonMaxStacks, e.stacks + stacks);
                 e.until = Mathf.Max(e.until, until);
                 if (dpsPerStack >= e.dps) { e.dps = dpsPerStack; e.source = source; }
@@ -50,6 +63,7 @@ namespace ZombieWar.Skills.Powers
                 return;
             }
             if (_entries.Count >= MaxTracked) return;
+            _index[enemy] = _entries.Count;
             _entries.Add(new Entry { enemy = enemy, stacks = Mathf.Min(SkillRuntime.PoisonMaxStacks, stacks), dps = dpsPerStack, until = until, source = source });
             var a = Lib?.poison;
             if (a != null) SkillFxDirector.Instance?.TintEnemy(enemy, a.tint, seconds);
@@ -57,8 +71,7 @@ namespace ZombieWar.Skills.Powers
 
         public int StacksOn(ZombieBase enemy)
         {
-            for (int i = 0; i < _entries.Count; i++) if (_entries[i].enemy == enemy) return _entries[i].stacks;
-            return 0;
+            return enemy != null && _index.TryGetValue(enemy, out int i) ? _entries[i].stacks : 0;
         }
 
         public override void Tick(SkillRuntime run, Vector3 player, float dt)
@@ -74,7 +87,7 @@ namespace ZombieWar.Skills.Powers
                 var e = _entries[i];
                 if (e.enemy == null || e.enemy.IsDead || !e.enemy.isActiveAndEnabled || now >= e.until)
                 {
-                    _entries.RemoveAt(i);
+                    RemoveAt(i);
                     continue;
                 }
                 PowerKit.Hit(e.enemy, e.stacks * e.dps * TickSeconds, 0f, e.source);
@@ -98,7 +111,7 @@ namespace ZombieWar.Skills.Powers
                 if (e.enemy == null || !e.enemy.IsDead) continue;
                 Vector3 d = e.enemy.transform.position - at; d.y = 0f;
                 if (d.sqrMagnitude > 0.5f) continue;
-                _entries.RemoveAt(i);
+                RemoveAt(i);
                 // Deferred a beat: kills arrive from inside damage loops walking the shared buffer.
                 _spreadAt = at; _spreadDps = e.dps;
                 Host.Delay(0.05f, _spread ??= Spread, at);
@@ -113,7 +126,7 @@ namespace ZombieWar.Skills.Powers
         void Spread(Vector3 at)
         {
             var a = Lib?.poison;
-            int found = TargetQuery.GatherEnemies(at, 3f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(at, 3f);
             int given = 0;
             for (int i = 0; i < found && given < 3; i++)
             {
@@ -126,6 +139,6 @@ namespace ZombieWar.Skills.Powers
             if (given > 0 && a != null) FxPool.Play(a.tickFx, at + Vector3.up * 0.6f, PowerKit.Flat(a.tickFx), 0.6f);
         }
 
-        public override void ResetForRun() => _entries.Clear();
+        public override void ResetForRun() { _entries.Clear(); _index.Clear(); }
     }
 }

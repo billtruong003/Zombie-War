@@ -43,7 +43,7 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             if (a == null) return;
             if (run.IsEvolved(SkillCatalogDefs.AutoGravity)) { _singularityRadius = proc.radius; return; }   // the permanent one pulls instead
-            int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.scanRadius);
             found = TargetQuery.Compact(found, _onScreen ??= Host.OnScreen);
             int best = found > 0 ? TargetQuery.DensestCluster(found, proc.radius * 0.6f, out _) : -1;
             if (best < 0) { run.Refund(proc.skillId); return; }
@@ -74,7 +74,7 @@ namespace ZombieWar.Skills.Powers
             if (now >= _singleGoalAt)
             {
                 _singleGoalAt = now + 0.25f;
-                int near = TargetQuery.GatherEnemies(player, 14f, Host.EnemyMask);
+                int near = TargetQuery.GatherEnemies(player, 14f);
                 int best = near > 0 ? TargetQuery.DensestCluster(near, 3f, out _) : -1;
                 _singleGoal = best >= 0 ? TargetQuery.CandidatePoint(best) : player + Host.Player.forward * 4f;
                 _singleGoal.y = 0f;
@@ -91,7 +91,7 @@ namespace ZombieWar.Skills.Powers
             if (now >= _singlePullAt)
             {
                 _singlePullAt = now + PullTick;
-                found = TargetQuery.GatherEnemies(_singlePos, r, Host.EnemyMask);
+                found = TargetQuery.GatherEnemies(_singlePos, r);
                 for (int k = 0; k < found; k++)
                 {
                     var e = TargetQuery.CandidateEnemy(k);
@@ -125,7 +125,7 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < _wells.Count; i++)
             {
                 var w = _wells[i];
-                int found = TargetQuery.GatherEnemies(w.pos, w.radius, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(w.pos, w.radius);
                 for (int k = 0; k < found; k++)
                 {
                     var e = TargetQuery.CandidateEnemy(k);
@@ -145,8 +145,8 @@ namespace ZombieWar.Skills.Powers
             Host.Sfx("sfx.skill.blast", w.pos, 0.8f, 0.1f);
             Host.Shake(0.16f);
             float damage = run.PowerDamage(a.popDamage, SkillCatalogDefs.AutoGravity);
-            int found = TargetQuery.GatherEnemies(w.pos, r, Host.EnemyMask);
-            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 1f, source);
+            int found = TargetQuery.GatherEnemies(w.pos, r);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.CandidateEnemy(k), damage, 1f, source);
         }
 
         public override void ResetForRun() { _wells.Clear(); _single = false; }

@@ -21,14 +21,30 @@ namespace ZombieWar
         // can hold its crowd ceiling against it - no separate bookkeeping needed.
         public static int AliveCount => _zombies.Count;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _zombies.Clear();
+
+        /// <summary>Every enemy currently in play. The one list target queries read (no physics sweep).</summary>
+        public static IReadOnlyList<ZombieBase> Alive => _zombies;
+
+        // O(1) both ways: each enemy remembers its slot (spawns/deaths/recycles hit this every frame
+        // of a horde; Contains/Remove scanned up to 300 entries each time).
         public static void Register(ZombieBase zombie)
         {
-            if (!_zombies.Contains(zombie)) _zombies.Add(zombie);
+            if (zombie == null || zombie.RegistryIndex >= 0) return;
+            zombie.RegistryIndex = _zombies.Count;
+            _zombies.Add(zombie);
         }
 
         public static void Unregister(ZombieBase zombie)
         {
-            _zombies.Remove(zombie);
+            if (zombie == null) return;
+            int i = zombie.RegistryIndex;
+            if (i < 0 || i >= _zombies.Count || !ReferenceEquals(_zombies[i], zombie)) return;
+            int last = _zombies.Count - 1;
+            if (i != last) { _zombies[i] = _zombies[last]; _zombies[i].RegistryIndex = i; }
+            _zombies.RemoveAt(last);
+            zombie.RegistryIndex = -1;
         }
 
         private void OnEnable()

@@ -57,7 +57,7 @@ namespace ZombieWar.Skills.Powers
             float now = Time.time;
             if (now < _nextStrike) return;
             Vector3 below = new(_cloud.position.x, 0f, _cloud.position.z);
-            int found = TargetQuery.GatherEnemies(below, a.range, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(below, a.range);
             int best = TargetQuery.Nearest(found, below);
             var target = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
             if (target == null || target.IsDead) { _nextStrike = now + 0.15f; return; }

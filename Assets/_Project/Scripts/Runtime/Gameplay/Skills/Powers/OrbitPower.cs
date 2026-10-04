@@ -89,7 +89,7 @@ namespace ZombieWar.Skills.Powers
 
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoOrbit);
             string source = run.Has(SkillCatalogDefs.EvoBuzzsaw) ? SkillCatalogDefs.EvoBuzzsaw : SkillCatalogDefs.AutoOrbit;
-            int found = TargetQuery.GatherEnemies(p, radius + 1.2f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, radius + 1.2f);
             for (int c = 0; c < found; c++)
             {
                 Vector3 ep = TargetQuery.CandidatePoint(c);
@@ -104,7 +104,7 @@ namespace ZombieWar.Skills.Powers
 
                 int id = TargetQuery.CandidateId(c);
                 if (_nextHit.TryGetValue(id, out float next) && now < next) continue;
-                var enemy = PowerKit.EnemyOf(TargetQuery.Candidate(c));
+                var enemy = TargetQuery.CandidateEnemy(c);
                 if (enemy == null) continue;
                 _nextHit[id] = now + a.hitInterval;
 

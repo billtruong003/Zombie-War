@@ -86,7 +86,7 @@ namespace ZombieWar.Skills.Powers
             _ringScanAt = now + 0.1f;
             float damage = run.PowerDamage(a.baseDamage, SkillCatalogDefs.AutoIceShards) * 0.6f;
             int fx = 2;   // A10 stress: an unbudgeted burst per touch cost 650 draw calls in a 200-enemy crowd
-            int found = TargetQuery.GatherEnemies(p, radius + 1f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, radius + 1f);
             for (int c = 0; c < found; c++)
             {
                 Vector3 ep = TargetQuery.CandidatePoint(c);
@@ -136,7 +136,7 @@ namespace ZombieWar.Skills.Powers
                     _shards.RemoveAt(i);
                     continue;
                 }
-                int found = TargetQuery.GatherEnemies(s.pos, Contact, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(s.pos, Contact);
                 for (int k = 0; k < found; k++)
                 {
                     var e = TargetQuery.CandidateEnemy(k);

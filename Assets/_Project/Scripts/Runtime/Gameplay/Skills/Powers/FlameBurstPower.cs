@@ -38,7 +38,7 @@ namespace ZombieWar.Skills.Powers
             var a = A;
             if (a == null) return;
             if (run.IsEvolved(SkillCatalogDefs.AutoFlameBurst)) { _range = proc.radius; return; }   // the breath never stops
-            int found = TargetQuery.GatherEnemies(origin, proc.radius + 2f, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, proc.radius + 2f);
             if (found == 0) { run.Refund(proc.skillId); return; }
             Vector3 d = TargetQuery.CandidatePoint(TargetQuery.Nearest(found, origin)) - origin; d.y = 0f;
             _dir = d.sqrMagnitude > 0.01f ? d.normalized : Host.Player.forward;
@@ -73,13 +73,13 @@ namespace ZombieWar.Skills.Powers
             if (_jet != null) _jet.transform.position = p + Vector3.up * 0.8f + _dir * 0.4f;   // it comes out of the player
             if (now < _tickAt) return;
             _tickAt = now + TickSeconds;
-            int found = TargetQuery.GatherEnemies(p, _range, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, _range);
             int hits = TargetQuery.Cone(found, p, _dir, a.coneDegrees * 0.5f, Cone);
             float damage = run.PowerDamage(a.dps, SkillCatalogDefs.AutoFlameBurst) * TickSeconds;
             int flames = 0;
             for (int i = 0; i < hits; i++)
             {
-                var e = PowerKit.EnemyOf(TargetQuery.Candidate(Cone[i]));
+                var e = TargetQuery.CandidateEnemy(Cone[i]);
                 if (e == null || e.IsDead) continue;
                 PowerKit.Hit(e, damage, 0.15f, run.IsEvolved(SkillCatalogDefs.AutoFlameBurst) ? SkillCatalogDefs.EvoDragonBreath : SkillCatalogDefs.AutoFlameBurst);
                 SkillFxDirector.Instance?.TintEnemy(e, a.burnTint, 0.5f);

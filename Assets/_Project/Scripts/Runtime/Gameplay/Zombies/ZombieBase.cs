@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using BillGameCore;
 
@@ -169,8 +170,33 @@ namespace ZombieWar
         /// <see cref="CanBeTargeted"/> because splash damage does not go through targeting.</summary>
         protected virtual bool IsInvulnerable => false;
 
+        // Collider -> enemy, filled once per instance (pooled enemies keep theirs). A raycast or
+        // sweep hit resolves its enemy with one lookup instead of a GetComponentInParent walk - the
+        // gun did 4-6 of those per pellet.
+        static readonly Dictionary<int, ZombieBase> ByCollider = new(1024);
+        Collider[] _colliders;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetColliderMap() => ByCollider.Clear();
+
+        /// <summary>The enemy a collider belongs to, or null (props, ground, the player).</summary>
+        public static ZombieBase FromCollider(Collider c) =>
+            c != null && ByCollider.TryGetValue(c.GetInstanceID(), out var z) && z != null ? z : null;
+
+        /// <summary>This enemy's Health (read by the hit pipeline).</summary>
+        internal Health Life => _health;
+
+        private void OnDestroy()
+        {
+            if (_colliders == null) return;
+            for (int i = 0; i < _colliders.Length; i++)
+                if (_colliders[i] != null) ByCollider.Remove(_colliders[i].GetInstanceID());
+        }
+
         private void Awake()
         {
+            _colliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < _colliders.Length; i++) ByCollider[_colliders[i].GetInstanceID()] = this;
             _motor = GetComponent<PlanarEnemyMotor>();
             _health = GetComponent<Health>();
             // VAT_Animator lives on the child "Visual" mesh, not the root - search children (incl. inactive).
@@ -338,6 +364,9 @@ namespace ZombieWar
         }
 
         bool _nextHitCrit;
+
+        /// <summary>Slot in <see cref="ZombieManager.Alive"/> (-1 = not registered).</summary>
+        internal int RegistryIndex = -1;
 
         /// <summary>The next damage number is a crit (gold). Set by the gun right before the hit lands.</summary>
         public void MarkNextHitCrit() => _nextHitCrit = true;

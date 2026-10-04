@@ -132,7 +132,7 @@ namespace ZombieWar.Skills.Powers
                     continue;
                 }
 
-                int found = TargetQuery.GatherEnemies(t.root.position, a.range, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(t.root.position, a.range);
                 int best = TargetQuery.Nearest(found, t.root.position);
                 var target = best >= 0 ? TargetQuery.CandidateEnemy(best) : null;
                 if (target != null)
@@ -169,8 +169,8 @@ namespace ZombieWar.Skills.Powers
             // Fortress: every round is a rocket that bursts on the target.
             Host.Sfx("sfx.skill.blast", to, 0.35f, 0.08f);
             FxPool.Play(a.rocketBlastFx, to, PowerKit.Flat(a.rocketBlastFx), 0.5f);
-            int found = TargetQuery.GatherEnemies(to, a.rocketRadius, Host.EnemyMask);
-            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.Candidate(k), damage, 0.5f, SkillCatalogDefs.EvoFortress);
+            int found = TargetQuery.GatherEnemies(to, a.rocketRadius);
+            for (int k = 0; k < found; k++) PowerKit.Hit(TargetQuery.CandidateEnemy(k), damage, 0.5f, SkillCatalogDefs.EvoFortress);
         }
 
         public override void ResetForRun()

@@ -148,8 +148,8 @@ namespace ZombieWar.Tests
             string weapon = Read("/_Project/Scripts/Runtime/Gameplay/Weapon.cs");
             StringAssert.Contains("FireShockwave", weapon, "Shockwave Belt must actually sweep its cone");
             StringAssert.Contains("TargetQuery.Cone", weapon, "and must use the shared P3 cone query");
-            StringAssert.Contains("GetComponentInParent<ZombieBase>()", weapon,
-                "the cone must damage enemies only — never the player");
+            StringAssert.Contains("TargetQuery.GatherEnemies(origin, 12f)", weapon,
+                "the cone must sweep enemies only — never the player");
         }
 
         [Test]

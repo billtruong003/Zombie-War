@@ -576,15 +576,17 @@ namespace ZombieWar
 
             // SingleHitscan / MultiPelletHitscan: dừng ở target đầu tiên.
             Vector3 hitPoint = muzzlePosition + direction * data.range;
+            ZombieBase directEnemy = null;
             bool didHit = Physics.Raycast(rayOrigin, direction, out RaycastHit hit, rayRange, hitMask);
 
             if (didHit)
             {
                 hitPoint = hit.point;
-                ApplyHit(data, hit.collider.GetComponentInParent<IDamageable>(), hit, rayOrigin, 1f);
+                directEnemy = null;
+                ApplyHit(data, Damageable(hit.collider, out directEnemy), directEnemy, hit, rayOrigin, 1f);
             }
             if (data.splashRadius > 0f)
-                Splash(data, hitPoint, didHit ? hit.collider.GetComponentInParent<ZombieBase>() : null);
+                Splash(data, hitPoint, didHit ? directEnemy : null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EmitRay(data, rayOrigin, direction, hitPoint,
@@ -607,7 +609,7 @@ namespace ZombieWar
             if (run != null)
                 ZombieWar.Skills.SkillArsenal.Instance?.OnLauncherBlast(run, at, data.splashRadius,
                     WeaponUpgradeMath.EffectiveDamage(data, _starLevel) * (1f + _skinBonus) * run.DamageMultiplier);
-            int found = ZombieWar.Skills.TargetQuery.GatherEnemies(at, data.splashRadius, hitMask);
+            int found = ZombieWar.Skills.TargetQuery.GatherEnemies(at, data.splashRadius);
             for (int i = 0; i < found; i++)
             {
                 var enemy = ZombieWar.Skills.TargetQuery.CandidateEnemy(i);
@@ -619,8 +621,17 @@ namespace ZombieWar
             ShakeCamera(0.2f);
         }
 
-        // Áp damage (range falloff + dmgMult) + impact FX + knockback cho 1 hit.
-        private void ApplyHit(WeaponData data, IDamageable dmg, RaycastHit hit, Vector3 origin, float dmgMult)
+        /// One resolve per hit: the enemy (via the collider map) or, for props, any IDamageable.
+        private static IDamageable Damageable(Collider c, out ZombieBase enemy)
+        {
+            enemy = ZombieBase.FromCollider(c);
+            if (enemy != null) return enemy;
+            return c != null ? c.GetComponentInParent<IDamageable>() : null;
+        }
+
+        // Áp damage (range falloff + dmgMult) + impact FX + knockback cho 1 hit. The enemy is resolved
+        // once by the caller and passed down (it used to be looked up again at every step).
+        private void ApplyHit(WeaponData data, IDamageable dmg, ZombieBase enemy, RaycastHit hit, Vector3 origin, float dmgMult)
         {
             if (dmg != null)
             {
@@ -635,7 +646,7 @@ namespace ZombieWar
                 {
                     // Real values, not placeholders: a constant here would silently disable
                     // Execution Round, Point Blank, Longshot and Focus Fire.
-                    var targetHealth = hit.collider.GetComponentInParent<Health>();
+                    var targetHealth = enemy != null ? enemy.Life : hit.collider.GetComponentInParent<Health>();
                     int targetId = targetHealth != null
                         ? targetHealth.transform.GetInstanceID()
                         : hit.collider.transform.GetInstanceID();
@@ -653,7 +664,7 @@ namespace ZombieWar
                     {
                         damage *= ZombieWar.Skills.SkillRuntime.CritMultiplier;
                         _hitCrit = true;
-                        hit.collider.GetComponentInParent<ZombieBase>()?.MarkNextHitCrit();
+                        if (enemy != null) enemy.MarkNextHitCrit();
                     }
 
                     // M7.2c legibility — a status the player cannot see is a status they will call a
@@ -688,26 +699,25 @@ namespace ZombieWar
 
                 // A3 gun modifiers that act after the bullet lands (ricochet, burst, acid).
                 var run = ZombieWar.Skills.SkillRuntime.Active;
-                var enemy = hit.collider.GetComponentInParent<ZombieBase>();
                 if (run != null && enemy != null)
                     ZombieWar.Skills.SkillArsenal.Instance?.OnGunHit(run, enemy, hit.point, damage, _hitCrit);
                 _hitCrit = false;
             }
             // The hit answers in the material of what it hit (blood, bone dust, sap, dirt, splinters…);
             // the weapon's own impact effect is the fallback when no material entry covers it.
-            if (!SurfaceImpact.Play(hit) && data.impactPrefab != null)
+            if (!SurfaceImpact.Play(hit, enemy) && data.impactPrefab != null)
                 FxPool.Play(data.impactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
-            ApplyKnockback(data, hit);
+            ApplyKnockback(data, enemy);
         }
 
         // Weapon-authored physical response. Routed through the enemy's own push API rather than a
         // Rigidbody impulse. The original reason was that a NavMeshAgent overwrote any Rigidbody
         // motion the same frame; since M4 there is no agent, but the routing stays because the enemy
         // still owns its displacement - one owner means the shove cannot fight the steering motor.
-        private void ApplyKnockback(WeaponData data, RaycastHit hit)
+        private void ApplyKnockback(WeaponData data, ZombieBase enemy)
         {
-            if (data.knockback <= 0f) return;
-            hit.collider.GetComponentInParent<ZombieBase>()?.ApplyPhysicalPush(data.knockback);
+            if (data.knockback <= 0f || enemy == null) return;
+            enemy.ApplyPhysicalPush(data.knockback);
         }
 
         // The plan produced by the skill runtime for the shot currently being resolved. Gameplay, not a
@@ -727,7 +737,7 @@ namespace ZombieWar
             Vector3 origin = transform.position;
             // M8: the wave is drawn whether or not it hits, across exactly the cone it checks.
             ZombieWar.Skills.SkillArsenal.Instance?.Cone(origin, aimDirection, 12f);
-            int found = ZombieWar.Skills.TargetQuery.Gather(origin, 12f, hitMask);
+            int found = ZombieWar.Skills.TargetQuery.GatherEnemies(origin, 12f);
             if (found == 0) return;
 
             int hits = ZombieWar.Skills.TargetQuery.Cone(
@@ -735,9 +745,8 @@ namespace ZombieWar
 
             for (int i = 0; i < hits; i++)
             {
-                var col = ZombieWar.Skills.TargetQuery.Candidate(ConeBuffer[i]);
-                var enemy = col != null ? col.GetComponentInParent<ZombieBase>() : null;
-                if (enemy == null) continue;                 // never the player: enemies only
+                var enemy = ZombieWar.Skills.TargetQuery.CandidateEnemy(ConeBuffer[i]);
+                if (enemy == null) continue;
                 float wave = skills.PowerDamage(18f, ZombieWar.Skills.SkillCatalogDefs.LmgShockwave);
                 enemy.TakeDamage(wave);
                 ZombieWar.Skills.DamageLedger.Record(ZombieWar.Skills.SkillCatalogDefs.LmgShockwave, wave);
@@ -841,7 +850,7 @@ namespace ZombieWar
                 for (int i = 0; i < count; i++)
                 {
                     RaycastHit hit = _pierceBuf[i];
-                    var dmg = hit.collider.GetComponentInParent<IDamageable>();
+                    var dmg = Damageable(hit.collider, out var hitEnemy);
                     if (dmg == null)
                     {
                         // Tường/vật cản chặn đạn => tracer dừng tại đây.
@@ -854,7 +863,7 @@ namespace ZombieWar
                     // without spending a pierce slot or re-damaging it.
                     if (!_pierceDamaged.Add(dmg)) continue;
 
-                    ApplyHit(data, dmg, hit, rayOrigin, dmgMult);
+                    ApplyHit(data, dmg, hitEnemy, hit, rayOrigin, dmgMult);
                     dmgMult *= falloff;
                     hitTargets++;
                     _lastPierceHits = hitTargets;

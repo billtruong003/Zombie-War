@@ -38,7 +38,7 @@ namespace ZombieWar.Skills.Powers
             float now = Time.time;
             if (now < _tickAt) return;
             _tickAt = now + TickSeconds;
-            int found = TargetQuery.GatherEnemies(p, radius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, radius);
             if (found == 0) return;
             bool maiden = run.IsEvolved(SkillCatalogDefs.AutoThorns);
             // PowerDamage already adds the evolution's x1.5; Iron Maiden is twice the plain aura.
@@ -93,7 +93,7 @@ namespace ZombieWar.Skills.Powers
             Host.Shockwave(p, 0.4f, r, a.ringColor, 0.45f);
             Host.Shake(0.18f);
             float damage = run.PowerDamage(40f, SkillCatalogDefs.AutoThorns);
-            int found = TargetQuery.GatherEnemies(p, r, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, r);
             for (int i = 0; i < found; i++)
             {
                 var e = TargetQuery.CandidateEnemy(i);

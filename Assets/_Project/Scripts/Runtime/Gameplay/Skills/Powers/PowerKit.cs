@@ -5,8 +5,6 @@ namespace ZombieWar.Skills.Powers
     /// <summary>Small helpers every power shares.</summary>
     public static class PowerKit
     {
-        public static ZombieBase EnemyOf(Collider c) => c != null ? c.GetComponentInParent<ZombieBase>() : null;
-
         /// <summary>
         /// Damages an ENEMY only, and books it in the ledger under <paramref name="source"/>.
         ///
@@ -22,9 +20,6 @@ namespace ZombieWar.Skills.Powers
             DamageLedger.Record(source, damage);
             if (push > 0f && !enemy.IsDead) enemy.ApplyPhysicalPush(push);
         }
-
-        public static void Hit(Collider col, float damage, float push, string source) =>
-            Hit(col != null ? col.GetComponentInParent<ZombieBase>() : null, damage, push, source);
 
         public static Vector3 Chest(ZombieBase e) => e.transform.position + Vector3.up * 0.9f;
 

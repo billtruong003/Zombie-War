@@ -26,7 +26,8 @@ namespace ZombieWar.Skills.Powers
             public float scanRadius = 22f;
         }
 
-        struct Cloud { public Vector3 pos; public float radius, until; public ParticleSystem fx; }
+        struct Cloud { public Vector3 pos, creepTo; public float radius, until, creepScanAt; public bool hasPrey; public ParticleSystem fx; }
+        const float CreepScanSeconds = 0.2f;   // Plague clouds re-pick their prey 5x a second, not every frame
 
         static readonly Color Lime = new(0.62f, 1f, 0.25f, 1f);
         const int MaxClouds = 4;
@@ -45,7 +46,7 @@ namespace ZombieWar.Skills.Powers
         {
             var a = A;
             if (a == null) return;
-            int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.scanRadius);
             found = TargetQuery.Compact(found, _onScreen ??= Host.OnScreen);
             int best = found > 0 ? TargetQuery.DensestCluster(found, proc.radius, out _) : -1;
             if (best < 0) { run.Refund(proc.skillId); return; }
@@ -88,7 +89,7 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < _clouds.Count; i++)
             {
                 var c = _clouds[i];
-                int found = TargetQuery.GatherEnemies(c.pos, c.radius, Host.EnemyMask);
+                int found = TargetQuery.GatherEnemies(c.pos, c.radius);
                 for (int k = 0; k < found; k++)
                     Host.Poison(TargetQuery.CandidateEnemy(k), 1, dps, SkillRuntime.PoisonSeconds, SkillCatalogDefs.AutoToxic);
             }
@@ -100,10 +101,17 @@ namespace ZombieWar.Skills.Powers
             for (int i = 0; i < _clouds.Count; i++)
             {
                 var c = _clouds[i];
-                int found = TargetQuery.GatherEnemies(c.pos, c.radius + 4f, Host.EnemyMask);
-                int best = TargetQuery.Nearest(found, c.pos);
-                if (best < 0) continue;
-                Vector3 to = TargetQuery.CandidatePoint(best) - c.pos; to.y = 0f;
+                if (Time.time >= c.creepScanAt)
+                {
+                    c.creepScanAt = Time.time + CreepScanSeconds;
+                    int found = TargetQuery.GatherEnemies(c.pos, c.radius + 4f);
+                    int best = TargetQuery.Nearest(found, c.pos);
+                    c.hasPrey = best >= 0;
+                    if (c.hasPrey) c.creepTo = TargetQuery.CandidatePoint(best);
+                    _clouds[i] = c;
+                }
+                if (!c.hasPrey) continue;
+                Vector3 to = c.creepTo - c.pos; to.y = 0f;
                 if (to.sqrMagnitude < 0.25f) continue;
                 c.pos += to.normalized * Mathf.Min(to.magnitude, 1.6f * dt);
                 if (c.fx != null) c.fx.transform.position = c.pos + Vector3.up * 0.3f;

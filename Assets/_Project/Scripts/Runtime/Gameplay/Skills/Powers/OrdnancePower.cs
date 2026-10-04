@@ -30,7 +30,7 @@ namespace ZombieWar.Skills.Powers
             var a = Lib?.ordnance;
             if (a == null) return;
             // The shell lands where the player can watch it: the densest cluster ON SCREEN.
-            int found = TargetQuery.GatherEnemies(origin, a.scanRadius, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(origin, a.scanRadius);
             found = TargetQuery.Compact(found, _onScreen ??= Host.OnScreen);
             if (found == 0) { run.Refund(proc.skillId); return; }
             int best = TargetQuery.DensestCluster(found, proc.radius, out _);

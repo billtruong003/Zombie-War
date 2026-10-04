@@ -49,7 +49,7 @@ namespace ZombieWar.Skills.Powers
             var a = Lib.timeWarp;
             // Re-applied twice a second so enemies that walk in during the warp slow down too.
             float left = _until - now;
-            int found = TargetQuery.GatherEnemies(p, a.reach, Host.EnemyMask);
+            int found = TargetQuery.GatherEnemies(p, a.reach);
             for (int i = 0; i < found; i++)
             {
                 var e = TargetQuery.CandidateEnemy(i);
