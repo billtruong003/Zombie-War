@@ -84,7 +84,7 @@ namespace ZombieWar.UI
             PlayerProfile.MissionsChanged -= Refresh; PlayerProfile.AccountChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh;
         }
 
-        protected override void OnShow() { Refresh(); ScrollToLevel(); }
+        protected override void OnShow() { Refresh(); ScrollToLevel(); ZombieWar.Audio.FtueVoice.MissionsShown(); }
         protected override void OnFocus() => Refresh();
 
         void ClaimLevel(int level, bool premium)

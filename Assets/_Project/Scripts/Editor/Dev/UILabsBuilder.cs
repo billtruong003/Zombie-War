@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -73,6 +74,117 @@ namespace ZombieWar.EditorTools
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[UILabs] built " + ScenePath);
+        }
+
+        // ───────────────────────────────────────── in-game radio overlay
+
+        const string OverlayPath = "Assets/_Project/UI/Radio/Resources/UI/RadioOverlay.prefab";
+
+        /// The FTUE v3 radio-call overlay the game uses (FtueRadio): the UI Labs components on their
+        /// own overlay canvas (1080×1920, above every screen, no input). Cards are the Lab's radio card
+        /// at phone width 1014 (normal, small, with item icon) plus a small subtitle card; markers are
+        /// the Lab's dim, spotlight hole, energy ring, reticle corners, chip and hologram tapping hand.
+        [MenuItem("HordeCall/UI/Radio/Build Overlay Prefab")]
+        public static void BuildRadioOverlay()
+        {
+            if (Application.isPlaying) { Debug.LogWarning("[RadioOverlay] exit Play first"); return; }
+            LoadAssets();
+            var root = new GameObject("RadioOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 600;
+            canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2;
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080, 1920);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            // Full-screen layers first (under the safe area, so they cover the notch too).
+            var dim = Img(root.transform, null, Vector2.zero, Vector2.zero);
+            dim.name = "Dim";
+            Stretch(dim.rectTransform, 0, 0, 0, 0);
+            var spot = Img(root.transform, null, Vector2.zero, Vector2.zero);
+            spot.name = "Spotlight";
+            Stretch(spot.rectTransform, 0, 0, 0, 0);
+            spot.gameObject.AddComponent<UIRectUV>();
+            var hole = spot.gameObject.AddComponent<UISpotlightHole>();
+
+            var safe = new GameObject("Safe", typeof(RectTransform)).GetComponent<RectTransform>();
+            safe.SetParent(root.transform, false);
+            safe.anchorMin = Vector2.zero; safe.anchorMax = Vector2.one; safe.offsetMin = safe.offsetMax = Vector2.zero;
+
+            var spotTarget = new GameObject("SpotTarget", typeof(RectTransform)).GetComponent<RectTransform>();
+            spotTarget.SetParent(safe, false);
+            var ring = Img(safe, null, Vector2.zero, new Vector2(300, 300));
+            ring.name = "Ring";
+            ring.material = _ring;
+            var reticle = Reticle(safe, Vector2.zero, new Vector2(300, 300));
+            var chip = Chip(safe, "DRAG ANYWHERE", Vector2.zero, 30);
+            chip.name = "Chip";
+            var chipText = chip.GetComponentInChildren<TextMeshProUGUI>();
+            chip.sizeDelta = new Vector2(420, 52);
+
+            RadioCallView Card(string name, bool small, Sprite item)
+            {
+                var v = Radio(safe, Vector2.zero, 1014, small, item, 1f);
+                v.name = name;
+                var rt = (RectTransform)v.transform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f);
+                var g = v.gameObject.AddComponent<CanvasGroup>();
+                g.blocksRaycasts = false; g.interactable = false; g.alpha = 0f;
+                return v;
+            }
+            var normal = Card("CardNormal", false, null);
+            var small = Card("CardSmall", true, null);
+            var itemCard = Card("CardItem", false, Spr($"{Root}/Textures/Screens/T_Lab_Icon_Magnet.jpg"));
+            var sub = Card("CardSubtitle", true, null);
+
+            var handRoot = new GameObject("HandRoot", typeof(RectTransform)).GetComponent<RectTransform>();
+            handRoot.SetParent(safe, false);
+            var hand = Hand(handRoot, Vector2.zero, 180);
+            // The fingertip is the sprite's top-left; the hand hangs below-right of the tap point.
+            ((RectTransform)hand.transform).pivot = new Vector2(0.18f, 0.86f);
+
+            foreach (var gr in root.GetComponentsInChildren<Graphic>(true)) gr.raycastTarget = false;
+
+            var overlay = root.AddComponent<FtueRadio>();
+            var ids = new[] { "riley", "lukas", "chen", "kaito", "jiho", "mai" };
+            var so = new SerializedObject(overlay);
+            so.FindProperty("safe").objectReferenceValue = safe;
+            so.FindProperty("cardNormal").objectReferenceValue = normal;
+            so.FindProperty("cardSmall").objectReferenceValue = small;
+            so.FindProperty("cardItem").objectReferenceValue = itemCard;
+            so.FindProperty("cardSub").objectReferenceValue = sub;
+            so.FindProperty("itemIcon").objectReferenceValue = itemCard.transform.GetComponentsInChildren<Image>(true)
+                .FirstOrDefault(i => i.name == "ItemIcon");
+            so.FindProperty("dim").objectReferenceValue = dim;
+            so.FindProperty("spot").objectReferenceValue = spot;
+            so.FindProperty("ring").objectReferenceValue = ring;
+            so.FindProperty("reticle").objectReferenceValue = reticle;
+            so.FindProperty("spotHole").objectReferenceValue = hole;
+            so.FindProperty("spotTarget").objectReferenceValue = spotTarget;
+            so.FindProperty("chip").objectReferenceValue = chip;
+            so.FindProperty("chipText").objectReferenceValue = chipText;
+            so.FindProperty("handRoot").objectReferenceValue = handRoot;
+            var a = so.FindProperty("agentIds"); var f = so.FindProperty("faces");
+            a.arraySize = f.arraySize = ids.Length;
+            for (int i = 0; i < ids.Length; i++)
+            {
+                a.GetArrayElementAtIndex(i).stringValue = ids[i];
+                f.GetArrayElementAtIndex(i).objectReferenceValue = Face(ids[i]);
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            var hs = new SerializedObject(hole);
+            hs.FindProperty("target").objectReferenceValue = spotTarget;
+            hs.FindProperty("baseMaterial").objectReferenceValue = _spot;
+            hs.FindProperty("padding").floatValue = 0f;
+            hs.ApplyModifiedPropertiesWithoutUndo();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(OverlayPath));
+            PrefabUtility.SaveAsPrefabAsset(root, OverlayPath);
+            Object.DestroyImmediate(root);
+            Debug.Log("[RadioOverlay] built " + OverlayPath);
         }
 
         // ───────────────────────────────────────── assets
@@ -296,7 +408,7 @@ namespace ZombieWar.EditorTools
             {
                 var ic = Rounded(card, Vector2.zero, new Vector2(124, 124), Dark);
                 Anchor(ic, new Vector2(1, 1), new Vector2(-(pad + 62), -(top + 40 + 62)));
-                Img(ic, item, Vector2.zero, new Vector2(116, 116));
+                Img(ic, item, Vector2.zero, new Vector2(116, 116)).name = "ItemIcon";
             }
 
             var view = go.AddComponent<RadioCallView>();

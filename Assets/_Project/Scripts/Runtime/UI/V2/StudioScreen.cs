@@ -97,6 +97,7 @@ namespace ZombieWar.UI
 
         protected override void OnShow()
         {
+            ZombieWar.Audio.RadioDirector.StudioShown();
             _stage = FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
             if (character != null && _stage != null) character.texture = _stage.Texture;
             _slots = catalog != null ? catalog.slotDefinitions.Where(d => !catalog.IsTechnicalCasualSlot(d.id)).OrderBy(d => d.sortOrder).ToList() : new();

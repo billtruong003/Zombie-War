@@ -90,6 +90,7 @@ namespace ZombieWar.UI
         {
             if (deleteConfirm != null) deleteConfirm.SetActive(false);
             Refresh();
+            ZombieWar.Audio.RadioDirector.SettingsShown();
         }
 
         public override bool OnEscape()

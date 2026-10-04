@@ -336,6 +336,7 @@ namespace ZombieWar.Stations
                 return false;
             }
             Debug.Log($"[StationDirector] Boss Beacon spawned '{chosen.name}'.");
+            ZombieWar.Audio.RadioDirector.BossSpawned(chosen.name);
 
             // DO NOT reposition the boss.
             //

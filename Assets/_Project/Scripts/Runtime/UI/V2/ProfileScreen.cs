@@ -95,7 +95,7 @@ namespace ZombieWar.UI
 
         private void OnEnable() => PlayerProfile.AccountChanged += Refresh;
         private void OnDisable() => PlayerProfile.AccountChanged -= Refresh;
-        protected override void OnShow() => Refresh();
+        protected override void OnShow() { Refresh(); ZombieWar.Audio.RadioDirector.ProfileShown(); }
 
         public override bool OnEscape()
         {

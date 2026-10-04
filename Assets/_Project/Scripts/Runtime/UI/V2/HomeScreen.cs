@@ -177,6 +177,12 @@ namespace ZombieWar.UI
         {
             Refresh();
             MaybeReveal();
+            ZombieWar.Audio.FtueVoice.HomeShown(() => this != null && isActiveAndEnabled && !_launching);
+            if (FirstRunPending && playButton != null)
+            {
+                FtueV3.HideV2(transform.Find("Safe/PlayRow/Hint")?.gameObject);   // v3 uses the hologram hand
+                FtueV3.Home(playButton.transform as RectTransform);
+            }
             // A link from the run result or an unlock popup lands here first, then goes on.
             var intent = MenuIntent.Take();
             var go = intent == MenuIntent.Shop ? shopScreen

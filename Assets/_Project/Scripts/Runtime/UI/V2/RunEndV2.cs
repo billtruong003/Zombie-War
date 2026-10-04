@@ -174,11 +174,17 @@ namespace ZombieWar.UI
             Set(coinLabel, cost.ToString("N0"));
             _freeRevive = !Ftue.Done(Ftue.Revive);
             if (_freeRevive) Set(costNote, "Your first revive is free, no ad. Later: one ad per run, then coins.");
+            if (_freeRevive) ZombieWar.Audio.FtueVoice.FreeReviveOffered();
             if (adButton != null)
             {
                 adButton.gameObject.SetActive(_freeRevive || ReviveRules.AdAvailable);
                 adButton.transform.Find("Face/Video")?.gameObject.SetActive(!_freeRevive);
-                adButton.transform.Find("FtueTag")?.gameObject.SetActive(_freeRevive);
+                adButton.transform.Find("FtueTag")?.gameObject.SetActive(_freeRevive && !FtueV3.On);
+                if (_freeRevive && FtueV3.On)
+                {
+                    Set(adButton.transform.Find("Face/Label")?.GetComponent<TMP_Text>(), "REVIVE FREE");
+                    FtueV3.Revive(adButton.transform as RectTransform);
+                }
             }
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
             if (_count != null) StopCoroutine(_count);
@@ -301,6 +307,8 @@ namespace ZombieWar.UI
             var s = result.Summary;
             _banked = result.BankedCoin; _doubled = false;
             long gift = NewcomerGift(_banked);
+            ZombieWar.Audio.FtueVoice.ResultShown(gift, result);
+            if (gift > 0 && shopLink != null) FtueV3.Result(shopLink.transform as RectTransform);
             resultRoot.SetActive(true);
             resultRoot.transform.SetAsLastSibling();
             Set(banner, s.Outcome == RunOutcome.Died ? "THE HORDE GOT YOU" : "YOU WALKED AWAY");
@@ -473,6 +481,7 @@ namespace ZombieWar.UI
             Set(col?.Find("Try/Face/Label")?.GetComponent<TMP_Text>(), cta);
             Set(unlockNextLabel, "LATER");
             UIFeedback.LevelUp();
+            FtueV3.Unlock(feature, col?.Find("Try") as RectTransform, () => _featureIntent == intent && unlockRoot != null && unlockRoot.activeInHierarchy);
         }
 
         void SetRow(int i, string text, string tag)

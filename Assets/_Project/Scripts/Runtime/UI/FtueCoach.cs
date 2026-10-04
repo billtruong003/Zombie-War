@@ -29,6 +29,7 @@ namespace ZombieWar
         Station _target;
         float _nextScan, _toastUntil;
         int _killsAtStart = -1;
+        bool _xpCalled;
 
         struct StationText { public string name, how, reward, note; public Color color, ink; }
 
@@ -103,6 +104,7 @@ namespace ZombieWar
             if (_killsAtStart < 0) _killsAtStart = run.Kills;
             int kills = run.Kills - _killsAtStart;
             if (kills >= GlowKills) { _glow.gameObject.SetActive(false); Ftue.Complete(Ftue.XpGlow); return; }
+            if (kills >= 1 && !_xpCalled) { _xpCalled = true; FtueV3.Xp(_glow.rectTransform.parent as RectTransform); }
             if (!_glow.gameObject.activeSelf) _glow.gameObject.SetActive(true);
             var c = _glow.color; c.a = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 5f)); _glow.color = c;
         }
@@ -133,6 +135,13 @@ namespace ZombieWar
             }
             if (best == null) return;
             _target = best;
+            ZombieWar.Audio.FtueVoice.StationCallout(best.Anchor.kind);
+            if (FtueV3.On)
+            {
+                var s = best;
+                FtueV3.NewStation(s, () => _target == s);
+                return;
+            }
             Bind(TextFor(best.Anchor.kind));
             _callout.gameObject.SetActive(true);
             UIFx.PopIn(_callout, 0f, 0.85f, 0.25f);
@@ -201,6 +210,11 @@ namespace ZombieWar
             if (Ftue.Done(step)) return;
             Ftue.Complete(step);
             var (name, desc, color, icon) = ItemFor(e.Effect);
+            if (FtueV3.On)
+            {
+                FtueV3.Item(e.Effect, _toast.Find("Icon/" + icon)?.GetComponent<Image>()?.sprite);
+                return;
+            }
             Set(_toast, "Head/Title", name);
             Set(_toast, "Head/Tag/Label", "NEW ITEM");
             Set(_toast, "Desc", desc);

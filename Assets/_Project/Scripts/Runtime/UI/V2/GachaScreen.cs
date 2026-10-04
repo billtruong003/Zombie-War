@@ -118,6 +118,7 @@ namespace ZombieWar.UI
             if (resultsSheet != null) resultsSheet.SetActive(false);
             if (ratesSheet != null) ratesSheet.SetActive(false);
             Refresh();
+            ZombieWar.Audio.RadioDirector.GachaShown();
         }
 
         public override bool OnEscape()
@@ -150,6 +151,7 @@ namespace ZombieWar.UI
             if (count >= 10 && B.kind == GachaBanners.Kind.Event) PlayerProfile.AddFrame("frame.neon");
             foreach (var res in results) if (res.tier >= WeaponTier.Legendary) { PlayerProfile.AddFrame("frame.royal"); break; }
             ShowResults(results);
+            ZombieWar.Audio.FtueVoice.GachaPulled(results.Exists(r => r.tier >= WeaponTier.Legendary));
             Refresh();
         }
 

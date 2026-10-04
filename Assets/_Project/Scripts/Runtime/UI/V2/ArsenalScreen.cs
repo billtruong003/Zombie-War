@@ -103,6 +103,13 @@ namespace ZombieWar.UI
             if (_ftueGun != null) _selected = _ftueGun;
             Refresh();
             ShowFtueGun(_ftueGun != null);
+            if (_ftueGun != null) ZombieWar.Audio.FtueVoice.FirstGunShown();
+            else ZombieWar.Audio.RadioDirector.ArsenalShown();
+        }
+
+        protected override void OnHide()
+        {
+            if (_ftueGun != null) ZombieWar.Audio.FtueVoice.FirstGunLeft();
         }
 
         // ------------------------------------------------------------ ftue v2: first gun
@@ -115,6 +122,17 @@ namespace ZombieWar.UI
         void ShowFtueGun(bool on)
         {
             var spot = transform.Find("FtueGun") as RectTransform;
+            if (FtueV3.On)
+            {
+                // v3 (board FR_09): the radio call draws the spotlight, corners and hand.
+                if (spot != null) spot.gameObject.SetActive(false);
+                if (!on) { FtueRadio.Hide("gun"); return; }
+                Canvas.ForceUpdateCanvases();
+                int g = _guns.IndexOf(_ftueGun);
+                var gunCell = g >= 0 && g < cells.Length && cells[g]?.button != null ? cells[g].button.transform as RectTransform : null;
+                FtueV3.Gun(gunCell, starButton != null ? starButton.transform as RectTransform : null, _ftueGun.weaponName);
+                return;
+            }
             if (spot == null) return;
             spot.gameObject.SetActive(on);
             if (!on) return;
@@ -196,6 +214,7 @@ namespace ZombieWar.UI
                         UIFeedback.Purchase();
                         Toast.Show($"{_selected.weaponName} is yours");
                         if (_ftueGun != null) { _ftueGun = null; Ftue.Complete(Ftue.Gun); ShowFtueGun(false); }
+                        else ZombieWar.Audio.RadioDirector.GunBought(_selected.tier >= WeaponTier.Legendary, _guns.Count(w => PlayerProfile.IsWeaponOwned(w.WeaponId)));
                         Refresh();
                     }
                     else { UIFeedback.Error(); Toast.Show("Could not buy"); }
@@ -208,7 +227,11 @@ namespace ZombieWar.UI
             var r = PlayerProfile.TryUpgradeWeapon(_selected, economy);
             switch (r)
             {
-                case PlayerProfile.WeaponUpgradeResult.Upgraded: UIFeedback.LevelUp(); Toast.Show($"{_selected.weaponName} reached {PlayerProfile.GetWeaponLevel(_selected.WeaponId)} stars"); break;
+                case PlayerProfile.WeaponUpgradeResult.Upgraded:
+                    UIFeedback.LevelUp();
+                    Toast.Show($"{_selected.weaponName} reached {PlayerProfile.GetWeaponLevel(_selected.WeaponId)} stars");
+                    ZombieWar.Audio.FtueVoice.StarUpgraded();
+                    break;
                 case PlayerProfile.WeaponUpgradeResult.MaxLevel: Toast.Show("Max stars"); break;
                 case PlayerProfile.WeaponUpgradeResult.Locked:
                     UIFeedback.Error();

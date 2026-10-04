@@ -132,7 +132,11 @@ namespace ZombieWar.Skills
         public void NotifyFiring() => _lastShotTime = Time.time;
 
         /// <summary>The level-up screen took an evolution: mark the moment on the player.</summary>
-        public void OnEvolutionTaken() => _arsenal?.PlayEvolve();
+        public void OnEvolutionTaken()
+        {
+            _arsenal?.PlayEvolve();
+            ZombieWar.Audio.RadioDirector.EvolutionTaken();
+        }
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>
         public void PlayShieldBreak() => _arsenal?.OnShieldBlocked();

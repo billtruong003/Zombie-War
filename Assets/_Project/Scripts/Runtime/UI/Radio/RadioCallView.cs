@@ -17,6 +17,9 @@ namespace ZombieWar.UI
         [SerializeField] private Material waveformMaterial;
         [SerializeField] private float charsPerSecond = 38f;
 
+        /// Typing speed of the body; the radio overlay sets it so the text keeps pace with the voice.
+        public float CharsPerSecond { get => charsPerSecond; set => charsPerSecond = value; }
+
         Material _wave;
         float _shown;
         bool _typing;

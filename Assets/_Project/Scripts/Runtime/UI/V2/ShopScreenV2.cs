@@ -93,7 +93,7 @@ namespace ZombieWar.UI
 
         private void OnEnable() { PlayerProfile.WalletChanged += Refresh; PlayerProfile.LoadoutChanged += Refresh; PlayerProfile.CostumeChanged += Refresh; }
         private void OnDisable() { PlayerProfile.WalletChanged -= Refresh; PlayerProfile.LoadoutChanged -= Refresh; PlayerProfile.CostumeChanged -= Refresh; }
-        protected override void OnShow() { Refresh(); Jump(0, false); }
+        protected override void OnShow() { Refresh(); Jump(0, false); ZombieWar.Audio.RadioDirector.ShopShown(); }
         protected override void OnFocus() => Refresh();
 
         void Update()

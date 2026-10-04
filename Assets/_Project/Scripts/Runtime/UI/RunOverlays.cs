@@ -259,6 +259,8 @@ namespace ZombieWar
             if (!Ftue.Done(Ftue.Move))
             {
                 Show(ftueRoot, true);
+                FtueV3.HideV2(ftueRoot);   // v3 draws the radio call; the v2 overlay keeps watching the joystick
+                FtueV3.Move();
                 _ftueWatch = StartCoroutine(CoFtueWatchJoystick());
             }
         }
@@ -414,6 +416,13 @@ namespace ZombieWar
             var sub = levelUpRoot.transform.Find("Sub/Label")?.GetComponent<TMP_Text>();
             if (sub != null) sub.text = _ftueCard ? $"Level {run.Level} · choose one · no timer" : $"Level {run.Level} · choose one";
             ShowFtueCard(_ftueCard ? SuggestedCard(_skillOffer) : -1);
+            if (_ftueCard) ZombieWar.Audio.FtueVoice.CardOffered(); else ZombieWar.Audio.RadioDirector.CardOffered();
+            if (_ftueCard && FtueV3.On)
+            {
+                int suggested = SuggestedCard(_skillOffer);
+                foreach (var n in new[] { "FtueRing", "FtueTag", "FtueCoach", "Hint" }) levelUpRoot.transform.Find(n)?.gameObject.SetActive(false);
+                FtueV3.FirstCard(levelUpRoot.transform.Find($"Perk{Mathf.Max(0, suggested)}") as RectTransform);
+            }
             BindBuildStrip(skills);
             _shownAutoPickSeconds = -1;
 
@@ -457,6 +466,7 @@ namespace ZombieWar
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             var auto = ZombieWar.Skills.SkillOfferBuilder.AutoPick(_skillOffer, skills);
             int slot = auto == null ? 0 : _skillOffer.IndexOf(auto);
+            ZombieWar.Audio.RadioDirector.CardAutoPicked();
             PickPerk(Mathf.Max(0, slot));
         }
 
