@@ -97,9 +97,9 @@ namespace ZombieWar.UI
             Toast.Show("Day made up! Got " + Describe(r));
         }
 
-        /// "CLAIM DAY 1" over a smaller "500 COINS".
-        static string ClaimLabel(int day) =>
-            $"CLAIM DAY {day}\n<size=60%>{Describe(DailyRewards.WelcomeReward(day)).ToUpperInvariant()}</size>";
+        /// "CLAIM 500 COINS": one full-size line. A shrunken second line drowned in the label's black
+        /// outline (owner 04/10).
+        static string ClaimLabel(int day) => "CLAIM " + Describe(DailyRewards.WelcomeReward(day)).ToUpperInvariant();
 
         static string Describe(DailyRewards.Reward r) => r.kind switch
         {

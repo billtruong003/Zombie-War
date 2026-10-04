@@ -113,7 +113,8 @@ namespace ZombieWar.EditorTools.V2
         {
             var pill = Box(Node(tile, "Claim"), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), 0, 1, 52, 14);
             Surface(pill, Green, 7f);
-            Label(Fill(Node(pill, "L"), 0, 0, 0, 0), "CLAIM", OnGreen, 9f).alignment = TextAlignmentOptions.Center;
+            // Text on a coloured fill is the light outline font, like every button label (owner rule).
+            Title(Fill(Node(pill, "L"), 0, 0, 0, 0), "CLAIM", 10f, Ink, TextAlignmentOptions.Center);
             pill.gameObject.SetActive(false);
             return pill.gameObject;
         }
