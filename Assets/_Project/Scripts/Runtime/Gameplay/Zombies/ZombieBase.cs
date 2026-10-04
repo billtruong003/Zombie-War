@@ -309,9 +309,12 @@ namespace ZombieWar
             // recycled enemy inherits the Exposed / slow / mark of whatever died in its slot — and
             // that surfaces weeks later as unexplained damage spikes.
             ZombieWar.Skills.StatusCarrier.Clear(transform.GetInstanceID());
-            IsBeaconOwned = false;   // a recycled instance must not inherit the last occupant's role
+            // Release BEFORE clearing the role: the slot counter decides by this enemy's role, and a
+            // beacon boss cleared first would be counted as an ordinary attacker on the way out.
             ReleaseAttackSlotIfHeld();   // dying mid-swing must not leak a slot
+            IsBeaconOwned = false;   // a recycled instance must not inherit the last occupant's role
             IsWaitingForAttackSlot = false;
+            _nextHitCrit = false;    // a crit marked on a blocked hit must not show on the next occupant
 
             TargetRegistry.Unregister(this);
             ZombieManager.Unregister(this);
@@ -819,7 +822,7 @@ namespace ZombieWar
             // also bank it here - the kill and XP still register either way.
             bool pickupsHandleCoin = PickupManager.Instance != null;
             RunState.Current?.RecordKill(data, !pickupsHandleCoin);
-            Bill.Events?.Fire(new ZombieKilledEvent(data, transform.position));
+            Bill.Events?.Fire(new ZombieKilledEvent(data, transform.position, this));
 
             // Kill any pending hit react so it can't crossfade over the death anim.
             if (_hitReactRoutine != null)

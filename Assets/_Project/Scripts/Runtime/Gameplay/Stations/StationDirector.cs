@@ -61,15 +61,12 @@ namespace ZombieWar.Stations
 
         void OnAnyZombieKilled(ZombieKilledEvent e)
         {
-            // Route a beacon boss's death back to its anchor: pays the reward, frees the encounter
-            // slot and marks the station spent. Without this the beacon stayed claimed forever.
-            ZombieBase dead = null;
-            foreach (var kv in _bossAnchors)
-                if (kv.Key == null || !kv.Key.gameObject.activeInHierarchy) { dead = kv.Key; break; }
-            if (dead == null) return;
-
-            long anchorId = _bossAnchors[dead];
-            _bossAnchors.Remove(dead);
+            // Route a beacon boss's death back to its anchor: pays the reward at the boss, frees the
+            // encounter slot and marks the station spent. Matched by identity: the boss is still
+            // active when its kill event fires, so the old "find the inactive boss" scan never
+            // matched it and paid on some later kill, at that zombie's position, or never.
+            if (e.Source == null || !_bossAnchors.TryGetValue(e.Source, out long anchorId)) return;
+            _bossAnchors.Remove(e.Source);
             NotifyBossKilled(anchorId, e.Position);
         }
 
@@ -360,6 +357,11 @@ namespace ZombieWar.Stations
             // The registry flag is what lets us know an orphan is possible at all.
             StationRegistry.SetBossAlive(anchorId, false);
             StationRegistry.ReleaseEncounter(anchorId);
+            // Forget the boss too: it goes back to the pool and must not pay a beacon reward when
+            // the same instance later dies as an ordinary enemy.
+            ZombieBase owned = null;
+            foreach (var kv in _bossAnchors) if (kv.Value == anchorId) { owned = kv.Key; break; }
+            if (owned != null) _bossAnchors.Remove(owned);
         }
 
         /// <summary>Called when a beacon boss dies: pays the reward and frees the encounter slot.</summary>

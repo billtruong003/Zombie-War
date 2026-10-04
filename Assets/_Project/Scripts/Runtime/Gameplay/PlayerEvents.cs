@@ -49,11 +49,15 @@ namespace ZombieWar
         public readonly ZombieData Data;
         /// <summary>Where it died - loot drops here, so the event has to carry it.</summary>
         public readonly UnityEngine.Vector3 Position;
+        /// <summary>The enemy that died. It is still active when this fires (the dissolve runs
+        /// afterwards), so a listener can identify it but must not assume it is gone yet.</summary>
+        public readonly ZombieBase Source;
 
-        public ZombieKilledEvent(ZombieData data, UnityEngine.Vector3 position)
+        public ZombieKilledEvent(ZombieData data, UnityEngine.Vector3 position, ZombieBase source)
         {
             Data = data;
             Position = position;
+            Source = source;
         }
     }
 
