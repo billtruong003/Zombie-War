@@ -52,8 +52,8 @@ namespace ZombieWar
         public static bool IsMilestone(int stamp) => stamp % 7 == 0;
 
         /// <summary>Local calendar day number (days since 2000-01-01).</summary>
-        public static int Today => DayOf(DateTime.Now);
-        public static int DayOf(DateTime t) => (int)(t.Date - new DateTime(2000, 1, 1)).TotalDays;
+        /// <summary>The game day (GameClock: UTC with one reset hour, never runs backwards).</summary>
+        public static int Today => GameClock.Today;
 
         static PlayerProfile.ProfileData D => PlayerProfile.DailyData;
 
@@ -139,8 +139,11 @@ namespace ZombieWar
         /// <summary>Something to claim today: drives the Home rail badge.</summary>
         public static int ClaimableCount(int today)
         {
-            EnsureCycle(today);
-            return (CanClaimWelcome(today) ? 1 : 0) + (CanStamp(today) ? 1 : 0);
+            // Read-only (the Home badge asks every refresh): a cycle that has run out counts as a
+            // fresh one without being reset here - Stamp/MakeUp/the Daily screen start it for real.
+            bool cycleLive = D.stampCycleStart != 0 && today >= D.stampCycleStart && today < D.stampCycleStart + CardDays;
+            bool canStamp = cycleLive ? CanStamp(today) : true;
+            return (CanClaimWelcome(today) ? 1 : 0) + (canStamp ? 1 : 0);
         }
 
         // ------------------------------------------------------------------ grants

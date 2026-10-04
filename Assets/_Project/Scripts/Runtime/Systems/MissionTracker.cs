@@ -17,11 +17,25 @@ namespace ZombieWar
     {
         private readonly List<PassMission> _active = new List<PassMission>();
 
+        private int _activeDay = int.MinValue;
+
+        // The active set belongs to one game day: a run that crosses the reset credits the new
+        // day's missions (it used to keep feeding yesterday's set cached at OnEnable).
+        private void EnsureActiveSet()
+        {
+            int today = GameClock.Today;
+            if (today == _activeDay) return;
+            _activeDay = today;
+            var now = GameClock.UtcNow;
+            PlayerProfile.RefreshMissionWindow(now);
+            _active.Clear();
+            _active.AddRange(PassMissions.ActiveFor(now));
+        }
+
         private void OnEnable()
         {
-            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
-            _active.Clear();
-            _active.AddRange(PassMissions.ActiveFor(DateTime.UtcNow));
+            _activeDay = int.MinValue;
+            EnsureActiveSet();
 
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
             Bill.Events?.Subscribe<StationCompletedEvent>(OnStationCompleted);
@@ -82,6 +96,7 @@ namespace ZombieWar
         private void Report(MissionMetric metric, int amount)
         {
             if (amount <= 0) return;
+            EnsureActiveSet();
             for (int i = 0; i < _active.Count; i++)
                 if (_active[i].metric == metric)
                     PlayerProfile.AddMissionProgress(_active[i].id, amount);
@@ -89,6 +104,7 @@ namespace ZombieWar
 
         private void RaiseTo(MissionMetric metric, int value)
         {
+            EnsureActiveSet();
             for (int i = 0; i < _active.Count; i++)
             {
                 if (_active[i].metric != metric) continue;
@@ -102,7 +118,7 @@ namespace ZombieWar
         private static void ReportStatic(MissionMetric metric, int amount)
         {
             if (amount <= 0) return;
-            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
+            foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
                 if (m.metric == metric)
                     PlayerProfile.AddMissionProgress(m.id, amount);
         }

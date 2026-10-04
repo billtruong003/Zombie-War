@@ -59,7 +59,7 @@ namespace ZombieWar.UI
 
         protected override void OnShow()
         {
-            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
+            PlayerProfile.RefreshMissionWindow(GameClock.UtcNow);
             Refresh();
         }
 
@@ -92,7 +92,7 @@ namespace ZombieWar.UI
             if (questRows == null || questRows.Length == 0) return;
 
             _visible.Clear();
-            _visible.AddRange(PassMissions.ActiveFor(DateTime.UtcNow));
+            _visible.AddRange(PassMissions.ActiveFor(GameClock.UtcNow));
             _visible.Sort((a, b) => Priority(b).CompareTo(Priority(a)));
 
             for (int i = 0; i < questRows.Length; i++)

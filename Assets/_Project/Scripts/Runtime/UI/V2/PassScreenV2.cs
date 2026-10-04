@@ -124,7 +124,7 @@ namespace ZombieWar.UI
         {
             int today = DailyRewards.Today;
             PassRewards.EnsureSeason(today);
-            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
+            PlayerProfile.RefreshMissionWindow(GameClock.UtcNow);
             Set(coinLabel, HomeScreen.Short(PlayerProfile.Coin));
             Set(gemLabel, HomeScreen.Short(PlayerProfile.Gem));
             int level = PassRewards.Level;
@@ -146,7 +146,7 @@ namespace ZombieWar.UI
                 ThemeTint.Set(c.node, reached ? ThemeRole.Claim : ThemeRole.Edge);
             }
 
-            var active = PassMissions.ActiveFor(DateTime.UtcNow)
+            var active = PassMissions.ActiveFor(GameClock.UtcNow)
                 .OrderBy(m => PlayerProfile.IsMissionClaimed(m.id) ? 2 : PlayerProfile.IsMissionComplete(m) ? 0 : 1)
                 .ThenBy(m => m.scope).ToList();
             _missionIds = active.Select(m => m.id).ToArray();
@@ -164,7 +164,7 @@ namespace ZombieWar.UI
                 Set(card.claimLabel, $"+{m.passXp} XP");
                 if (card.xpLabel != null) { card.xpLabel.gameObject.SetActive(!done || claimed); card.xpLabel.text = claimed ? "DONE" : $"{m.passXp} XP"; }
             }
-            Set(resetLabel, $"DAILY RESETS {24 - DateTime.UtcNow.Hour}H");
+            Set(resetLabel, $"DAILY RESETS {Mathf.CeilToInt((float)GameClock.UntilNextReset.TotalHours)}H");
             if (premiumButton != null) premiumButton.gameObject.SetActive(!PassRewards.IsPremium);
             if (nav != null) nav.SetDot(4, PassRewards.ClaimableCount() > 0);
         }

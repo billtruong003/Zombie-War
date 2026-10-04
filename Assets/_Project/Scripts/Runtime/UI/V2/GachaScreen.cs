@@ -135,7 +135,7 @@ namespace ZombieWar.UI
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
             if (freeLabel == null) return;
-            freeLabel.text = GachaBanners.FreePullReady(DailyRewards.Today) ? "FREE PULL READY" : "FREE PULL IN " + ShopOffers.RefreshIn(DateTime.Now);
+            freeLabel.text = GachaBanners.FreePullReady(DailyRewards.Today) ? "FREE PULL READY" : "FREE PULL IN " + ShopOffers.RefreshIn();
         }
 
         void DoPull(int count)

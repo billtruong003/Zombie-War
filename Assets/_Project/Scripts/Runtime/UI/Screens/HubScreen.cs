@@ -98,7 +98,7 @@ namespace ZombieWar.UI
 
         private void RefreshAll()
         {
-            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
+            PlayerProfile.RefreshMissionWindow(GameClock.UtcNow);
             RefreshRecord();
             RefreshBadges();
             RefreshMissionCard();
@@ -177,7 +177,7 @@ namespace ZombieWar.UI
 
         private static bool HasClaimableMission()
         {
-            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
+            foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
                 if (PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id))
                     return true;
             return false;
@@ -191,7 +191,7 @@ namespace ZombieWar.UI
 
             PassMission best = null;
             float bestScore = -1f;
-            foreach (var m in PassMissions.ActiveFor(DateTime.UtcNow))
+            foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
             {
                 if (PlayerProfile.IsMissionClaimed(m.id)) continue;
                 bool complete = PlayerProfile.IsMissionComplete(m);

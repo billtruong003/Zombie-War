@@ -70,7 +70,8 @@ namespace ZombieWar
             int passed = (today - D.passSeasonStart) / SeasonDays;
             D.passSeason += passed;
             D.passSeasonStart += passed * SeasonDays;
-            D.passPremium = false;
+            // Premium is stored per season (passPremiumSeason), so a new season simply has none -
+            // nothing paid is "cleared".
             D.passClaimed.Clear();
             PlayerProfile.ResetPassXp();
             PlayerProfile.SaveDaily();
@@ -78,14 +79,14 @@ namespace ZombieWar
 
         public static int Season => Mathf.Max(1, D.passSeason);
         public static int DaysLeft(int today) => Mathf.Max(0, D.passSeasonStart + SeasonDays - today);
-        public static bool IsPremium => D.passPremium;
+        public static bool IsPremium => D.passPremiumSeason == Season;
 
         public static int Level => Mathf.Clamp(1 + PlayerProfile.PassXp / XpPerLevel, 1, MaxLevel);
         public static int XpIntoLevel => Level >= MaxLevel ? XpPerLevel : PlayerProfile.PassXp % XpPerLevel;
 
         public static bool IsClaimed(int level, bool premium) => D.passClaimed.Contains(Key(level, premium));
         public static bool CanClaim(int level, bool premium) =>
-            level >= 1 && level <= Level && !IsClaimed(level, premium) && (!premium || D.passPremium);
+            level >= 1 && level <= Level && !IsClaimed(level, premium) && (!premium || IsPremium);
 
         public static int ClaimableCount()
         {
@@ -123,8 +124,8 @@ namespace ZombieWar
         /// <summary>Called by the store after a successful premium purchase.</summary>
         public static void UnlockPremium()
         {
-            if (D.passPremium) return;
-            D.passPremium = true;
+            if (IsPremium) return;
+            D.passPremiumSeason = Season;
             PlayerProfile.SaveDaily();
         }
 

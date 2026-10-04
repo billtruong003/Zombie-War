@@ -343,7 +343,7 @@ namespace ZombieWar.UI
             Set(doubleLabel, $"WATCH AD · DOUBLE TO {_banked * 2:N0}");
 
             // Missions this run finished (claimable in the Pass), then the gun it made affordable.
-            var done = PassMissions.ActiveFor(DateTime.UtcNow)
+            var done = PassMissions.ActiveFor(GameClock.UtcNow)
                 .Where(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id)).Take(2).ToList();
             for (int i = 0; i < progressRows.Length; i++) if (progressRows[i] != null) progressRows[i].SetActive(false);
             int row = 0;

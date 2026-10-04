@@ -42,11 +42,13 @@ namespace ZombieWar.Tests
         [Test]
         public void ActiveSet_IsDeterministicForTheSameDay()
         {
-            var a = PassMissions.ActiveFor(new DateTime(2026, 7, 21, 3, 0, 0, DateTimeKind.Utc));
-            var b = PassMissions.ActiveFor(new DateTime(2026, 7, 21, 22, 0, 0, DateTimeKind.Utc));
+            // One game day runs from GameClock.ResetHourUtc to the next (G6, 04/10).
+            var start = new DateTime(2026, 7, 21, GameClock.ResetHourUtc, 5, 0, DateTimeKind.Utc);
+            var a = PassMissions.ActiveFor(start);
+            var b = PassMissions.ActiveFor(start.AddHours(23.5));
 
             CollectionAssert.AreEqual(a.Select(m => m.id).ToList(), b.Select(m => m.id).ToList(),
-                "the same UTC day must always yield the same mission set");
+                "the same game day must always yield the same mission set");
         }
 
         [Test]

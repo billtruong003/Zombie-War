@@ -272,7 +272,7 @@ namespace ZombieWar.UI
         // ------------------------------------------------------------------ refresh
         public void Refresh()
         {
-            PlayerProfile.RefreshMissionWindow(DateTime.UtcNow);
+            PlayerProfile.RefreshMissionWindow(GameClock.UtcNow);
             int level = PlayerProfile.AccountLevel;
             int xp = PlayerProfile.AccountXp;
             Set(levelLabel, level.ToString());
@@ -347,13 +347,13 @@ namespace ZombieWar.UI
         }
 
         static int ClaimableMissions() =>
-            PassMissions.ActiveFor(DateTime.UtcNow).Count(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id));
+            PassMissions.ActiveFor(GameClock.UtcNow).Count(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id));
 
         void RefreshMissions(int claimable)
         {
             bool unlocked = AccountProgress.IsUnlocked(AccountProgress.Feature.Missions);
             Set(missionsHeader, unlocked ? (claimable > 0 ? $"MISSIONS · {claimable} READY" : "MISSIONS") : "MISSIONS · LV 2");
-            var list = PassMissions.ActiveFor(DateTime.UtcNow)
+            var list = PassMissions.ActiveFor(GameClock.UtcNow)
                 .Where(m => !PlayerProfile.IsMissionClaimed(m.id))
                 .OrderByDescending(m => PlayerProfile.IsMissionComplete(m) ? 2f : PlayerProfile.GetMissionProgress(m.id) / (float)m.target)
                 .Take(missionRows.Length).ToList();

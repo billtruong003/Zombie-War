@@ -119,7 +119,9 @@ namespace ZombieWar
             public List<string> ownedSkins = new List<string>();
             public int passSeason;
             public int passSeasonStart;
-            public bool passPremium;
+            public bool passPremium;          // legacy (v3 and earlier); premium is passPremiumSeason
+            public int passPremiumSeason;     // the season premium was bought for; 0 = none
+            public long lastSeenUtcTicks;     // GameClock: the latest time seen, so the clock never runs back
             public List<string> passClaimed = new List<string>();
             public List<string> equippedSkins = new List<string>();   // "weaponId|skinId"
             // M10 Shop v2.
@@ -367,6 +369,14 @@ namespace ZombieWar
         // ===== Account level (M9) =====
 
         public static event Action AccountChanged;
+
+        /// <summary>GameClock's high-water mark. Written lazily: it only guards against a clock set
+        /// back, so losing the last minute of it costs nothing.</summary>
+        internal static DateTime LastSeenUtc
+        {
+            get => Data.lastSeenUtcTicks > 0 ? new DateTime(Data.lastSeenUtcTicks, DateTimeKind.Utc) : DateTime.MinValue;
+            set { Data.lastSeenUtcTicks = value.Ticks; MarkDirty(); }
+        }
 
         public static int AccountXp => Data.accountXp;
         public static int AccountLevel => AccountProgress.LevelFor(Data.accountXp);
@@ -1863,6 +1873,9 @@ namespace ZombieWar
             d.claimedMissionIds = DedupeNonEmpty(d.claimedMissionIds);
             MigrateToSingleWeapon(d);
             MigrateVoFlags(d);
+            // The old premium flag was cleared at every season change, so one still set is this season's.
+            if (d.passPremium && d.passPremiumSeason == 0) d.passPremiumSeason = Math.Max(1, d.passSeason);
+            d.passPremium = false;
             if (d.passXp < 0) d.passXp = 0;
             if (d.accountXp < 0) d.accountXp = 0;
             if (string.IsNullOrEmpty(d.playerId)) d.playerId = UnityEngine.Random.Range(10000000, 99999999).ToString();

@@ -87,8 +87,8 @@ namespace ZombieWar
             return null;
         }
 
-        /// <summary>Days since epoch in UTC. The daily reset key.</summary>
-        public static int DayKey(DateTime utcNow) => (int)(utcNow.Date - new DateTime(1970, 1, 1)).TotalDays;
+        /// <summary>The game day (GameClock's reset hour), so missions roll over with every other daily.</summary>
+        public static int DayKey(DateTime utcNow) => GameClock.DayIndex(utcNow);
 
         /// <summary>Weeks since epoch in UTC. The weekly reset key.</summary>
         public static int WeekKey(DateTime utcNow) => DayKey(utcNow) / 7;

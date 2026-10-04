@@ -100,8 +100,8 @@ namespace ZombieWar.UI
         {
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
-            if (dealsTimer != null) dealsTimer.text = "NEW IN " + ShopOffers.RefreshIn(DateTime.Now);
-            var left = ShopOffers.StarterLeft(DateTime.UtcNow);
+            if (dealsTimer != null) dealsTimer.text = "NEW IN " + ShopOffers.RefreshIn();
+            var left = ShopOffers.StarterLeft(GameClock.UtcNow);
             if (hero != null && hero.activeSelf != left > TimeSpan.Zero) hero.SetActive(left > TimeSpan.Zero);
             if (heroTimer != null) heroTimer.text = "ONE TIME · ENDS " + ShopOffers.Clock(left);
         }
@@ -225,7 +225,7 @@ namespace ZombieWar.UI
             }
 
             var starter = ShopOffers.FindPack("pack.starter");
-            if (hero != null) hero.SetActive(ShopOffers.StarterLeft(DateTime.UtcNow) > TimeSpan.Zero);
+            if (hero != null) hero.SetActive(ShopOffers.StarterLeft(GameClock.UtcNow) > TimeSpan.Zero);
             if (starter != null) { Set(heroPrice, starter.price); Set(heroWas, $"<s>{starter.was}</s>"); }
             for (int i = 0; i < gemPacks.Length && i < ShopOffers.GemPackIds.Length; i++)
             {

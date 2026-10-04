@@ -55,10 +55,24 @@ namespace ZombieWar
             };
         }
 
-        public static bool IsDealBought(int today, int slot) { EnsureDay(today); return D.dealsBought.Contains(slot.ToString()); }
+        // Read-only: yesterday's purchases simply do not count today; the reset is written when a
+        // deal is actually bought (EnsureDay in the purchase path), not by every shop refresh.
+        public static bool IsDealBought(int today, int slot) => D.dealDay == today && D.dealsBought.Contains(SlotKey(slot));
+
+        static string SlotKey(int slot) => slot >= 0 && slot < SlotKeys.Length ? SlotKeys[slot] : slot.ToString();
+
+        static readonly string[] SlotKeys = { "0", "1", "2", "3", "4", "5" };
 
         /// <summary>Pays for (Coin/Gem) and grants a deal. Ad deals call this after the ad paid out.</summary>
         public static bool BuyDeal(int today, Deal deal)
+        {
+            // Payment, grant and the bought mark commit together (one write, rolled back on failure).
+            bool bought = false;
+            PlayerProfile.Batch(() => bought = BuyDealUnbatched(today, deal));
+            return bought;
+        }
+
+        static bool BuyDealUnbatched(int today, Deal deal)
         {
             EnsureDay(today);
             if (D.dealsBought.Contains(deal.slot.ToString())) return false;
@@ -76,11 +90,7 @@ namespace ZombieWar
         }
 
         /// <summary>Hours:minutes:seconds until tomorrow's deals.</summary>
-        public static string RefreshIn(System.DateTime now)
-        {
-            var left = now.Date.AddDays(1) - now;
-            return $"{(int)left.TotalHours:00}:{left.Minutes:00}:{left.Seconds:00}";
-        }
+        public static string RefreshIn() => GameClock.UntilNextResetText();
 
         // ------------------------------------------------------------------ boutique
         /// <summary>The week's look: a gem-priced costume set sold in the shop, rotating weekly.</summary>
