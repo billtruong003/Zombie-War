@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using ZombieWar.Skins;
+using static ZombieWar.UI.UIBind;
 
 namespace ZombieWar.UI
 {
@@ -340,7 +341,6 @@ namespace ZombieWar.UI
             }
         }
 
-        static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
         static void Star(Image i, bool lit) => StarPips.Paint(i, lit);
     }
 }

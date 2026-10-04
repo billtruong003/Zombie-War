@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using BillGameCore;
 using TMPro;
@@ -127,6 +127,7 @@ namespace ZombieWar
             // the frozen ledger.
             Bill.Events?.Subscribe<RunFinishedEvent>(OnRunFinished);
             Bill.Events?.Subscribe<AppPauseEvent>(OnAppPause);
+            Bill.Events?.Subscribe<CardOfferRequestedEvent>(OnCardOfferRequested);
             RunState.LevelsGained += OnLevelsGained;
             PickupManager.ChestCollected += OnChestCollected;
         }
@@ -135,6 +136,7 @@ namespace ZombieWar
         {
             Bill.Events?.Unsubscribe<RunFinishedEvent>(OnRunFinished);
             Bill.Events?.Unsubscribe<AppPauseEvent>(OnAppPause);
+            Bill.Events?.Unsubscribe<CardOfferRequestedEvent>(OnCardOfferRequested);
             RunState.LevelsGained -= OnLevelsGained;
             PickupManager.ChestCollected -= OnChestCollected;
         }
@@ -497,6 +499,8 @@ namespace ZombieWar
         }
 
         /// <summary>Test hook: shows the overlay with a fresh offer without needing earned XP.</summary>
+        private void OnCardOfferRequested(CardOfferRequestedEvent _) => ShowLevelUp();
+
         public void ShowLevelUp()
         {
             if (TerminalOverlayActive) return;

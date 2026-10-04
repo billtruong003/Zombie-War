@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using BillGameCore;
 
@@ -270,11 +270,7 @@ namespace ZombieWar.Stations
         // ───────────────────────────────────────────────────────── rewards
 
         /// <summary>Signal Relay's reward: a 1-of-3 card offer, through the existing level-up path.</summary>
-        public void GrantCardOffer()
-        {
-            var overlays = FindFirstObjectByType<RunOverlays>();
-            if (overlays != null) overlays.ShowLevelUp();
-        }
+        public void GrantCardOffer() => Bill.Events?.Fire(new CardOfferRequestedEvent());
 
         // ───────────────────────────────────────────────────────── boss beacon
 
@@ -332,7 +328,6 @@ namespace ZombieWar.Stations
                                "was obstructed for every entry. The beacon stays unspent and retries.");
                 return false;
             }
-            Debug.Log($"[StationDirector] Boss Beacon spawned '{chosen.name}'.");
             ZombieWar.Audio.RadioDirector.BossSpawned(chosen.name);
 
             // DO NOT reposition the boss.

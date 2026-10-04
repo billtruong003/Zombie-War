@@ -3,6 +3,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static ZombieWar.UI.UIBind;
 
 namespace ZombieWar.UI
 {
@@ -141,8 +142,8 @@ namespace ZombieWar.UI
                 int l = i + 1; bool reached = l <= level;
                 bool fDone = PassRewards.IsClaimed(l, false), pDone = PassRewards.IsClaimed(l, true);
                 ThemeTint.Set(c.freeBg, fDone ? ThemeRole.ClaimTint : ThemeRole.Card);
-                Show(c.freeCheck, fDone); Show(c.freeRing, PassRewards.CanClaim(l, false));
-                Show(c.premCheck, pDone); Show(c.premLock, !PassRewards.IsPremium); Show(c.premRing, PassRewards.CanClaim(l, true));
+                Active(c.freeCheck, fDone); Active(c.freeRing, PassRewards.CanClaim(l, false));
+                Active(c.premCheck, pDone); Active(c.premLock, !PassRewards.IsPremium); Active(c.premRing, PassRewards.CanClaim(l, true));
                 ThemeTint.Set(c.node, reached ? ThemeRole.Claim : ThemeRole.Edge);
             }
 
@@ -167,7 +168,5 @@ namespace ZombieWar.UI
             if (nav != null) nav.SetDot(4, PassRewards.ClaimableCount() > 0);
         }
 
-        static void Show(GameObject g, bool on) { if (g != null) g.SetActive(on); }
-        static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
     }
 }

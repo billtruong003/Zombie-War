@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieWar.Skills
@@ -50,28 +50,29 @@ namespace ZombieWar.Skills
             }
         }
 
-        static AutonomousPower Every(string id, float cooldown) => new(id, AutonomousPower.TriggerKind.Interval, cooldown);
+        // The base rhythm is the power's rank-1 "cd" in its SkillDef (it used to be repeated here).
+        static AutonomousPower Every(string id) => new(id, AutonomousPower.TriggerKind.Interval, CooldownAt(id, 1, false));
 
         readonly ProcPower[] _procPowers =
         {
-            new(Every(SkillCatalogDefs.AutoChainLightning, 6f), r => r.ChainTargets, _ => 8f),
-            new(Every(SkillCatalogDefs.AutoOrdnance, 7f), _ => 1, r => r.Value(SkillCatalogDefs.AutoOrdnance) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoChainLightning), r => r.ChainTargets, _ => 8f),
+            new(Every(SkillCatalogDefs.AutoOrdnance), _ => 1, r => r.Value(SkillCatalogDefs.AutoOrdnance) * r.AreaMultiplier),
             new(new AutonomousPower(SkillCatalogDefs.AutoSoulBurst, AutonomousPower.TriggerKind.KillCount, 0.5f, killsRequired: 12),
                 _ => 0, r => r.Value(SkillCatalogDefs.AutoSoulBurst) * r.AreaMultiplier, timed: false),
             new(new AutonomousPower(SkillCatalogDefs.AutoEmergency, AutonomousPower.TriggerKind.HealthThreshold, 30f, healthFraction: 0.3f),
                 _ => 0, r => r.Value(SkillCatalogDefs.AutoEmergency) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoFrostNova, 5f), _ => 0, r => r.FrostRadius),
-            new(Every(SkillCatalogDefs.AutoBoomerang, 2.5f), r => r.BoomerangCount, _ => 9f),
-            new(Every(SkillCatalogDefs.AutoAirstrike, 8f), r => r.AirstrikeBlasts, r => 2.6f * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoToxic, 6f), _ => 1, r => r.Value(SkillCatalogDefs.AutoToxic) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoGravity, 9f), _ => 1, r => r.Value(SkillCatalogDefs.AutoGravity) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoTurret, 12f), r => r.TurretCount, _ => 0f),
-            new(Every(SkillCatalogDefs.AutoMeteor, 15f), _ => 1, r => r.Value(SkillCatalogDefs.AutoMeteor) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoIceShards, 4f), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoIceShards)), _ => 0f),
-            new(Every(SkillCatalogDefs.AutoFlameBurst, 5f), _ => 1, r => r.Value(SkillCatalogDefs.AutoFlameBurst) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoAxe, 3f), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoAxe)), _ => 0f),
-            new(Every(SkillCatalogDefs.AutoStomp, 6f), _ => 0, r => r.Value(SkillCatalogDefs.AutoStomp) * r.AreaMultiplier),
-            new(Every(SkillCatalogDefs.AutoTimeWarp, 20f), _ => 0, _ => 0f),
+            new(Every(SkillCatalogDefs.AutoFrostNova), _ => 0, r => r.FrostRadius),
+            new(Every(SkillCatalogDefs.AutoBoomerang), r => r.BoomerangCount, _ => 9f),
+            new(Every(SkillCatalogDefs.AutoAirstrike), r => r.AirstrikeBlasts, r => 2.6f * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoToxic), _ => 1, r => r.Value(SkillCatalogDefs.AutoToxic) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoGravity), _ => 1, r => r.Value(SkillCatalogDefs.AutoGravity) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoTurret), r => r.TurretCount, _ => 0f),
+            new(Every(SkillCatalogDefs.AutoMeteor), _ => 1, r => r.Value(SkillCatalogDefs.AutoMeteor) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoIceShards), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoIceShards)), _ => 0f),
+            new(Every(SkillCatalogDefs.AutoFlameBurst), _ => 1, r => r.Value(SkillCatalogDefs.AutoFlameBurst) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoAxe), r => Mathf.RoundToInt(r.Value(SkillCatalogDefs.AutoAxe)), _ => 0f),
+            new(Every(SkillCatalogDefs.AutoStomp), _ => 0, r => r.Value(SkillCatalogDefs.AutoStomp) * r.AreaMultiplier),
+            new(Every(SkillCatalogDefs.AutoTimeWarp), _ => 0, _ => 0f),
         };
 
         ProcPower ProcOf(string id)
@@ -294,12 +295,9 @@ namespace ZombieWar.Skills
         public static float CooldownAt(string powerId, int rank, bool evolved)
         {
             rank = Mathf.Max(1, rank);
-            if (evolved)
-            {
-                // Evolutions set their own rhythm.
-                if (powerId == SkillCatalogDefs.AutoChainLightning) return 2f;   // Thunderstorm
-                if (powerId == SkillCatalogDefs.AutoFrostNova) return 4f;        // Absolute Zero
-            }
+            // An evolution with a "cd" of its own sets its own rhythm (Thunderstorm, Absolute Zero).
+            var evo = evolved ? SkillCatalogDefs.EvolutionOf(powerId) : null;
+            if (evo != null && evo.HasTable("cd")) return evo.At("cd", 1, 0f);
             return SkillCatalogDefs.ById(powerId)?.At("cd", rank, 0f) ?? 0f;
         }
 

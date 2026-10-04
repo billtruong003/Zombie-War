@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
@@ -38,7 +38,6 @@ namespace ZombieWar
             foreach (var es in systems)
             {
                 if (es == keep) continue;
-                Debug.Log($"[EventSystemDedup] Disable duplicate EventSystem '{es.gameObject.scene.name}/{es.name}'");
                 es.gameObject.SetActive(false);
             }
         }

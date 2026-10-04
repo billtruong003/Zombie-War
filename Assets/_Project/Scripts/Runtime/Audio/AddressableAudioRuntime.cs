@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using BillGameCore;
@@ -91,13 +91,7 @@ namespace ZombieWar.Audio
             }
 
             IsReady = _loadedEntries.Count > 0;
-            if (IsReady)
-            {
-                Debug.Log(
-                    $"[ZombieWar Audio] Runtime catalog ready: {_loadedEntries.Count} variants, "
-                    + $"{_catalog.CatalogId}.");
-                Ready?.Invoke();
-            }
+            if (IsReady) Ready?.Invoke();
         }
 
         private void AppendLabelEntries(string label, IList<AudioClip> clips)

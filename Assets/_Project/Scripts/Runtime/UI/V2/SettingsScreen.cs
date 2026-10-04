@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static ZombieWar.UI.UIBind;
 
 namespace ZombieWar.UI
 {
@@ -150,6 +151,5 @@ namespace ZombieWar.UI
             }
         }
 
-        static void On(Button b, UnityEngine.Events.UnityAction a) { if (b != null) b.onClick.AddListener(a); }
     }
 }

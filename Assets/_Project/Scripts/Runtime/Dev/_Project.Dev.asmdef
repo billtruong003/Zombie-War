@@ -1,31 +1,28 @@
 {
-    "name": "_Project.Editor",
-    "rootNamespace": "ZombieWar.Editor",
+    "name": "_Project.Dev",
+    "rootNamespace": "ZombieWar.Dev",
     "references": [
         "_Project.Runtime",
-        "_Project.Dev",
-        "BillGameCore.Runtime",
         "Unity.AI.Navigation",
-        "Unity.AI.Navigation.Editor",
         "Unity.Animation.Rigging",
-        "Unity.Addressables.Editor",
         "Unity.TextMeshPro",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "BillGameCore.Runtime",
+        "BillInspector.Runtime",
         "VAT.Runtime",
-        "VAT.Editor",
         "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.RenderPipelines.Core.Runtime",
-        "UnityEditor.TestRunner",
-        "UnityEngine.TestRunner"
+        "Unity.RenderPipelines.Core.Runtime"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

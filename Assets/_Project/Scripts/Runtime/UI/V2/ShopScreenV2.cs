@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static ZombieWar.UI.UIBind;
 
 namespace ZombieWar.UI
 {
@@ -272,6 +273,5 @@ namespace ZombieWar.UI
             }
         }
 
-        static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
     }
 }

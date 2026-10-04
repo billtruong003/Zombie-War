@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static ZombieWar.UI.UIBind;
 
 namespace ZombieWar.UI
 {
@@ -533,8 +534,6 @@ namespace ZombieWar.UI
         }
 
         static void Leave(Action go) { Time.timeScale = 1f; go(); }
-        static void Set(TMP_Text t, string s) { if (t != null) t.text = s; }
-        static void On(Button b, UnityEngine.Events.UnityAction a) { if (b != null) b.onClick.AddListener(a); }
     }
 
     /// <summary>Where the menu should go right after it opens (e.g. the result's Shop link).</summary>

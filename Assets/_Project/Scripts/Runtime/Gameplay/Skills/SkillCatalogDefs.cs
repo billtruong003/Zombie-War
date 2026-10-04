@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ZombieWar.Skills
 {
@@ -331,10 +331,10 @@ namespace ZombieWar.Skills
                 tables: Power(("cd", R(20f, 19f, 18f, 17f, 16f)))),
 
             // ── M8 EVOLUTIONS (6) — one rank, offered once the power is maxed and the partner owned ─
-            new(EvoThunderstorm, "Thunderstorm",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoChainLightning, StatFireRate),
+            new(EvoThunderstorm, "Thunderstorm",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoChainLightning, StatFireRate, T(("cd", R(2f)))),
             new(EvoCarpetBomb,   "Carpet Bomb",    SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoOrdnance,       StatDamage),
             new(EvoBuzzsaw,      "Buzzsaw Halo",   SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoOrbit,          StatMoveSpeed),
-            new(EvoAbsoluteZero, "Absolute Zero",  SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoFrostNova,      StatMaxHealth),
+            new(EvoAbsoluteZero, "Absolute Zero",  SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoFrostNova,      StatMaxHealth, T(("cd", R(4f)))),
             new(EvoSquadron,     "Drone Squadron", SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoDrone,          StatCoinGain),
             new(EvoReaper,       "Reaper",         SkillLayer.Evolution, null, R(1f), "MUST", 1, AutoSoulBurst,      UniExecution),
 

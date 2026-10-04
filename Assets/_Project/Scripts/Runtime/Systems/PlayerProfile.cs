@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using BillGameCore;
@@ -1806,6 +1806,8 @@ namespace ZombieWar
         // ===== Dev (QA cheat panel) =====
         // Shortcuts the QA panel needs to reach states that normally take days of play: pity on
         // the edge, today's free pull and stamp again, pass XP, every skin and frame.
+        // Compiled only where the QA panel exists (the _Project.Dev assembly's constraint).
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
 
         public static void DevSetPity(string poolId, int count)
         {
@@ -1844,6 +1846,7 @@ namespace ZombieWar
             SaveNow(); Notify(Change.Account);
             return n;
         }
+#endif
 
         // ===== Load/normalize/migration =====
 
