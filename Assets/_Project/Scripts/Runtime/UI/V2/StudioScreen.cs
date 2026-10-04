@@ -117,10 +117,28 @@ namespace ZombieWar.UI
             int g = GroupOf(slot);
             _groupSlots = _slots.Where(d => GroupOf(d.id) == g).ToList();
             var s = catalog != null ? catalog.GetSlot(slot) : null;
-            _parts = s != null ? s.parts.ToList() : new();
             _picked = PlayerProfile.GetPart(slot);
+            _parts = s != null ? Sorted(s.parts, _picked) : new();
             if (strip != null) strip.horizontalNormalizedPosition = 0f;
             Refresh();
+        }
+
+        /// Owner 05/10: the piece being worn comes first, then the owned ones (rarest first), then
+        /// what can be bought (coins before gems, cheapest first), gacha-only pieces last. Catalog
+        /// order breaks ties. Sorted once per slot, so a purchase never makes the strip jump.
+        List<ModularCostumeCatalog.PartEntry> Sorted(IEnumerable<ModularCostumeCatalog.PartEntry> parts, string worn) =>
+            parts.OrderBy(p => SortRank(p.itemId, worn))
+                 .ThenByDescending(p => economy != null && economy.TryGetCostume(p.itemId, out var e) && PlayerProfile.IsCostumeOwned(p.itemId) ? (int)e.rarity : 0)
+                 .ThenBy(p => economy != null && economy.TryGetCostume(p.itemId, out var e) && !PlayerProfile.IsCostumeOwned(p.itemId) ? e.price : 0)
+                 .ToList();
+
+        int SortRank(string id, string worn)
+        {
+            if (id == worn) return 0;
+            if (PlayerProfile.IsCostumeOwned(id)) return 1;
+            if (economy == null || !economy.TryGetCostume(id, out var e)) return 5;
+            if (e.source == AcquireSource.Gacha) return 4;
+            return e.currency == WalletCurrency.Gem ? 3 : 2;
         }
 
         void Pick(int i)
