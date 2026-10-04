@@ -28,6 +28,7 @@ namespace ZombieWar.UI
         [Header("Sound")]
         [SerializeField] private Slider musicSlider;
         [SerializeField] private Slider sfxSlider;
+        [SerializeField] private Slider voiceSlider;
         [SerializeField] private Switch vibration;
 
         [Header("Game")]
@@ -61,6 +62,7 @@ namespace ZombieWar.UI
             On(backButton, () => { UIFeedback.Back(); UIManager.Instance?.Pop(); });
             if (musicSlider != null) musicSlider.onValueChanged.AddListener(v => GameSettings.Music = v);
             if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(v => GameSettings.Sfx = v);
+            if (voiceSlider != null) voiceSlider.onValueChanged.AddListener(v => GameSettings.Voice = v);
             On(vibration?.button, () => { GameSettings.Haptics = !GameSettings.Haptics; UIFeedback.Tap(); Refresh(); });
             On(notifications?.button, () => { GameSettings.Notifications = !GameSettings.Notifications; UIFeedback.Tap(); Refresh(); });
             for (int i = 0; i < graphics.Length; i++) { int g = i; On(graphics[i], () => { GameSettings.Quality = (GameSettings.Graphics)g; UIFeedback.Tap(); Refresh(); }); }
@@ -116,6 +118,7 @@ namespace ZombieWar.UI
         {
             musicSlider?.SetValueWithoutNotify(GameSettings.Music);
             sfxSlider?.SetValueWithoutNotify(GameSettings.Sfx);
+            voiceSlider?.SetValueWithoutNotify(GameSettings.Voice);
             SetSwitch(vibration, GameSettings.Haptics);
             SetSwitch(notifications, GameSettings.Notifications);
             SetSegment(graphics, (int)GameSettings.Quality);

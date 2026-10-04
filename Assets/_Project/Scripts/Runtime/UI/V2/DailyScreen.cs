@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,6 +20,8 @@ namespace ZombieWar.UI
             public Image bg;
             public GameObject ring;
             public GameObject check;
+            [Tooltip("The CLAIM pill under today's tile (owner 04/10, Daily option B).")]
+            public GameObject claim;
         }
 
         [Serializable]
@@ -56,7 +58,12 @@ namespace ZombieWar.UI
             if (backButton != null) backButton.onClick.AddListener(() => { UIFeedback.Back(); UIManager.Instance?.Pop(); });
             for (int i = 0; i < welcomeTiles.Length; i++)
                 if (welcomeTiles[i]?.button != null) welcomeTiles[i].button.onClick.AddListener(ClaimWelcome);
-            if (stampButton != null) stampButton.onClick.AddListener(Stamp);
+            // Option B (owner 04/10): while today's welcome gift waits, the big button claims it; only
+            // then does it stamp. One thing to press at a time.
+            if (stampButton != null) stampButton.onClick.AddListener(() =>
+            {
+                if (DailyRewards.CanClaimWelcome(DailyRewards.Today)) ClaimWelcome(); else Stamp();
+            });
             if (makeUpButton != null) makeUpButton.onClick.AddListener(MakeUp);
         }
 
@@ -90,6 +97,10 @@ namespace ZombieWar.UI
             Toast.Show("Day made up! Got " + Describe(r));
         }
 
+        /// "CLAIM DAY 1" over a smaller "500 COINS".
+        static string ClaimLabel(int day) =>
+            $"CLAIM DAY {day}\n<size=60%>{Describe(DailyRewards.WelcomeReward(day)).ToUpperInvariant()}</size>";
+
         static string Describe(DailyRewards.Reward r) => r.kind switch
         {
             DailyRewards.Kind.Coin => $"{r.amount:N0} coins",
@@ -120,6 +131,7 @@ namespace ZombieWar.UI
                     bool done = i < claimed, isToday = canClaim && i == claimed;
                     if (t.check != null) t.check.SetActive(done);
                     if (t.ring != null) t.ring.SetActive(isToday);
+                    if (t.claim != null) t.claim.SetActive(isToday);
                     if (t.bg != null && i < DailyRewards.WelcomeDays - 1) ThemeTint.Set(t.bg, done ? ThemeRole.ClaimTint : ThemeRole.Deep);
                     if (t.button != null) t.button.interactable = isToday;
                 }
@@ -147,8 +159,11 @@ namespace ZombieWar.UI
             if (makeUpButton != null) makeUpButton.gameObject.GetComponent<CanvasGroup>()?.SetAlpha(DailyRewards.CanMakeUp(today) ? 1f : 0.45f);
 
             bool full = stamps >= DailyRewards.CardDays;
-            if (stampLabel != null) stampLabel.text = full ? "CARD COMPLETE" : stampedToday ? "BACK TOMORROW" : $"STAMP DAY {stamps + 1}";
-            if (stampButton != null) stampButton.gameObject.GetComponent<CanvasGroup>()?.SetAlpha(DailyRewards.CanStamp(today) ? 1f : 0.5f);
+            bool gift = DailyRewards.CanClaimWelcome(today);
+            if (stampLabel != null)
+                stampLabel.text = gift ? ClaimLabel(DailyRewards.WelcomeClaims + 1)
+                                : full ? "CARD COMPLETE" : stampedToday ? "BACK TOMORROW" : $"STAMP DAY {stamps + 1}";
+            if (stampButton != null) stampButton.gameObject.GetComponent<CanvasGroup>()?.SetAlpha(gift || DailyRewards.CanStamp(today) ? 1f : 0.5f);
         }
     }
 

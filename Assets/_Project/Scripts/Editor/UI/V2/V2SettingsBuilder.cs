@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -34,6 +34,7 @@ namespace ZombieWar.EditorTools.V2
                 var sound = CardColumn(page, "Sound");
                 Wire(s, "musicSlider", Slider(RowNode(sound, "Music", true), 0.7f));
                 Wire(s, "sfxSlider", Slider(RowNode(sound, "Sound effects"), 0.85f));
+                Wire(s, "voiceSlider", Slider(RowNode(sound, "Radio voice"), 1f));
                 WireSwitch(s, "vibration", Switch(RowNode(sound, "Vibration")));
 
                 SectionLabel(page, "GAME");
@@ -81,6 +82,33 @@ namespace ZombieWar.EditorTools.V2
         }
 
         /// A 40 px row: key text on the left, a 1 px top border unless first.
+        /// One-off for the prefab as it is (owner-approved 04/10): a "Radio voice" row, a copy of the
+        /// "Sound effects" row placed under it, without rebuilding the owner's prefab.
+        [MenuItem("HordeCall/UI v2/Settings: add Radio voice row")]
+        public static void AddVoiceRow()
+        {
+            var root = PrefabUtility.LoadPrefabContents(Path);
+            try
+            {
+                var s = root.GetComponentInChildren<SettingsScreen>(true);
+                var so = new SerializedObject(s);
+                var sfx = so.FindProperty("sfxSlider").objectReferenceValue as UnityEngine.UI.Slider;
+                var sfxRow = sfx.transform.parent;
+                var old = sfxRow.parent.Find("Radio voice");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var row = Object.Instantiate(sfxRow.gameObject, sfxRow.parent);
+                row.name = "Radio voice";
+                row.transform.SetSiblingIndex(sfxRow.GetSiblingIndex() + 1);
+                row.transform.Find("Key").GetComponent<TextMeshProUGUI>().text = "Radio voice";
+                var slider = row.GetComponentInChildren<UnityEngine.UI.Slider>(true);
+                slider.SetValueWithoutNotify(1f);
+                so.FindProperty("voiceSlider").objectReferenceValue = slider;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, Path);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+        }
+
         static RectTransform RowNode(RectTransform card, string key, bool first = false)
         {
             var row = Node(card, key); Size(row, -1, 40);

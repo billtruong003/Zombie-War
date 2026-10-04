@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -94,6 +94,7 @@ namespace ZombieWar.EditorTools.V2
                 Surface(check, Green, 9f);
                 Picto(Fill(Node(check, "I"), 3, 3, 3, 3), "Check_1", OnGreen);
                 check.gameObject.SetActive(false);
+                var claim = ClaimPill(tile);
                 var b = tile.gameObject.AddComponent<Button>(); b.targetGraphic = bg; b.transition = Selectable.Transition.None;
 
                 var e = arr.GetArrayElementAtIndex(i);
@@ -101,8 +102,49 @@ namespace ZombieWar.EditorTools.V2
                 e.FindPropertyRelative("bg").objectReferenceValue = bg;
                 e.FindPropertyRelative("ring").objectReferenceValue = ring.gameObject;
                 e.FindPropertyRelative("check").objectReferenceValue = check.gameObject;
+                e.FindPropertyRelative("claim").objectReferenceValue = claim;
             }
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// The green CLAIM pill on the bottom edge of today's tile (owner 04/10, Daily option B). It
+        /// stays inside the 6 px row gap so it never runs under the next row.
+        static GameObject ClaimPill(RectTransform tile)
+        {
+            var pill = Box(Node(tile, "Claim"), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), 0, 1, 52, 14);
+            Surface(pill, Green, 7f);
+            Label(Fill(Node(pill, "L"), 0, 0, 0, 0), "CLAIM", OnGreen, 9f).alignment = TextAlignmentOptions.Center;
+            pill.gameObject.SetActive(false);
+            return pill.gameObject;
+        }
+
+        /// One-off for the prefab as it is (owner-approved 04/10): adds the CLAIM pills without a
+        /// rebuild, so nothing else in the owner's prefab changes.
+        [MenuItem("HordeCall/UI v2/Daily: add CLAIM pills")]
+        public static void AddClaimPills()
+        {
+            var root = PrefabUtility.LoadPrefabContents(Path);
+            try
+            {
+                var s = root.GetComponentInChildren<DailyScreen>(true);
+                var so = new SerializedObject(s);
+                var arr = so.FindProperty("welcomeTiles");
+                for (int i = 0; i < arr.arraySize; i++)
+                {
+                    var e = arr.GetArrayElementAtIndex(i);
+                    var button = e.FindPropertyRelative("button").objectReferenceValue as Button;
+                    if (button == null) continue;
+                    var tile = (RectTransform)button.transform;
+                    var old = tile.Find("Claim");
+                    if (old != null) Object.DestroyImmediate(old.gameObject);
+                    var claim = ClaimPill(tile);
+                    claim.transform.SetSiblingIndex(tile.Find("Check").GetSiblingIndex());
+                    e.FindPropertyRelative("claim").objectReferenceValue = claim;
+                }
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, Path);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         static void StampCard(RectTransform page, RectTransform safe, DailyScreen s)

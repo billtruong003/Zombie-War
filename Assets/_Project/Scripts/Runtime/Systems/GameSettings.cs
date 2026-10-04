@@ -1,4 +1,4 @@
-using BillGameCore;
+﻿using BillGameCore;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -15,12 +15,14 @@ namespace ZombieWar
     {
         public enum Graphics { Low, Mid, High }
 
-        const string KMusic = "set.music", KSfx = "set.sfx", KGraphics = "set.graphics", KFps = "set.fps", KNotify = "set.notify";
+        const string KMusic = "set.music", KSfx = "set.sfx", KVoice = "set.voice", KGraphics = "set.graphics", KFps = "set.fps", KNotify = "set.notify";
         /// Shared with UIFeedback and the in-run pause panel.
         public const string KHaptics = "haptics";
 
         public static float Music { get => PlayerPrefs.GetFloat(KMusic, 0.8f); set { PlayerPrefs.SetFloat(KMusic, Mathf.Clamp01(value)); Bill.Audio?.SetVolume(AudioChannel.Music, Music); } }
         public static float Sfx { get => PlayerPrefs.GetFloat(KSfx, 1f); set { PlayerPrefs.SetFloat(KSfx, Mathf.Clamp01(value)); Bill.Audio?.SetVolume(AudioChannel.SFX, Sfx); } }
+        /// <summary>The agents' radio voice (owner 04/10); 0 mutes it, subtitles still show.</summary>
+        public static float Voice { get => PlayerPrefs.GetFloat(KVoice, 1f); set { PlayerPrefs.SetFloat(KVoice, Mathf.Clamp01(value)); Bill.Audio?.SetVolume(AudioChannel.Voice, Voice); } }
         public static bool Haptics { get => PlayerPrefs.GetInt(KHaptics, 1) == 1; set => PlayerPrefs.SetInt(KHaptics, value ? 1 : 0); }
         public static bool Notifications { get => PlayerPrefs.GetInt(KNotify, 1) == 1; set => PlayerPrefs.SetInt(KNotify, value ? 1 : 0); }
 
@@ -49,6 +51,7 @@ namespace ZombieWar
         {
             Bill.Audio?.SetVolume(AudioChannel.Music, Music);
             Bill.Audio?.SetVolume(AudioChannel.SFX, Sfx);
+            Bill.Audio?.SetVolume(AudioChannel.Voice, Voice);
             Application.targetFrameRate = Fps;
             ApplyGraphics();
         }
