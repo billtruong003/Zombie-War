@@ -36,13 +36,15 @@ namespace ZombieWar
                         if (r == null || !r.enabled || !r.gameObject.activeInHierarchy || !r.isVisible) continue;
                         var m = r.sharedMaterial;
                         if (m == null) continue;
-                        int pass = m.FindPass(PassName);
+                        if (!PassOf.TryGetValue(m, out int pass)) PassOf[m] = pass = m.FindPass(PassName);
                         if (pass >= 0) ctx.cmd.DrawRenderer(r, m, 0, pass);
                     }
                 });
             }
 
             static readonly int PlanarOnId = Shader.PropertyToID("_ZWPlanarShadowOn");
+            // Pass index per material, looked up once instead of per caster per frame.
+            static readonly System.Collections.Generic.Dictionary<Material, int> PassOf = new();
         }
 
         DrawPass _pass;

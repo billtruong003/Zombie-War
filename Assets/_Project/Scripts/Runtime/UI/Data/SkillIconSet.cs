@@ -47,9 +47,18 @@ namespace ZombieWar.UI
         }
 
         /// <summary>"Orbit Blades" → "OB", "Airstrike" → "AI". Shown when a card has no icon yet.</summary>
+        // Memoised: the skill bar asks for every slot ten times a second.
+        static readonly System.Collections.Generic.Dictionary<string, string> AbbrevCache = new();
+
         public static string Abbreviation(string displayName)
         {
             if (string.IsNullOrWhiteSpace(displayName)) return "?";
+            if (AbbrevCache.TryGetValue(displayName, out var cached)) return cached;
+            return AbbrevCache[displayName] = BuildAbbreviation(displayName);
+        }
+
+        static string BuildAbbreviation(string displayName)
+        {
             var words = displayName.Split(new[] { ' ', '-', '&' }, StringSplitOptions.RemoveEmptyEntries);
             if (words.Length >= 2) return (char.ToUpperInvariant(words[0][0]).ToString() + char.ToUpperInvariant(words[1][0]));
             string w = words[0];

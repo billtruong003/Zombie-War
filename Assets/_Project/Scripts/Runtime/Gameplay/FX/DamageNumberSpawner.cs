@@ -26,12 +26,21 @@ namespace ZombieWar
         private static DamageNumber _prefab;
         private static bool _loadAttempted;
 
+        // At most this many new numbers per frame (crits always show): a damage-over-time tick over a
+        // crowd used to pop a hundred numbers in one frame, each its own text mesh.
+        public const int MaxPerFrame = 12;
+        public const int WarmCount = 32;
+        private static int _frame = -1, _spawnedThisFrame;
+
         /// <summary>Pop a floating damage number at a world position.</summary>
         /// <param name="crit">Plumbed for a future crit system; pass false today.</param>
         public static void Spawn(float amount, Vector3 position, bool crit = false)
         {
+            if (_frame != Time.frameCount) { _frame = Time.frameCount; _spawnedThisFrame = 0; }
+            if (!crit && _spawnedThisFrame >= MaxPerFrame) return;
             var prefab = ResolvePrefab();
             if (prefab == null) return;
+            _spawnedThisFrame++;
 
             var pool = Bill.Pool;
             if (pool == null)
@@ -44,7 +53,7 @@ namespace ZombieWar
             }
 
             // Idempotent register-by-key (mirrors TracerPool) then pool-spawn.
-            pool.Register(PoolKey, prefab.gameObject);
+            pool.Register(PoolKey, prefab.gameObject, WarmCount);
 
             var number = pool.Spawn<DamageNumber>(PoolKey, position, Quaternion.identity);
             if (number != null) number.Show(amount, crit);

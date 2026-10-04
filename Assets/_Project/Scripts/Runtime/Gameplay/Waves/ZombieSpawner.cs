@@ -87,7 +87,7 @@ namespace ZombieWar
         private float _nextFailureLogTime;
         private int _failuresSinceLog;
 
-        public static string KeyFor(ZombieData data) => "zombie_" + data.prefab.GetInstanceID();
+        public static string KeyFor(ZombieData data) => PoolKeys.For("zombie_", data.prefab);
 
         private void Awake()
         {

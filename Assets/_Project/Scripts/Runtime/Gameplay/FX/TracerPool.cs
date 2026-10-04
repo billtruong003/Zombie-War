@@ -32,7 +32,7 @@ namespace ZombieWar
                 return lt;
             }
 
-            string key = "tracer_" + prefab.GetInstanceID();
+            string key = PoolKeys.For("tracer_", prefab);
             pool.Register(key, prefab);
 
             var go = pool.Spawn(key, start, Quaternion.identity);

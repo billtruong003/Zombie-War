@@ -3,13 +3,23 @@ using UnityEngine;
 
 namespace BillGameCore
 {
-    public class PoolService : IPoolService, IInitializable, IDisposableService
+    public class PoolService : IPoolService, IInitializable, IDisposableService, ITickable
     {
         private readonly Dictionary<string, Queue<GameObject>> _pools = new(16);
         private readonly Dictionary<string, GameObject> _prefabs = new(16);
         private readonly Dictionary<string, Transform> _containers = new(16);
         private readonly Dictionary<string, PoolDefinition> _defs = new(16);
         private readonly Dictionary<GameObject, string> _active = new(64);
+        // Cached at creation: Spawn and Return used to GetComponent<PooledObject>() every time.
+        private readonly Dictionary<GameObject, PooledObject> _hooks = new(256);
+
+        // Delayed returns, checked once per frame. Replaces a closure + coroutine + WaitForSeconds per
+        // call (every muzzle flash, impact and tracer). Each entry carries the spawn generation it was
+        // made for: a delayed return that fires after the object was already returned and spawned
+        // again for something else must not pull that new use out from under it.
+        private struct TimedReturn { public GameObject obj; public float at; public int gen; }
+        private readonly List<TimedReturn> _timed = new(256);
+        private readonly Dictionary<GameObject, int> _gen = new(256);
         private Transform _root;
 
         public void Initialize()
@@ -23,7 +33,10 @@ namespace BillGameCore
         }
 
         public void Register(string key, GameObject prefab, int warmCount = 5)
-            => Register(new PoolDefinition { key = key, prefab = prefab, warmCount = warmCount });
+        {
+            if (string.IsNullOrEmpty(key) || _pools.ContainsKey(key)) return;   // no definition built for a known key
+            Register(new PoolDefinition { key = key, prefab = prefab, warmCount = warmCount });
+        }
 
         private void Register(PoolDefinition def)
         {
@@ -64,9 +77,9 @@ namespace BillGameCore
             obj.transform.SetParent(parent);
             obj.SetActive(true);
             _active[obj] = key;
+            _gen[obj] = _gen.TryGetValue(obj, out int g) ? g + 1 : 1;
 
-            var po = obj.GetComponent<PooledObject>();
-            if (po != null) po.OnSpawnedFromPool();
+            if (_hooks.TryGetValue(obj, out var po) && po != null) po.OnSpawnedFromPool();
 
             if (_defs.TryGetValue(key, out var def) && def.autoReturnTime > 0f)
                 Return(obj, def.autoReturnTime);
@@ -79,7 +92,8 @@ namespace BillGameCore
             if (!_prefabs.TryGetValue(key, out var pf)) return null;
             var obj = Object.Instantiate(pf);
             obj.name = pf.name;
-            if (obj.GetComponent<PooledObject>() == null) obj.AddComponent<PooledObject>();
+            if (!obj.TryGetComponent(out PooledObject po)) po = obj.AddComponent<PooledObject>();
+            _hooks[obj] = po;
             return obj;
         }
 
@@ -91,7 +105,29 @@ namespace BillGameCore
             ReturnImpl(obj, key);
         }
 
-        public void Return(GameObject obj, float delay) { if (obj != null) CoroutineRunner.RunDelayed(delay, () => Return(obj)); }
+        public void Return(GameObject obj, float delay)
+        {
+            if (obj == null) return;
+            if (delay <= 0f) { Return(obj); return; }
+            _timed.Add(new TimedReturn { obj = obj, at = Time.time + delay, gen = _gen.TryGetValue(obj, out int g) ? g : 0 });
+        }
+
+        public void Tick(float dt)
+        {
+            if (_timed.Count == 0) return;
+            float now = Time.time;
+            for (int i = _timed.Count - 1; i >= 0; i--)
+            {
+                var t = _timed[i];
+                if (t.obj != null && now < t.at) continue;
+                int last = _timed.Count - 1;
+                _timed[i] = _timed[last];
+                _timed.RemoveAt(last);
+                if (t.obj == null) continue;
+                // Only the use it was scheduled for: skip if the object went back and was reused since.
+                if (_active.ContainsKey(t.obj) && _gen.TryGetValue(t.obj, out int g) && g == t.gen) Return(t.obj);
+            }
+        }
 
         public void ReturnAll(string key)
         {
@@ -109,12 +145,15 @@ namespace BillGameCore
         private void ReturnImpl(GameObject obj, string key)
         {
             if (obj == null) return;
-            var po = obj.GetComponent<PooledObject>();
-            if (po != null) po.OnReturnedToPool();
+            if (_hooks.TryGetValue(obj, out var po) && po != null) po.OnReturnedToPool();
             obj.SetActive(false);
 
             if (_defs.TryGetValue(key, out var def) && def.maxSize > 0 && _pools[key].Count >= def.maxSize)
+            {
+                _hooks.Remove(obj);
+                _gen.Remove(obj);
                 Object.Destroy(obj);
+            }
             else
             {
                 if (_containers.TryGetValue(key, out var c)) obj.transform.SetParent(c);
@@ -151,6 +190,7 @@ namespace BillGameCore
         {
             foreach (var kv in _pools) while (kv.Value.Count > 0) { var o = kv.Value.Dequeue(); if (o) Object.Destroy(o); }
             _pools.Clear(); _prefabs.Clear(); _containers.Clear(); _defs.Clear(); _active.Clear();
+            _hooks.Clear(); _timed.Clear(); _gen.Clear();
             if (_root != null) Object.Destroy(_root.gameObject);
         }
     }

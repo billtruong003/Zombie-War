@@ -37,6 +37,14 @@ namespace ZombieWar
             static readonly int TintId = Shader.PropertyToID("_BloomTint");
             const int MaxIterations = 4;
             readonly TextureHandle[] _levels = new TextureHandle[MaxIterations + 1];
+            // Texture names built once: "_ToonBloom" + i made two or three strings every frame.
+            static readonly string[] LevelNames = BuildNames();
+            static string[] BuildNames()
+            {
+                var n = new string[MaxIterations + 1];
+                for (int i = 0; i < n.Length; i++) n[i] = "_ToonBloom" + i;
+                return n;
+            }
             public Material material;
 
             public BloomPass() { renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing; }
@@ -65,7 +73,7 @@ namespace ZombieWar
                 {
                     w = Mathf.Max(1, w / 2); h = Mathf.Max(1, h / 2);
                     desc.width = w; desc.height = h;
-                    _levels[i] = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, "_ToonBloom" + i, false, FilterMode.Bilinear);
+                    _levels[i] = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, LevelNames[i], false, FilterMode.Bilinear);
                     renderGraph.AddBlitPass(new RenderGraphUtils.BlitMaterialParameters(_levels[i - 1], _levels[i], material, 1), "ToonBloom Down");
                     made = i;
                     if (w == 1 && h == 1) break;

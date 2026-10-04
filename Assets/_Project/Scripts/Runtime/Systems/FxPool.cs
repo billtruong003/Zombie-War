@@ -100,7 +100,7 @@ namespace ZombieWar
                 return loose;
             }
 
-            string key = "fx_" + prefab.GetInstanceID();
+            string key = PoolKeys.For("fx_", prefab);
             pool.Register(key, prefab.gameObject);
 
             go = pool.Spawn(key, position, rotation);

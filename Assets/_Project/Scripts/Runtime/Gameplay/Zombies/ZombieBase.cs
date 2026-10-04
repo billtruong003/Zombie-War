@@ -86,8 +86,12 @@ namespace ZombieWar
             get => IsWaitingForAttackSlot;
             set => IsWaitingForAttackSlot = value;
         }
-        private Coroutine _hitReactRoutine;
-        private Coroutine _hitFlashRoutine;
+        // Hit flash and hit react are timestamps advanced once a frame (TickTimedVisuals), not a
+        // coroutine per hit: every bullet started a flash coroutine (iterator + Coroutine object) and
+        // every react a WaitForSeconds, which added up to hundreds of allocations a second in a horde.
+        private bool _reacting, _flashing, _flashListed, _reactListed;
+        private float _reactEndsAt, _flashEndsAt;
+        private static readonly List<ZombieBase> Flashing = new(256), Reacting = new(256);
         private Coroutine _attackRoutine;
         private float _nextHurtAudioTime;
 
@@ -268,8 +272,10 @@ namespace ZombieWar
             _tier = ZombieTier.Full;
             _attackCooldownTimer = 0f;
             ReleaseAttackSlotIfHeld();
-            _hitReactRoutine = null; // coroutines died with the pooled deactivation
-                        _hitFlashRoutine = null;
+            _pendingNumber = 0f; _nextNumberAt = 0f;
+            _reacting = false;   // a new life starts with no flash or react in progress
+            _flashing = false;
+            SetHitFlash(0f);     // a recycled enemy pulled mid-flash must not come back white
             _attackRoutine = null;
             _nextHurtAudioTime = 0f;
             _cheapBlockedTime = 0f;
@@ -364,6 +370,17 @@ namespace ZombieWar
         }
 
         bool _nextHitCrit;
+        const float NumberWindow = 0.12f;
+        float _pendingNumber, _nextNumberAt;
+
+        void FlushDamageNumber()
+        {
+            if (_pendingNumber <= 0f) return;
+            DamageNumberSpawner.Spawn(_pendingNumber, transform.position + Vector3.up * damageNumberHeight, _nextHitCrit);
+            _pendingNumber = 0f;
+            _nextHitCrit = false;
+            _nextNumberAt = Time.time + NumberWindow;
+        }
 
         /// <summary>Slot in <see cref="ZombieManager.Alive"/> (-1 = not registered).</summary>
         internal int RegistryIndex = -1;
@@ -485,8 +502,13 @@ namespace ZombieWar
             }
         }
 
+        static int _visualsTickedFrame = -1;
+
         private void Update()
         {
+            // The first enemy to update each frame advances every flash and react (no manager needed,
+            // so sandbox scenes without a ZombieManager behave the same).
+            if (_visualsTickedFrame != Time.frameCount) { _visualsTickedFrame = Time.frameCount; TickTimedVisuals(Time.time); }
             if (_tier != ZombieTier.Full || _state == State.Dead) return;
 
             var player = PlayerMovement.Instance;
@@ -642,7 +664,7 @@ namespace ZombieWar
 
             _attackRoutine = null;
             if (_state == State.Dead) yield break;
-            if (_state == State.Attack && _hitReactRoutine == null)
+            if (_state == State.Attack && !_reacting)
                 _vatAnimator.CrossFade(data.idleClip, stateCrossFadeDuration);
         }
 
@@ -705,55 +727,76 @@ namespace ZombieWar
 
             // Floating damage number at chest height. Covers every source (guns, bomb, contact)
             // since it hangs off Health.OnDamaged rather than any single weapon.
-            DamageNumberSpawner.Spawn(amount, transform.position + Vector3.up * damageNumberHeight, _nextHitCrit);
-            _nextHitCrit = false;
+            // One number per enemy per NumberWindow: rapid fire and damage-over-time ticks add up into
+            // it instead of each spawning a popup. A crit always shows at once (it is the gold one).
+            _pendingNumber += amount;
+            if (_nextHitCrit || Time.time >= _nextNumberAt) FlushDamageNumber();
 
             // The flash restarts on EVERY hit (unlike the react anim below) - that per-bullet
             // response is the whole point of it, and it's a shader value so it costs nothing.
-            if (_hitFlashRoutine != null) StopCoroutine(_hitFlashRoutine);
-            _hitFlashRoutine = StartCoroutine(HitFlash());
+            _flashing = true;
+            _flashEndsAt = Time.time + hitFlashDuration;
+            SetHitFlash(1f);
+            if (!_flashListed) { _flashListed = true; Flashing.Add(this); }
 
             // One-shot hit react: while the hit anim is still playing, further bullets only
             // deal damage/spawn numbers - they do NOT restart the anim or re-knockback, so
             // rapid fire can't lock the zombie into a looping flinch.
-            if (_hitReactRoutine != null) return;
-            _hitReactRoutine = StartCoroutine(HitReact());
+            if (_reacting) return;
+            StartHitReact();
             ApplyGenericKnockback();
         }
 
-        private IEnumerator HitReact()
+        private void StartHitReact()
         {
             _vatAnimator.Play(data.hitClip);
-
             float duration = 0.4f;
             if (_vatAnimator.animationData != null &&
                 _vatAnimator.animationData.TryGetClipInfo(data.hitClip, out var clip) &&
                 clip.duration > 0f)
                 duration = clip.duration;
-
-            yield return new WaitForSeconds(duration);
-            _hitReactRoutine = null;
-
-            // Hit clips are baked looping like everything else in the VAT, so once the react
-            // window ends we must hand the animator back to whatever the FSM is doing.
-            if (_state == State.Dead) yield break;
-            ResumeStateClip();
+            _reacting = true;
+            _reactEndsAt = Time.time + duration;
+            if (!_reactListed) { _reactListed = true; Reacting.Add(this); }
         }
 
-        // Fades the shader's white flash back out. Deliberately unscaled-time-free: it uses regular
-        // deltaTime so a paused game freezes the flash along with everything else.
-        private IEnumerator HitFlash()
+        /// <summary>Advances every running hit flash and hit react. Scaled time: a paused game
+        /// freezes them with everything else. Called once a frame, by the first enemy to update.</summary>
+        internal static void TickTimedVisuals(float now)
         {
-            float t = 0f;
-            while (t < hitFlashDuration)
+            for (int i = Flashing.Count - 1; i >= 0; i--)
             {
-                t += Time.deltaTime;
-                SetHitFlash(1f - Mathf.Clamp01(t / hitFlashDuration));
-                yield return null;
+                var z = Flashing[i];
+                if (z != null && z._flashing)
+                {
+                    float left = z._flashEndsAt - now;
+                    if (left > 0f) { z.SetHitFlash(Mathf.Clamp01(left / Mathf.Max(0.0001f, z.hitFlashDuration))); continue; }
+                    z.SetHitFlash(0f);
+                    z._flashing = false;
+                }
+                if (z != null) z._flashListed = false;
+                Flashing[i] = Flashing[Flashing.Count - 1];
+                Flashing.RemoveAt(Flashing.Count - 1);
             }
-            SetHitFlash(0f);
-            _hitFlashRoutine = null;
+            for (int i = Reacting.Count - 1; i >= 0; i--)
+            {
+                var z = Reacting[i];
+                if (z != null && z._reacting)
+                {
+                    if (now < z._reactEndsAt) continue;
+                    z._reacting = false;
+                    // Hit clips are baked looping like everything else in the VAT, so once the react
+                    // window ends the animator goes back to whatever the FSM is doing.
+                    if (z._state != State.Dead && z.isActiveAndEnabled) z.ResumeStateClip();
+                }
+                if (z != null) z._reactListed = false;
+                Reacting[i] = Reacting[Reacting.Count - 1];
+                Reacting.RemoveAt(Reacting.Count - 1);
+            }
         }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetTimedVisuals() { Flashing.Clear(); Reacting.Clear(); }
 
         private void ResumeStateClip()
         {
@@ -854,21 +897,14 @@ namespace ZombieWar
             Bill.Events?.Fire(new ZombieKilledEvent(data, transform.position, this));
 
             // Kill any pending hit react so it can't crossfade over the death anim.
-            if (_hitReactRoutine != null)
-            {
-                StopCoroutine(_hitReactRoutine);
-                _hitReactRoutine = null;
-            }
+            _reacting = false;
+            FlushDamageNumber();   // the killing blow always shows
 
             // A swing already wound up must not still connect after death.
             CancelPendingAttack();
 
             // A corpse must not keep flashing white while it dissolves.
-            if (_hitFlashRoutine != null)
-            {
-                StopCoroutine(_hitFlashRoutine);
-                _hitFlashRoutine = null;
-            }
+            _flashing = false;
             SetHitFlash(0f);
 
             _state = State.Dead;

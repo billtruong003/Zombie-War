@@ -92,6 +92,8 @@ namespace ZombieWar.Stations
         public StationVisual Visual => _visual;
         StationKind _kind;
         SignalState _state = SignalState.Idle;
+        bool _stateApplied;
+        int _shownSegments = -1;
         float _progress01;
         Transform _tr;
 
@@ -226,6 +228,9 @@ namespace ZombieWar.Stations
         /// </summary>
         public void SetState(SignalState state)
         {
+            // Stations call this every frame; re-tinting an unchanged state was ~50 engine calls each.
+            if (_stateApplied && state == _state) return;
+            _stateApplied = true;
             _state = state;
             Color baseColor = ColorOf(_kind);
 
@@ -270,6 +275,8 @@ namespace ZombieWar.Stations
             if (_progress == null) return;
 
             int shown = Mathf.Max(1, Mathf.RoundToInt(ringSegments * _progress01));
+            if (shown == _shownSegments) return;   // the ring only changes when a segment does
+            _shownSegments = shown;
             for (int i = 0; i <= ringSegments; i++)
             {
                 float a = Mathf.Min(i, shown) / (float)ringSegments * Mathf.PI * 2f;

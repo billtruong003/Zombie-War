@@ -63,7 +63,7 @@ namespace ZombieWar
                     var shown = evolved ? SkillCatalogDefs.EvolutionOf(def.id) ?? def : def;
                     slots[i].Show(icons != null ? icons.For(shown.id) : null, SkillIconSet.Abbreviation(shown.displayName),
                         evolved ? EvolutionGold : SkillDescriptions.LayerColor(def),
-                        evolved ? "EVO" : run.RankOf(def.id).ToString(),
+                        evolved ? "EVO" : Num(run.RankOf(def.id)),
                         1f - run.ReadinessOf(def.id), evolved);
                 }
 
@@ -82,7 +82,7 @@ namespace ZombieWar
                     if (more)
                     {
                         PipIcon(pip, false);
-                        pip.text = "+" + (_passives.Count - visible);
+                        pip.text = Plus(_passives.Count - visible);
                         pip.alignment = TextAlignmentOptions.Center;
                         pip.color = Color.white;
                         continue;
@@ -92,7 +92,7 @@ namespace ZombieWar
                     var icon = PipIcon(pip, sprite != null);
                     if (icon != null) icon.sprite = sprite;
                     // With art the chip shows the icon and the rank; without, the old abbreviation.
-                    pip.text = sprite != null ? run.RankOf(def.id).ToString() : SkillIconSet.Abbreviation(def.displayName) + run.RankOf(def.id);
+                    pip.text = sprite != null ? Num(run.RankOf(def.id)) : SkillIconSet.Abbreviation(def.displayName) + Num(run.RankOf(def.id));
                     pip.alignment = sprite != null ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.Center;
                     pip.color = SkillDescriptions.LayerColor(def);
                 }
@@ -118,5 +118,12 @@ namespace ZombieWar
             img.enabled = show;
             return img;
         }
+
+        // Cached labels: this view refreshes ten times a second and ToString/concat made new strings
+        // every time (TMP also skips the rebuild when it gets the same string back).
+        static readonly string[] Nums = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        static readonly string[] Pluses = { "+0", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9" };
+        static string Num(int n) => n >= 0 && n < Nums.Length ? Nums[n] : n.ToString();
+        static string Plus(int n) => n >= 0 && n < Pluses.Length ? Pluses[n] : "+" + n;
     }
 }

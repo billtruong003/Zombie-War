@@ -62,7 +62,7 @@ namespace ZombieWar
             CacheRefs();
             _elapsed = 0f;
 
-            _text.text = Mathf.Max(1, Mathf.RoundToInt(amount)).ToString();
+            _text.SetText("{0}", Mathf.Max(1, Mathf.RoundToInt(amount)));   // no string per hit
             _text.color = crit ? critColor : normalColor;
             _text.alpha = 1f;
 

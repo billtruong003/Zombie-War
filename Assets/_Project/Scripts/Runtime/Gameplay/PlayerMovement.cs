@@ -5,6 +5,9 @@ namespace ZombieWar
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerMovement : MonoBehaviour
     {
+        static readonly int MoveXId = Animator.StringToHash("MoveX"), MoveYId = Animator.StringToHash("MoveY"),
+            SpeedId = Animator.StringToHash("Speed");
+
         [SerializeField] private VirtualJoystick joystick;
         [SerializeField] private Animator animator;
         [SerializeField] private float moveSpeed = 5f;
@@ -106,9 +109,9 @@ namespace ZombieWar
             {
                 float localX = Vector3.Dot(move, transform.right);
                 float localY = Vector3.Dot(move, transform.forward);
-                animator.SetFloat("MoveX", localX, animDamp, Time.fixedDeltaTime);
-                animator.SetFloat("MoveY", localY, animDamp, Time.fixedDeltaTime);
-                animator.SetFloat("Speed", move.magnitude, animDamp, Time.fixedDeltaTime);
+                animator.SetFloat(MoveXId, localX, animDamp, Time.fixedDeltaTime);
+                animator.SetFloat(MoveYId, localY, animDamp, Time.fixedDeltaTime);
+                animator.SetFloat(SpeedId, move.magnitude, animDamp, Time.fixedDeltaTime);
             }
         }
 
