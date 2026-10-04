@@ -194,7 +194,11 @@ namespace ZombieWar.Threat
             // static and must reset even in a run where no director component exists.
         }
 
-        void OnDestroy() { if (Instance == this) Instance = null; }
+        void OnDestroy()
+        {
+            if (_playerHealth != null) _playerHealth.OnDamaged -= OnPlayerDamaged;
+            if (Instance == this) Instance = null;
+        }
 
         void Start()
         {
@@ -320,6 +324,12 @@ namespace ZombieWar.Threat
             _playerVelocity = (p - _lastPlayerPos) / Mathf.Max(Time.deltaTime, 1e-4f);
             _lastPlayerPos = p;
 
+            // Genre rule 7 (05/10): distance adds at most one band per DistanceBandEverySeconds, so
+            // running to dodge never spikes the tier.
+            float allowedBands = Mathf.Floor(run.Duration / DistanceBandEverySeconds);
+            distance = Mathf.Min(distance, (allowedBands + 0.999f) * Mathf.Max(1f, metresPerDistanceBand));
+            TickRest(run.Duration);
+
             int tier = ComputeTier(_objectiveProgress, distance, run.Duration,
                                    metresPerDistanceBand, secondsPerTimeStep, maxTier);
             _enemyStatMultiplier = StatMultiplierFor(tier, statScalingStartsAtTier, statGrowthPerTier);
@@ -332,7 +342,7 @@ namespace ZombieWar.Threat
                 if (Bill.IsReady) Bill.Events.Fire(new ThreatTierChangedEvent(tier, rising));
             }
 
-            bool surging = IsSurgeAt(run.Duration, openingSeconds, surgeEverySeconds, surgeSeconds);
+            bool surging = !Resting && IsSurgeAt(run.Duration, openingSeconds, surgeEverySeconds, surgeSeconds);
             if (surging != Surging)
             {
                 Surging = surging;
@@ -352,10 +362,11 @@ namespace ZombieWar.Threat
             float interval = SpawnIntervalFor(CurrentTier)
                              * OpeningIntervalScale(run.Duration, openingSeconds, openingIntervalScale)
                              * (surging ? surgeIntervalScale : 1f)
-                             * CatchUpScale(ZombieManager.AliveCount, target, catchUpIntervalScale);
+                             * CatchUpScale(ZombieManager.AliveCount, target, catchUpIntervalScale)
+                             * (Resting ? RestIntervalScale : 1f);
             _nextSpawnAt = Time.time + Mathf.Max(0.03f, interval) * (1f + Random.Range(-intervalJitter, intervalJitter));
 
-            var data = PickFor(CurrentTier);
+            var data = Resting ? PickFodder() : PickFor(CurrentTier, run.Duration, target);
             if (data == null) return;
             _spawner.EnsureRegistered(data, target);
 
@@ -416,6 +427,95 @@ namespace ZombieWar.Threat
             for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
             if (Pool.Count == 0) return null;
             return Pool[Random.Range(0, Pool.Count)];
+        }
+
+        // ── 05/10 genre rule 2: the crowd is fodder, specialists are a capped share ─────────────
+        public const float RangedFrom = 120f, RangedStepSeconds = 45f, RangedShare = 0.15f;
+        public const int RangedStart = 2;
+
+        /// <summary>Ranged enemies allowed alive at once: none before 2:00, then 2, one more every
+        /// 45 s, never above 15% of the crowd target.</summary>
+        public static int RangedCapAt(float runSeconds, int aliveTarget)
+        {
+            if (runSeconds < RangedFrom) return 0;
+            int byTime = RangedStart + Mathf.FloorToInt((runSeconds - RangedFrom) / RangedStepSeconds);
+            return Mathf.Min(byTime, Mathf.Max(RangedStart, Mathf.CeilToInt(aliveTarget * RangedShare)));
+        }
+
+        /// <summary>Extra weight of the tier-0 fodder in the pick: 3 before 2:00, 2 before 4:00.</summary>
+        public static int FodderWeightAt(float runSeconds) => runSeconds < 120f ? 3 : runSeconds < 240f ? 2 : 1;
+
+        static readonly List<ZombieData> Weighted = new(32);
+        static readonly List<ZombieData> Tier0Scratch = new(8);
+
+        /// <summary>The tier's roster, weighted toward fodder early, with ranged kinds held back by
+        /// <see cref="RangedCapAt"/>.</summary>
+        public ZombieData PickFor(int tier, float runSeconds, int aliveTarget)
+        {
+            Pool.Clear();
+            for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
+            if (Pool.Count == 0) return null;
+
+            int rangedAlive = 0;
+            var alive = ZombieManager.Alive;
+            for (int i = 0; i < alive.Count; i++)
+                if (alive[i] != null && !alive[i].IsDead && alive[i].Data != null && alive[i].Data.archetype == ZombieArchetype.Ranged) rangedAlive++;
+            bool rangedOk = rangedAlive < RangedCapAt(runSeconds, aliveTarget);
+
+            Weighted.Clear();
+            int fodder = FodderWeightAt(runSeconds);
+            var tier0 = Tier0Scratch;
+            tier0.Clear();
+            AppendTier(tier0, 0);
+            for (int i = 0; i < Pool.Count; i++)
+            {
+                var d = Pool[i];
+                if (d.archetype == ZombieArchetype.Ranged && !rangedOk) continue;
+                int w = tier0.Contains(d) ? fodder : 1;
+                for (int k = 0; k < w; k++) Weighted.Add(d);
+            }
+            if (Weighted.Count == 0) return Pool[Random.Range(0, Pool.Count)];
+            return Weighted[Random.Range(0, Weighted.Count)];
+        }
+
+        ZombieData PickFodder()
+        {
+            Pool.Clear();
+            AppendTier(Pool, 0);
+            return Pool.Count == 0 ? PickFor(CurrentTier) : Pool[Random.Range(0, Pool.Count)];
+        }
+
+        // ── 05/10 genre rule 10: tension breathes ──────────────────────────────────────────
+        // When the player is taking a beating (a big share of health lost in the last few seconds,
+        // or low health) the director rests: only fodder arrives, at half the cadence, and no surge
+        // starts. The crowd stays dense - it just stops getting harder for a moment.
+        public const float StressWindow = 6f, StressLossFraction = 0.35f, StressLowHealth = 0.3f;
+        public const float RestSeconds = 10f, RestCooldown = 30f, RestIntervalScale = 2f;
+        public const float DistanceBandEverySeconds = 120f;
+
+        public bool Resting { get; private set; }
+        float _restUntil, _restReadyAt;
+        Health _playerHealth;
+        readonly Queue<(float at, float amount)> _recentLoss = new();
+
+        void OnPlayerDamaged(float amount) => _recentLoss.Enqueue((Time.time, amount));
+
+        void TickRest(float runSeconds)
+        {
+            if (_playerHealth == null && _player != null && _player.TryGetComponent(out _playerHealth))
+                _playerHealth.OnDamaged += OnPlayerDamaged;
+            if (Resting && Time.time >= _restUntil) Resting = false;
+            while (_recentLoss.Count > 0 && Time.time - _recentLoss.Peek().at > StressWindow) _recentLoss.Dequeue();
+            if (Resting || Time.time < _restReadyAt || _playerHealth == null || _playerHealth.Max <= 0f) return;
+
+            float lost = 0f;
+            foreach (var l in _recentLoss) lost += l.amount;
+            float hp = _playerHealth.Current / _playerHealth.Max;
+            if (lost / _playerHealth.Max < StressLossFraction && hp >= StressLowHealth) return;
+            Resting = true;
+            _restUntil = Time.time + RestSeconds;
+            _restReadyAt = _restUntil + RestCooldown;
+            _recentLoss.Clear();
         }
 
         static void Append(List<ZombieData> into, ZombieData[] src)

@@ -182,14 +182,16 @@ namespace ZombieWar
 
         [Header("Pursuit (M8) — TUNING")]
         [Tooltip("Within this distance an enemy moves at its authored speed.")]
-        [SerializeField] private float pursuitNearDistance = 10f;
+        [SerializeField] private float pursuitNearDistance = 14f;
         [Tooltip("At or beyond this distance an enemy moves at the full pursuit multiplier.")]
-        [SerializeField] private float pursuitFarDistance = 25f;
+        [SerializeField] private float pursuitFarDistance = 30f;
         [Tooltip("Speed multiplier for far enemies. Lifts the common crowd (2.4 m/s and up) above the " +
                  "player's base 5 m/s, so a runner cannot leave it behind; slow plants stay slow.")]
-        [SerializeField] private float pursuitMaxMultiplier = 2.2f;
+        [SerializeField] private float pursuitMaxMultiplier = 1.8f;
 
-        static float _pursuitNear = 10f, _pursuitFar = 25f, _pursuitMax = 2.2f;
+        // 05/10 genre rule 3: on screen (about 12 m from the player) nothing outpaces the player;
+        // the catch-up only works off screen.
+        static float _pursuitNear = 14f, _pursuitFar = 30f, _pursuitMax = 1.8f;
         static bool _hasPursuitTarget;
         static Vector3 _pursuitTarget;
 
