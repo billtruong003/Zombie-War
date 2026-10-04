@@ -1,8 +1,90 @@
-# Zombie War — trạng thái thật của project
+# Zombie War (HordeCall) — trạng thái thật của project
+
+> **2026-10-04 — sau FTUE v3 bộ đàm và kế hoạch sửa G0–G12 (commits `d84d8b258`, `752c2c633`..`e08f3471d`,
+> nhánh `m8/ship-quality`, chưa push).** Khối này thắng khối 2026-10-01 và mọi mục bên dưới khi mâu thuẫn.
+> Đường dẫn tính từ `Assets/_Project/` nếu không ghi khác; `R/` = `Scripts/Runtime/`.
+>
+> **Quyết định owner 04/10 (memory `roadmap-decisions-1004`, `fix-plan-decisions-1004`)**
+> - V1 chỉ có Endless; campaign làm sau. Mọi map mở cho người chơi, không thiết kế khoá map. Ship theme nào: quyết sau.
+> - Thứ tự tiếp: (1) build Android Development có cheat, đo profiler trên máy; (2) dọn dẹp; (3) gameplay:
+>   cân bằng, giá súng so với thu nhập, nhịp phần thưởng trong trận, juice, thành tích.
+> - Kế hoạch sửa P0→P7 (nhóm G0–G12) đã duyệt, chọn A mọi câu hỏi. Đã làm xong hết, xem bảng dưới.
+>
+> **Đã sửa ngày 04/10 (mỗi nhóm một commit)**
+>
+> | Nhóm | Commit | Kết quả |
+> |---|---|---|
+> | G0 | `752c2c633` | EventBus không còn giữ closure sau Unsubscribe; reset static mỗi session; cheat `zw.die/chest/item/station/acclevel`; baseline perf `Review/QA/perf_baseline.md` |
+> | G1 | `8628f206c` | Thanh máu HUD theo mọi thay đổi máu qua `Health.SetCurrent` (`R/Gameplay/Health.cs:62-140`) |
+> | G2 | `4d3e52e30` | Màn UI trượt về vị trí gốc cố định, không lệch 40 px khi bấm tab giữa chừng |
+> | G3 | `f00a6df2b` | Boss Beacon trả rương đúng con boss, lúc boss chết. Phân tích rơi đồ: `Review/QA/drop_rates.md` |
+> | G4 | `9f8c28547` | VO import không ép mono; hàng đợi ưu tiên FTUE > hội thoại > chatter (`R/Audio/RadioVoice.cs:39`); phụ đề ẩn dưới modal |
+> | G5 | `56212c8b0` | Ghi save theo `PlayerProfile.Batch` (`R/Systems/PlayerProfile.cs:293`), `MarkDirty` gộp ghi; bản dự phòng `zw.profile.bak`, save hỏng giữ ở `zw.profile.corrupt` (`:263`); schema v3 |
+> | G6 | `02b1fff5c` | `GameClock`: UTC, một giờ reset 16:00 UTC (`R/Systems/GameClock.cs:24`), không lùi giờ được; Daily, stamp, free pull, deal, nhiệm vụ, Pass dùng chung |
+> | G7 | `abb0baf64` | Một đường FTUE (v3); thẻ bộ đàm tránh đè mục tiêu; lần hồi sinh miễn phí đầu không đếm ngược; LV5 tặng mảnh sao cho súng đang trang bị |
+> | G8 | `fe6da529a` | Tìm quái qua `ZombieManager.Alive`, không OverlapSphere; collider → enemy tra một lần |
+> | G9 | `1156af481` | Pool tự tick hẹn giờ trả; gộp số sát thương; GC 3.530 → 2.028 KB/s, lần flush save 147 → 6 (`Review/QA/perf_baseline.md`) |
+> | G10 | `253291130` | Nav chỉ đọc lại vùng thay đổi trong cửa sổ 72 m; chunk dựng sẵn lúc loading; map mang nhạc và câu brief riêng (`R/World/Maps/MapTheme.cs:37-39`) |
+> | G11 | `912e72c47` | Chữ kinh tế sinh từ luật; lượt quay miễn phí đầu tiên luôn ra súng (`R/Systems/GachaBanners.cs:143-150, 189-200`); một câu khoá tính năng |
+> | G12.1–6 | `97109dd78` | Sự kiện gameplay → UI; `UIBind`; cooldown nằm trong SkillDef; code dev tách assembly `_Project.Dev` (`R/Dev/_Project.Dev.asmdef:23-25`: `UNITY_EDITOR \|\| DEVELOPMENT_BUILD \|\| ZW_CHEATS`) |
+> | G12 part 2 | `7a42bf079` | Tách class lớn thành partial: `PlayerProfile` (+ Account, Arsenal, Dev, Load, Missions, Outfit, Wallet, Wardrobe), `RunOverlays`, `Weapon`, `ZombieBase`, `SkillRuntime`; xoá revive/result V1 |
+> | G12.7 | `008c991af` | Xoá 5 màn menu V1 (Hub, Loadout, Shop, Costume, Pass) khỏi `Menu.unity` cùng prefab và script; `UI/Prefabs/Screens/` chỉ còn `UI_Hud.prefab` |
+> | G12.8 | `ae5b3e14f` | Widget là reference serialize, không `transform.Find` theo đường dẫn; `SerializedRefsTests` |
+> | G12.9 | `6976df8c6` | Đo: tách canvas HUD không lợi gì (~0,22 ms/frame cả hai cách), không áp dụng |
+> | G12.10 | `96fd2be41` | Map theme và VO thành Addressables (xem dưới) |
+>
+> Thêm sau kế hoạch: Daily nút CLAIM trước + nhãn CLAIM, thanh "Radio voice" trong Settings (`60fb91be3`, `fb65b0326`;
+> `R/Systems/GameSettings.cs:25`); thẻ bộ đàm gõ chữ khi giọng của chính nó bắt đầu, sóng âm theo độ lớn giọng
+> (`3b5fc1b4f`, `e08f3471d`).
+>
+> **Trạng thái đã soát**
+> - Map: 6 theme bake sẵn — meadow (mặc định, `R/World/Maps/MapTheme.cs:95`), forest, swamp, volcano, tundra, desert
+>   (`Data/MapThemes/MapTheme_*.asset`). Addressables `map/<id>`, label `maptheme` (`MapTheme.cs:21`), nạp trong màn loading
+>   bằng `MapTheme.PreloadForRun` (`:163`). Nhạc riêng 5 map; desert để trống `musicKey` nên dùng nhạc chung
+>   (`Data/MapThemes/MapTheme_desert.asset:59`, `MapTheme.cs:210`). Người chơi chưa có UI chọn map: chỉ cheat QA đổi
+>   `MapTheme.CurrentId` (`R/Dev/ZombieWarCheatPanel.cs:798`).
+> - Bộ đàm: 256 câu VO (`Audio/VO/Clips/*.wav`), nạp Addressables `vo/<id>` (`R/Audio/RadioVoice.cs:21, 33`), phát xong thì
+>   release. Thẻ FTUE v3 (`R/UI/Radio/FtueRadio.cs`, `FtueV3.cs`) gõ chữ khi nhận `RadioLineEvent` của câu đó
+>   (`FtueRadio.cs:295`). Sóng âm đọc `RadioVoice.Level` (`RadioVoice.cs:93`) từ envelope 30 giá trị/giây do
+>   `Tools/vo_envelopes.py` sinh ra (`R/Audio/VoiceEnvelopes.cs:10-21`). 10 câu thành tích đã thu (`Audio/VO/Clips/*_ach_*.wav`)
+>   nhưng chưa có hệ thống thành tích trong code.
+> - Payout: mọi kết thúc giữ 100% coin (`R/Systems/RunClosure.cs:17-22`).
+> - Giá súng (54 `Data/Weapons/WD_*.asset`, trường `price` dòng 23–24): Common 400–1.200 (`WD_Sidearm_Makarov.asset:24`,
+>   `WD_Sidearm_DesertEagle.asset:24`), Uncommon 1.800 (`WD_SMG_ModernP.asset:23`), Rare 2.500–3.500
+>   (`WD_AssaultRifle_M4A1.asset:24`, `WD_Shotgun_AA12.asset:24`), Epic 5.000–6.000 (`WD_AssaultRifle_FAMAS.asset:24`,
+>   `WD_AssaultRifle_G36C.asset:24`), Legendary 12.000
+>   (`WD_AssaultRifle_ModernW.asset:23`, `WD_Launcher_ModernG.asset:23`). Sáu file `*_Generic`/`PistolA` có giá 0.
+> - Gacha (`R/Systems/GachaBanners.cs`): 3 banner — sự kiện NEON NIGHTS 14 ngày, Legendary 0,6%, pity cứng 90, 50/50
+>   (`:31-35, 47-59`), x10 = 11 hộp (`:39`); STREET (trang phục) và SHARDS dùng `GachaService` với pity 30, không 50/50
+>   (`Data/Economy/EconomyConfig.asset:3756, 3771`). Giá 30 gem / 270 gem, 1 / 10 vé (`GachaBanners.cs:31`).
+> - Daily: 7 ngày chào mừng + thẻ 28 stamp, bù 2 ngày mỗi chu kỳ với 20 gem (`R/Systems/DailyRewards.cs:15`).
+> - Hồi sinh: tối đa 3 mỗi trận, giá coin gấp đôi mỗi lần (`R/Systems/ReviveRules.cs:13, 35-36`); quà tân binh bù đủ
+>   giá súng rẻ nhất ở trận đầu (`R/UI/V2/RunEndV2.cs:346, 389`).
+> - Menu: chỉ còn bộ màn V2 (`R/UI/V2/`: Home, Arsenal, Shop, Gacha, Pass, Daily, Studio, Profile, Settings, RunEndV2).
+> - Thoát ra màn hình chính tự pause (`R/UI/RunOverlays.cs:116`, `RunOverlays.Pause.cs:21-25`); Blob có âm tấn công/đau/chết
+>   (`Data/Zombies/ZD_BlobAlien.asset:34-36`); PowerBudget có hệ số cho Landmine, Time Warp (`R/Gameplay/Skills/PowerBudget.cs:47-49`).
+>   Ba mục này trong danh sách 10-01 đã xong.
+> - Test: EditMode 832 pass (sau commit `e08f3471d`, gồm SerializedRefsTests và VoiceEnvelopeTests).
+>
+> **Còn thiếu cho V1 (thứ tự owner 04/10)**
+> 1. Build Android Development (có cheat) và đo profiler trên máy thật. Chưa build Android lần nào.
+> 2. Dọn dẹp: comment `Purchases.cs:7` còn nhắc AppLovin (đã bị loại); widget FTUE v2 còn ẩn trong prefab; `Assets/_Recovery/*.unity`.
+> 3. Gameplay: trận đầu quá khó (QA 04/10 chết ở 0:43 — chưa có file ghi lại); giá súng so với thu nhập; rương và vật phẩm
+>    chỉ từ elite và trạm (`Review/QA/drop_rates.md`); juice; màn kết quả có điểm theo kill (hiện chỉ lưu thời gian sống);
+>    hệ thống thành tích; đường độ khó endless (hiện +4%/tier từ tier 6, `R/Gameplay/Threat/ThreatDirector.cs:82-84`).
+> 4. SDK và store: IAP, quảng cáo (AdMob hoặc ironSource; AppLovin bị loại 29/09), Firebase, UMP; Settings còn Help,
+>    Ad privacy, Privacy là "Coming soon" (`R/UI/V2/SettingsScreen.cs:83-85`), Language chưa có (`:80`).
+>    `productName` vẫn "Zombie War" (`ProjectSettings/ProjectSettings.asset:16`), package id Android vẫn là id mẫu (`:170`), chưa keystore.
+> 5. Perf chờ số liệu trên máy: gom Update của zombie vào một tick (FullTick), SetParent của pool, ngân sách giải flow field
+>    (`Review/QA/perf_baseline.md`, commit `253291130`).
+> 6. Banner thường (STREET, SHARDS) vẫn pity 30 không 50/50; chưa có bản dịch; save chưa mã hoá; backend (leaderboard, cloud) để sau.
 
 > **2026-10-01 — Catch-up sau phase A, B, C, E (commits `eaaccef6`..`05a8256c`).** Khối này thắng mọi
 > khối và mục bên dưới khi mâu thuẫn. Soát bằng đọc code và asset; đường dẫn tính từ `Assets/_Project/Scripts/Runtime/`
 > nếu không ghi khác. Việc còn mở và quyết định: board "HordeCall Board" (artifact, db `items`).
+> *(04/10: khối này đã cũ một phần. Nay có 6 map (thêm desert). Trong "Còn thiếu" dưới đây, mục 3 (FTUE), 4 (pause),
+> 6 (âm Blob, nhạc mỗi map), 10 (PowerBudget), phần đồng hồ máy của 11 và 12 (dọn màn cũ) đã xong; mục 5 nay là
+> "mọi map mở", chỉ còn thiếu UI chọn map. Xem khối 2026-10-04.)*
 >
 > **Trong trận — đã có**
 > - Vòng trận: `GameFlow.StartGameplay` → `RunState.Begin`, một scene `Map_Level1`. Chỉ có mode Endless; campaign,
@@ -94,6 +176,9 @@
 > perk choice/application vẫn chưa end-to-end; `Weapon.EquipData()` vẫn refill magazine và xóa reload khi swap. Design truth
 > hiện nằm trong `DESIGN_BRIEF.md` và ba canonical file dưới `Reference/Design/`. Không dùng các gap
 > G1/G7/G10 cũ dưới đây như task mới nếu chưa re-check source.
+
+> **Từ đây trở xuống là snapshot 2026-07-31 (§0–§6), chỉ còn giá trị lịch sử** trừ luật cứng §0. Riêng §0.6
+> ("không thêm Addressables") đã bị owner thay ngày 04/10: map theme và VO là Addressables (G12.10).
 
 **Cập nhật:** 2026-07-31 · **HEAD:** `68fbc090` · **Branch:** `main`
 **Cách lập:** đọc source/asset thật + đọc scene qua Unity MCP. Mọi khẳng định có `file:line`

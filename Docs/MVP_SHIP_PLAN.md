@@ -1,25 +1,86 @@
-# Zombie War — MVP Ship Plan
+# HordeCall (Zombie War) — MVP Ship Plan
 
-> **2026-09-27 — superseded where it conflicts:** the game is now **HordeCall**; runs bank **100%** of
-> coins on death and walk-away (the "25 % / 0 %" lines below are history); weapons cost **Coin** (no
-> Blueprint); the approved Meta v2 screens and the M9–M14 roadmap (artifact "HordeCall Roadmap") are the
-> current plan. See the top block of `CURRENT_STATE.md`.
-
-**Phase:** SHIP · M0-M5+ complete · **M6 LOCKED** · M7.0 delivered (2026-08-15) · **M7 Slice A DELIVERED** (2026-09-25) — see the section below  
-**Updated:** 2026-08-15  
-**Design authority:** [M6_ENDLESS_RUN_SYSTEM_DESIGN.md](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)  
-**Vision authority:** [GAME_DESIGN.md](GAME_DESIGN.md)  
-**World authority:** [WORLD_STREAMING_TECHNICAL_DESIGN.md](WORLD_STREAMING_TECHNICAL_DESIGN.md)
+**Phase:** SHIP · M0–M10, phases A–E, FTUE v3 and the 04/10 fix plan (G0–G12) delivered · next: Android
+device build + profiling
+**Updated:** 2026-10-04
+**State evidence:** [CURRENT_STATE.md](CURRENT_STATE.md) (2026-10-04 block, `file:line`)
+**Vision:** [GAME_DESIGN.md](GAME_DESIGN.md) (top block lists what changed)
 
 > ## READ THIS FIRST - document structure
 >
 > | Part | Status |
 > |---|---|
-> | From here to "M5+ TOON UNIFICATION" | **ARCHIVED HISTORY - NOT CURRENT DESIGN.** Delivered work plus the pre-M6 *expedition* plan. A record, not a direction. |
-> | "M6 - PROPOSED EXECUTION LADDER" (at the end) | The only forward-looking section. **M7 is not authorized.** |
+> | "Current plan — 2026-10-04" (next section) | **The only live plan.** Scope, what is done, what is next, in order. |
+> | "M7 Slice A — DELIVERED" | Delivered 2026-09-25; several rows were later changed (marked). |
+> | From "ARCHIVED HISTORY" to "M5+ TOON UNIFICATION" | **History.** Pre-M6 expedition plan and M4/M5 closeout evidence. Do not execute. |
+> | "M6 / M7 ladder — outcome" (end) | Short record of what happened to each M7 step. |
 >
-> The archived part still uses expedition, extraction, objective and bomb/weapon-switch vocabulary.
-> **All of that is superseded.** The current input model is movement + card choice + one context action.
+> The archived part still uses expedition, extraction, objective, 25 %/0 % banking, Blueprint and
+> bomb/weapon-switch vocabulary. **All of that is superseded.**
+
+---
+
+## Current plan — 2026-10-04
+
+Owner decisions this plan rests on (project memory files): `roadmap-decisions-1004`,
+`fix-plan-decisions-1004`, `m8-economy-decisions`, `m8-meta-redesign-decisions`, `v1-scope-decisions-0927`,
+`sdk-decisions-0928`, `ftue-*`, `lore-agents-radio`, `backend-features-deferred`.
+
+### V1 scope (locked)
+
+- **Endless only.** A campaign comes later. **Every map is open to the player** (no unlock gating). Six baked
+  maps exist (meadow, forest, swamp, volcano, tundra, desert); which themes ship is decided later. There is
+  no player-facing map picker yet (only a QA cheat).
+- One gun per run, auto-aim/auto-fire; 82 skill cards, 6 skill + 4 stat slots; stations Signal Relay, Supply
+  Cache, Boss Beacon, Supply Drop, Heal Zone; items Magnet, Bomb, Freeze Clock; 33 enemy kinds.
+- Every run end banks **100 %** of coin. Guns are bought with coin (Common 400–1,200, Uncommon 1,800,
+  Rare 2,500–3,500, Epic 5,000–6,000, Legendary 12,000).
+- Meta v2: Home, Arsenal, Shop, Gacha (event banner pity 90 + 50/50; first free pull ever is a gun), Pass,
+  Daily (7-day welcome + 28-stamp card), Studio, Profile, Settings. Revive up to 3 per run.
+- FTUE v3: HQ radio-call cards with agent voice-over (256 lines, Addressables `vo/<id>`).
+- Backend features (leaderboard, friends, cloud save, server mail) are design-only until offline work ships.
+
+### Done (since the 2026-09-27 note)
+
+| Item | Status | Evidence |
+|---|---|---|
+| M8 economy (100 % payout, D2 gun prices), M9 HordeCall name in UI, M10 Meta v2 screens | DONE | `CURRENT_STATE.md` 09-27 blocks |
+| Phase A skills + balance pass 1, B monsters (17 Blob, VAT), C optimisation, E map themes (6 baked maps, looks, audio per map) | DONE | `CURRENT_STATE.md` 10-01 block; commits up to `bfaeb0608` |
+| FTUE v2 logic + v3 radio-call presentation, 6 agents, 256 VO lines | DONE | `62db2b451`, `7a9793a42`, `d84d8b258` |
+| Fix plan P0→P7, groups G0–G12 (QA + code review; owner chose A everywhere) | DONE | `752c2c633`..`6976df8c6`; table in `CURRENT_STATE.md` 10-04 block |
+| Map themes and VO on Addressables (G12.10) | DONE | `96fd2be41` |
+| V1 menu screens removed (G12.7); dev code in `_Project.Dev` assembly | DONE | `008c991af`, `97109dd78` |
+| Daily claim-first button, Settings "Radio voice" slider | DONE | `60fb91be3`, `fb65b0326` |
+| Radio card types with its own voice; waveform follows loudness | DONE | `3b5fc1b4f`, `e08f3471d` |
+
+### Next, in order (owner 2026-10-04)
+
+Each task gets a plan for owner approval first, written as what it does → why → how it shows in game.
+
+1. **Android Development build with cheats + on-device profiling.** The owner plugs in a phone; no keystore
+   needed. Measure frame time, GC and memory with the profiler (no manual device testing).
+   Gate: a capture in `Review/QA/` from the same scenario as `perf_baseline.md`.
+2. **Cleanup.** Stale comments (AppLovin in `Purchases.cs:7`), hidden FTUE v2 widgets, `Assets/_Recovery/`,
+   docs that still describe retired systems. No behaviour change.
+3. **Gameplay balance and reward feel.**
+   - First run is too hard (QA 04/10: death at 0:43). Tune the opening so a newcomer reaches the first
+     station and first chest.
+   - Gun price vs income: re-run `Tools/econ_sim.py` with full payout; check time to the second gun.
+   - In-run reward cadence: chests and items only come from elites and stations (`Review/QA/drop_rates.md`);
+     early runs see almost nothing.
+   - Juice / dopamine: hit, kill, level-up, chest and pickup feedback.
+   - Result screen with a **kill-based score** (the owner wants score, not survival time, as the record).
+   - **Achievement system** (10 achievement VO lines already recorded: `Assets/_Project/Audio/VO/Clips/*_ach_*.wav`).
+   - Endless difficulty curve: the player must die eventually (now +4 %/tier from tier 6).
+4. **SDK and store.** Unity IAP (Google Play Billing); ads through **AdMob or ironSource** (one mediation
+   layer; AppLovin rejected 2026-09-29); Firebase (Analytics, Crashlytics, Remote Config); UMP consent;
+   Settings rows Help / Ad privacy / Privacy / Language; package id, productName "HordeCall", keystore,
+   privacy policy; interstitial rules from `sdk-decisions-0928`.
+5. **Perf items waiting for device numbers:** zombie per-object Update into one manager tick (FullTick), pool
+   SetParent churn, flow-field solve budget (G10.2). Only if the device profile asks for them.
+
+Later (not V1 unless the owner says so): campaign, map-select presentation, 50/50 on the normal gacha
+banners, localisation, save encryption, backend features.
 
 ---
 
@@ -30,22 +91,21 @@ everything M6 retired. Evidence: `Review/M7_SliceA/` (screenshots, `pacing_measu
 
 | Area | Now true in code |
 |---|---|
-| Run end | Death banks 25 % Coin, walking away 0 %; both show the result screen. No Victory. Gem secured on pickup. Best survival time is the record. |
+| Run end | *(changed 2026-09-27: every ending banks 100 %)* Death banks 25 % Coin, walking away 0 %; both show the result screen. No Victory. Gem secured on pickup. Best survival time is the record. |
 | World | One scene (`Map_Level1`). Campaign, stage selector, WaveDirector/WaveData, Map_Level2-5 and Map_GenTest deleted. ThreatDirector is the only spawner. |
 | Weapon | One weapon per run (profile schema v2 migrates the three slots). Weapon switching and the bomb are deleted. |
 | Cards | SkillRuntime is the single run-stat owner; the legacy perk pool is deleted. All 23 cards change what the game reads (behaviour test per repaired card). Fresh seed per run. |
-| Pacing | Threat time pressure uncapped (1 tier / 90 s); +8 % enemy stats per tier past tier 3; 60 s eased opening; XP `25 + (L-1)^1.35 x 12`. Measured: starter pistol idle gets its first card at 32 s. |
+| Pacing | *(changed since: +4 % per tier from tier 6, XP curve retuned)* Threat time pressure uncapped (1 tier / 90 s); +8 % enemy stats per tier past tier 3; 60 s eased opening; XP `25 + (L-1)^1.35 x 12`. Measured: starter pistol idle gets its first card at 32 s. |
 | Stations | Supply Cache sells a card offer for a rising, visible Coin price; relays/beacons raise threat; a ground chevron points at the nearest unfinished station. |
-| Meta | Shop ships Weapons + Costume. Gacha, upgrades, Gold hidden (code kept). Pass missions rewritten for endless play. |
+| Meta | *(changed 2026-09-27: Meta v2, gacha and stars live; V1 screens deleted 2026-10-04)* Shop ships Weapons + Costume. Gacha, upgrades, Gold hidden (code kept). Pass missions rewritten for endless play. |
 | Editor | Pressing Play in any scene boots through Bootstrap. |
 
-Not in this slice (Icebox until playtest evidence): Blueprint, Relic/Archive, Boss Chest, Greed
+Not in this slice (Icebox until playtest evidence; Blueprint later dropped for good): Blueprint, Relic/Archive, Boss Chest, Greed
 Terminal, Medical Station, Route Scanner, outfit H2, weapon tier re-authoring, new streaming features.
 
-Owner checklist (prefabs agents may not edit): remove `WeaponBtn`, `BombBtn`, `VictoryPanel` from
-`UI_Hud`; the stage selector (`CampaignSelectorView`/`CampaignDotView` components) from
-`UI_HubScreen`; `BombRow` and the retired slots from `UI_LoadoutScreen`; the Gacha link from
-`UI_PassScreen`. Runtime code hides all of them until then.
+Owner checklist (2026-09-25): remove retired widgets from `UI_Hud`, `UI_HubScreen`, `UI_LoadoutScreen`,
+`UI_PassScreen`. *2026-10-04: the Hub, Loadout and Pass V1 prefabs were deleted in G12.7 (`008c991af`);
+whether `WeaponBtn`/`BombBtn`/`VictoryPanel` still sit hidden in `UI_Hud` was not re-checked.*
 
 ---
 
@@ -1995,59 +2055,22 @@ not the same as successful browser execution.
 
 ---
 
-# M6 — PROPOSED EXECUTION LADDER — M7 NOT AUTHORIZED
+# M6 / M7 ladder — outcome (rewritten 2026-10-04)
 
-**M6 design authority:** [`M6_ENDLESS_RUN_SYSTEM_DESIGN.md`](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)
-**Status: M6 is LOCKED (W1–W7 answered 2026-08-15). M7 is NOT STARTED and NOT AUTHORIZED.**
-M5 and M5+ are complete.
+M6 was locked on 2026-08-15; M7 Slice A was authorized and delivered on 2026-09-25. The M6 economy row
+(Blueprint, Relic, gacha "without design authority") and the 25 %/0 % banking rule were replaced by the
+owner on 2026-09-27 (Meta v2, 100 % payout). The old proposal table is removed; what happened to each step:
 
-> M6 being locked is **not** M7 authorization — they are separate approvals, and the second has not been
-> given. The ladder below is what M7 approval *would* trigger. It is not an active plan. The answered
-> decisions are in section 1 of the M6 document; the three deltas they created are in §1c–§1e.
+| Step | Outcome |
+|---|---|
+| M7.1 one-weapon contract, XP curve, one stat card per offer | DONE (Slice A); XP curve retuned since (`RunState.XpForLevel`) |
+| M7.2 offer system + cards | DONE and grown to 82 cards (phase A) |
+| M7.3 Signal Relay + compass | DONE (Slice A) |
+| M7.4 Supply Cache coin sink | DONE |
+| M7.5 Boss Beacon + chest | DONE; boss chest payout fixed in G3 (`f00a6df2b`) |
+| M7.6 endless settlement, no wave auto-collect | DONE; WaveDirector deleted; payout now 100 % |
+| M7.7 Relic Archive | CUT (not built) |
+| M7.8 costume metadata + H2 randomizer | Partly: styled Random in Studio (`7b5462b53`, `8a1577343`); the H2 gate was not re-measured |
 
-Every "expedition", "extraction" and "contract" statement earlier in this document describes the
-pre-M6 direction and is superseded. The game is a **one-weapon endless action roguelite**.
-
-## What M6 proposes (owner-locked rows are marked)
-
-| Area | Decision | Status |
-|---|---|---|
-| Run structure | Endless. **No Victory state.** Death banks **25 %** Coin; manual abandon banks **0 %** and requires confirmation. |
-| Weapons | **One per run**, chosen in the Hub. **Weapon Factory**: 6 families, 33 distinct bodies measured, variants inside families (W1, OWNER-LOCKED); no fixed weapon count is a design boundary. Onboarding runs through the **universal Weapon Visual Onboarding Gate G1–G8**, and every weapon sits in a **measured tier band** (W3, OWNER-LOCKED). The three-gun roster limit is retired. |
-| Skills | **23-card candidate catalog** = 5 stat (filler) + 12 signature (2 per family) + 4 autonomous + 2 universal. **Max one stat card per 1-of-3 offer.** 20 of 23 need new runtime primitives. |
-| Grenade | **Retired.** Content reused as `Ordnance Core` (autonomous) and `Emergency Detonation` (instant on pickup). |
-| Map objects | Signal Relay · Supply Cache · Boss Beacon · Medical Station · Route Scanner · Greed Terminal, all on one interaction grammar. |
-| Boss content | **Existing assets only** — `CactusBoss`, `MoleRatKing`, `SkeletonGiant`; elites `DogBowwow`, `SkeletonMage`, `CatLightning`. |
-| Economy | **Coin** (spend now) · **Gem** (rare cosmetics) · **Blueprint** (weapon unlocks — new, fungible, deterministic) · **Relic** (collection). Weapons cost Blueprint only; Coin buys everything else. **Gold, Weapon Shards, star upgrades and gacha are present in code, without design authority** (W6, OWNER-LOCKED). |
-| Outfits | **H2 approved for production** (W7, OWNER-LOCKED). Gate: **0 % hard conflicts (mandatory)** + ~70 %+ thematic coherence; measured 0 % / 73 % over 300 seeds. The 85 % bar is superseded by owner decision. Metadata authoring over 453 items is still outstanding. |
-| Removed | Wave-clear auto-collect · five-wave Victory · three-weapon switching · extraction as core · Maps 2–5. |
-
-## Proposed ladder (M7) — NOT AUTHORIZED
-
-| Step | Deliverable | Pass condition | Cost |
-|---|---|---|---|
-| **M7.1** | One-weapon contract · widened XP curve · one-stat-card-per-offer rule | Two runs with the same gun differ; no all-stat offer appears | MEDIUM |
-| **M7.2** | Offer system + approved subset of the 23 cards | ≥2 visibly different builds per family; no all-stat offer | MEDIUM |
-| **M7.3** | Signal Relay + compass/pin HUD | Players leave safety to reach a signal | MEDIUM |
-| **M7.4** | Supply Cache + in-run Coin sink | Players spend Coin before dying | LOW–MEDIUM |
-| **M7.5** | Boss Beacon + Boss Chest (existing enemies) | Players opt into a boss they could have skipped | MEDIUM |
-| **M7.6** | Endless settlement; remove `WaveClearedEvent` auto-collect | No "Victory" string reachable; banking correct | MEDIUM |
-| **M7.7** | Relic Archive; Gem/Relic secure-on-pickup | A rare drop survives a death | MEDIUM |
-| **M7.8** | Costume metadata authoring + H2 randomizer | ≥80 % PASS over 100 seeded outfits, 0 hard conflicts | MEDIUM–HIGH |
-
-**Smallest coherent vertical slice = M7.1 + M7.2 + M7.3.**
-If players will not voluntarily start a third run after those three steps, nothing later is worth
-building. Do **not** implement 25 weapons or the full skill library before that gate.
-
-## Known implementation debt recorded, not fixed, by M6
-
-These are code changes M6 identified but deliberately did **not** perform:
-
-| Item | Location | Work |
-|---|---|---|
-| Wave-clear auto-collect | `PickupManager.cs:141` → `CollectAll()` | remove for endless |
-| Dead weapon fields | 25 `WeaponData`: `resourceModel = Magazine`, empty `roleTag`/`buildTag`/`buildHint` | author identity, drop dead fields |
-| Three weapon slots | `LoadoutState` slots 0–2 | reduce to one selected weapon |
-| Manual bomb input | `BombThrower`, `Bomb`, HUD bomb button | retire input, keep art |
-| XP curve | `RunState.XpForNextLevel = 10 + (Level-1)*8` | widen (see spec §16.2) |
-| Stale project fact | `Docs/Reference/Design/SKILL_SYSTEM_DESIGN.md` §1 | perks **are** applied; correct the text |
+The M6 implementation-debt rows (wave-clear auto-collect, three loadout slots, manual bomb, XP curve) were
+closed by Slice A; check source before reopening any of them.

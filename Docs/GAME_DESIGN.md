@@ -1,27 +1,31 @@
 # Zombie War — Game Design Document
 
-> ## 2026-10-01 — what changed since this document (read first)
+> ## 2026-10-04 — what changed since this document (read first)
 >
-> The game is now **HordeCall**. The owner's later decisions (M8–M10, phases A–E) replaced several
-> rules below; where this block and the text disagree, this block wins. Verified state with
-> `file:line` evidence: [`CURRENT_STATE.md`](CURRENT_STATE.md) (2026-10-01 block).
+> The game is now **HordeCall**. The owner's later decisions (M8–M10, phases A–E, the 04/10 fix plan and
+> roadmap) replaced several rules below; where this block and the text disagree, this block wins. Verified
+> state with `file:line` evidence: [`CURRENT_STATE.md`](CURRENT_STATE.md) (2026-10-04 block). Paths are
+> under `Assets/_Project/Scripts/Runtime/`.
 >
 > | Topic | Below says | Now |
 > |---|---|---|
-> | Run payout | death banks 25 %, walk-away 0 % | every run end keeps **100 %** of coin (`Systems/RunClosure.cs`) |
-> | Guns | Blueprint unlocks; stars, Gold retired | guns are bought with **coin** in the Shop; **stars** upgrade a gun (shards + coin, from LV5); Gold is Coin |
-> | Gacha | hidden | live: event banner (pity 90 + 50/50), outfit and shard banners, daily free pull, tickets |
-> | Meta | — | Home, Arsenal, Shop, Gacha, Pass (XP from missions only), Daily (7 days + 28-day stamp card), Studio, Profile; account level gates LV2 Pass/missions, LV3 Gacha, LV5 stars |
+> | Run payout | death banks 25 %, walk-away 0 % | every run end keeps **100 %** of coin (`Systems/RunClosure.cs:17-22`) |
+> | Guns | Blueprint unlocks; stars, Gold retired | guns are bought with **coin**: Common 400–1,200, Uncommon 1,800, Rare 2,500–3,500, Epic 5,000–6,000, Legendary 12,000 (`Data/Weapons/WD_*.asset`). **Blueprint does not exist in code** (only a stale comment, `Systems/WeaponCatalog.cs:31`). **Stars** upgrade a gun (shards + coin, from LV5); Gold is Coin |
+> | Gacha | hidden | **live**: event banner (0.6 % Legendary, hard pity 90, 50/50; x10 = 11 boxes), STREET outfit banner and SHARDS banner (pity 30, no 50/50), one free pull a day, tickets (`Systems/GachaBanners.cs:31-62`). The **first free pull ever gives a gun** — the cheapest unowned Uncommon or better (`:143-150, 189-200`) |
+> | Meta | — | V2 screens only: Home, Arsenal, Shop, Gacha, Pass (XP from missions only), Daily (7-day welcome + 28-stamp card), Studio, Profile, Settings; account level gates LV2 Pass/missions, LV3 Gacha, LV5 stars. Revive: up to 3 per run, coin price doubles (`Systems/ReviveRules.cs:13`) |
+> | Modes | — | **Endless only for V1**; a campaign comes later. All maps are open to the player (no unlock gating); which themes ship is decided later (owner, 04/10) |
 > | Skills | 23 cards | 82: 10 stats, 14 signature, 12 universal, 23 powers, 19 evolutions, 4 BONUS; rank 5; 6 skill + 4 stat slots; cards unlock by account level LV1–34; **evolutions only from chests** |
 > | Enemies | no new enemy art | 33 kinds (16 Cute + 17 low-poly Blob), each map adds its own crowd, later kind and elite |
-> | World | one blended endless biome | **5 baked maps** (meadow, forest, swamp, volcano, tundra), each a 192 m wrapping map with basins and bridges, its own palette, light, music and monsters; the old procedural world is a fallback |
-> | In-run extras | Medical Station, Route Scanner, Greed Terminal; Relic, Blueprint, Boss Chest | stations are Signal Relay, Supply Cache, Boss Beacon, Supply Drop, Heal Zone; items are Magnet, Bomb, Freeze Clock |
-> | Level-up | auto-pick after ≤30 s | still 30 s; the FTUE (approved 2026-10-01) removes the timer on the very first pick |
-> | Escalation | +8 % per tier from tier 3 | enemies +4 % per tier from tier 6; crowd grows each tier |
+> | World | one blended endless biome | **6 baked maps** (meadow default, forest, swamp, volcano, tundra, desert; `Data/MapThemes/`), each a 192 m wrapping map with basins and bridges, its own palette, light and monsters, loaded on demand as Addressables `map/<id>` (`World/Maps/MapTheme.cs:21, 163`); the old procedural world is a fallback |
+> | Onboarding | — | FTUE v3: HQ radio-call cards voiced by six agent NPCs (256 VO lines, `Audio/RadioVoice.cs`); the player is always the recruit |
+> | In-run extras | Medical Station, Route Scanner, Greed Terminal; Relic, Blueprint, Boss Chest | stations are Signal Relay, Supply Cache, Boss Beacon, Supply Drop, Heal Zone; items are Magnet, Bomb, Freeze Clock. Relic, Blueprint, Greed Terminal, Route Scanner, Medical Station are not built |
+> | Level-up | auto-pick after ≤30 s | still 30 s (`UI/RunOverlays.LevelUp.cs:23`); the first pick ever has no timer |
+> | Escalation | +8 % per tier from tier 3 | enemies +4 % per tier from tier 6 (`Gameplay/Threat/ThreatDirector.cs:82-84`); crowd grows each tier |
+> | Score | best survival time | owner wants a **kill-based score** on the result screen and an achievement system — not built yet |
 
 **Authority:** Canonical game vision, player fantasy, world and content direction  
 **Phase:** CONCEIVE — vision locked; **M6 system design is LOCKED** (W1–W7 answered 2026-08-15)  
-**Updated:** 2026-09-25 (owner decisions in §1; M7 Slice A delivered — see `MVP_SHIP_PLAN.md`)  
+**Updated:** 2026-10-04 (payout, guns, gacha, Blueprint and meta corrected in the body; top block lists the rest)  
 **System companion:** [`M6_ENDLESS_RUN_SYSTEM_DESIGN.md`](M6_ENDLESS_RUN_SYSTEM_DESIGN.md)  
 **Technical companion:** [`WORLD_STREAMING_TECHNICAL_DESIGN.md`](WORLD_STREAMING_TECHNICAL_DESIGN.md)
 
@@ -41,15 +45,15 @@
 > | One weapon chosen before the run; no in-run switching | **OWNER-LOCKED** |
 > | Auto-fire, no reload, no manual grenade button | **OWNER-LOCKED** |
 > | Level-up is 1-of-3, pauses ≤30 s unscaled, auto-picks on timeout | **OWNER-LOCKED** |
-> | No Victory state; death banks 25 % Coin, manual abandon banks 0 % | **OWNER-LOCKED** (corrected) |
+> | No Victory state; every ending banks 100 % Coin | **OWNER-LOCKED** (M8, 2026-09-27; replaced 25 % / 0 %) |
 > | `Map_Level2`–`5` retired; dedicated character metal cut | **OWNER-LOCKED** |
 > | **Weapon Factory**: 6 families, variants inside families, mostly-automatic onboarding | **OWNER-LOCKED** (W1, 2026-08-15). No fixed weapon count is a design boundary |
 > | **Universal Weapon Visual Onboarding Gate** (G1–G8) + measured tier ladder | **OWNER-LOCKED** (W3). Replaces the retired MW4-specific gate |
 > | **23-card catalog** (5 stat + 12 signature + 4 autonomous + 2 universal); all 23 in scope; max one stat card per offer | **OWNER-LOCKED** (W2). MUST/SHOULD/LATER is build order, not scope. 20 cards rest on 9 shared primitives |
 > | Signal Relay / Supply Cache / Boss Beacon as first interactives, in that order; station identity carried by a prop-independent **World Signal Language** | **OWNER-LOCKED** (W4) |
 > | Relic collection system — collection-only, never grants stats, **2D/billboard art** | **OWNER-LOCKED** (W5) |
-> | Replacement economy: **Coin + Gem + Blueprint (new) + Relic**. Weapons cost Blueprint only | **OWNER-LOCKED** (W6) |
-> | Gold / Weapon Shard / star upgrades / gacha | **OWNER-LOCKED (W6): present in code, without design authority.** Not deleted, not "pending approval" |
+> | ~~Replacement economy: Coin + Gem + Blueprint + Relic; weapons cost Blueprint only~~ | **Replaced (M8–M10, 2026-09-27):** weapons cost Coin; Blueprint and Relic were never built |
+> | Gold / Weapon Shard / star upgrades / gacha | **Live (Meta v2, 2026-09-27):** Gold = Coin; shards + coin raise gun stars from LV5; gacha is live (§11) |
 > | H2 outfit grammar | **OWNER-LOCKED (W7): APPROVED FOR PRODUCTION.** Gate is **0 % hard conflicts (mandatory)** + ~70 %+ thematic coherence; measured 0 % / 73 % over 300 seeds. The earlier 85 % bar is **superseded by owner decision**. Metadata authoring over 453 items is still outstanding |
 >
 > Everything below describing expeditions, extraction, POIs or contracts is **historical**.
@@ -81,9 +85,9 @@
   rate.** Weapon rhythm comes from fire cadence and weapon-specific behaviour, not from reload
   downtime. **The only player inputs are movement, the level-up card choice, and a single context
   action for world interactives.** There is no manual bomb button and no in-run weapon switching.
-- The current runtime has pooled enemies, 16 enemy data assets (11 unused in production), 25 weapon
-  data assets, run closure, profile persistence and Coin/Gold/Gem infrastructure. `LoadoutState` still
-  models three weapon slots; **M6 uses slot 0 semantics only and the rest is dormant.**
+- The current runtime (2026-10-04) has pooled enemies, 33 enemy data assets (`Data/Zombies/ZD_*.asset`),
+  54 weapon data assets (`Data/Weapons/WD_*.asset`), run closure, profile persistence, Coin/Gem/shard/ticket
+  wallets and one weapon per run.
 - Current combat already supports useful questions: crowd pressure, runners/pouncers, ranged pressure,
   burrow telegraphs, chargers, heavy enemies and bosses.
 - **Superseded at M4:** production maps no longer use baked NavMesh or authored terrain as the world
@@ -106,14 +110,14 @@
 
 ### Owner decisions — 2026-09-25 (OWNER-LOCKED)
 
-- **Walking away banks 0 % of Coin.** There is no Evac/banking station; a run ends by death (25 %)
-  or by walking away (0 %). The fantasy is "until the world beats me", not "leave when it suits me".
+- ~~Walking away banks 0 % of Coin; death 25 %.~~ **Replaced 2026-09-27:** every ending banks 100 % of
+  Coin. Living longer already pays more; a cut only added friction. There is still no Evac/banking station.
 - **Time pressure is uncapped.** One threat tier per 90 s, forever. Tiers 0-3 change composition;
   later tiers scale enemy health and damage (+8 % per tier). Standing still is ground down.
 - **Theme: cute creatures, infected.** The baked Cute-series roster stays; no new enemy art. The
   store name is decided at listing time.
-- **Meta follows M6.** Gacha, weapon shards/stars and Gold stay in code but are hidden; weapons are
-  bought with Coin until Blueprint exists.
+- ~~Meta follows M6; gacha, shards/stars and Gold hidden.~~ **Replaced 2026-09-27 (Meta v2):** gacha,
+  shards and stars are live; Gold is Coin; weapons are bought with Coin. Blueprint was dropped.
 - **Retired input is removed, not hidden in design:** no bomb, no weapon switching, no stages, no
   Victory. Runtime code hides the owner-authored prefab widgets until the owner deletes them.
 - **Supply Cache sells a 1-of-3 card offer for Coin** (price shown in the world, rising per purchase).
@@ -124,8 +128,7 @@
 - One visible destination or meaningful route decision appears every **30–60 seconds**.
 - The first implementation profile uses dry scrub, grassland and rocky visual weights, blended
   continuously rather than separated into biome chunks.
-- **Death banks 25 % of Coin; a manual abandon banks 0 %.** Gem and Relic are secured the moment they
-  are picked up, in every ending.
+- Every ending banks **100 %** of Coin. Gem is secured the moment it is picked up.
 - Threat rises from time, distance and the stations the player chooses to activate.
 
 ### Open tuning questions, not concept blockers
@@ -177,7 +180,7 @@ instant-on-pickup (`Emergency Detonation`).
 World space is continuous and deterministic, and a run has a clear beginning, continuous escalation and
 a result the player either accepts or is handed. “Endless” never means “aimless”: pressure rises, the
 map keeps offering destinations, and pressure never stops climbing - the run ends when the world wins
-(or when the player walks away and forfeits the run's Coin).
+(or when the player walks away; every ending keeps the run's Coin).
 
 ### Anti-pillars
 
@@ -351,35 +354,34 @@ canonical run-build/skill specification before implementation begins. The curren
 
 ## 11. Resources and economy
 
-> **M6 LOCKED:** `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` sections 16 and 1d. Coin, Gem, **Blueprint** and
-> Relic are all **OWNER-LOCKED (W6)**; Gold / Weapon Shard / star upgrades / gacha are **present in
-> code, without design authority**. None of these is awaiting approval. Numeric rates remain `TUNING`.
+> **Current (Meta v2, owner 2026-09-27; checked in code 2026-10-04).** The M6 W6 economy (Blueprint,
+> Relic, gacha "without design authority") was replaced. Blueprint and Relic were never built. Paths are
+> under `Assets/_Project/`. Numbers stay tuning; the balance pass (gun price vs income) is next work.
 
 | Value | Source | Use | Persistence |
 |---|---|---|---|
 | XP | kills | temporary level-up card choices | resets each run |
-| Coin | kills, crates, containers | **spent in-run** at Supply Cache and Medical Station; Hub purchases | banked by outcome |
-| Gem | elites, Boss Chest, golden stations | rare cosmetics, costume sets, Archive | **secured on pickup** |
-| Relic Fragment | Boss Chest, Mythic Cache | Archive collection sets only | **secured on pickup** |
+| Coin | kills, Daily, Pass, gacha | **spent in-run** at Supply Cache and on coin revives; guns, star upgrades and Shop items | **100 % banked** in every ending |
+| Gem | elites, Daily, Pass (paid packs wait for the IAP SDK) | gacha pulls, Shop deals (tickets, weekly costume set), stamp make-up days (20 gem) | secured on pickup |
+| Gun shard | gacha (SHARDS banner, event banner), LV5 gift for the equipped gun | gun stars (with coin), from LV5 | permanent |
+| Ticket | gacha duplicates and event banner, Daily, Pass | gacha pulls (1 / 10) | permanent |
+| Daily day 7 | 7-day welcome check-in | a gun (`Scripts/Runtime/Systems/DailyRewards.cs:41-42`) | once |
+| Account XP | each run (`Scripts/Runtime/Systems/RunClosure.cs`) | account level: LV2 Pass/missions, LV3 Gacha, LV5 stars, cards LV1–34 | permanent |
 
 ### Meta currency roles
 
-Four resources, four disjoint jobs (**OWNER-LOCKED, W6** — full design in
-`M6_ENDLESS_RUN_SYSTEM_DESIGN.md` §1d and `Review/M6_DecisionLock/ECONOMY_V2.md`):
-
-- **Coin:** *"what do I spend right now?"* — in-run sink and Hub purchases. **Only Coin is at risk on
-  death** (25 % banked; manual abandon banks 0 %).
-- **Gem:** rare cosmetic lane; never required for the core loop. Secured at pickup.
-- **Blueprint (new):** *"how do I get the next weapon?"* — the **only** weapon unlock resource, and the
-  explicit non-luck path. **Fungible, not per-weapon**, so there are no duplicates, no conversion and
-  no pity. Faucet is event-driven (guaranteed from Boss Chest, plus completed stations), never time.
-  Cost scales by the measured tier band; **all costs are `TUNING`**. Secured at pickup.
-- **Relic Fragment:** collection only. Not a currency, never grants raw stats. Secured at pickup.
-- **Weapons cost Blueprint only; Coin buys everything else.** Disjoint sinks, so Coin is always safe to
-  spend in-run.
-- **Gold, Weapon Shards, star upgrades and gacha are present in code, without design authority.** The
-  code remains in the repository untouched; the design does not use it. This is a settled decision, not
-  a pending recommendation.
+- **Coin:** *"what do I spend right now?"* — in-run sink (Supply Cache, revives) and the main meta sink:
+  guns are bought with Coin. Gun prices: Common 400–1,200, Uncommon 1,800, Rare 2,500–3,500,
+  Epic 5,000–6,000, Legendary 12,000 (`Data/Weapons/WD_*.asset`, field `price`). Gold is the same thing.
+- **Gem:** premium lane earned by playing; pays gacha pulls (30 single / 270 for x10,
+  `Scripts/Runtime/Systems/GachaBanners.cs:31`).
+- **Gun shards + stars:** a gun gains stars with shards plus coin, from account LV5. Gun skins from the
+  Pass also add damage (`WeaponSkins.DamageBonus`, owner leans pay-to-win on skins).
+- **Gacha (live):** event banner with 0.6 % Legendary, hard pity 90 and a 50/50 on the featured prize; x10
+  opens 11 boxes. STREET (outfits) and SHARDS banners use pity 30 without 50/50 (`Data/Economy/EconomyConfig.asset:3756, 3771`).
+  One free pull per game day. The **first free pull ever is a gun** (cheapest unowned Uncommon or better,
+  `GachaBanners.cs:189-200`). Every rate is shown before the pull.
+- **Not built:** Blueprint, Relic Fragment, Archive. Do not plan work against them.
 
 ### Source/sink rules
 
@@ -389,13 +391,14 @@ Four resources, four disjoint jobs (**OWNER-LOCKED, W6** — full design in
 
 ### Closure rule
 
-- **Death:** bank **25 percent** of Coin; lose nothing already secured.
-- **Manual abandon / quit:** bank **0 percent** of Coin. Requires confirmation. This is not a victory
-  and not a successful settlement.
-- Gem and Relic are exempt from banking - they are secured the moment they are picked up.
+- **Every ending — death or walking away (with confirmation) — banks 100 percent of Coin**
+  (`Scripts/Runtime/Systems/RunClosure.cs:17-22`, owner 2026-09-27). The run is endless, so living longer
+  already pays more.
+- Closure is idempotent; the first terminal call wins.
+- First run ever: if it earned less than the cheapest gun, a "Newcomer gift" tops it up
+  (`Scripts/Runtime/UI/V2/RunEndV2.cs:346, 389`).
 
-A `Secure Station / Banking Shrine`, letting the player risk time or position to secure some Coin
-mid-run, is a **future proposal** and is not part of MVP.
+A `Secure Station / Banking Shrine` is moot under full payout and is not planned.
 
 ## 12. World structure
 
@@ -538,17 +541,14 @@ and base threat, boss/elite candidates, and reward tables.
 
 - **First run:** starter weapon, one clear route choice, one Signal Relay, no pressure to take a boss.
 - **First hour:** a second weapon unlocked with Coin, a visibly different build, first Gem.
-- **Several sessions:** higher personal survival times, Relic collection, more weapon families.
+- **Several sessions:** higher personal best (a kill-based score is planned), gun stars and skins, more weapon families.
 - **Long term:** additional biome palettes, interactive archetypes and encounter modifiers enter the
   same data architecture without changing streaming fundamentals.
 
-Weapon unlocks are **horizontal within a tier band and controlled between bands** (**OWNER-LOCKED**,
-W3). A newly unlocked weapon is **immediately playable at its full designed power**: there is no
-per-weapon upgrade track, and no weapon has a weaker early version of itself. Tier is a power band
-fixed at authoring time, derived from the measured `powerBudgetUsed` of the arsenal — it is not an
-upgrade level and it is never grinded. Inside a band, a new weapon is a new playstyle rather than a
-bigger number. Star upgrades and shard-fed vertical weapon power remain retired.
-See `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` §1c.
+Weapons sit in five rarity tiers (Common → Legendary) priced in Coin (§11). A bought gun is playable at
+its tier's designed power. **Since Meta v2 (2026-09-27) there is also vertical gun power:** stars (shards
++ coin, from LV5) and Pass gun skins add damage. The M6 W3 rule "no per-weapon upgrade track; stars
+retired" is superseded.
 
 ## 19. Player motivation
 
@@ -575,20 +575,20 @@ See `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` §1c.
 
 ## 20. Fail and reward states
 
-> **M6 draft:** `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` section 17.4. The banking rule below is
-> **owner-corrected and firm**.
+> Banking rule changed by the owner on 2026-09-27 (M8): every ending keeps all Coin.
 
 | State | Trigger | Result |
 |---|---|---|
-| Death | player HP reaches 0 | bank **25 %** of Coin; Gem/Relic already secured |
-| Manual abandon / quit | player quits from pause, with confirmation | bank **0 %** of Coin; Gem/Relic secured |
+| Revive offer | player HP reaches 0 | first death ever: free revive, no countdown; then up to 3 revives per run (ad, then coin price doubling) |
+| Death | HP reaches 0 and no revive taken | bank **100 %** of Coin; Gem already secured |
+| Manual abandon / quit | player quits from pause, with confirmation | bank **100 %** of Coin |
 | Technical recovery | app interruption or invalid world state | never duplicate payout; idempotent closure retained |
 
 **There is no Victory state.** An endless world has no wave count to clear.
 
-**Manual abandon deliberately banks nothing.** An earlier draft granted 100 percent on a voluntary end;
-that was rejected because it makes quitting-before-danger the optimal play and turns death risk into
-theatre.
+The earlier rule (death 25 %, walk-away 0 %) was dropped: the run is endless, so a longer run already
+pays more, and the cut only added friction. The balance pass must still make the player die eventually
+(owner, 2026-09-27).
 
 Failure should teach the source of pressure and preserve enough value to invite another attempt.
 
@@ -607,9 +607,10 @@ The detailed ownership and persistence model is defined in the technical compani
 
 ## 22. MVP scope
 
-> **M6 draft:** `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` section 23 (proposed scope board) and section 24
-> (proposed ladder). M7 Slice A (M7.1-M7.3 core) was authorized and delivered on 2026-09-25; the
-> rest of the ladder still needs playtest evidence.
+> **2026-10-04:** P0 below is delivered. The live V1 scope and remaining work (Android device build,
+> cleanup, balance and reward feel, achievements, then SDK/store) are in `MVP_SHIP_PLAN.md` (top section).
+> Of P1, Medical Station / Route Scanner / Greed Terminal and Relic were not built (Supply Drop and Heal
+> Zone took their place); P1–P3 below are history unless the owner reopens them.
 
 ### P0 - must prove the direction
 
@@ -617,7 +618,7 @@ The detailed ownership and persistence model is defined in the technical compani
 - Widened XP curve; at most one stat card per 1-of-3 offer.
 - Weapon Factory foundation: one authoritative catalog, 6 families, variants inside families.
 - Signal Relay, Supply Cache and Boss Beacon (using existing enemies).
-- Endless settlement: death banks 25 percent, manual abandon banks 0 percent; no Victory state.
+- Endless settlement: every ending banks 100 percent of Coin; no Victory state.
 
 ### P1 - strengthens the loop
 
@@ -633,7 +634,7 @@ The detailed ownership and persistence model is defined in the technical compani
 ### P3 - only after evidence
 
 - Persistent altered world state; gameplay terrain height; GPU-driven vegetation; live events;
-  monetization expansion; gacha reactivation.
+  monetization expansion (gacha is already live since Meta v2).
 
 ## 23. Explicitly removed or superseded assumptions
 
