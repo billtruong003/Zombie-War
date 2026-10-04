@@ -16,10 +16,17 @@ namespace ZombieWar.UI
         [SerializeField] private Graphic waveform;
         [SerializeField] private Material waveformMaterial;
         [SerializeField] private float charsPerSecond = 38f;
+        [Tooltip("Body line spacing (TMP em/100). Cairo's line height is ~1.9x its size, which spread a " +
+                 "two-line body like two paragraphs.")]
+        [SerializeField] private float bodyLineSpacing = -36f;
 
         /// Typing speed of the body; the radio overlay sets it so the text keeps pace with the voice.
         public float CharsPerSecond { get => charsPerSecond; set => charsPerSecond = value; }
 
+        RectTransform _rect;
+        float _baseHeight, _bodyBaseHeight;
+        Vector2 _bodyBaseOffsetMin;
+        bool _measured;
         Material _wave;
         float _shown;
         bool _typing;
@@ -44,6 +51,28 @@ namespace ZombieWar.UI
             _wave = null;
         }
 
+        void Measure()
+        {
+            if (_measured || body == null) return;
+            _measured = true;
+            _rect = (RectTransform)transform;
+            _baseHeight = _rect.rect.height;
+            _bodyBaseHeight = body.rectTransform.rect.height;
+            _bodyBaseOffsetMin = body.rectTransform.offsetMin;
+        }
+
+        /// The card grows by whatever the body needs beyond its authored box, so a two-line body is
+        /// never cut off at the card's bottom edge (QA 04/10: the first-chest card).
+        void FitBody()
+        {
+            Measure();
+            body.lineSpacing = bodyLineSpacing;
+            body.ForceMeshUpdate();
+            float extra = Mathf.Max(0f, body.preferredHeight - _bodyBaseHeight);
+            _rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, _baseHeight + extra);
+            body.rectTransform.offsetMin = new Vector2(_bodyBaseOffsetMin.x, _bodyBaseOffsetMin.y - extra);
+        }
+
         /// Shows a line. In Play the body types in; in the editor it appears at once.
         public void Say(string channelText, string titleText, string bodyText, Sprite face = null)
         {
@@ -52,6 +81,7 @@ namespace ZombieWar.UI
             if (face != null && portrait != null) portrait.sprite = face;
             if (body == null) return;
             body.text = bodyText;
+            FitBody();
             _typing = Application.isPlaying;
             _shown = 0;
             body.maxVisibleCharacters = _typing ? 0 : int.MaxValue;

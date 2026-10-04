@@ -259,10 +259,9 @@ namespace ZombieWar
             // Radio subtitles hide while any of these is up (owner decision 04/10).
             foreach (var m in new[] { pauseRoot, confirmRoot, settingsRoot, levelUpRoot, reviveRoot, ChestRoot }) FtueRadio.RegisterModal(m);
 
+            Show(ftueRoot, false);   // the v2 move overlay (prefab) stays hidden; the radio draws the step
             if (!Ftue.Done(Ftue.Move))
             {
-                Show(ftueRoot, true);
-                FtueV3.HideV2(ftueRoot);   // v3 draws the radio call; the v2 overlay keeps watching the joystick
                 FtueV3.Move();
                 _ftueWatch = StartCoroutine(CoFtueWatchJoystick());
             }
@@ -418,14 +417,12 @@ namespace ZombieWar
             _ftueCard = !Ftue.Done(Ftue.Card);
             var sub = levelUpRoot.transform.Find("Sub/Label")?.GetComponent<TMP_Text>();
             if (sub != null) sub.text = _ftueCard ? $"Level {run.Level} · choose one · no timer" : $"Level {run.Level} · choose one";
-            ShowFtueCard(_ftueCard ? SuggestedCard(_skillOffer) : -1);
             if (_ftueCard) ZombieWar.Audio.FtueVoice.CardOffered(); else ZombieWar.Audio.RadioDirector.CardOffered();
-            if (_ftueCard && FtueV3.On)
-            {
-                int suggested = SuggestedCard(_skillOffer);
-                foreach (var n in new[] { "FtueRing", "FtueTag", "FtueCoach", "Hint" }) levelUpRoot.transform.Find(n)?.gameObject.SetActive(false);
-                FtueV3.FirstCard(levelUpRoot.transform.Find($"Perk{Mathf.Max(0, suggested)}") as RectTransform);
-            }
+            // v2 coach widgets in the prefab stay hidden; the radio card marks the suggested card. The
+            // auto-pick countdown (Hint) only shows when there is a timer.
+            foreach (var n in LegacyCardWidgets) levelUpRoot.transform.Find(n)?.gameObject.SetActive(false);
+            levelUpRoot.transform.Find("Hint")?.gameObject.SetActive(!_ftueCard);
+            if (_ftueCard) FtueV3.FirstCard(levelUpRoot.transform.Find($"Perk{SuggestedCard(_skillOffer)}") as RectTransform);
             BindBuildStrip(skills);
             _shownAutoPickSeconds = -1;
 
@@ -641,34 +638,7 @@ namespace ZombieWar
             return 0;
         }
 
-        /// Places the ring and the TRY THIS tag on card <paramref name="slot"/> (-1 hides them) and
-        /// swaps the countdown line for the one-line rule.
-        private void ShowFtueCard(int slot)
-        {
-            var lu = levelUpRoot.transform;
-            var ring = lu.Find("FtueRing") as RectTransform;
-            var tag = lu.Find("FtueTag") as RectTransform;
-            var coach = lu.Find("FtueCoach");
-            var hint = lu.Find("Hint");
-            var perk = slot >= 0 ? lu.Find($"Perk{slot}") as RectTransform : null;
-            bool on = perk != null;
-            if (ring != null)
-            {
-                ring.gameObject.SetActive(on);
-                if (on) { ring.anchorMin = perk.anchorMin; ring.anchorMax = perk.anchorMax; ring.pivot = perk.pivot; ring.anchoredPosition = perk.anchoredPosition; ring.sizeDelta = perk.sizeDelta + new Vector2(28f, 28f); }
-            }
-            if (tag != null)
-            {
-                tag.gameObject.SetActive(on);
-                if (on)
-                {
-                    tag.anchorMin = perk.anchorMin; tag.anchorMax = perk.anchorMax; tag.pivot = new Vector2(1f, 0.5f);
-                    tag.anchoredPosition = perk.anchoredPosition + new Vector2(perk.sizeDelta.x * (1f - perk.pivot.x) - 24f, perk.sizeDelta.y * (1f - perk.pivot.y));
-                }
-            }
-            if (coach != null) coach.gameObject.SetActive(on);
-            if (hint != null) hint.gameObject.SetActive(!on);
-        }
+        static readonly string[] LegacyCardWidgets = { "FtueRing", "FtueTag", "FtueCoach" };
 
         /// A Max Health rank (card or chest) must act at pick time; the Health component owns the number.
         static void ApplyPendingMaxHealth(ZombieWar.Skills.SkillRuntime skills)
@@ -681,7 +651,7 @@ namespace ZombieWar
 
         private void PickPerk(int slot)
         {
-            if (_ftueCard) { _ftueCard = false; Ftue.Complete(Ftue.Card); ShowFtueCard(-1); }
+            if (_ftueCard) { _ftueCard = false; Ftue.Complete(Ftue.Card); }
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             if (skills != null && _skillOffer != null && slot >= 0 && slot < _skillOffer.Count)
             {
@@ -732,7 +702,7 @@ namespace ZombieWar
         {
             var joy = GetComponentInChildren<VirtualJoystick>(true);
             float held = 0f;
-            while (ftueRoot != null && ftueRoot.activeSelf)
+            while (!Ftue.Done(Ftue.Move))
             {
                 if (joy != null && joy.Direction.sqrMagnitude > 0.04f) held += Time.unscaledDeltaTime;
                 else held = 0f;

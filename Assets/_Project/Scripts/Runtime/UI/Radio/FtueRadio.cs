@@ -35,6 +35,11 @@ namespace ZombieWar.UI
             public bool Spotlight, Ring;
             /// Screen-space rect (pixels) the corners frame; null hides them. Re-read every frame.
             public Func<Rect?> Target;
+            /// <summary>A second rect the spotlight also opens (e.g. the BUY button next to the gun).</summary>
+            public Func<Rect?> Target2;
+            /// <summary>Put the chip over the target's top edge instead of under it (a list item
+            /// whose next sibling sits right below, like the suggested level-up card).</summary>
+            public bool ChipAbove;
             /// Screen-space point the hand taps; null hides it. Re-read every frame.
             public Func<Vector2?> Hand;
             /// The call ends itself when this turns false (its screen closed, the step is done).
@@ -79,9 +84,10 @@ namespace ZombieWar.UI
         CanvasGroup[] _stepGroups;     // cached: this runs every frame for the whole session
         RadioCallView[] _stepViews;
         Rect _lastSafe;
+        float _placedY;
+        RectTransform _spotTarget2;
 
         // ------------------------------------------------------------ public API
-        public static bool UseV3 = true;
 
         /// Queues a step; the one on screen is the newest modal step, else the oldest in-run step.
         public static void Show(Call c)
@@ -188,6 +194,13 @@ namespace ZombieWar.UI
             _subGroup = cardSub != null ? Group(cardSub) : null;
             _stepGroups = new[] { cardNormal != null ? Group(cardNormal) : null, cardSmall != null ? Group(cardSmall) : null, cardItem != null ? Group(cardItem) : null };
             _stepViews = new[] { cardNormal, cardSmall, cardItem };
+            // The second spotlight hole follows its own target rect, cloned from the first at runtime
+            // so the prefab stays as built.
+            if (spotTarget != null && spotHole != null)
+            {
+                _spotTarget2 = Instantiate(spotTarget, spotTarget.parent);
+                _spotTarget2.name = "SpotTarget2";
+            }
             HideMarkers();
             ApplySafeArea();
         }
@@ -221,6 +234,7 @@ namespace ZombieWar.UI
             _card.CharsPerSecond = 38f;
             _card.Say(channel, c.Title, c.Body, Face(c.Agent));
             if (c.ShownAt < 0f) c.ShownAt = Time.unscaledTime;
+            _placedY = c.Y;
             _lastY = c.Y; _lastAt = Time.unscaledTime;
             if (_subGroup != null) _subGroup.alpha = 0f;   // the step card replaces any subtitle
             _subUntil = 0f;
@@ -324,6 +338,14 @@ namespace ZombieWar.UI
             {
                 var local = ToLocal(target.Value);
                 if (spotTarget != null) { spotTarget.anchoredPosition = local.center; spotTarget.sizeDelta = local.size; }
+                Rect? second = null;
+                if (c.Spotlight && c.Target2 != null) try { second = c.Target2(); } catch (MissingReferenceException) { }
+                if (_spotTarget2 != null && spotHole != null)
+                {
+                    _spotTarget2.gameObject.SetActive(second.HasValue);
+                    if (second.HasValue) { var l2 = ToLocal(second.Value); _spotTarget2.anchoredPosition = l2.center; _spotTarget2.sizeDelta = l2.size; }
+                    spotHole.Target2 = second.HasValue ? _spotTarget2 : null;
+                }
                 if (reticle != null)
                 {
                     reticle.enabled = true;
@@ -339,7 +361,12 @@ namespace ZombieWar.UI
                 if (chip != null)
                 {
                     chip.gameObject.SetActive(!string.IsNullOrEmpty(c.Chip));
-                    chip.anchoredPosition = new Vector2(local.xMin - reticlePad + chip.sizeDelta.x * 0.5f, local.yMin - reticlePad - 6f - chip.sizeDelta.y * 0.5f);
+                    float chipY = c.ChipAbove ? local.yMax + reticlePad   // straddles the corners' top edge, a tag on the card
+                                              : local.yMin - reticlePad - 6f - chip.sizeDelta.y * 0.5f;
+                    // Kept on screen: a station at the screen edge pushed its chip half off it (QA 04/10).
+                    float halfW = safe != null ? safe.rect.width * 0.5f : 540f, chipHalf = chip.sizeDelta.x * 0.5f;
+                    float chipX = Mathf.Clamp(local.xMin - reticlePad + chipHalf, -halfW + chipHalf + 12f, halfW - chipHalf - 12f);
+                    chip.anchoredPosition = new Vector2(chipX, chipY);
                 }
             }
             else
@@ -353,6 +380,51 @@ namespace ZombieWar.UI
                 handRoot.gameObject.SetActive(hand.HasValue);
                 if (hand.HasValue && RectTransformUtility.ScreenPointToLocalPointInRectangle(safe, hand.Value, null, out var p)) handRoot.anchoredPosition = p;
             }
+            KeepCardClear(c, target, hand);
+        }
+
+        const float ClearPad = 24f, HandReach = 70f;
+
+        /// The board height is a starting point, not a promise: when the card would cover what the
+        /// step points at (the Arsenal link under the result gift card, QA 04/10) it moves above the
+        /// target, or below it when there is no room above.
+        void KeepCardClear(Call c, Rect? target, Vector2? hand)
+        {
+            if (_card == null || (!target.HasValue && !hand.HasValue)) return;
+            var card = (RectTransform)_card.transform;
+            var parent = card.parent as RectTransform;
+            if (parent == null) return;
+
+            Rect keep = default; bool any = false;
+            if (target.HasValue) { keep = ToLocalIn(parent, target.Value); any = true; }
+            if (hand.HasValue && RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, hand.Value, null, out var hp))
+            {
+                var h = new Rect(hp.x - HandReach, hp.y - HandReach, HandReach * 2f, HandReach * 2f);
+                keep = any ? Rect.MinMaxRect(Mathf.Min(keep.xMin, h.xMin), Mathf.Min(keep.yMin, h.yMin), Mathf.Max(keep.xMax, h.xMax), Mathf.Max(keep.yMax, h.yMax)) : h;
+                any = true;
+            }
+            if (!any) return;
+
+            float top = parent.rect.yMax, height = card.rect.height;
+            float y = c.Y;
+            float cardTop = top - y, cardBottom = cardTop - height;
+            bool covers = cardBottom < keep.yMax + ClearPad && cardTop > keep.yMin - ClearPad;
+            if (covers)
+            {
+                float above = top - (keep.yMax + ClearPad + height);   // card bottom just over the target
+                float below = top - (keep.yMin - ClearPad);            // card top just under it
+                y = above >= ClearPad ? above : below;
+            }
+            if (Mathf.Abs(y - _placedY) < 1f) return;
+            _placedY = y;
+            Place(card, y);
+        }
+
+        static Rect ToLocalIn(RectTransform space, Rect screen)
+        {
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(space, screen.min, null, out var a);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(space, screen.max, null, out var b);
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
         }
 
         /// Screen-pixel rect → rect in the safe area's local space (centre-anchored children).

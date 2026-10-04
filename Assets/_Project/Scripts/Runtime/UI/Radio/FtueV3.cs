@@ -11,8 +11,6 @@ namespace ZombieWar.UI
     /// </summary>
     public static class FtueV3
     {
-        public static bool On => FtueRadio.UseV3;
-
         static float Y(float boardTop) => boardTop * 1920f / 693f;
 
         static FtueRadio.Call Card(string id, string voice, string agent, string ctx, string title, string body,
@@ -26,7 +24,7 @@ namespace ZombieWar.UI
         // FR_01 · Home, first visit: HQ says hit PLAY.
         public static void Home(RectTransform play)
         {
-            if (!On || play == null) return;
+            if (play == null) return;
             var c = Card("home", "vo_riley_ftue_home", "riley", null, "YOUR FIRST RUN",
                 "Hit PLAY. Drag to move, your gun fires by itself.", FtueRadio.Size.Normal, 440);
             c.Target = () => FtueRadio.ScreenRect(play);
@@ -39,7 +37,6 @@ namespace ZombieWar.UI
         // FR_02 · Drag to move: corners and energy ring on the thumb zone, "DRAG ANYWHERE".
         public static void Move()
         {
-            if (!On) return;
             var c = Card("move", "vo_riley_ftue_move", "riley", null, "DRAG TO MOVE",
                 "Your gun fires at the nearest monster by itself.", FtueRadio.Size.Normal, 78);
             c.Dim = 0.22f;
@@ -55,7 +52,6 @@ namespace ZombieWar.UI
         // FR_02b · First kill: corners on the XP bar.
         public static void Xp(RectTransform xpBar)
         {
-            if (!On) return;
             var c = Card("xp", "vo_kaito_ftue_xp", "kaito", null, "XP",
                 "The bar up top glows on each kill. Fill it to level up.", FtueRadio.Size.Small, 78);
             c.Target = () => FtueRadio.ScreenRect(xpBar);
@@ -68,10 +64,11 @@ namespace ZombieWar.UI
         // FR_03 · First level-up: no timer, corners + "SUGGESTED" on one card, hand on it.
         public static void FirstCard(RectTransform perk)
         {
-            if (!On || perk == null) return;
+            if (perk == null) return;
             var c = Card("card", "vo_chen_ftue_card", "chen", null, "PICK A CARD",
                 "One card each level. No timer this time. I'd take this one.", FtueRadio.Size.Small, 586);
             c.Chip = "SUGGESTED";
+            c.ChipAbove = true;   // the next card sits right under this one
             c.Target = () => FtueRadio.ScreenRect(perk);
             c.Hand = () => FtueRadio.TapPoint(perk);
             c.Alive = () => Live(perk) && !Ftue.Done(Ftue.Card);
@@ -82,7 +79,7 @@ namespace ZombieWar.UI
         // FR_04a–e · First station of each kind: corners on the pad, chip, card under it.
         public static void NewStation(ZombieWar.Stations.Station s, System.Func<bool> alive)
         {
-            if (!On || s == null) return;
+            if (s == null) return;
             var kind = s.Anchor.kind;
             var (agent, voice, title, body, chip) = kind switch
             {
@@ -108,7 +105,6 @@ namespace ZombieWar.UI
         // FR_05a–c · First item of each kind: card with the item icon, play keeps going.
         public static void Item(PickupEffect effect, Sprite icon)
         {
-            if (!On) return;
             var (agent, voice, title, body) = effect switch
             {
                 PickupEffect.Magnet => ("mai", "vo_mai_ftue_magnet", "MAGNET", "Pulls every coin and gem on the map to you."),
@@ -124,7 +120,7 @@ namespace ZombieWar.UI
         // FR_06 · First chest: no timer, corners + hand on CLAIM.
         public static void Chest(RectTransform claim)
         {
-            if (!On || claim == null) return;
+            if (claim == null) return;
             var c = Card("chest", "vo_chen_ftue_chest", "chen", null, "YOUR FIRST CHEST",
                 "No timer this time. Rank a power to 5 and own its partner card: the next chest evolves it.", FtueRadio.Size.Small, 452);
             c.Target = () => FtueRadio.ScreenRect(claim);
@@ -137,7 +133,7 @@ namespace ZombieWar.UI
         // FR_07 · First death: the free revive.
         public static void Revive(RectTransform button)
         {
-            if (!On || button == null) return;
+            if (button == null) return;
             var c = Card("revive", "vo_riley_ftue_revive", "riley", null, "FIRST ONE'S ON US",
                 "Your first revive is free, no ad. Later: one ad per run, then coins.", FtueRadio.Size.Normal, 520);
             c.Target = () => FtueRadio.ScreenRect(button);
@@ -150,7 +146,7 @@ namespace ZombieWar.UI
         // FR_08 · First result: the newcomer gift, hand on "Arsenal ›".
         public static void Result(RectTransform arsenalLink)
         {
-            if (!On || arsenalLink == null) return;
+            if (arsenalLink == null) return;
             var c = Card("result", "vo_mai_ftue_result_gift", "mai", null, "NEWCOMER GIFT",
                 "I topped you up to 400 coins. That's your first real gun.", FtueRadio.Size.Small, 470);
             c.Hand = () => FtueRadio.TapPoint(arsenalLink);
@@ -159,14 +155,26 @@ namespace ZombieWar.UI
             FtueRadio.Show(c);
         }
 
-        // FR_09 · First gun: spotlight + corners on the gun cell, hand on BUY.
-        public static void Gun(RectTransform cell, RectTransform buy, string gunName)
+        /// The card's claim comes from the weapon data, so it cannot go stale when guns are retuned
+        /// (QA 04/10: "hits harder" while the Makarov's per-shot damage was lower than the Pistol's).
+        static string GunPitch(WeaponData gun, WeaponData current)
         {
-            if (!On || cell == null) return;
-            var c = Card("gun", "vo_lukas_ftue_gun", "lukas", "ARMORY", "YOUR FIRST NEW GUN",
-                $"{gunName} hits harder and fires faster than the Pistol. Tap BUY.", FtueRadio.Size.Normal, 246);
+            if (current == null) return $"{gun.weaponName} is your first real gun. Tap BUY.";
+            int a = Mathf.RoundToInt(CombatPower.WeaponPower(gun, 1)), b = Mathf.RoundToInt(CombatPower.WeaponPower(current, 1));
+            string why = gun.damage > current.damage && gun.fireRate > current.fireRate ? "hits harder and fires faster"
+                : gun.fireRate > current.fireRate ? "fires faster" : gun.damage > current.damage ? "hits harder" : "is stronger";
+            return $"{gun.weaponName} {why} than your {current.weaponName}: power {a:N0} vs {b:N0}. Tap BUY.";
+        }
+
+        // FR_09 · First gun: spotlight + corners on the gun cell, hand on BUY.
+        public static void Gun(RectTransform cell, RectTransform buy, WeaponData gun, WeaponData current)
+        {
+            if (cell == null || gun == null) return;
+            var c = Card("gun", "vo_lukas_ftue_gun", "lukas", "ARMORY", "YOUR FIRST NEW GUN", GunPitch(gun, current),
+                FtueRadio.Size.Normal, 246);
             c.Spotlight = true;
             c.Target = () => FtueRadio.ScreenRect(cell);
+            c.Target2 = () => FtueRadio.ScreenRect(buy);   // the button the hand points at is lit too
             c.Hand = () => FtueRadio.TapPoint(buy);
             c.Alive = () => Live(cell) && !Ftue.Done(Ftue.Gun);
             c.Modal = true;
@@ -176,7 +184,7 @@ namespace ZombieWar.UI
         // FR_10–12 · Account unlocks: card over the popup, hand on its main button.
         public static void Unlock(int feature, RectTransform cta, System.Func<bool> alive)
         {
-            if (!On || cta == null) return;
+            if (cta == null) return;
             var (agent, voice, title, body) = feature switch
             {
                 0 => ("chen", "vo_chen_ftue_lv2", "MISSIONS + PASS", "Missions are open. Clear them for Pass XP and free loot."),
@@ -188,16 +196,6 @@ namespace ZombieWar.UI
             c.Alive = () => Live(cta) && (alive == null || alive());
             c.Modal = true;
             FtueRadio.Show(c);
-        }
-
-        /// Hides an FTUE v2 widget for good while v3 is on (it stays in the prefab).
-        public static void HideV2(GameObject go)
-        {
-            if (!On || go == null) return;
-            var g = go.GetComponent<CanvasGroup>();
-            if (g == null) g = go.AddComponent<CanvasGroup>();
-            g.alpha = 0f;
-            g.blocksRaycasts = false;
         }
     }
 }

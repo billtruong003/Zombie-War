@@ -16,8 +16,11 @@ namespace ZombieWar.UI
         Material _mat;
         readonly Vector3[] _corners = new Vector3[4];
         static readonly int HoleId = Shader.PropertyToID("_Hole");
+        static readonly int Hole2Id = Shader.PropertyToID("_Hole2");
 
         public RectTransform Target { get => target; set => target = value; }
+        /// <summary>Optional second hole (null = none).</summary>
+        public RectTransform Target2 { get; set; }
 
         void OnEnable() => EnsureMaterial();
 
@@ -41,14 +44,19 @@ namespace ZombieWar.UI
         {
             EnsureMaterial();
             if (_mat == null || target == null) return;
+            _mat.SetVector(HoleId, HoleOf(target));
+            _mat.SetVector(Hole2Id, Target2 != null && Target2.gameObject.activeInHierarchy ? HoleOf(Target2) : Vector4.zero);
+        }
+
+        Vector4 HoleOf(RectTransform t)
+        {
             var self = (RectTransform)transform;
-            target.GetWorldCorners(_corners);
+            t.GetWorldCorners(_corners);
             Vector2 a = self.InverseTransformPoint(_corners[0]);
             Vector2 b = self.InverseTransformPoint(_corners[2]);
-            var r = self.rect;
-            var centre = (a + b) * 0.5f - r.min;
+            var centre = (a + b) * 0.5f - self.rect.min;
             var size = new Vector2(Mathf.Abs(b.x - a.x), Mathf.Abs(b.y - a.y)) + Vector2.one * padding * 2;
-            _mat.SetVector(HoleId, new Vector4(centre.x, centre.y, size.x, size.y));
+            return new Vector4(centre.x, centre.y, size.x, size.y);
         }
     }
 }

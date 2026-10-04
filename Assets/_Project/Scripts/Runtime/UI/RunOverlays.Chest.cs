@@ -64,7 +64,7 @@ namespace ZombieWar
             _chestShownLeft = -1;
             // FTUE v2: the first chest ever has no timer and says how evolutions come about.
             _ftueChest = !Ftue.Done(Ftue.Chest);
-            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(_ftueChest && !ZombieWar.UI.FtueV3.On);
+            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(false);   // v2 widget; the radio card explains
             if (_ftueChest) SetText(ChestRoot.transform, "Hint", "No timer on your first chest");
             if (_ftueChest) ZombieWar.Audio.FtueVoice.ChestOpened();
             if (_ftueChest) ZombieWar.UI.FtueV3.Chest(ChestRoot.transform.Find("Claim") as RectTransform

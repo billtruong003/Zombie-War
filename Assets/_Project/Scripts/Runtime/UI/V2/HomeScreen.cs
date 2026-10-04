@@ -94,12 +94,8 @@ namespace ZombieWar.UI
         [Header("First run (FTUE)")]
         [Tooltip("Shown instead of missions + next buy until the first run is played.")]
         [SerializeField] private GameObject firstRunCard;
+        [Tooltip("v2 post-run popup, kept hidden: the v3 gun step replaced it.")]
         [SerializeField] private GameObject revealRoot;
-        [SerializeField] private Image revealTile;
-        [SerializeField] private Image revealIcon;
-        [SerializeField] private TMP_Text revealName;
-        [SerializeField] private Button revealOpen;
-        [SerializeField] private Button revealLater;
         [SerializeField] private NavBarV2 nav;
 
         [Header("Targets")]
@@ -145,8 +141,6 @@ namespace ZombieWar.UI
             On(stageButton, () => { if (!GateFirstRun()) Open(studioScreen); });
             On(outfitButton, () => { if (!GateFirstRun()) Open(studioScreen); });
             On(gunCard, () => { if (!GateFirstRun()) Open(arsenalScreen); });
-            On(revealOpen, () => { CloseReveal(); Open(arsenalScreen); });
-            On(revealLater, () => { UIFeedback.Back(); CloseReveal(); });
             On(stripDaily, () => { if (!GateFirstRun()) Open(dailyScreen); });
             On(stripGacha, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(stripPass, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
@@ -176,11 +170,11 @@ namespace ZombieWar.UI
         protected override void OnShow()
         {
             Refresh();
-            MaybeReveal();
+            if (revealRoot != null) revealRoot.SetActive(false);   // v2 "ARSENAL + SHOP" popup: replaced by the v3 gun step
             ZombieWar.Audio.FtueVoice.HomeShown(() => this != null && isActiveAndEnabled && !_launching);
             if (FirstRunPending && playButton != null)
             {
-                FtueV3.HideV2(transform.Find("Safe/PlayRow/Hint")?.gameObject);   // v3 uses the hologram hand
+                transform.Find("Safe/PlayRow/Hint")?.gameObject.SetActive(false);   // v2 hint; v3 uses the hologram hand
                 FtueV3.Home(playButton.transform as RectTransform);
             }
             // A link from the run result or an unlock popup lands here first, then goes on.
@@ -194,35 +188,7 @@ namespace ZombieWar.UI
         protected override void OnFocus() => Refresh();
         public override bool OnEscape()
         {
-            if (revealRoot != null && revealRoot.activeSelf) { CloseReveal(); return true; }
             return true;   // root screen
-        }
-
-        /// First time back from a run: show what just opened (the player's gun, Arsenal + Shop).
-        void MaybeReveal()
-        {
-            if (revealRoot == null || FirstRunPending || Ftue.Done(Ftue.Reveal)) return;
-            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
-            var d = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
-            if (d != null)
-            {
-                Set(revealName, d.weaponName.ToUpperInvariant());
-                if (revealTile != null) revealTile.color = d.TileColor;
-                var icon = catalog != null ? catalog.GetWeaponIcon(d, true) : null;
-                if (revealIcon != null) { revealIcon.enabled = icon != null; revealIcon.sprite = icon; }
-            }
-            revealRoot.SetActive(true);
-            revealRoot.transform.SetAsLastSibling();
-            var card = revealRoot.transform.Find("Card");
-            if (card != null) UIFx.PopIn(card, 0f, 0.35f, 0.4f);
-            UIFeedback.LevelUp();
-        }
-
-        void CloseReveal()
-        {
-            Ftue.Complete(Ftue.Reveal);
-            if (revealRoot != null) revealRoot.SetActive(false);
-            Refresh();
         }
 
         void Play()

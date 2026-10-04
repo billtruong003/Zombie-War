@@ -97,6 +97,7 @@ namespace ZombieWar.UI
                 .Where(w => w != null)
                 .OrderByDescending(w => PlayerProfile.IsWeaponOwned(w.WeaponId)).ThenBy(w => w.tier).ThenBy(w => w.price).ToList();
             _selected = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, _guns);
+            GiftFirstStarShards();
             // FTUE v2 (mockup FTUE2_09): the first visit after the first run points at the gun the
             // newcomer gift paid for.
             _ftueGun = !Ftue.Done(Ftue.Gun) && !HomeScreen.FirstRunPending ? FirstAffordable() : null;
@@ -105,6 +106,22 @@ namespace ZombieWar.UI
             ShowFtueGun(_ftueGun != null);
             if (_ftueGun != null) ZombieWar.Audio.FtueVoice.FirstGunShown();
             else ZombieWar.Audio.RadioDirector.ArsenalShown();
+        }
+
+        /// Owner decision 04/10 (A): when gun stars open (LV5), the gun in hand gets exactly the shards
+        /// its second star costs, once, so "UPGRADE MY GUN" leads to an upgrade and not to "need more
+        /// shards". The amount comes from the economy table for the gun's tier.
+        void GiftFirstStarShards()
+        {
+            if (economy == null || _selected == null || Ftue.Done(Ftue.StarGift)) return;
+            if (!AccountProgress.IsUnlocked(AccountProgress.Feature.GunStars)) return;
+            var table = economy.weaponStar2ShardCost;
+            int tier = Mathf.Clamp((int)_selected.tier, 0, 4);
+            if (table == null || table.Length <= tier) return;
+            int missing = table[tier] - PlayerProfile.GetWeaponShards(_selected.WeaponId);
+            if (PlayerProfile.GetWeaponLevel(_selected.WeaponId) <= 1 && missing > 0)
+                PlayerProfile.AddWeaponShards(_selected.WeaponId, missing);
+            Ftue.Complete(Ftue.StarGift);
         }
 
         protected override void OnHide()
@@ -118,34 +135,17 @@ namespace ZombieWar.UI
         WeaponData FirstAffordable() => _guns.Where(w => w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId) && w.price <= PlayerProfile.Coin)
                                              .OrderBy(w => w.price).FirstOrDefault();
 
-        /// Dims the screen around the gun's cell and the buy button, with the coach card.
+        /// First gun (board FR_09): the radio call draws the spotlight, corners and hand. The v2
+        /// "FtueGun" overlay stays in the prefab, hidden.
         void ShowFtueGun(bool on)
         {
-            var spot = transform.Find("FtueGun") as RectTransform;
-            if (FtueV3.On)
-            {
-                // v3 (board FR_09): the radio call draws the spotlight, corners and hand.
-                if (spot != null) spot.gameObject.SetActive(false);
-                if (!on) { FtueRadio.Hide("gun"); return; }
-                Canvas.ForceUpdateCanvases();
-                int g = _guns.IndexOf(_ftueGun);
-                var gunCell = g >= 0 && g < cells.Length && cells[g]?.button != null ? cells[g].button.transform as RectTransform : null;
-                FtueV3.Gun(gunCell, starButton != null ? starButton.transform as RectTransform : null, _ftueGun.weaponName);
-                return;
-            }
-            if (spot == null) return;
-            spot.gameObject.SetActive(on);
-            if (!on) return;
-            Canvas.ForceUpdateCanvases();   // the grid lays its cells out late; the rings read their corners
-            int i = _guns.IndexOf(_ftueGun);
-            var cell = i >= 0 && i < cells.Length && cells[i]?.button != null ? cells[i].button.transform as RectTransform : null;
-            Cover(spot.Find("CellRing") as RectTransform, cell, 14f);
-            Cover(spot.Find("ButtonRing") as RectTransform, starButton != null ? starButton.transform as RectTransform : null, 14f);
-            var coach = spot.Find("Coach/Body")?.GetComponent<TMP_Text>();
-            if (coach != null) coach.text = $"You have {PlayerProfile.Coin:N0} coins. {_ftueGun.weaponName} hits harder and fires faster than your starter gun.";
-            var hand = spot.Find("Hand") as RectTransform;
-            var btn = spot.Find("ButtonRing") as RectTransform;
-            if (hand != null && btn != null) hand.position = btn.TransformPoint(new Vector3(btn.rect.xMax - 90f, btn.rect.yMin + 10f, 0f));
+            transform.Find("FtueGun")?.gameObject.SetActive(false);
+            if (!on) { FtueRadio.Hide("gun"); return; }
+            Canvas.ForceUpdateCanvases();   // the grid lays its cells out late; the spotlight reads their corners
+            int g = _guns.IndexOf(_ftueGun);
+            var gunCell = g >= 0 && g < cells.Length && cells[g]?.button != null ? cells[g].button.transform as RectTransform : null;
+            var current = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, _guns);
+            FtueV3.Gun(gunCell, starButton != null ? starButton.transform as RectTransform : null, _ftueGun, current);
         }
 
         /// Puts <paramref name="ring"/> over <paramref name="target"/> (any parent), grown by

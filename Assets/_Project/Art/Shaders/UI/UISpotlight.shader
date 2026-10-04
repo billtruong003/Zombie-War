@@ -11,6 +11,7 @@ Shader "ZombieWar/UI/Spotlight"
         _Color ("Dim Colour", Color) = (0.03,0.05,0.09,0.88)
         _RimColor ("Rim Colour", Color) = (1,0.82,0.24,1)
         _Hole ("Hole (centre xy, size zw, px)", Vector) = (540,960,320,280)
+        _Hole2 ("Second hole (size 0 = none)", Vector) = (0,0,0,0)
         _Radius ("Corner Radius (px)", Float) = 26
         _Feather ("Feather (px)", Float) = 14
         _Rim ("Rim Width (px)", Float) = 4
@@ -55,7 +56,7 @@ Shader "ZombieWar/UI/Spotlight"
             struct v2f { float4 pos : SV_POSITION; fixed4 color : COLOR; float2 px : TEXCOORD0; float4 world : TEXCOORD1; };
 
             fixed4 _Color, _RimColor;
-            float4 _Hole;
+            float4 _Hole, _Hole2;
             half _Radius, _Feather, _Rim, _Speed;
             float4 _ClipRect;
 
@@ -71,9 +72,15 @@ Shader "ZombieWar/UI/Spotlight"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                // Signed distance to the rounded hole: negative inside.
+                // Signed distance to the rounded hole(s): negative inside; two holes are their union
+                // (the first gun's cell and its BUY button light up together).
                 float2 q = abs(i.px - _Hole.xy) - (_Hole.zw * 0.5 - _Radius);
                 float sd = length(max(q, 0)) + min(max(q.x, q.y), 0) - _Radius;
+                if (_Hole2.z > 0)
+                {
+                    float2 q2 = abs(i.px - _Hole2.xy) - (_Hole2.zw * 0.5 - _Radius);
+                    sd = min(sd, length(max(q2, 0)) + min(max(q2.x, q2.y), 0) - _Radius);
+                }
                 half dim = smoothstep(0, _Feather, sd);
                 half rim = (1 - smoothstep(0, _Rim, abs(sd - _Rim))) * (0.65 + 0.35 * sin(_Time.y * _Speed));
                 fixed4 col = i.color;

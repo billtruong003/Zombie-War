@@ -192,12 +192,10 @@ namespace ZombieWar.UI
             {
                 adButton.gameObject.SetActive(_freeRevive || ReviveRules.AdAvailable);
                 adButton.transform.Find("Face/Video")?.gameObject.SetActive(!_freeRevive);
-                adButton.transform.Find("FtueTag")?.gameObject.SetActive(_freeRevive && !FtueV3.On);
-                if (_freeRevive && FtueV3.On)
-                {
-                    Set(adButton.transform.Find("Face/Label")?.GetComponent<TMP_Text>(), "REVIVE FREE");
-                    FtueV3.Revive(adButton.transform as RectTransform);
-                }
+                adButton.transform.Find("FtueTag")?.gameObject.SetActive(false);   // v2 tag; the radio card explains
+                // The label says what the button costs: the first-ever revive is free with no ad.
+                Set(adButton.transform.Find("Face/Label")?.GetComponent<TMP_Text>(), _freeRevive ? "REVIVE FREE" : "WATCH AD · REVIVE");
+                if (_freeRevive) FtueV3.Revive(adButton.transform as RectTransform);
             }
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
             if (_count != null) StopCoroutine(_count);
@@ -205,11 +203,25 @@ namespace ZombieWar.UI
             return true;
         }
 
+        static readonly string[] SecondLabels = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
         IEnumerator Countdown()
         {
+            // The first-ever revive is the FTUE step: no clock, like the first level-up card. With the
+            // 7 s timer a newcomer still reading HQ's card lost the free revive and the run (QA 04/10).
+            var bubble = seconds != null ? seconds.transform.parent : null;   // the "N SEC" badge
+            if (bubble != null && bubble != transform) bubble.gameObject.SetActive(!_freeRevive);
+            if (_freeRevive)
+            {
+                if (ring != null) ring.fillAmount = 1f;
+                Bar(adDrain, 1f);
+                yield break;
+            }
+            int shown = -1;
             for (float t = ReviveRules.OfferSeconds; t > 0f; t -= Time.unscaledDeltaTime)
             {
-                Set(seconds, Mathf.CeilToInt(t).ToString());
+                int whole = Mathf.CeilToInt(t);
+                if (whole != shown) { shown = whole; Set(seconds, whole < SecondLabels.Length ? SecondLabels[whole] : whole.ToString()); }
                 if (ring != null) ring.fillAmount = t / ReviveRules.OfferSeconds;
                 Bar(adDrain, t / ReviveRules.OfferSeconds);
                 yield return null;
