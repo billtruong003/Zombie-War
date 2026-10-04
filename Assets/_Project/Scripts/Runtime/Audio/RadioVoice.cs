@@ -51,6 +51,8 @@ namespace ZombieWar.Audio
         AudioSource _source;
         readonly List<Block> _queue = new();
         string _current;
+        Priority _currentPriority;
+        float _level;
         bool _loading;
         float _nextAt;
         int _duckMusic = -1, _duckSfx = -1;
@@ -78,6 +80,20 @@ namespace ZombieWar.Audio
             _source.ignoreListenerPause = true;   // the level-up and chest overlays pause the game, not the radio
             _source.priority = 16;
         }
+
+        /// <summary>The line coming out of the speaker right now (null while silent or loading).</summary>
+        public static string PlayingId => _instance != null && _instance._source != null && _instance._source.isPlaying ? _instance._current : null;
+
+        /// <summary>Seconds left of the line playing now (0 when silent).</summary>
+        public static float PlayingTimeLeft => PlayingId != null && _instance._source.clip != null
+            ? Mathf.Max(0f, _instance._source.clip.length - _instance._source.time) : 0f;
+
+        /// <summary>How loud the voice is right now, 0..1 (from the line's envelope, see
+        /// <see cref="VoiceEnvelopes"/>): the radio card's waveform follows it.</summary>
+        public static float Level => _instance != null ? _instance._level : 0f;
+
+        /// <summary>True while <paramref name="id"/> is playing, loading or queued.</summary>
+        public static bool Pending(string id) => _instance != null && id != null && (_instance._current == id || _instance.IsQueued(id));
 
         /// <summary>True while a line plays, loads or waits in the queue.</summary>
         public static bool Busy => _instance != null && (_instance._current != null || _instance._queue.Count > 0);
@@ -121,6 +137,11 @@ namespace ZombieWar.Audio
             int at = v._queue.Count;
             while (at > 0 && v._queue[at - 1].Priority < priority) at--;
             v._queue.Insert(at, new Block(lines, priority));
+
+            // An FTUE line belongs to the card that is on screen now: chatter or a conversation still
+            // talking is cut so the voice and its card start together (owner 04/10: they drifted apart).
+            if (priority == Priority.Ftue && v._current != null && v._currentPriority < Priority.Ftue && !v._loading)
+                v._source.Stop();   // Update sees the source stopped and moves on
         }
 
         bool IsQueued(string id)
@@ -189,6 +210,10 @@ namespace ZombieWar.Audio
 
         void Update()
         {
+            // The waveform's input: fast up, a little slower down, so the bars bounce with the syllables.
+            float target = _current != null && !_loading && _source.isPlaying ? VoiceEnvelopes.At(_current, _source.time) : 0f;
+            _level = target > _level ? Mathf.Lerp(_level, target, 0.7f) : Mathf.MoveTowards(_level, target, Time.unscaledDeltaTime * 5f);
+
             if (_current != null)
             {
                 if (_loading || _source.isPlaying) { _source.volume = Volume(); return; }
@@ -199,6 +224,7 @@ namespace ZombieWar.Audio
             var id = block.Lines[0];
             block.Lines.RemoveAt(0);
             if (block.Lines.Count == 0) _queue.RemoveAt(0);
+            _currentPriority = block.Priority;
             StartCoroutine(CoPlay(id));
         }
 

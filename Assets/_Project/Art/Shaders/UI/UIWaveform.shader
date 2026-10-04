@@ -1,6 +1,7 @@
 // UIWaveform.shader — the "speaking" bars next to the radio channel label.
 // Cost: 1 noise sample per pixel (bar height from a scrolling noise row, so nothing random is
-// computed), a frac and two steps. _Speaking (0..1) is set by RadioCallView while the line plays.
+// computed), a frac and two steps. _Speaking (0..1) is set by RadioCallView every frame from the voice
+// line's loudness (RadioVoice.Level, envelopes from Tools/vo_envelopes.py), so the bars move with it.
 Shader "ZombieWar/UI/Waveform"
 {
     Properties

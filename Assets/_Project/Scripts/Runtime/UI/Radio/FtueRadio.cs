@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
@@ -231,8 +231,13 @@ namespace ZombieWar.UI
             if (c.Size == Size.Item && itemIcon != null) { itemIcon.sprite = c.Icon; itemIcon.enabled = c.Icon != null; }
             var (_, call) = Agents.TryGetValue(c.Agent ?? "", out var a) ? a : ("", "");
             string channel = "● HQ" + (call != "" ? " · " + call : "") + (string.IsNullOrEmpty(c.Context) ? "" : " · " + c.Context);
-            _card.CharsPerSecond = 38f;
-            _card.Say(channel, c.Title, c.Body, Face(c.Agent));
+            // The card and its voice start together (owner 04/10): the body waits for the voice line
+            // to begin (OnLine), unless it is already playing or will never come.
+            _card.CharsPerSecond = DefaultCps;
+            bool playing = c.VoiceId != null && RadioVoice.PlayingId == c.VoiceId;
+            _card.Say(channel, c.Title, c.Body, Face(c.Agent), c.VoiceId, waitForVoice: c.VoiceId != null && !playing);
+            if (playing) _card.StartTyping(CpsFor(c.Body, RadioVoice.PlayingTimeLeft));
+            _waitSince = Time.unscaledTime;
             if (c.ShownAt < 0f) c.ShownAt = Time.unscaledTime;
             _placedY = c.Y;
             _lastY = c.Y; _lastAt = Time.unscaledTime;
@@ -270,9 +275,27 @@ namespace ZombieWar.UI
             if (handRoot != null) handRoot.gameObject.SetActive(false);
         }
 
+        const float DefaultCps = 38f, NoVoiceGrace = 0.35f, VoiceTimeout = 6f;
+        float _waitSince;
+
+        /// Typing speed that ends the text a little before the voice does.
+        static float CpsFor(string text, float seconds) => Mathf.Max(12f, (text?.Length ?? 0) / Mathf.Max(0.5f, seconds * 0.85f));
+
+        /// A step card waiting for its voice types anyway once the voice is not coming (already said,
+        /// no clip) or failed to start in time.
+        void ReleaseWaitingCard()
+        {
+            if (_card == null || !_card.WaitingForVoice || _call == null) return;
+            float waited = Time.unscaledTime - _waitSince;
+            bool coming = RadioVoice.Pending(_call.VoiceId);
+            if ((!coming && waited > NoVoiceGrace) || waited > VoiceTimeout) _card.StartTyping(DefaultCps);
+        }
+
         /// Subtitles for every radio line that is not the current step's own line.
         void OnLine(RadioLineEvent e)
         {
+            // The step card's own voice started: its text types along with it.
+            if (_call != null && _card != null && _call.VoiceId == e.Id) _card.StartTyping(CpsFor(_call.Body, e.Duration));
             if (cardSub == null || !_lines.TryGetValue(e.Id, out var line)) return;
             // A step card on screen already speaks for its FTUE moment (its line, nudge, "done").
             if (_call != null && (_call.VoiceId == e.Id || e.Id.Contains("_ftue_"))) return;
@@ -282,8 +305,8 @@ namespace ZombieWar.UI
             float y = _call == null && Time.unscaledTime - _lastAt < 30f && _lastY >= 0f ? _lastY : subtitleTop;
             if (_call != null && Mathf.Abs(_call.Y - subtitleTop) < 260f) y = _call.Y + 300f;
             Place((RectTransform)cardSub.transform, y);
-            cardSub.CharsPerSecond = Mathf.Max(12f, line.en.Length / Mathf.Max(0.5f, e.Duration * 0.85f));
-            cardSub.Say("● HQ · " + call, name, line.en, Face(agent));
+            cardSub.CharsPerSecond = CpsFor(line.en, e.Duration);
+            cardSub.Say("● HQ · " + call, name, line.en, Face(agent), e.Id);
             _subUntil = Time.unscaledTime + e.Duration + 0.6f;
         }
 
@@ -318,7 +341,7 @@ namespace ZombieWar.UI
                 float to = Time.unscaledTime < _subUntil && !AnyModalOpen() ? 1f : 0f;
                 if (_subGroup.alpha != to) _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, to, dt);
             }
-            if (_call != null) Track(_call);
+            if (_call != null) { ReleaseWaitingCard(); Track(_call); }
         }
 
         void Track(Call c)
