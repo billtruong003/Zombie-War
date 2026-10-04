@@ -22,7 +22,7 @@ namespace ZombieWar.Audio
     /// because WebGL has no runtime audio filters. Clean masters and the scripts that make both live in
     /// Review/Lore/voices/ftue_v4 (master.py, radio_fx.py). One line at a time, queued in order; music and SFX are ducked while an agent
     /// talks. Clips load on demand and are released once played, so the VO costs no memory at rest.
-    /// <see cref="SayOnce"/> remembers a line in the profile (as FTUE step "vo.&lt;id&gt;"), so the
+    /// <see cref="SayOnce"/> remembers a line in the profile (PlayerProfile voFlags), so the
     /// FTUE QA reset (zw.ftue.reset) plays the lines again.
     /// </summary>
     public sealed class RadioVoice : MonoBehaviour
@@ -80,7 +80,7 @@ namespace ZombieWar.Audio
         public static bool Busy => _instance != null && (_instance._current != null || _instance._queue.Count > 0);
 
         /// <summary>Whether <see cref="SayOnce"/> already used this line.</summary>
-        public static bool Said(string id) => PlayerProfile.HasFtueStep("vo." + id);
+        public static bool Said(string id) => PlayerProfile.HasVoFlag(id);
 
         /// <summary>Queue a line. A line already playing or queued is not queued twice.</summary>
         public static void Say(string id)
@@ -130,7 +130,7 @@ namespace ZombieWar.Audio
         public static bool SayOnce(string id)
         {
             if (Said(id)) return false;
-            PlayerProfile.MarkFtueStep("vo." + id);
+            PlayerProfile.MarkVoFlag(id);
             Say(id);
             return true;
         }

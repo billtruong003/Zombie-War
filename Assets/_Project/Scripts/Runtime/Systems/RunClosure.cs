@@ -58,13 +58,19 @@ namespace ZombieWar
             // Read the outcome back off the snapshot rather than trusting the argument: Finish is
             // first-call-wins, so the snapshot is the only honest record of what the run ended as.
             var summary = run.Finish(outcome);
-            PlayerProfile.FlushIfDirty();
-            run.Payout(CoinFractionFor(summary.Outcome));
 
-            bool record = PlayerProfile.RecordSurvival(summary.Duration);
-            PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
-            int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills);
-            int levels = PlayerProfile.AddAccountXp(xp);
+            // One write for the whole closing (payout, record, stats, XP and the run's pending
+            // mission/voice flags), not four, and the change events after it.
+            bool record = false;
+            int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills), levels = 0;
+            PlayerProfile.Batch(() =>
+            {
+                run.Payout(CoinFractionFor(summary.Outcome));
+                record = PlayerProfile.RecordSurvival(summary.Duration);
+                PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
+                levels = PlayerProfile.AddAccountXp(xp);
+            });
+            PlayerProfile.FlushIfDirty();
             return new Result(true, summary, run.BankedCoin, record, xp, levels);
         }
     }

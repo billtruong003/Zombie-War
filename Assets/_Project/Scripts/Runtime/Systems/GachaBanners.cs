@@ -126,6 +126,16 @@ namespace ZombieWar
         public static List<Result> Pull(Banner b, int count, Pay pay, int today, EconomyConfig econ,
                                         IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
         {
+            // One transaction: the payment, every box grant and the pity are written once (a x10 used
+            // to save ~13 times and fire ~11 refreshes), and a failure leaves the profile untouched.
+            List<Result> results = null;
+            if (!PlayerProfile.Batch(() => results = PullUnbatched(b, count, pay, today, econ, guns, rng))) return null;
+            return results;
+        }
+
+        static List<Result> PullUnbatched(Banner b, int count, Pay pay, int today, EconomyConfig econ,
+                                          IReadOnlyList<WeaponData> guns, GachaService.IRng rng)
+        {
             if (b == null || (count != 1 && count != MultiPaid)) return null;
             if (b.kind != Kind.Event) return PullPool(b, count, pay, today, econ, guns, rng);
             if (!CanPay(b, count, pay, today) || !Spend(b, count, pay, today)) return null;

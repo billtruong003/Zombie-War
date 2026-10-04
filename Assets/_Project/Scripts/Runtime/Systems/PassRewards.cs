@@ -107,12 +107,16 @@ namespace ZombieWar
         /// <summary>Claims every open reward; returns how many.</summary>
         public static int ClaimAll()
         {
+            // One write and one refresh for the whole sweep (it saved twice per claim before).
             int n = 0;
-            for (int l = 1; l <= Level; l++)
+            PlayerProfile.Batch(() =>
             {
-                if (Claim(l, false, out _)) n++;
-                if (Claim(l, true, out _)) n++;
-            }
+                for (int l = 1; l <= Level; l++)
+                {
+                    if (Claim(l, false, out _)) n++;
+                    if (Claim(l, true, out _)) n++;
+                }
+            });
             return n;
         }
 

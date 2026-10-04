@@ -18,7 +18,7 @@ namespace ZombieWar
     public static class PlayerProfile
     {
         /// v2: the three weapon slots collapsed into the single run weapon (M6 one-weapon contract).
-        public const int SchemaVersion = 2;
+        public const int SchemaVersion = 3;   // v3: voice-line flags moved out of ftueSteps into voFlags
         public const string SaveKey = "zw.profile";
 
         public enum CurrencyKind { Coin, Gold, Gem }
@@ -102,6 +102,8 @@ namespace ZombieWar
             public int bestKills;
             // First-time-user steps already done (Ftue.Move, Ftue.Reveal, ...).
             public List<string> ftueSteps = new List<string>();
+            // Radio lines already used once, conversations and yearly eggs (v3; were "vo.*" FTUE steps).
+            public List<string> voFlags = new List<string>();
             // M10 Daily: gacha tickets, avatar frames, the 7-day welcome check-in, the 28-day stamp card.
             public long tickets;
             public List<string> ownedFrames = new List<string>();
@@ -170,6 +172,11 @@ namespace ZombieWar
             ResetCacheForTests();
             _saveDirty = false;
             _flushScheduled = false;
+            _batchDepth = 0;
+            _flushTimer = null;
+            _pendingChanges = Change.None;
+            _batchSnapshot = null;
+            _newerSchema = false;
             WalletChanged = null;
             LoadoutChanged = null;
             CostumeChanged = null;
@@ -180,6 +187,8 @@ namespace ZombieWar
         internal static void ResetCacheForTests()
         {
             _data = null;
+            InvalidateLookups();
+            _newerSchema = false;
             _warnedCorrupt = false;
             _warnedUnknownIds.Clear();
             _warnedDefaultIssues.Clear();
@@ -203,13 +212,27 @@ namespace ZombieWar
                 if (storage.Has(SaveKey))
                 {
                     var loaded = storage.Get<ProfileData>(SaveKey); // null neu JSON hong (Get<T> catch)
+                    if (loaded == null)
+                    {
+                        // A damaged save is never overwritten blind: keep its raw text for support,
+                        // then fall back to the last profile that loaded cleanly.
+                        storage.Set(CorruptKey, storage.GetString(SaveKey));
+                        loaded = storage.Get<ProfileData>(BackupKey);
+                        if (loaded != null) Debug.LogWarning("[PlayerProfile] Profile unreadable - restored the last good backup; the damaged copy is kept as " + CorruptKey);
+                    }
                     if (loaded != null)
                     {
+                        // A save written by a newer build is read but never written back: JsonUtility
+                        // would drop the fields this build does not know.
+                        _newerSchema = loaded.version > SchemaVersion;
+                        if (_newerSchema) Debug.LogWarning($"[PlayerProfile] Profile schema v{loaded.version} is newer than v{SchemaVersion}; saving is disabled for this session.");
+                        else storage.Set(BackupKey, storage.GetString(SaveKey));   // last good copy
                         // An older schema is migrated by Normalize and written back once, so the
                         // upgrade is persisted rather than silently re-run on every launch.
                         // A profile from before M10 has no player ID; the one Normalize makes must be kept.
                         bool outdated = loaded.version < SchemaVersion || string.IsNullOrEmpty(loaded.playerId);
                         _data = Normalize(loaded);
+                        InvalidateLookups();
                         if (outdated) SaveNow();
                         return _data;
                     }
@@ -221,6 +244,7 @@ namespace ZombieWar
                 }
 
                 _data = Normalize(MigrateFromLegacy());
+                InvalidateLookups();
                 SaveNow();
                 return _data;
             }
@@ -228,11 +252,97 @@ namespace ZombieWar
 
         private static bool _saveDirty;
         private static bool _flushScheduled;
-        private const float DeferredFlushSeconds = 1.5f;
+        private const float DeferredFlushSeconds = 1.5f;   // secured currency (gems): written soon
+        private const float LazyFlushSeconds = 20f;        // bookkeeping (missions, voice flags): run end,
+                                                           // pause and quit flush it; this is the crash net
+        private static float _flushDue;
+        private static TimerHandle _flushTimer;
+
+        public const string BackupKey = "zw.profile.bak", CorruptKey = "zw.profile.corrupt";
+        private static bool _newerSchema;
+
+        // ===== Write path =====
+        // Three ways to persist, by how hot the caller is:
+        //  - SaveNow: write now (purchases, claims). Inside a Batch it only marks the profile dirty.
+        //  - MarkDirty: coalesced write a moment later (per-kill mission progress, voice-line flags):
+        //    the old save-on-every-kill wrote the whole profile to disk ~1x per kill mid-horde.
+        //  - Batch: many changes, one write and one round of events, rolled back as a unit on failure.
+
+        [Flags]
+        private enum Change { None = 0, Wallet = 1, Loadout = 2, Costume = 4, Account = 8, Missions = 16 }
+
+        private static int _batchDepth;
+        private static Change _pendingChanges;
+        private static string _batchSnapshot;
+
+        private static void Notify(Change c)
+        {
+            if (_batchDepth > 0) { _pendingChanges |= c; return; }
+            if ((c & Change.Wallet) != 0) WalletChanged?.Invoke();
+            if ((c & Change.Loadout) != 0) LoadoutChanged?.Invoke();
+            if ((c & Change.Costume) != 0) CostumeChanged?.Invoke();
+            if ((c & Change.Account) != 0) AccountChanged?.Invoke();
+            if ((c & Change.Missions) != 0) MissionsChanged?.Invoke();
+        }
+
+        /// <summary>Runs <paramref name="body"/> as one transaction: every save inside is coalesced into
+        /// one write at the end and every change event fires once, after it. If the body throws or the
+        /// write fails, the whole profile goes back to how it was and no event fires.</summary>
+        public static bool Batch(Action body)
+        {
+            if (body == null) return true;
+            if (_batchDepth == 0) { _batchSnapshot = Snapshot(); _pendingChanges = Change.None; }
+            _batchDepth++;
+            bool ok = true;
+            try { body(); }
+            catch (Exception e) { ok = false; Debug.LogException(e); }
+            finally { _batchDepth--; }
+            if (_batchDepth > 0) return ok;   // the outermost batch commits
+
+            var changes = _pendingChanges;
+            _pendingChanges = Change.None;
+            if (ok && _saveDirty) ok = TryCommit(null, "[PlayerProfile] Batch save failed - rollback.");
+            if (!ok) { Restore(_batchSnapshot); _batchSnapshot = null; return false; }
+            _batchSnapshot = null;
+            Notify(changes);
+            return true;
+        }
+
+        /// <summary>Saves; on failure runs <paramref name="rollback"/> and logs. The one copy of the
+        /// save-or-undo step every purchase/equip used to repeat.</summary>
+        private static bool TryCommit(Action rollback, string failure)
+        {
+            try { SaveNow(); return true; }
+            catch (Exception e)
+            {
+                try { rollback?.Invoke(); } catch (Exception r) { Debug.LogException(r); }
+                Debug.LogError(failure + " " + e.Message);
+                return false;
+            }
+        }
+
+        private static string Snapshot() => JsonUtility.ToJson(Data);
+
+        private static void Restore(string snapshot)
+        {
+            if (string.IsNullOrEmpty(snapshot)) return;
+            _data = Normalize(JsonUtility.FromJson<ProfileData>(snapshot));
+            InvalidateLookups();
+        }
+
+        /// <summary>Marks the profile changed and lets a short timer write it (or the end of the run,
+        /// app pause or quit, whichever comes first).</summary>
+        private static void MarkDirty(bool soon = false)
+        {
+            _saveDirty = true;
+            if (_batchDepth == 0) ScheduleFlush(soon ? DeferredFlushSeconds : LazyFlushSeconds);
+        }
 
         private static void SaveNow()
         {
+            if (_batchDepth > 0) { _saveDirty = true; return; }
             _saveDirty = false;
+            if (_newerSchema) return;
             var storage = Storage;
             storage.Set(SaveKey, _data);
             storage.Flush();
@@ -266,20 +376,41 @@ namespace ZombieWar
         public static int RunsPlayed => Data.runsPlayed;
         public static int BestKills => Data.bestKills;
 
-        public static bool HasFtueStep(string step) => Data.ftueSteps != null && Data.ftueSteps.Contains(step);
+        // Hash lookups over the saved lists: FTUE and radio checks run several times a second.
+        private static HashSet<string> _ftueSet, _voSet;
 
+        private static void InvalidateLookups() { _ftueSet = null; _voSet = null; }
+
+        private static HashSet<string> FtueSet => _ftueSet ??= new HashSet<string>(Data.ftueSteps);
+        private static HashSet<string> VoSet => _voSet ??= new HashSet<string>(Data.voFlags);
+
+        public static bool HasFtueStep(string step) => !string.IsNullOrEmpty(step) && FtueSet.Contains(step);
+
+        /// <summary>Records a first-time step. A coalesced write (MarkDirty): steps are marked in the
+        /// middle of play, where a synchronous full save hitches the frame.</summary>
         public static void MarkFtueStep(string step)
         {
-            Data.ftueSteps ??= new List<string>();
-            if (Data.ftueSteps.Contains(step)) return;
+            if (string.IsNullOrEmpty(step) || !FtueSet.Add(step)) return;
             Data.ftueSteps.Add(step);
-            SaveNow();
+            MarkDirty();
         }
 
-        /// <summary>QA: forget every first-time step so the FTUE plays again.</summary>
+        /// <summary>Whether a once-only radio line, conversation or yearly egg was already used.</summary>
+        public static bool HasVoFlag(string flag) => !string.IsNullOrEmpty(flag) && VoSet.Contains(flag);
+
+        public static void MarkVoFlag(string flag)
+        {
+            if (string.IsNullOrEmpty(flag) || !VoSet.Add(flag)) return;
+            Data.voFlags.Add(flag);
+            MarkDirty();
+        }
+
+        /// <summary>QA: forget every first-time step and radio flag so the FTUE and its lines play again.</summary>
         public static void ClearFtueSteps()
         {
-            Data.ftueSteps?.Clear();
+            Data.ftueSteps.Clear();
+            Data.voFlags.Clear();
+            InvalidateLookups();
             SaveNow();
         }
         public static long TotalKills => Data.totalKills;
@@ -292,12 +423,12 @@ namespace ZombieWar
         public static void AddTickets(long n)
         {
             if (n <= 0) return;
-            Data.tickets += n; SaveNow(); WalletChanged?.Invoke();
+            Data.tickets += n; SaveNow(); Notify(Change.Wallet);
         }
         public static bool TrySpendTickets(long n)
         {
             if (n < 0 || Data.tickets < n) return false;
-            Data.tickets -= n; SaveNow(); WalletChanged?.Invoke();
+            Data.tickets -= n; SaveNow(); Notify(Change.Wallet);
             return true;
         }
         /// <summary>Owned avatar frames besides the default one.</summary>
@@ -305,13 +436,13 @@ namespace ZombieWar
         /// <summary>Selected profile picture and frame (AvatarCatalog ids).</summary>
         public static string AvatarId => string.IsNullOrEmpty(Data.avatarId) ? AvatarCatalog.LiveAvatar : Data.avatarId;
         public static string FrameId => string.IsNullOrEmpty(Data.frameId) ? AvatarCatalog.DefaultFrame : Data.frameId;
-        public static void SetAvatar(string id) { if (Data.avatarId == id) return; Data.avatarId = id; SaveNow(); AccountChanged?.Invoke(); }
-        public static void SetFrame(string id) { if (Data.frameId == id) return; Data.frameId = id; SaveNow(); AccountChanged?.Invoke(); }
+        public static void SetAvatar(string id) { if (Data.avatarId == id) return; Data.avatarId = id; SaveNow(); Notify(Change.Account); }
+        public static void SetFrame(string id) { if (Data.frameId == id) return; Data.frameId = id; SaveNow(); Notify(Change.Account); }
 
         public static void AddFrame(string id)
         {
             if (string.IsNullOrEmpty(id) || Data.ownedFrames.Contains(id)) return;
-            Data.ownedFrames.Add(id); SaveNow(); AccountChanged?.Invoke();
+            Data.ownedFrames.Add(id); SaveNow(); Notify(Change.Account);
         }
 
         /// <summary>Owned gun skin sets (ids from WeaponSkins.Season1).</summary>
@@ -320,14 +451,14 @@ namespace ZombieWar
         public static void AddSkin(string id)
         {
             if (string.IsNullOrEmpty(id) || Data.ownedSkins.Contains(id)) return;
-            Data.ownedSkins.Add(id); SaveNow(); LoadoutChanged?.Invoke();
+            Data.ownedSkins.Add(id); SaveNow(); Notify(Change.Loadout);
         }
 
         public static void AddWeaponShards(string weaponId, int amount)
         {
             if (string.IsNullOrEmpty(weaponId) || amount <= 0) return;
             AddWeaponShardsInMemory(weaponId, amount);
-            SaveNow(); LoadoutChanged?.Invoke();
+            SaveNow(); Notify(Change.Loadout);
         }
 
         public static bool NoAds => Data.noAds;
@@ -374,7 +505,7 @@ namespace ZombieWar
             string prefix = weaponId + "|";
             Data.equippedSkins.RemoveAll(e => e.StartsWith(prefix, StringComparison.Ordinal));
             if (!string.IsNullOrEmpty(skinId)) Data.equippedSkins.Add(prefix + skinId);
-            SaveNow(); LoadoutChanged?.Invoke();
+            SaveNow(); Notify(Change.Loadout);
             return true;
         }
 
@@ -383,7 +514,7 @@ namespace ZombieWar
 
         /// <summary>Daily state lives in the profile save; <see cref="DailyRewards"/> owns the rules.</summary>
         internal static ProfileData DailyData => Data;
-        internal static void SaveDaily() { SaveNow(); AccountChanged?.Invoke(); }
+        internal static void SaveDaily() { SaveNow(); Notify(Change.Account); }
 
         public static void RecordBossDefeated()
         {
@@ -399,9 +530,14 @@ namespace ZombieWar
         {
             var storage = Storage;
             storage.Delete(SaveKey);
+            storage.Delete(BackupKey);
+            // The pre-profile keys too, or the next load migrated the old wallet and loadout back in.
+            foreach (var key in LegacyPrefKeys) PlayerPrefs.DeleteKey(key);
             storage.Flush();
+            _saveDirty = false;
+            _flushScheduled = false;
             ResetCacheForTests();
-            AccountChanged?.Invoke();
+            Notify(Change.Account);
         }
 
         /// <summary>Lifetime stats for the Profile screen, added once per closed run.</summary>
@@ -428,7 +564,7 @@ namespace ZombieWar
             if (name.Length > 16) name = name.Substring(0, 16);
             Data.displayName = name;
             SaveNow();
-            AccountChanged?.Invoke();
+            Notify(Change.Account);
             return true;
         }
 
@@ -439,7 +575,7 @@ namespace ZombieWar
             int before = AccountLevel;
             Data.accountXp += xp;
             SaveNow();
-            AccountChanged?.Invoke();
+            Notify(Change.Account);
             return AccountLevel - before;
         }
 
@@ -475,7 +611,7 @@ namespace ZombieWar
 
             if (!dirty) return;
             SaveNow();
-            MissionsChanged?.Invoke();
+            Notify(Change.Missions);
         }
 
         static bool ClearScope(MissionScope scope)
@@ -530,8 +666,8 @@ namespace ZombieWar
             if (!found)
                 Data.missionProgress.Add(new MissionProgressEntry { missionId = missionId, amount = next });
 
-            SaveNow();
-            MissionsChanged?.Invoke();
+            MarkDirty();   // per kill: coalesced, not a disk write per zombie
+            Notify(Change.Missions);
         }
 
         /// <summary>
@@ -553,7 +689,7 @@ namespace ZombieWar
 
             if (mission.coinReward > 0) Add(CurrencyKind.Coin, mission.coinReward);
 
-            MissionsChanged?.Invoke();
+            Notify(Change.Missions);
             return true;
         }
 
@@ -566,7 +702,7 @@ namespace ZombieWar
             Data.missionWeekKey = 0;
             Data.passXp = 0;
             SaveNow();
-            MissionsChanged?.Invoke();
+            Notify(Change.Missions);
         }
 
         // ===== Wallet =====
@@ -592,7 +728,7 @@ namespace ZombieWar
             if (next < current) next = long.MaxValue; // overflow clamp
             SetBalance(kind, next);
             SaveNow();
-            WalletChanged?.Invoke();
+            Notify(Change.Wallet);
         }
 
         /// <summary>
@@ -607,9 +743,8 @@ namespace ZombieWar
             long next = current + amount;
             if (next < current) next = long.MaxValue;
             SetBalance(kind, next);
-            _saveDirty = true;
-            WalletChanged?.Invoke();
-            ScheduleFlush();
+            Notify(Change.Wallet);
+            MarkDirty(soon: true);
         }
 
         /// <summary>Writes the profile if a deferred change is still waiting.</summary>
@@ -618,16 +753,19 @@ namespace ZombieWar
             if (_saveDirty) SaveNow();
         }
 
-        private static void ScheduleFlush()
+        private static void ScheduleFlush(float delay)
         {
             // No timer means nothing will flush later, whatever the flag says: a flag left set by a
             // timer that never fired (Play exited first; statics survive without a domain reload)
             // used to swallow every deferred save after it.
             var timer = Bill.IsReady ? Bill.Timer : null;
             if (timer == null) { _flushScheduled = false; SaveNow(); return; }
-            if (_flushScheduled) return;
+            float due = Time.unscaledTime + delay;
+            if (_flushScheduled && _flushDue <= due) return;   // an earlier flush already covers it
+            if (_flushScheduled && _flushTimer != null) timer.Cancel(_flushTimer);
             _flushScheduled = true;
-            timer.Delay(DeferredFlushSeconds, () => { _flushScheduled = false; FlushIfDirty(); }, true);
+            _flushDue = due;
+            _flushTimer = timer.Delay(delay, () => { _flushScheduled = false; _flushTimer = null; FlushIfDirty(); }, true);
         }
 
         /// Tru tien nguyen tu: false (khong doi gi) neu amount am hoac so du khong du.
@@ -638,7 +776,7 @@ namespace ZombieWar
             if (current < amount) return false;
             SetBalance(kind, current - amount);
             SaveNow();
-            WalletChanged?.Invoke();
+            Notify(Change.Wallet);
             return true;
         }
 
@@ -654,7 +792,7 @@ namespace ZombieWar
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
             SetBalance(kind, Math.Max(0, value));
             SaveNow();
-            WalletChanged?.Invoke();
+            Notify(Change.Wallet);
 #else
             Debug.LogWarning("[PlayerProfile] SetBalanceForDev is only available in Editor/development builds.");
 #endif
@@ -679,20 +817,10 @@ namespace ZombieWar
 
             d.coin -= price;
             d.ownedWeaponIds.Add(weaponId);
-            try
-            {
-                SaveNow();
-            }
-            catch (Exception e)
-            {
-                d.coin += price;
-                d.ownedWeaponIds.Remove(weaponId);
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi mua '{weaponId}' — rollback, khong tru tien. {e.Message}");
-                return PurchaseResult.SaveFailed;
-            }
+            if (!TryCommit(() => { d.coin += price; d.ownedWeaponIds.Remove(weaponId); }, $"[PlayerProfile] Luu profile that bai khi mua '{weaponId}' — rollback, khong tru tien.")) return PurchaseResult.SaveFailed;
 
-            if (price > 0) WalletChanged?.Invoke();
-            LoadoutChanged?.Invoke();
+            if (price > 0) Notify(Change.Wallet);
+            Notify(Change.Loadout);
             return PurchaseResult.Purchased;
         }
 
@@ -717,15 +845,9 @@ namespace ZombieWar
             long before = GetBalance(kind);
             SetBalance(kind, before - price);
             GrantCostumeItem(itemId);
-            try { SaveNow(); }
-            catch (Exception ex)
-            {
-                SetBalance(kind, before); RevokeCostumeItem(itemId);
-                Debug.LogError($"[PlayerProfile] Save fail mua costume '{itemId}' — rollback. {ex.Message}");
-                return PurchaseResult.SaveFailed;
-            }
-            if (price > 0) WalletChanged?.Invoke();
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { SetBalance(kind, before); RevokeCostumeItem(itemId); }, $"[PlayerProfile] Save fail mua costume '{itemId}' — rollback.")) return PurchaseResult.SaveFailed;
+            if (price > 0) Notify(Change.Wallet);
+            Notify(Change.Costume);
             return PurchaseResult.Purchased;
         }
 
@@ -751,18 +873,12 @@ namespace ZombieWar
             var kind = ToKind(currency);
             if (GetBalance(kind) < price) return PurchaseResult.InsufficientFunds;
 
-            string snapshot = JsonUtility.ToJson(Data);
+            string snapshot = Snapshot();
             SetBalance(kind, GetBalance(kind) - price);
             for (int i = 0; i < set.itemIds.Count; i++) GrantCostumeItem(set.itemIds[i]);
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                _data = Normalize(JsonUtility.FromJson<ProfileData>(snapshot));
-                Debug.LogError($"[PlayerProfile] Save failed while purchasing set '{setId}' - rollback. {e.Message}");
-                return PurchaseResult.SaveFailed;
-            }
-            WalletChanged?.Invoke();
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => Restore(snapshot), $"[PlayerProfile] Save failed while purchasing set '{setId}' - rollback.")) return PurchaseResult.SaveFailed;
+            Notify(Change.Wallet);
+            Notify(Change.Costume);
             return PurchaseResult.Purchased;
         }
 
@@ -871,18 +987,12 @@ namespace ZombieWar
             // Owner (M10): Gold is Coin. The star cost tables keep their "Gold" names but charge Coin.
             if (Coin < goldCost) return WeaponUpgradeResult.InsufficientGold;
 
-            string snapshot = JsonUtility.ToJson(Data);
+            string snapshot = Snapshot();
             SetWeaponShardsInMemory(weapon.WeaponId, GetWeaponShards(weapon.WeaponId) - shardCost);
             SetBalance(CurrencyKind.Coin, Coin - goldCost);
             SetWeaponLevelInMemory(weapon.WeaponId, level + 1);
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                _data = Normalize(JsonUtility.FromJson<ProfileData>(snapshot));
-                Debug.LogError($"[PlayerProfile] Save failed upgrading '{weapon.WeaponId}' - rollback. {e.Message}");
-                return WeaponUpgradeResult.SaveFailed;
-            }
-            WalletChanged?.Invoke(); LoadoutChanged?.Invoke();
+            if (!TryCommit(() => Restore(snapshot), $"[PlayerProfile] Save failed upgrading '{weapon.WeaponId}' - rollback.")) return WeaponUpgradeResult.SaveFailed;
+            Notify(Change.Wallet); Notify(Change.Loadout);
             return WeaponUpgradeResult.Upgraded;
         }
 
@@ -924,19 +1034,13 @@ namespace ZombieWar
         /// neu tien khong du hoac save fail. Nothing-committed-without-debit dam bao boi thu tu nay.
         internal static bool CommitGacha(CurrencyKind spendKind, long spend, System.Action applyGrants)
         {
-            string snapshot = JsonUtility.ToJson(Data);
+            string snapshot = Snapshot();
             if (!SpendInMemory(spendKind, spend)) return false;
             applyGrants();
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                _data = Normalize(JsonUtility.FromJson<ProfileData>(snapshot));
-                Debug.LogError($"[PlayerProfile] Save fail gacha — rollback. {e.Message}");
-                return false;
-            }
-            WalletChanged?.Invoke();
-            LoadoutChanged?.Invoke();
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => Restore(snapshot), "[PlayerProfile] Save fail gacha — rollback.")) return false;
+            Notify(Change.Wallet);
+            Notify(Change.Loadout);
+            Notify(Change.Costume);
             return true;
         }
 
@@ -952,7 +1056,7 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(weaponId) || Data.ownedWeaponIds.Contains(weaponId)) return;
             Data.ownedWeaponIds.Add(weaponId);
             SaveNow();
-            LoadoutChanged?.Invoke();
+            Notify(Change.Loadout);
         }
 
         public static int UnlockAllWeaponsForDev(IReadOnlyList<WeaponData> weapons)
@@ -966,7 +1070,7 @@ namespace ZombieWar
                 if (string.IsNullOrEmpty(id) || Data.ownedWeaponIds.Contains(id)) continue;
                 Data.ownedWeaponIds.Add(id); added++;
             }
-            if (added > 0) { SaveNow(); LoadoutChanged?.Invoke(); }
+            if (added > 0) { SaveNow(); Notify(Change.Loadout); }
             return added;
 #else
             return 0;
@@ -984,7 +1088,7 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(id) || Data.weapon == id) return;
             Data.weapon = id;
             SaveNow();
-            LoadoutChanged?.Invoke();
+            Notify(Change.Loadout);
         }
 
         /// Makes the run weapon valid against the real arsenal before it is shown or equipped:
@@ -1015,7 +1119,7 @@ namespace ZombieWar
             if (changed)
             {
                 SaveNow();
-                LoadoutChanged?.Invoke();
+                Notify(Change.Loadout);
             }
         }
 
@@ -1077,7 +1181,7 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(guid) || Data.ownedCostumeGuids.Contains(guid)) return;
             Data.ownedCostumeGuids.Add(guid);
             SaveNow();
-            CostumeChanged?.Invoke();
+            Notify(Change.Costume);
         }
 
         // ===== Body composite (Slice 4.2): mau + bien the tai =====
@@ -1090,13 +1194,13 @@ namespace ZombieWar
         public static void AddOwnedBodyColor(string color)
         {
             if (string.IsNullOrEmpty(color) || color == "White" || Data.ownedBodyColors.Contains(color)) return;
-            Data.ownedBodyColors.Add(color); SaveNow(); CostumeChanged?.Invoke();
+            Data.ownedBodyColors.Add(color); SaveNow(); Notify(Change.Costume);
         }
 
         public static void AddOwnedBodyEar(string ear)
         {
             if (string.IsNullOrEmpty(ear) || ear == "Normal" || Data.ownedBodyEars.Contains(ear)) return;
-            Data.ownedBodyEars.Add(ear); SaveNow(); CostumeChanged?.Invoke();
+            Data.ownedBodyEars.Add(ear); SaveNow(); Notify(Change.Costume);
         }
 
         /// Doi mau body: validate mau hop le + so huu + resolve duoc mesh body & head cho mau+tai
@@ -1110,7 +1214,7 @@ namespace ZombieWar
 
             string prev = Data.bodyColor; Data.bodyColor = color;
             if (!Commit()) { Data.bodyColor = prev; return CostumeEquipResult.SaveFailed; }
-            CostumeChanged?.Invoke(); return CostumeEquipResult.Equipped;
+            Notify(Change.Costume); return CostumeEquipResult.Equipped;
         }
 
         /// Doi bien the tai (Normal/Elf): giu nguyen mau, chi doi mesh head.
@@ -1123,7 +1227,7 @@ namespace ZombieWar
 
             string prev = Data.bodyEar; Data.bodyEar = ear;
             if (!Commit()) { Data.bodyEar = prev; return CostumeEquipResult.SaveFailed; }
-            CostumeChanged?.Invoke(); return CostumeEquipResult.Equipped;
+            Notify(Change.Costume); return CostumeEquipResult.Equipped;
         }
 
         private static bool BodyMeshesResolve(ModularCostumeCatalog catalog, string color, string ear)
@@ -1133,11 +1237,7 @@ namespace ZombieWar
             return body.HasValue && body.Value.skinnedMesh != null && head.HasValue && head.Value.skinnedMesh != null;
         }
 
-        private static bool Commit()
-        {
-            try { SaveNow(); return true; }
-            catch (Exception e) { Debug.LogError($"[PlayerProfile] Save that bai — rollback. {e.Message}"); return false; }
-        }
+        private static bool Commit() => TryCommit(null, "[PlayerProfile] Save failed - rollback.");
 
         public static string GetPart(string slot)
         {
@@ -1154,7 +1254,7 @@ namespace ZombieWar
             if (string.IsNullOrEmpty(slot)) return;
             if (!SetPartInMemory(slot, guid)) return;
             SaveNow();
-            CostumeChanged?.Invoke();
+            Notify(Change.Costume);
         }
 
         /// True neu co thay doi thuc su (dung cho batch: gom nhieu thay doi vao 1 save/event).
@@ -1194,14 +1294,8 @@ namespace ZombieWar
 
             string previous = GetPart(slotName);
             SetPartInMemory(slotName, guid);
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                SetPartInMemory(slotName, previous);
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi equip costume '{guid}' — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { SetPartInMemory(slotName, previous); }, $"[PlayerProfile] Luu profile that bai khi equip costume '{guid}' — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1224,14 +1318,8 @@ namespace ZombieWar
 
             string previous = GetPart(slot.slot);
             SetPartInMemory(slot.slot, target);
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                SetPartInMemory(slot.slot, previous);
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi clear slot '{slotName}' — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { SetPartInMemory(slot.slot, previous); }, $"[PlayerProfile] Luu profile that bai khi clear slot '{slotName}' — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1274,13 +1362,8 @@ namespace ZombieWar
             { d.bodyEar = defEar; changed = true; }
 
             if (!changed) return false;
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi ensure costume defaults. {e.Message}");
-                return false;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(null, "[PlayerProfile] Luu profile that bai khi ensure costume defaults.")) return false;
+            Notify(Change.Costume);
             return true;
         }
 
@@ -1350,13 +1433,8 @@ namespace ZombieWar
             }
 
             if (!changed) return false;
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi ensure Casual costume. {e.Message}");
-                return false;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(null, "[PlayerProfile] Luu profile that bai khi ensure Casual costume.")) return false;
+            Notify(Change.Costume);
             return true;
         }
 
@@ -1386,14 +1464,8 @@ namespace ZombieWar
                 d.equippedParts.Add(new LoadoutState.PartSel { slot = def.id, guid = id });
                 if (!d.ownedCostumeGuids.Contains(id)) d.ownedCostumeGuids.Add(id);
             }
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                d.equippedParts = backup;
-                Debug.LogError($"[PlayerProfile] Save fail reset Casual outfit — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { d.equippedParts = backup; }, "[PlayerProfile] Save fail reset Casual outfit — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1424,14 +1496,8 @@ namespace ZombieWar
                 d.equippedParts.Add(new LoadoutState.PartSel { slot = def.id, guid = id });
                 if (!d.ownedCostumeGuids.Contains(id)) d.ownedCostumeGuids.Add(id);
             }
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                d.equippedParts = backup;
-                Debug.LogError($"[PlayerProfile] Save fail set Casual outfit — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { d.equippedParts = backup; }, "[PlayerProfile] Save fail set Casual outfit — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1463,14 +1529,8 @@ namespace ZombieWar
             d.equippedParts.Clear();
             d.equippedParts.AddRange(target); // optional slots (Feet/Beard/...) bi bo -> ve Khong mang
             d.bodyColor = defColor; d.bodyEar = defEar;
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                d.equippedParts = backup; d.bodyColor = bcBak; d.bodyEar = beBak;
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi reset outfit — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { d.equippedParts = backup; d.bodyColor = bcBak; d.bodyEar = beBak; }, "[PlayerProfile] Luu profile that bai khi reset outfit — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1516,14 +1576,8 @@ namespace ZombieWar
                 changed |= SetPartInMemory(outfit[i].slot, outfit[i].guid);
             if (!changed) return CostumeEquipResult.AlreadyEquipped;
 
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                Data.equippedParts = backup;
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi equip outfit — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { Data.equippedParts = backup; }, "[PlayerProfile] Luu profile that bai khi equip outfit — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1552,14 +1606,8 @@ namespace ZombieWar
             if (outfit != null) foreach (var o in outfit) d.equippedParts.Add(o);
             // Dam bao essential luon co (randomize outfit da gom essential owned; nhung neu thieu, EnsureValid se sua)
             d.bodyColor = color; d.bodyEar = ear;
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                d.equippedParts = backup; d.bodyColor = bcBak; d.bodyEar = beBak;
-                Debug.LogError($"[PlayerProfile] Save that bai khi equip look — rollback. {e.Message}");
-                return CostumeEquipResult.SaveFailed;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { d.equippedParts = backup; d.bodyColor = bcBak; d.bodyEar = beBak; }, "[PlayerProfile] Save that bai khi equip look — rollback.")) return CostumeEquipResult.SaveFailed;
+            Notify(Change.Costume);
             return CostumeEquipResult.Equipped;
         }
 
@@ -1596,14 +1644,8 @@ namespace ZombieWar
                     if (e2 != "Normal" && !Data.ownedBodyEars.Contains(e2)) { Data.ownedBodyEars.Add(e2); added++; }
             }
             if (added == 0) return 0;
-            try { SaveNow(); }
-            catch (Exception e)
-            {
-                owned.RemoveRange(backupCount, Math.Max(0, owned.Count - backupCount));
-                Debug.LogError($"[PlayerProfile] Luu profile that bai khi unlock all costume — rollback. {e.Message}");
-                return 0;
-            }
-            CostumeChanged?.Invoke();
+            if (!TryCommit(() => { owned.RemoveRange(backupCount, Math.Max(0, owned.Count - backupCount)); }, "[PlayerProfile] Luu profile that bai khi unlock all costume — rollback.")) return 0;
+            Notify(Change.Costume);
             return added;
 #else
             Debug.LogWarning("[PlayerProfile] UnlockAllCostumes chi chay trong Editor/dev build.");
@@ -1639,7 +1681,7 @@ namespace ZombieWar
                     casual.equippedParts.Add(new LoadoutState.PartSel { slot = def.id, guid = id });
                 }
                 SaveNow();
-                CostumeChanged?.Invoke();
+                Notify(Change.Costume);
                 Debug.Log($"[PlayerProfile] Casual costume reset: owned={casual.ownedCostumeGuids.Count}, equipped={casual.equippedParts.Count}. Wallet/weapons preserved.");
                 return;
             }
@@ -1661,7 +1703,7 @@ namespace ZombieWar
             d.bodyColor = string.IsNullOrEmpty(catalog.defaults.defaultBodyColor) ? "White" : catalog.defaults.defaultBodyColor;
             d.bodyEar = string.IsNullOrEmpty(catalog.defaults.defaultBodyEar) ? "Normal" : catalog.defaults.defaultBodyEar;
             SaveNow();
-            CostumeChanged?.Invoke();
+            Notify(Change.Costume);
             Debug.Log($"[PlayerProfile] Costume progress ve design default: owned={d.ownedCostumeGuids.Count} guid + White/Normal, equipped={d.equippedParts.Count} slot. Vi/sung giu nguyen.");
 #else
             Debug.LogWarning("[PlayerProfile] ResetCostumeProgressForDev chi chay trong Editor/dev build.");
@@ -1759,20 +1801,20 @@ namespace ZombieWar
         {
             if (string.IsNullOrEmpty(poolId)) return;
             SetPityInMemory(poolId, Math.Max(0, count));
-            SaveNow(); WalletChanged?.Invoke();
+            SaveNow(); Notify(Change.Wallet);
         }
 
         /// Today's free pull, daily stamp, welcome reward and the mission window, all fresh again.
         public static void DevResetDailyClocks()
         {
             Data.gachaFreeDay = -1; Data.stampLastDay = -1; Data.welcomeLastDay = -1; Data.missionDayKey = 0;
-            SaveNow(); WalletChanged?.Invoke(); MissionsChanged?.Invoke();
+            SaveNow(); Notify(Change.Wallet); Notify(Change.Missions);
         }
 
         public static void DevAddPassXp(int xp)
         {
             Data.passXp = Math.Max(0, Data.passXp + xp);
-            SaveNow(); MissionsChanged?.Invoke();
+            SaveNow(); Notify(Change.Missions);
         }
 
         public static int DevUnlockAllSkins()
@@ -1780,7 +1822,7 @@ namespace ZombieWar
             int n = 0;
             foreach (var s in ZombieWar.Skins.WeaponSkins.Season1)
                 if (s != null && !Data.ownedSkins.Contains(s.id)) { Data.ownedSkins.Add(s.id); n++; }
-            SaveNow(); LoadoutChanged?.Invoke();
+            SaveNow(); Notify(Change.Loadout);
             return n;
         }
 
@@ -1789,7 +1831,7 @@ namespace ZombieWar
             int n = 0;
             foreach (var f in AvatarCatalog.Frames)
                 if (f != null && !Data.ownedFrames.Contains(f.id)) { Data.ownedFrames.Add(f.id); n++; }
-            SaveNow(); AccountChanged?.Invoke();
+            SaveNow(); Notify(Change.Account);
             return n;
         }
 
@@ -1820,6 +1862,7 @@ namespace ZombieWar
             d.missionProgress ??= new List<MissionProgressEntry>();
             d.claimedMissionIds = DedupeNonEmpty(d.claimedMissionIds);
             MigrateToSingleWeapon(d);
+            MigrateVoFlags(d);
             if (d.passXp < 0) d.passXp = 0;
             if (d.accountXp < 0) d.accountXp = 0;
             if (string.IsNullOrEmpty(d.playerId)) d.playerId = UnityEngine.Random.Range(10000000, 99999999).ToString();
@@ -1844,9 +1887,25 @@ namespace ZombieWar
             if (d.version <= 0) d.version = SchemaVersion;
             else if (d.version > SchemaVersion)
                 Debug.LogWarning($"[PlayerProfile] Profile version {d.version} moi hon build ({SchemaVersion}) — doc theo schema hien tai.");
-            // version < SchemaVersion: v1 -> v2 is MigrateToSingleWeapon above, idempotent by design.
+            // version < SchemaVersion: v1 -> v2 is MigrateToSingleWeapon, v2 -> v3 MigrateVoFlags (both idempotent).
             d.version = Math.Max(d.version, SchemaVersion);
             return d;
+        }
+
+        /// v2 -> v3: radio-line flags lived in ftueSteps as "vo.&lt;id&gt;" and grew it by hundreds of entries
+        /// that every FTUE check scanned. They move to voFlags without the prefix.
+        private static void MigrateVoFlags(ProfileData d)
+        {
+            d.ftueSteps = DedupeNonEmpty(d.ftueSteps);
+            d.voFlags = DedupeNonEmpty(d.voFlags);
+            for (int i = d.ftueSteps.Count - 1; i >= 0; i--)
+            {
+                var step = d.ftueSteps[i];
+                if (!step.StartsWith("vo.", StringComparison.Ordinal)) continue;
+                var flag = step.Substring(3);
+                if (!d.voFlags.Contains(flag)) d.voFlags.Add(flag);
+                d.ftueSteps.RemoveAt(i);
+            }
         }
 
         /// v1 -> v2: the run weapon is the first filled legacy slot, long guns first - a player who
@@ -1886,6 +1945,9 @@ namespace ZombieWar
         /// EnsureValidLoadout se canonical hoa o lan ApplyTo dau tien vi luc do moi co arsenal.
         /// Costume: chi giu entry slot+guid hop le; guid dang trang bi duoc seed lam owned de giu
         /// nguyen ngoai hinh da luu (KHONG cap toan bo catalog).
+        /// <summary>Unprefixed PlayerPrefs keys the profile migrates from (pre-profile builds).</summary>
+        private static readonly string[] LegacyPrefKeys = { "zw.loadout", "wallet_coin", "wallet_gold", "wallet_gem" };
+
         private static ProfileData MigrateFromLegacy()
         {
             var p = new ProfileData();

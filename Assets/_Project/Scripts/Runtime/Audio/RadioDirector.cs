@@ -129,9 +129,9 @@ namespace ZombieWar.Audio
         /// <summary>Queue conversation n (1-based) once ever.</summary>
         bool Converse(int n)
         {
-            string flag = $"vo.dlg.{n:00}";
-            if (PlayerProfile.HasFtueStep(flag) || RadioVoice.Busy) return false;
-            PlayerProfile.MarkFtueStep(flag);
+            string flag = $"dlg.{n:00}";
+            if (PlayerProfile.HasVoFlag(flag) || RadioVoice.Busy) return false;
+            PlayerProfile.MarkVoFlag(flag);
             RadioVoice.SayAll(Dialogues[n - 1]);
             _lastLineAt = Time.unscaledTime;
             return true;
@@ -478,9 +478,9 @@ namespace ZombieWar.Audio
         {
             var n = DateTime.Now;
             string y = n.Year.ToString();
-            bool On(string id, bool when) => when && !PlayerProfile.HasFtueStep("vo.year." + y + "." + id)
-                                             && Say(id) && Mark("vo.year." + y + "." + id);
-            bool Mark(string f) { PlayerProfile.MarkFtueStep(f); return true; }
+            bool On(string id, bool when) => when && !PlayerProfile.HasVoFlag("year." + y + "." + id)
+                                             && Say(id) && Mark("year." + y + "." + id);
+            bool Mark(string f) { PlayerProfile.MarkVoFlag(f); return true; }
             bool lunar = LunarNewYear.TryGetValue(n.Year, out var ly) && Math.Abs((n.Date - ly).TotalDays) <= 3;
             bool chuseok = Chuseok.TryGetValue(n.Year, out var cy) && Math.Abs((n.Date - cy).TotalDays) <= 2;
             return On("vo_mai_egg_tet", lunar) || On("vo_chen_egg_lunar", lunar)

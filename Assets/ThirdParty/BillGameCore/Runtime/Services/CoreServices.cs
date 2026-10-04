@@ -32,7 +32,14 @@ namespace BillGameCore
         public void SetSlot(int slot) => _slot = Mathf.Max(0, slot);
         /// <summary>Disk writes since launch — lets QA tooling see how often gameplay saves.</summary>
         public static int FlushCount { get; private set; }
-        public void Flush() { FlushCount++; PlayerPrefs.Save(); }
+        /// <summary>QA: when set, every disk write records the stack that asked for it.</summary>
+        public static System.Collections.Generic.List<string> FlushTraces;
+        public void Flush()
+        {
+            FlushCount++;
+            FlushTraces?.Add(System.Environment.StackTrace);
+            PlayerPrefs.Save();
+        }
         public void Cleanup() => Flush();
     }
 
