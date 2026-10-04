@@ -7,6 +7,17 @@ namespace ZombieWar
     {
         [SerializeField] private float maxHealth = 100f;
 
+        // Player only (05/10, genre rule 6: damage is attrition, not burst; rule 5: mistakes heal).
+        [Header("Player protection")]
+        [Tooltip("Seconds after a hit during which further hits are ignored.")]
+        [SerializeField] private float hitGraceSeconds = 0.4f;
+        [Tooltip("Most of max health the player can lose in any one second, however many hit.")]
+        [SerializeField, Range(0.05f, 1f)] private float maxLossPerSecond = 0.25f;
+        [Tooltip("Health per second regained after regenDelay seconds without a hit.")]
+        [SerializeField] private float regenPerSecond = 2f;
+        [SerializeField] private float regenDelay = 3f;
+        float _windowStart = -999f, _windowLoss, _lastHitAt = -999f;
+
         private float _current;
 
         public float Current => _current;
@@ -29,6 +40,7 @@ namespace ZombieWar
         {
             _current = maxHealth;
             _isPlayer = GetComponent<PlayerMovement>() != null;
+            enabled = _isPlayer;   // only the player regenerates: no Update on every pooled enemy
         }
 
         /// <summary>
@@ -57,6 +69,14 @@ namespace ZombieWar
                     OnDamageAbsorbed?.Invoke();
                     return;
                 }
+            }
+
+            if (_isPlayer)
+            {
+                amount = CapLoss(amount, Time.time);
+                if (amount <= 0f) return;
+                _invulnerableUntil = Time.time + hitGraceSeconds;
+                _lastHitAt = Time.time;
             }
 
             SetCurrent(Mathf.Max(0f, _current - amount));
@@ -108,6 +128,23 @@ namespace ZombieWar
         }
 
         public void ResetHealth() => SetCurrent(maxHealth);
+
+        /// <summary>What is left of a hit once the one-second loss budget is applied.</summary>
+        float CapLoss(float amount, float now)
+        {
+            if (now - _windowStart >= 1f) { _windowStart = now; _windowLoss = 0f; }
+            float allowed = Mathf.Max(0f, maxHealth * maxLossPerSecond - _windowLoss);
+            amount = Mathf.Min(amount, allowed);
+            _windowLoss += amount;
+            return amount;
+        }
+
+        private void Update()
+        {
+            if (!_isPlayer || IsDead || IsHeld || regenPerSecond <= 0f || _current >= maxHealth) return;
+            if (Time.time - _lastHitAt < regenDelay) return;
+            SetCurrent(Mathf.Min(maxHealth, _current + regenPerSecond * Time.deltaTime));
+        }
 
         /// <summary>Restores health, clamped at max. Refuses to revive something already dead -
         /// a health pickup must not undo a death that has already resolved.</summary>

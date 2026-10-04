@@ -21,6 +21,9 @@ namespace ZombieWar
         [Header("Pool keys (Resources/Pools/<key>)")]
         [SerializeField] private string coinPoolKey = "pickup_coin";
         [SerializeField] private string gemPoolKey = "pickup_gem";
+        [Tooltip("05/10: run XP drops as blue orbs (the coin mesh on the blue atlas cell).")]
+        [SerializeField] private string xpPoolKey = "pickup_xp";
+        [SerializeField] private string healthPoolKey = "pickup_health";
 
         [Header("Magnet")]
         [Tooltip("How close the player must get before loot flies to them.")]
@@ -69,6 +72,7 @@ namespace ZombieWar
         {
             Instance = this;
             EnsureMagnetRegistered();
+            if (!TryGetComponent<SupplyCrates>(out _)) gameObject.AddComponent<SupplyCrates>();
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
         }
 
@@ -81,6 +85,7 @@ namespace ZombieWar
         private void Update()
         {
             TrackEvolutionReady();
+            TickRescue();
             var player = PlayerMovement.Instance;
             if (player == null || Live.Count == 0) return;
 
@@ -156,7 +161,7 @@ namespace ZombieWar
 
         /// <summary>Adds the value to the nearest resting pickup of the same kind within
         /// <see cref="mergeRadius"/>. False when none is close enough, so the drop spawns normally.</summary>
-        private bool TryMerge(PlayerProfile.CurrencyKind kind, int amount, Vector3 origin)
+        private bool TryMerge(PlayerProfile.CurrencyKind kind, int amount, string key, Vector3 origin)
         {
             Pickup best = null;
             float bestSqr = mergeRadius * mergeRadius;
@@ -165,7 +170,7 @@ namespace ZombieWar
                 var p = Live[i];
                 if (p == null) continue;
                 float d = (p.transform.position - origin).sqrMagnitude;
-                if (d < bestSqr && p.Kind == kind && p.Amount > 0 && !p.Collected) { best = p; bestSqr = d; }
+                if (d < bestSqr && p.Kind == kind && p.PoolKey == key && p.Amount > 0 && !p.Collected) { best = p; bestSqr = d; }
             }
             return best != null && best.TryAbsorb(kind, amount);
         }
@@ -185,29 +190,20 @@ namespace ZombieWar
 
             Vector3 origin = e.Position;
 
-            int coin = Mathf.Max(0, data.coinReward);
-            if (coin > 0)
+            // 05/10: coin is banked on the kill (RecordKill); the floor carries XP and items.
+            int xp = Mathf.Max(0, data.xpReward);
+            if (xp > 0)
             {
-                int drops = Mathf.Clamp(coin, 1, data.isElite ? maxCoinDropsPerKill : Mathf.Max(1, normalEnemyCoinDrops));
-                int per = Mathf.Max(1, coin / drops);
-                int remainder = coin - per * drops;
-
+                int drops = Mathf.Clamp(xp, 1, data.isElite ? maxCoinDropsPerKill : Mathf.Max(1, normalEnemyCoinDrops));
+                int per = Mathf.Max(1, xp / drops);
+                int remainder = xp - per * drops;
                 for (int i = 0; i < drops; i++)
-                {
-                    int amount = per + (i == 0 ? remainder : 0);
-                    Spawn(PlayerProfile.CurrencyKind.Coin, amount, coinPoolKey, origin);
-                }
+                    Spawn(PlayerProfile.CurrencyKind.Coin, per + (i == 0 ? remainder : 0), xpPoolKey, origin);
             }
 
-            // A8 — the mechanic item drop (Magnet, Bomb, Freeze Clock). Elites only, so it stays an
-            // event rather than background noise, and only while none is on the map.
-            //
-            // FALLBACK, and it matters more than the magnet: a player who never sees one loses
-            // nothing. Coins sit on the ground indefinitely and are collected by walking over them,
-            // exactly as before. The magnet is a convenience reward, never the only route to loot.
+            // Genre rule 9: what the player needs, rarely enough to feel like luck (NeedDrops).
             float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;   // A4 Luck: items, not coins
-            if (data.isElite && Random.value < mechanicDropChance * luck)
-                SpawnMechanic(MechanicItems.Pick(Random.value), origin);
+            DropForNeed(origin, data.isElite, luck);
 
             // A7: elites can drop a chest; Luck raises the chance (the beacon boss drops its own).
             // A10 pity: an evolution waiting too long makes the next elite's chest certain.
@@ -238,6 +234,85 @@ namespace ZombieWar
         public static bool ChestPity(float readySince, float now, float pitySeconds) =>
             readySince >= 0f && now - readySince >= pitySeconds;
 
+        // ── Need drops (05/10, genre rules 5 and 9) ─────────────────────────────────────
+        readonly NeedDrops _needs = new();
+        static bool _needsRegistered;
+        Health _playerHealth;
+
+        Health PlayerHealth()
+        {
+            if (_playerHealth == null && PlayerMovement.Instance != null)
+                _playerHealth = PlayerMovement.Instance.GetComponentInParent<Health>();
+            return _playerHealth;
+        }
+
+        float HealthFraction()
+        {
+            var h = PlayerHealth();
+            return h == null || h.Max <= 0f ? 1f : h.Current / h.Max;
+        }
+
+        void TickRescue()
+        {
+            if (!_needsRegistered) { _needsRegistered = true; RunScope.Register(() => { if (Instance != null) Instance._needs.Reset(); }); }
+            var player = PlayerMovement.Instance;
+            if (player == null || !_needs.Tick(HealthFraction(), Time.time)) return;
+            // No kill brought it in time: a heal lands a few metres away, in view.
+            Vector2 dir = Random.insideUnitCircle.normalized * Random.Range(2.5f, 4f);
+            SpawnAt(healthPoolKey, player.transform.position + new Vector3(dir.x, 0f, dir.y));
+        }
+
+        void DropForNeed(Vector3 origin, bool elite, float luck)
+        {
+            if (PlayerMovement.Instance == null) return;
+            var c = GatherNeeds(elite);
+            var r = _needs.OnKill(c, Time.time, Random.value / luck, Random.value / luck);
+            if (r.heal) SpawnAt(healthPoolKey, origin + new Vector3(0.5f, 0f, -0.3f));
+            if (r.item != PickupEffect.Currency) SpawnMechanic(r.item, origin + new Vector3(-0.5f, 0f, 0.3f));
+        }
+
+        NeedDrops.Context GatherNeeds(bool elite)
+        {
+            var c = new NeedDrops.Context { healthFraction = HealthFraction(), elite = elite };
+            var player = PlayerMovement.Instance;
+            if (player == null) return c;
+            Vector3 p = player.transform.position;
+            var alive = ZombieManager.Alive;
+            int pouncers = 0;
+            for (int i = 0; i < alive.Count; i++)
+            {
+                var z = alive[i];
+                if (z == null || z.IsDead) continue;
+                Vector3 d = z.transform.position - p; d.y = 0f;
+                float sqr = d.sqrMagnitude;
+                if (sqr <= 16f) c.crowdNear++;
+                if (sqr <= 64f && ((z.Data != null && z.Data.isElite) || z is ZombiePouncer && ++pouncers >= 3)) c.dangerNear = true;
+            }
+            for (int i = 0; i < Live.Count; i++)
+                if (Live[i] != null && Live[i].Effect == PickupEffect.Xp && !Live[i].Collected) c.looseOrbs++;
+            return c;
+        }
+
+        /// <summary>A broken supply crate: XP worth half a level in a ring, a heal when the player is
+        /// hurt, and the item they need most.</summary>
+        public void DropCrateLoot(Vector3 at)
+        {
+            int xp = Mathf.Max(6, (RunState.Current?.XpForNextLevel ?? 12) / 2);
+            for (int i = 0; i < 4; i++)
+            {
+                var offset = new Vector3(Mathf.Cos(i * 1.57f), 0f, Mathf.Sin(i * 1.57f)) * 0.9f;
+                Spawn(PlayerProfile.CurrencyKind.Coin, Mathf.Max(1, xp / 4), xpPoolKey, at + offset);
+            }
+            if (HealthFraction() < 0.7f) SpawnAt(healthPoolKey, at + new Vector3(0.6f, 0f, -0.6f));
+            SpawnMechanic(NeedDrops.BestItem(GatherNeeds(true), out _), at + new Vector3(-0.6f, 0f, 0.6f));
+        }
+
+        void SpawnAt(string key, Vector3 at)
+        {
+            at.y = 0f;
+            Spawn(PlayerProfile.CurrencyKind.Coin, 0, key, at);
+        }
+
         private void TrackEvolutionReady()
         {
             if (Time.time < _evoCheckAt) return;
@@ -262,15 +337,15 @@ namespace ZombieWar
         /// <summary>A coin that is not a kill's authored reward (Drone Squadron's bonus).</summary>
         public static void SpawnBonusCoin(Vector3 at, int amount)
         {
-            if (Instance == null || amount <= 0) return;
-            Instance.Spawn(PlayerProfile.CurrencyKind.Coin, amount, Instance.coinPoolKey, at);
+            if (amount <= 0) return;
+            RunState.Current?.AddCurrency(PlayerProfile.CurrencyKind.Coin, amount);   // 05/10: coin is never on the floor
         }
 
         private void Spawn(PlayerProfile.CurrencyKind kind, int amount, string key, Vector3 origin)
         {
             if (string.IsNullOrEmpty(key) || Bill.Pool == null) return;
 
-            if (amount > 0 && Live.Count >= mergeAboveLive && TryMerge(kind, amount, origin)) return;
+            if (amount > 0 && Live.Count >= mergeAboveLive && TryMerge(kind, amount, key, origin)) return;
 
             Vector2 scatter = Random.insideUnitCircle * dropScatterRadius;
             Vector3 pos = origin + new Vector3(scatter.x, 0.25f, scatter.y);
@@ -297,10 +372,13 @@ namespace ZombieWar
         /// </summary>
         public void DropReward(Vector3 at, int coin = 60, int gem = 1)
         {
+            // 05/10: the coin is banked; the ring of loot is XP worth half a level.
+            RunState.Current?.AddCurrency(PlayerProfile.CurrencyKind.Coin, coin);
+            int xp = Mathf.Max(6, (RunState.Current?.XpForNextLevel ?? 12) / 2);
             for (int i = 0; i < 6; i++)
             {
                 var offset = new Vector3(Mathf.Cos(i * 1.05f), 0f, Mathf.Sin(i * 1.05f)) * 1.6f;
-                Spawn(PlayerProfile.CurrencyKind.Coin, Mathf.Max(1, coin / 6), coinPoolKey, at + offset);
+                Spawn(PlayerProfile.CurrencyKind.Coin, Mathf.Max(1, xp / 6), xpPoolKey, at + offset);
             }
             if (gem > 0) Spawn(PlayerProfile.CurrencyKind.Gem, gem, gemPoolKey, at);
         }

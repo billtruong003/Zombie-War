@@ -26,7 +26,8 @@ namespace ZombieWar
         public static ITargetable FindNearest(Vector3 from, float maxRange)
         {
             ITargetable nearest = null;
-            float nearestSqrDistance = maxRange * maxRange;
+            float maxSqr = maxRange * maxRange;
+            float nearestScore = float.MaxValue;
 
             for (int i = 0; i < _targets.Count; i++)
             {
@@ -34,9 +35,12 @@ namespace ZombieWar
                 if (!candidate.IsTargetable) continue;
 
                 float sqrDistance = (candidate.Transform.position - from).sqrMagnitude;
-                if (sqrDistance <= nearestSqrDistance)
+                if (sqrDistance > maxSqr) continue;
+                float bias = candidate.AimBias;
+                float score = bias > 0f ? Mathf.Max(0f, Mathf.Sqrt(sqrDistance) - bias) : Mathf.Sqrt(sqrDistance);
+                if (score <= nearestScore)
                 {
-                    nearestSqrDistance = sqrDistance;
+                    nearestScore = score;
                     nearest = candidate;
                 }
             }

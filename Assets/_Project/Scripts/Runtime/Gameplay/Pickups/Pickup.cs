@@ -28,7 +28,8 @@ namespace ZombieWar
     /// </summary>
     // Values are serialized in pickup prefabs: never renumber (2 was the retired bomb pickup;
     // the A8 Bomb item is a new value on purpose, so an old prefab can never turn into it).
-    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3, Chest = 4, Bomb = 5, Freeze = 6 }
+    // 7 = Xp (05/10): run XP dropped as blue orbs, collected like coins used to be.
+    public enum PickupEffect { Currency = 0, Health = 1, Magnet = 3, Chest = 4, Bomb = 5, Freeze = 6, Xp = 7 }
 
     public class Pickup : MonoBehaviour
     {
@@ -67,6 +68,9 @@ namespace ZombieWar
         public bool Collected => _collected;
         public int Amount => _amount;
         public PickupEffect Effect => effect;
+        public string PoolKey => _poolKey;
+        /// <summary>Currency and XP orbs carry a value; items do not.</summary>
+        bool CarriesValue => effect == PickupEffect.Currency || effect == PickupEffect.Xp;
         /// <summary>Magnet, Bomb or Freeze Clock (A8): one on the map at a time, never swept by a magnet.</summary>
         public bool IsMechanic => MechanicItems.IsMechanic(effect);
 
@@ -77,7 +81,7 @@ namespace ZombieWar
         /// </summary>
         public bool TryAbsorb(PlayerProfile.CurrencyKind kind, int amount)
         {
-            if (effect != PickupEffect.Currency || _collected || _flying || kind != _kind || amount <= 0)
+            if (!CarriesValue || _collected || _flying || kind != _kind || amount <= 0)
                 return false;
             _amount += amount;
             return true;
@@ -88,7 +92,7 @@ namespace ZombieWar
         {
             _kind = kind;
             // Only currency carries a value. A heal or a magnet reports 0 rather than a phantom coin.
-            _amount = effect == PickupEffect.Currency ? Mathf.Max(1, amount) : 0;
+            _amount = CarriesValue ? Mathf.Max(1, amount) : 0;
             _poolKey = poolKey;
             _collected = false;
             _flying = false;
@@ -112,7 +116,7 @@ namespace ZombieWar
 
         void EnsureBeam()
         {
-            bool wants = effect != PickupEffect.Currency || _kind == PlayerProfile.CurrencyKind.Gem;
+            bool wants = (effect != PickupEffect.Currency && effect != PickupEffect.Xp) || _kind == PlayerProfile.CurrencyKind.Gem;
             if (!wants) { if (_beam != null) _beam.gameObject.SetActive(false); return; }
             if (!_beamLoaded) { _beamMaterial = Resources.Load<Material>("FX/M_PickupBeam"); _beamLoaded = true; }
             if (_beamMaterial == null) return;
@@ -262,6 +266,10 @@ namespace ZombieWar
                 case PickupEffect.Chest:
                     // The run overlays open it (an evolution, a rank-up or a bonus card).
                     PickupManager.RaiseChestCollected(transform.position);
+                    break;
+
+                case PickupEffect.Xp:
+                    RunState.Current?.AddXp(_amount);
                     break;
 
                 default:

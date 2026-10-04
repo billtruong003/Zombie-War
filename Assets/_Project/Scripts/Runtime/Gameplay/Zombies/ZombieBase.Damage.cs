@@ -219,10 +219,9 @@ namespace ZombieWar
             if (_state == State.Dead) return;
             ShowEliteAura(false);   // the corpse dissolves without its glow
 
-            // When a PickupManager is present it drops physical coin instead, so the ledger must not
-            // also bank it here - the kill and XP still register either way.
-            bool pickupsHandleCoin = PickupManager.Instance != null;
-            RunState.Current?.RecordKill(data, !pickupsHandleCoin);
+            // 05/10: coin is banked on the kill (nothing to pick up, and the payout stays under
+            // control); with a PickupManager present the XP drops as an orb to collect instead.
+            RunState.Current?.RecordKill(data, bankCoin: true, grantXp: PickupManager.Instance == null);
             Bill.Events?.Fire(new ZombieKilledEvent(data, transform.position, this));
 
             // Kill any pending hit react so it can't crossfade over the death anim.

@@ -333,7 +333,8 @@ namespace ZombieWar.Audio
             if (e.Kind == PlayerProfile.CurrencyKind.Gem) { Bill.Audio?.PlayCue("sfx.pickup.gem", SfxPriority.Medium, 0.55f); return; }
             if (e.Effect == PickupEffect.Magnet) { Bill.Audio?.PlayPitched("sfx.pickup.gem", 0.8f, 0.7f); return; }
             // A chest, bomb and freeze clock play their own moment; never the coin blip.
-            if (e.Effect != PickupEffect.Currency) return;
+            // XP orbs (05/10) took over the coin's rising combo blip.
+            if (e.Effect != PickupEffect.Currency && e.Effect != PickupEffect.Xp) return;
 
             float now = Time.unscaledTime;
             if (now > _coinComboUntil) _coinCombo = 0;

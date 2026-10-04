@@ -22,8 +22,19 @@ namespace ZombieWar
     /// one that can kill you is a decision, and it gives the arena something to play around.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class DestructibleProp : MonoBehaviour, IDamageable
+    public class DestructibleProp : MonoBehaviour, IDamageable, ITargetable
     {
+        [Tooltip("05/10: auto-aim prefers this prop once the player is within about this many metres " +
+                 "of it (its distance counts this much shorter than an enemy's).")]
+        [SerializeField] private float aimBias = 3.5f;
+
+        /// <summary>Set by whoever spawned it from a pool; breaking returns it there.</summary>
+        public string PoolKey { get; set; }
+
+        public Transform Transform => transform;
+        public bool IsTargetable => !_destroyed && isActiveAndEnabled && kind == PropKind.LootCrate;
+        public float AimBias => aimBias;
+
         [SerializeField] private PropKind kind = PropKind.LootCrate;
         [SerializeField] private float maxHealth = 30f;
 
@@ -58,7 +69,10 @@ namespace ZombieWar
             _health = maxHealth;
             _destroyed = false;
             _nextHitSfxTime = 0f;
+            TargetRegistry.Register(this);
         }
+
+        private void OnDisable() => TargetRegistry.Unregister(this);
 
         public void TakeDamage(float amount)
         {
@@ -89,13 +103,17 @@ namespace ZombieWar
                 DropLoot();
             }
 
-            // Scenery is authored into the scene, not pooled, so it is simply switched off. Leaving
-            // the GameObject alive keeps any chain-reaction coroutine on a sibling valid.
-            gameObject.SetActive(false);
+            // Scenery is authored into the scene and simply switched off (leaving the GameObject alive
+            // keeps any chain-reaction coroutine on a sibling valid); a spawned crate goes back to its pool.
+            if (!string.IsNullOrEmpty(PoolKey) && Bill.Pool != null) Bill.Pool.Return(gameObject);
+            else gameObject.SetActive(false);
         }
 
         private void DropLoot()
         {
+            // 05/10: a crate pays in XP and what the player needs (no coin on the floor).
+            if (PickupManager.Instance != null) { PickupManager.Instance.DropCrateLoot(transform.position); return; }
+
             // A4 Luck raises the item shares (gem, health); coins fill what is left.
             float luck = ZombieWar.Skills.SkillRuntime.Active?.LuckMultiplier ?? 1f;
             float gem = gemChance * luck, health = healthChance * luck;

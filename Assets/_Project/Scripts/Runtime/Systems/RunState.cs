@@ -133,13 +133,14 @@ namespace ZombieWar
         /// way - it is only a question of whether it lands now or when the player walks over the
         /// drop. Banking in both places would pay twice for one kill.
         /// </param>
-        public void RecordKill(ZombieData data, bool bankCoin = true)
+        /// <param name="grantXp">False when the kill drops its XP as an orb to collect (05/10).</param>
+        public void RecordKill(ZombieData data, bool bankCoin = true, bool grantXp = true)
         {
             if (IsOver || data == null) return;
 
             Kills++;
             if (bankCoin) Coin += ScaleCoin(Mathf.Max(0, data.coinReward));
-            AddXp(Mathf.Max(0, data.xpReward));
+            if (grantXp) AddXp(Mathf.Max(0, data.xpReward));
             Changed?.Invoke();
         }
 
