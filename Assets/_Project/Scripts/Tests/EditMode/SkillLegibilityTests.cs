@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using ZombieWar.Skills;
@@ -20,7 +20,7 @@ namespace ZombieWar.Tests
         const string ArsenalSrc = "/_Project/Scripts/Runtime/Gameplay/Skills/SkillArsenal.cs";
         const string Player = "Assets/_Project/Prefabs/Player.prefab";
 
-        static string Read(string rel) => System.IO.File.ReadAllText(Application.dataPath + rel);
+        static string Read(string rel) => SourceText.Read(rel);
         static ZombieWar.Skills.Powers.SkillFxLibrary Lib() =>
             AssetDatabase.LoadAssetAtPath<ZombieWar.Skills.Powers.SkillFxLibrary>("Assets/_Project/Data/Skills/SkillFxLibrary.asset");
 

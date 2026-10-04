@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEngine;
 using ZombieWar.Skills;
 
@@ -139,8 +139,7 @@ namespace ZombieWar.Tests
         [Test]
         public void RunStateBeginIsTheSinglePlaceResetHappens()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Systems/RunState.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Systems/RunState.cs");
             StringAssert.Contains("RunScope.ResetAll", src,
                 "the run lifecycle must own the reset — scattering Clear() calls is how this bug returned twice");
         }

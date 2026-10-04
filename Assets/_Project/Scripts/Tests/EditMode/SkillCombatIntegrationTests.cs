@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -36,8 +36,7 @@ namespace ZombieWar.Tests
         {
             // Source-level proof that the hit site routes through the runtime. A behavioural test
             // would need a full weapon + physics scene; this asserts the wiring the report claims.
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Weapon.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Weapon.cs");
 
             StringAssert.Contains("SkillRuntime.Active", src, "the weapon must consult the skill runtime");
             StringAssert.Contains("ModifyHitDamage", src, "final damage must route through the cards");
@@ -62,8 +61,7 @@ namespace ZombieWar.Tests
         [Test]
         public void KillEventDrivesTheRuntime_SoulBurstCharges()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
             StringAssert.Contains("Subscribe<ZombieKilledEvent>", src, "kills must feed the runtime");
             StringAssert.Contains("Unsubscribe<ZombieKilledEvent>", src, "and must unsubscribe on teardown");
 
@@ -79,8 +77,7 @@ namespace ZombieWar.Tests
         [Test]
         public void PlayerHealthConsultsTheShield_AndEnemiesDoNot()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Health.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Health.cs");
 
             StringAssert.Contains("TryAbsorbDamage", src, "player damage must consult Kinetic Shield");
             StringAssert.Contains("_isPlayer", src,
@@ -106,8 +103,7 @@ namespace ZombieWar.Tests
         [Test]
         public void ADriverExists_TicksOnce_AndAppliesEveryPowerKind()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
 
             StringAssert.Contains("PollPowers", src, "something must poll the powers each frame");
             StringAssert.Contains("Dispatch", src, "every proc must reach the module that owns it");
@@ -130,8 +126,7 @@ namespace ZombieWar.Tests
                                        SkillCatalogDefs.AutoAirstrike, SkillCatalogDefs.SmgStatic })
                 Assert.IsTrue(claimed.ContainsKey(id), $"no power module handles {id}");
 
-            StringAssert.Contains("TakeDamage", System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs"),
+            StringAssert.Contains("TakeDamage", SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs"),
                 "a power proc must actually damage something");
         }
 
@@ -161,8 +156,7 @@ namespace ZombieWar.Tests
         [Test]
         public void EnemyDespawnClearsStatuses_SoARecycledEnemyInheritsNothing()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
             StringAssert.Contains("StatusCarrier.Clear", src,
                 "pooled enemies must clear their statuses on despawn");
 
@@ -218,14 +212,12 @@ namespace ZombieWar.Tests
         [Test]
         public void PowerApplicationIsBoundedToTwoConcurrentExplosions()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/SelfBurstPower.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/Powers/SelfBurstPower.cs");
             StringAssert.Contains("_burstsThisFrame >= 2", src,
                 "the damage cost of blasts must be bounded, not only the visual");
             StringAssert.Contains("PowerKit.PlaySized", src, "FX must go through the pool, never Instantiate");
             Assert.IsFalse(src.Contains("Instantiate"), "no ad-hoc instantiation in a proc");
-            string driver = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+            string driver = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
             Assert.IsFalse(driver.Contains("Instantiate"), "no ad-hoc instantiation in the driver");
         }
 
@@ -238,8 +230,7 @@ namespace ZombieWar.Tests
         [Test]
         public void PowerDamageResolvesEnemiesOnly_NeverThePlayer()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/Powers/PowerKit.cs");
 
             // G8 (04/10): the guarantee is now the type itself - PowerKit.Hit takes a ZombieBase and
             // there is no Collider/IDamageable overload a player-centred power could reach the player through.
@@ -268,8 +259,7 @@ namespace ZombieWar.Tests
                 int gathers = src.Split(new[] { "TargetQuery.Gather" }, System.StringSplitOptions.None).Length - 1;
                 Assert.AreEqual(kv.Value, gathers, $"{kv.Key}: one Gather per proc keeps the one-query-per-proc guarantee");
             }
-            string driver = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
+            string driver = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Skills/SkillCombatDriver.cs");
             Assert.IsFalse(driver.Contains("TargetQuery.Gather"), "the driver itself queries nothing");
         }
     }

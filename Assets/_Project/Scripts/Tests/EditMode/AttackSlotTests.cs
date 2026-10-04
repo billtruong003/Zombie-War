@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEngine;
 
 namespace ZombieWar.Tests
@@ -61,8 +61,7 @@ namespace ZombieWar.Tests
         [Test]
         public void BossesAndElitesAreNeverDeniedTheirAttack()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/ZombieManager.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/ZombieManager.cs");
 
             StringAssert.Contains("isElite", src, "an elite must always be able to commit");
             StringAssert.Contains("IsBeaconOwned", src, "a beacon boss must always be able to commit");
@@ -82,8 +81,7 @@ namespace ZombieWar.Tests
         [Test]
         public void EveryExitPathReleasesTheSlot()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
 
             // Dying mid-swing, being pooled, or resolving normally must all hand the slot back, or
             // the cap silently tightens until nothing can attack at all.
@@ -104,8 +102,7 @@ namespace ZombieWar.Tests
         [Test]
         public void TheSlotIsHeldForTheCooldown_SoTheCapBoundsDamagePerSecond()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
 
             int impactRelease = src.IndexOf("PerformAttack(target);", System.StringComparison.Ordinal);
             Assert.Greater(impactRelease, 0, "the swing must still land its hit");
@@ -160,8 +157,7 @@ namespace ZombieWar.Tests
         [Test]
         public void PacingWasReshapedNotStrengthened()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Threat/ThreatDirector.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Threat/ThreatDirector.cs");
 
             StringAssert.Contains("spawnBurst = 1", src,
                 "packs were the cause of both the clumping and the instant deaths");

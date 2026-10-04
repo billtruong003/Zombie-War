@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEngine;
 using ZombieWar.Skills;
 
@@ -83,8 +83,7 @@ namespace ZombieWar.Tests
         [Test]
         public void PoolReturnPathClearsStatuses_WiredInZombieBase()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/Zombies/ZombieBase.cs");
             StringAssert.Contains("StatusCarrier.Clear", src,
                 "despawn must clear statuses, or recycling spreads them to fresh enemies");
             StringAssert.Contains("IsBeaconOwned = false", src,
@@ -94,8 +93,7 @@ namespace ZombieWar.Tests
         [Test]
         public void TheLeashNeverRecyclesSomethingVisibleOrAuthored()
         {
-            string src = System.IO.File.ReadAllText(
-                Application.dataPath + "/_Project/Scripts/Runtime/Gameplay/ZombieManager.cs");
+            string src = SourceText.Read("/_Project/Scripts/Runtime/Gameplay/ZombieManager.cs");
 
             StringAssert.Contains("TestPlanesAABB", src,
                 "an enemy vanishing on screen is worse than the tail being fixed");

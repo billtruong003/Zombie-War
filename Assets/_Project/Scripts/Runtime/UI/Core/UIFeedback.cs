@@ -1,4 +1,4 @@
-using BillGameCore;
+﻿using BillGameCore;
 using UnityEngine;
 
 namespace ZombieWar.UI
@@ -21,7 +21,7 @@ namespace ZombieWar.UI
         public static void Equip() { Play("sfx.ui.equip"); Haptic(Buzz.Tick); }
         public static void LevelUp() { Play("sfx.ui.levelup"); Haptic(Buzz.Medium); }
 
-        public static bool HapticsOn => PlayerPrefs.GetInt("haptics", 1) == 1;
+        public static bool HapticsOn => GameSettings.Haptics;
 
         static void Play(string key)
         {
