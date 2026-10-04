@@ -14,9 +14,13 @@ namespace BillGameCore
         private static class Channel<T> where T : IEvent
         {
             public static readonly List<Action<T>> Listeners = new(8);
+            public static EventBus Owner;   // the bus that will clear this channel on Cleanup
         }
 
-        private readonly List<Action> _cleanupActions = new(32);
+        // One clear action per event type ever used, not one closure per Subscribe: the old per-handler
+        // closures were never removed by Unsubscribe, so the list grew every run and kept destroyed
+        // components reachable until shutdown.
+        private readonly List<Action> _channelClears = new(32);
 
         public void Initialize() { }
 
@@ -24,7 +28,11 @@ namespace BillGameCore
         {
             if (handler == null || Channel<T>.Listeners.Contains(handler)) return;
             Channel<T>.Listeners.Add(handler);
-            _cleanupActions.Add(() => Channel<T>.Listeners.Remove(handler));
+            if (Channel<T>.Owner != this)
+            {
+                Channel<T>.Owner = this;
+                _channelClears.Add(() => { Channel<T>.Listeners.Clear(); Channel<T>.Owner = null; });
+            }
         }
 
         public void SubscribeOnce<T>(Action<T> handler) where T : IEvent
@@ -51,8 +59,8 @@ namespace BillGameCore
 
         public void Cleanup()
         {
-            foreach (var a in _cleanupActions) try { a(); } catch { }
-            _cleanupActions.Clear();
+            foreach (var a in _channelClears) try { a(); } catch { }
+            _channelClears.Clear();
         }
     }
 

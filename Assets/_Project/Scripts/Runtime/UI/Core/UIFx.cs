@@ -43,6 +43,9 @@ namespace ZombieWar.UI
 
         static readonly System.Collections.Generic.Dictionary<int, float> AuthoredAlpha = new();
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => AuthoredAlpha.Clear();
+
         /// <summary>M8: a graphic (a modal's dim) fades from clear to its authored alpha.</summary>
         public static void FadeIn(UnityEngine.UI.Graphic g, float duration = 0.18f)
         {

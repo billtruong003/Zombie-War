@@ -89,6 +89,12 @@ namespace ZombieWar
             cheat.Register("zw.restart", RestartRun, "Restart the run");
             cheat.Register("zw.home", ReturnToMap, "Return to the menu");
             cheat.Register<string>("zw.map.go", LoadMap, "Load a map now (restarts the run): zw.map.go forest");
+            // QA repro shortcuts (04/10 playthrough): reach revive, chest, item and station moments on demand.
+            cheat.Register("zw.die", ForceLethalHit, "Take a lethal hit (opens the revive offer if one is left)");
+            cheat.Register("zw.chest", SpawnChestHere, "Drop a chest next to the player");
+            cheat.Register<string>("zw.item", SpawnItemHere, "Drop a mechanic item: zw.item Magnet|Bomb|Freeze");
+            cheat.Register<string>("zw.station", SpawnStationHere, "Place a station ahead: zw.station BossBeacon");
+            cheat.Register<int>("zw.acclevel", SetAccountLevel, "Raise the account to a level: zw.acclevel 5");
             _commandsRegistered = true;
         }
 
@@ -674,6 +680,50 @@ namespace ZombieWar
             var run = RunState.Current ?? throw new InvalidOperationException("No active run.");
             run.AddCurrency(PlayerProfile.CurrencyKind.Coin, 1000);
             SetStatus($"Run Coin: {run.Coin:N0}");
+        }
+
+        private static Transform PlayerOrThrow() =>
+            PlayerMovement.Instance != null ? PlayerMovement.Instance.transform : throw new InvalidOperationException("No active player.");
+
+        private void ForceLethalHit()
+        {
+            var health = PlayerOrThrow().GetComponent<Health>();
+            if (_godMode) ToggleGodMode();
+            health.TakeDamage(health.Max * 10f);
+            SetStatus(health.IsHeld ? "Revive offer open" : "Player died");
+        }
+
+        private void SpawnChestHere()
+        {
+            var pickups = PickupManager.Instance ?? throw new InvalidOperationException("No pickup manager.");
+            var p = PlayerOrThrow();
+            pickups.SpawnChest(p.position + p.forward * 2f);
+            SetStatus("Chest dropped");
+        }
+
+        private void SpawnItemHere(string kind)
+        {
+            if (!Enum.TryParse(kind, true, out PickupEffect effect)) throw new InvalidOperationException($"Unknown item {kind}");
+            var pickups = PickupManager.Instance ?? throw new InvalidOperationException("No pickup manager.");
+            var p = PlayerOrThrow();
+            bool ok = pickups.SpawnMechanic(effect, p.position + p.forward * 2f);
+            SetStatus(ok ? $"{effect} dropped" : $"{effect}: not spawned (one already out?)");
+        }
+
+        private void SpawnStationHere(string kind)
+        {
+            if (!Enum.TryParse(kind, true, out ZombieWar.Stations.StationKind k)) throw new InvalidOperationException($"Unknown station {kind}");
+            var director = ZombieWar.Stations.StationDirector.Instance ?? throw new InvalidOperationException("No station director.");
+            var p = PlayerOrThrow();
+            director.SpawnDebug(k, p.position + p.forward * 9f);
+            SetStatus($"{k} placed ahead");
+        }
+
+        private void SetAccountLevel(int level)
+        {
+            int need = AccountProgress.TotalFor(level) - PlayerProfile.AccountXp;
+            if (need > 0) PlayerProfile.AddAccountXp(need);
+            SetStatus($"Account LV {PlayerProfile.AccountLevel}");
         }
 
         private void KillAllZombies()

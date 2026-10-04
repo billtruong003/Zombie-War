@@ -19,6 +19,9 @@ namespace ZombieWar
         /// <summary>True while the gameplay scene is loaded.</summary>
         public static bool InGameplay { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => InGameplay = false;
+
         /// Called once from BootstrapEntry after Bill services are ready.
         public static void EnterMenu()
         {

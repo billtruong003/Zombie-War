@@ -42,6 +42,10 @@ namespace ZombieWar
         /// which also keeps menu-only scenes free of run state.</summary>
         public static RunState Current { get; private set; }
 
+        // Domain reload is off: a run left open when Play stopped must not leak into the next session.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Current = null;
+
         public static event Action Changed;
 
         /// <summary>Raised when XP crosses one or more level thresholds, with the number of levels

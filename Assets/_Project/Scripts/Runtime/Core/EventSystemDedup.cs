@@ -14,10 +14,16 @@ namespace ZombieWar
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
-            SceneManager.sceneLoaded += (_, _) => Dedup();
-            SceneManager.sceneUnloaded += _ => Dedup();
+            // Named handlers so a second Play session (domain reload off) replaces rather than stacks them.
+            SceneManager.sceneLoaded -= OnLoaded;
+            SceneManager.sceneUnloaded -= OnUnloaded;
+            SceneManager.sceneLoaded += OnLoaded;
+            SceneManager.sceneUnloaded += OnUnloaded;
             Dedup();
         }
+
+        static void OnLoaded(Scene s, LoadSceneMode m) => Dedup();
+        static void OnUnloaded(Scene s) => Dedup();
 
         private static void Dedup()
         {

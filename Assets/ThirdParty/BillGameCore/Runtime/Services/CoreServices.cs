@@ -30,7 +30,9 @@ namespace BillGameCore
         public bool Has(string key) => PlayerPrefs.HasKey(K(key));
         public void Delete(string key) => PlayerPrefs.DeleteKey(K(key));
         public void SetSlot(int slot) => _slot = Mathf.Max(0, slot);
-        public void Flush() => PlayerPrefs.Save();
+        /// <summary>Disk writes since launch — lets QA tooling see how often gameplay saves.</summary>
+        public static int FlushCount { get; private set; }
+        public void Flush() { FlushCount++; PlayerPrefs.Save(); }
         public void Cleanup() => Flush();
     }
 

@@ -162,6 +162,21 @@ namespace ZombieWar
         internal static Func<string, string> LegacyReadString = key => PlayerPrefs.GetString(key, "");
         internal static Func<string, int> LegacyReadInt = key => PlayerPrefs.GetInt(key, 0);
 
+        // Domain reload is off: without this the cached profile, the flush flags and every event's
+        // subscriber list (screens destroyed in the last play session) survive into the next Play.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            ResetCacheForTests();
+            _saveDirty = false;
+            _flushScheduled = false;
+            WalletChanged = null;
+            LoadoutChanged = null;
+            CostumeChanged = null;
+            AccountChanged = null;
+            MissionsChanged = null;
+        }
+
         internal static void ResetCacheForTests()
         {
             _data = null;

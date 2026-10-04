@@ -17,6 +17,9 @@ namespace ZombieWar
         static int _used, _coinUsed;
         static bool _adUsed;
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { _run = null; _used = 0; _coinUsed = 0; _adUsed = false; }
+
         static void Sync()
         {
             if (ReferenceEquals(_run, RunState.Current)) return;

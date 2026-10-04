@@ -10,6 +10,9 @@ namespace ZombieWar
     {
         private static readonly List<ITargetable> _targets = new();
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => _targets.Clear();
+
         public static void Register(ITargetable target)
         {
             if (!_targets.Contains(target)) _targets.Add(target);

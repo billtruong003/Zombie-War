@@ -518,6 +518,8 @@ namespace ZombieWar.UI
         public const string Shop = "shop";
         public const string Arsenal = "arsenal", Pass = "pass", Gacha = "gacha";
         public static string Next;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Next = null;
         public static string Take() { var n = Next; Next = null; return n; }
     }
 }

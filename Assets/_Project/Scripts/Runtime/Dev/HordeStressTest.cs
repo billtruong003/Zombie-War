@@ -100,9 +100,12 @@ namespace ZombieWar
             _loopRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "PlayerLoop");
             _loopNanos = 0;
             _loopSamples = 0;
+            _flushesAtStart = BillGameCore.SaveService.FlushCount;
             _measuring = true;
             Debug.Log($"[HordeStress] measuring '{label}' - call zw.horde.report to end the window.");
         }
+
+        private int _flushesAtStart;
 
         private void StopMeasuring()
         {
@@ -212,6 +215,7 @@ namespace ZombieWar
             sb.AppendLine($"  FPS       avg {avgFps:0.0} | worst {worstFps:0.0} (worst frame {_worstFrameTime * 1000f:0.0} ms)");
             sb.AppendLine($"  Peak      alive {_peakAlive}");
             sb.AppendLine($"  GC alloc  {_gcAllocated / 1024f:0.0} KB total | {allocPerSecond / 1024f:0.0} KB/s");
+            sb.AppendLine($"  PlayerLoop avg {loopMs:0.00} ms | save flushes {BillGameCore.SaveService.FlushCount - _flushesAtStart}");
             Debug.Log(sb.ToString());
 
             StopMeasuring();

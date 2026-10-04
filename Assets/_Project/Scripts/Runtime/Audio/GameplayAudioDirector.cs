@@ -303,6 +303,11 @@ namespace ZombieWar.Audio
         // not turn it into one long buzz; a heavier one on death. Honours the Vibration toggle.
         private static float _nextHurtBuzz;
 
+        // These hold unscaledTime stamps; carried into the next Play (domain reload off) they muted
+        // coin sounds and haptics until the new session's clock caught up.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { _nextHurtBuzz = 0f; _coinNextSoundAt = 0f; _coinComboUntil = 0f; _coinCombo = 0; }
+
         private static void OnPlayerDamaged(PlayerDamagedEvent e)
         {
             Bill.Audio?.PlayCue("sfx.player.hurt", SfxPriority.Medium, 0.62f);
