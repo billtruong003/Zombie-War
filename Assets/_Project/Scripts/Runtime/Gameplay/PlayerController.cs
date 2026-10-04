@@ -37,18 +37,26 @@ namespace ZombieWar
         private void OnEnable()
         {
             _health.OnDamaged += HandleDamaged;
+            _health.OnChanged += HandleChanged;
             _health.OnDeath += HandleDeath;
+            HandleChanged(_health.Current, _health.Max);
         }
 
         private void OnDisable()
         {
             _health.OnDamaged -= HandleDamaged;
+            _health.OnChanged -= HandleChanged;
             _health.OnDeath -= HandleDeath;
         }
 
         private void HandleDamaged(float amount)
         {
             Bill.Events?.Fire(new PlayerDamagedEvent(amount, _health.Current, _health.Max));
+        }
+
+        private void HandleChanged(float current, float max)
+        {
+            Bill.Events?.Fire(new PlayerHealthChangedEvent(current, max));
         }
 
         private void HandleDeath()

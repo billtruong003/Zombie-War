@@ -14,6 +14,9 @@ namespace ZombieWar
         public bool IsDead => _current <= 0f;
 
         public event Action<float> OnDamaged;
+        /// Every change of current or max health, whatever caused it (hit, heal, revive, max-up,
+        /// reset). The one signal a display should follow; OnDamaged/OnHealed are for reactions.
+        public event Action<float, float> OnChanged;
         public event Action OnDeath;
         /// Raised when Kinetic Shield ate an incoming hit, so the HUD can show it.
         public event Action OnDamageAbsorbed;
@@ -56,7 +59,7 @@ namespace ZombieWar
                 }
             }
 
-            _current = Mathf.Max(0f, _current - amount);
+            SetCurrent(Mathf.Max(0f, _current - amount));
 
             // A3 Guardian Angel: once per run a fatal hit heals instead, before any revive offer.
             if (_current <= 0f && _isPlayer)
@@ -64,7 +67,7 @@ namespace ZombieWar
                 var skills = ZombieWar.Skills.SkillRuntime.Active;
                 if (skills != null && skills.TryGuardianAngel(out float heal))
                 {
-                    _current = Mathf.Max(1f, maxHealth * heal);
+                    SetCurrent(Mathf.Max(1f, maxHealth * heal));
                     _invulnerableUntil = Time.time + 1f;
                     ZombieWar.Skills.SkillCombatDriver.Instance?.PlayGuardianAngel();
                     OnHealed?.Invoke(_current);
@@ -74,7 +77,7 @@ namespace ZombieWar
 
             if (_current <= 0f && _isPlayer && ReviveGate != null && ReviveGate())
             {
-                _current = 0.01f;   // alive but held; nothing hits during the offer (time is frozen)
+                SetCurrent(0.01f);   // alive but held; nothing hits during the offer (time is frozen)
                 IsHeld = true;
                 OnDamaged?.Invoke(amount);
                 return;
@@ -89,9 +92,10 @@ namespace ZombieWar
         {
             if (!IsHeld) return;
             IsHeld = false;
-            _current = maxHealth;
+            float healed = maxHealth - _current;
+            SetCurrent(maxHealth);
             _invulnerableUntil = Time.time + graceSeconds;
-            OnHealed?.Invoke(maxHealth);
+            OnHealed?.Invoke(healed);
         }
 
         /// <summary>Ends a held death by dying (offer declined or timed out).</summary>
@@ -99,22 +103,20 @@ namespace ZombieWar
         {
             if (!IsHeld) return;
             IsHeld = false;
-            _current = 0f;
+            SetCurrent(0f);
             OnDeath?.Invoke();
         }
 
-        public void ResetHealth()
-        {
-            _current = maxHealth;
-        }
+        public void ResetHealth() => SetCurrent(maxHealth);
 
         /// <summary>Restores health, clamped at max. Refuses to revive something already dead -
         /// a health pickup must not undo a death that has already resolved.</summary>
         public void Heal(float amount)
         {
             if (IsDead || amount <= 0f) return;
-            _current = Mathf.Min(maxHealth, _current + amount);
-            OnHealed?.Invoke(amount);
+            float before = _current;
+            SetCurrent(Mathf.Min(maxHealth, _current + amount));
+            OnHealed?.Invoke(_current - before);
         }
 
         public event Action<float> OnHealed;
@@ -124,7 +126,7 @@ namespace ZombieWar
         public void Configure(float max)
         {
             maxHealth = max;
-            _current = max;
+            SetCurrent(max);
         }
 
         /// <summary>Raises max health by a multiplier and grants the added headroom as current
@@ -135,7 +137,14 @@ namespace ZombieWar
             if (IsDead || multiplier <= 1f) return;
             float added = maxHealth * (multiplier - 1f);
             maxHealth += added;
-            _current += added;
+            SetCurrent(_current + added);
+        }
+
+        // The single write path for current health, so OnChanged can never be skipped.
+        private void SetCurrent(float value)
+        {
+            _current = value;
+            OnChanged?.Invoke(_current, maxHealth);
         }
     }
 }

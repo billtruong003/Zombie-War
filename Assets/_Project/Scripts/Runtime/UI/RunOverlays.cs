@@ -667,6 +667,15 @@ namespace ZombieWar
             if (hint != null) hint.gameObject.SetActive(!on);
         }
 
+        /// A Max Health rank (card or chest) must act at pick time; the Health component owns the number.
+        static void ApplyPendingMaxHealth(ZombieWar.Skills.SkillRuntime skills)
+        {
+            float bonus = skills.ConsumeMaxHealthBonus();
+            if (bonus <= 0f) return;
+            var player = PlayerMovement.Instance;
+            if (player != null && player.TryGetComponent(out Health health)) health.IncreaseMax(1f + bonus);
+        }
+
         private void PickPerk(int slot)
         {
             if (_ftueCard) { _ftueCard = false; Ftue.Complete(Ftue.Card); ShowFtueCard(-1); }
@@ -686,8 +695,7 @@ namespace ZombieWar
 
                 // Max Health is the one card that must act at pick time; the Health component owns
                 // the number.
-                float bonus = skills.ConsumeMaxHealthBonus();
-                if (bonus > 0f) PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(1f + bonus);
+                ApplyPendingMaxHealth(skills);
             }
 
             _skillOffer = null;

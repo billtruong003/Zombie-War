@@ -61,8 +61,12 @@ namespace ZombieWar
 
             var bus = Bill.Events;
             if (bus == null) return;
-            bus.Subscribe<PlayerDamagedEvent>(OnPlayerDamaged);
+            bus.Subscribe<PlayerHealthChangedEvent>(OnPlayerHealthChanged);
             bus.Subscribe<PlayerDiedEvent>(OnPlayerDied);
+
+            // The bar starts from the live value, not the prefab's placeholder fill.
+            var health = PlayerMovement.Instance != null ? PlayerMovement.Instance.GetComponent<Health>() : null;
+            if (health != null) SetHp(health.Max > 0f ? health.Current / health.Max : 0f, health.Current);
         }
 
         private void OnDisable()
@@ -72,7 +76,7 @@ namespace ZombieWar
 
             var bus = Bill.Events;
             if (bus == null) return;
-            bus.Unsubscribe<PlayerDamagedEvent>(OnPlayerDamaged);
+            bus.Unsubscribe<PlayerHealthChangedEvent>(OnPlayerHealthChanged);
             bus.Unsubscribe<PlayerDiedEvent>(OnPlayerDied);
         }
 
@@ -168,10 +172,15 @@ namespace ZombieWar
             else Debug.Log("[HudController] Pause: no overlay wired.");
         }
 
-        private void OnPlayerDamaged(PlayerDamagedEvent e) => SetHp(e.Normalized, e.Current);
+        // Every health change (hit, heal, revive, Max Health card), not only damage: following the
+        // damage event alone left the bar empty after a revive (QA 04/10).
+        private void OnPlayerHealthChanged(PlayerHealthChangedEvent e) => SetHp(e.Normalized, e.Current);
 
         // HP drops to 0 at once; the result screen waits for GameOverEvent so the death plays out.
         private void OnPlayerDied(PlayerDiedEvent e) => SetHp(0f, 0f);
+
+        private ZombieWar.UI.UIBarClip _clip;
+        private bool _clipResolved;
 
         private void SetHp(float normalized, float current)
         {
@@ -179,7 +188,8 @@ namespace ZombieWar
             {
                 // The pill shrinks instead of being clipped, so both ends stay round inside the round
                 // track at any value (owner: a flat cut looked off). Never thinner than it is tall.
-                var clip = healthFillRect.GetComponent<ZombieWar.UI.UIBarClip>();
+                if (!_clipResolved) { _clip = healthFillRect.GetComponent<ZombieWar.UI.UIBarClip>(); _clipResolved = true; }
+                var clip = _clip;
                 if (clip != null && clip.Graphic != null)
                 {
                     healthFillRect.anchorMax = new Vector2(1f, 1f);

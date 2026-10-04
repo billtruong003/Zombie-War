@@ -152,11 +152,7 @@ namespace ZombieWar
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             if (_chest.card != null && _chest.kind == ZombieWar.Skills.SkillRuntime.ChestKind.Evolution)
                 ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
-            if (skills != null)
-            {
-                float bonus = skills.ConsumeMaxHealthBonus();   // a chest can rank up Max Health
-                if (bonus > 0f) PlayerMovement.Instance?.GetComponent<Health>()?.IncreaseMax(1f + bonus);
-            }
+            if (skills != null) ApplyPendingMaxHealth(skills);   // a chest can rank up Max Health
             if (_ftueChest) { _ftueChest = false; Ftue.Complete(Ftue.Chest); }
             ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(false);
             Show(ChestRoot, false);

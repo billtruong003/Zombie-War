@@ -20,6 +20,23 @@ namespace ZombieWar
         public float Normalized => Max > 0f ? Current / Max : 0f;
     }
 
+    /// <summary>Fired on every change of the player's current or max health (hits, heals, revive,
+    /// Max Health cards, run start). Displays follow this; <see cref="PlayerDamagedEvent"/> stays the
+    /// signal for hit reactions (sound, haptics, radio).</summary>
+    public readonly struct PlayerHealthChangedEvent : IEvent
+    {
+        public readonly float Current;
+        public readonly float Max;
+
+        public PlayerHealthChangedEvent(float current, float max)
+        {
+            Current = current;
+            Max = max;
+        }
+
+        public float Normalized => Max > 0f ? Current / Max : 0f;
+    }
+
     /// <summary>Fired once when the player's health reaches zero. The game-over screen,
     /// audio stinger and wave system all react to this through Bill.Events.</summary>
     public readonly struct PlayerDiedEvent : IEvent { }
