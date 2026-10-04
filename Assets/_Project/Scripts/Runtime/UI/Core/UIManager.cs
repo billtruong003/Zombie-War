@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieWar.UI
@@ -13,7 +13,7 @@ namespace ZombieWar.UI
     {
         public static UIManager Instance { get; private set; }
 
-        [Tooltip("Màn mở tự động khi scene start (vd HubScreen ở Menu). Để trống nếu flow tự push.")]
+        [Tooltip("Màn mở tự động khi scene start (vd HomeScreen V2 ở Menu). Để trống nếu flow tự push.")]
         [SerializeField] private UIScreen initialScreen;
 
         private readonly Dictionary<System.Type, UIScreen> _screens = new();

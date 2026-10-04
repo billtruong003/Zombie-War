@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +9,22 @@ namespace ZombieWar
     {
         Sidearm, SMG, AssaultRifle, Shotgun, LMG,
         Marksman, Railgun, Flamethrower, Tesla, Laser, Rocket
+    }
+
+    /// <summary>The family name players see on cards ("PISTOL", "RIFLE"…).</summary>
+    public static class WeaponClassNames
+    {
+        public static string Family(WeaponClass c) => c switch
+        {
+            WeaponClass.Sidearm => "PISTOL",
+            WeaponClass.SMG => "SMG",
+            WeaponClass.AssaultRifle => "RIFLE",
+            WeaponClass.Shotgun => "SHOTGUN",
+            WeaponClass.Marksman => "SNIPER",
+            WeaponClass.LMG => "LMG",
+            WeaponClass.Rocket => "LAUNCHER",
+            _ => c.ToString().ToUpperInvariant(),
+        };
     }
 
     // How a shot meets the world. Only the modes the Weapon actually implements exist; beam,

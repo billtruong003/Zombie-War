@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -51,31 +51,16 @@ namespace ZombieWar.EditorTools
             var s = new List<Step>
             {
                 new Step { name = null, until = () => UIManager.Instance != null && UIManager.Instance.Top != null, wait = 5f },   // boot splash fades out first
-                Shot("hub", () => UIManager.Instance.PopTo<HubScreen>()),
-                Shot("loadout", () => UIManager.Instance.Push<LoadoutScreen>()),
-                Shot("shop", () => { UIManager.Instance.PopTo<HubScreen>(); UIManager.Instance.Push<ShopScreen>(); }),
-                Shot("costume", () => { UIManager.Instance.PopTo<HubScreen>(); UIManager.Instance.Push<CostumeScreen>(); }),
-                Shot("pass", () => { UIManager.Instance.PopTo<HubScreen>(); UIManager.Instance.Push<PassScreen>(); }),
-                // Display only (the save is untouched): every gun drawn as not owned, then the buy modal.
-                Shot("shop_locked", () =>
-                {
-                    UIManager.Instance.PopTo<HubScreen>();
-                    var shop = UIManager.Instance.Push<ShopScreen>();
-                    var cat = shop.GetType().GetField("catalog", Any)?.GetValue(shop) as UIPrototypeCatalog;
-                    foreach (var c in shop.GetComponentsInChildren<WeaponItemCardView>(true))
-                    { c.BindIcon(cat, false); c.SetOwned(false, c.data != null ? c.data.price : 0); }
-                }),
-                Shot("buy_modal", () =>
-                {
-                    var shop = UIManager.Instance.Get<ShopScreen>();
-                    var cat = shop.GetType().GetField("catalog", Any)?.GetValue(shop) as UIPrototypeCatalog;
-                    var d = shop.GetComponentsInChildren<WeaponItemCardView>(true).First(c => c.data != null && c.data.price > 0).data;
-                    Call(shop, "ShowPurchaseModal", null, false, d.weaponName, cat.GetWeaponIcon(d, true), WalletCurrency.Coin, (long)d.price);
-                }),
-                Shot("shop_after", () => Call(UIManager.Instance.Get<ShopScreen>(), "ClosePurchaseModal"), 0.8f),
+                // The V2 menu (the V1 screens were removed 04/10).
+                Shot("home", () => UIManager.Instance.PopTo<HomeScreen>()),
+                Shot("arsenal", () => UIManager.Instance.Push<ArsenalScreen>()),
+                Shot("shop", () => { UIManager.Instance.PopTo<HomeScreen>(); UIManager.Instance.Push<ShopScreenV2>(); }),
+                Shot("studio", () => { UIManager.Instance.PopTo<HomeScreen>(); UIManager.Instance.Push<StudioScreen>(); }),
+                Shot("gacha", () => { UIManager.Instance.PopTo<HomeScreen>(); UIManager.Instance.Push<GachaScreen>(); }),
+                Shot("pass", () => { UIManager.Instance.PopTo<HomeScreen>(); UIManager.Instance.Push<PassScreenV2>(); }),
             };
             if (!includeRun) return s;
-            s.Add(Shot("loading", () => { UIManager.Instance.PopTo<HubScreen>(); GameFlow.StartGameplay(); }, 0.6f));
+            s.Add(Shot("loading", () => { UIManager.Instance.PopTo<HomeScreen>(); GameFlow.StartGameplay(); }, 0.6f));
             s.Add(new Step { name = null, until = () => RunState.Current != null && Overlays() != null, wait = 3f });
             s.Add(new Step { name = null, act = () =>
             {

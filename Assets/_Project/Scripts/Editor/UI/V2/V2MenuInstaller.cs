@@ -38,17 +38,17 @@ namespace ZombieWar.EditorTools.V2
             ToastPath,
         };
 
-        /// For each link: v2 screen type name first, M8 fallback second.
+        /// For each link: the v2 screen type name (the M8/V1 screens were removed 04/10).
         static readonly Dictionary<string, string[]> Targets = new()
         {
             ["profileScreen"] = new[] { "ProfileScreen" },
             ["settingsScreen"] = new[] { "SettingsScreen" },
             ["dailyScreen"] = new[] { "DailyScreen" },
-            ["passScreen"] = new[] { "PassScreenV2", "PassScreen" },
-            ["arsenalScreen"] = new[] { "ArsenalScreen", "LoadoutScreen" },
-            ["shopScreen"] = new[] { "ShopScreenV2", "ShopScreen" },
+            ["passScreen"] = new[] { "PassScreenV2" },
+            ["arsenalScreen"] = new[] { "ArsenalScreen" },
+            ["shopScreen"] = new[] { "ShopScreenV2" },
             ["gachaScreen"] = new[] { "GachaScreen" },
-            ["studioScreen"] = new[] { "StudioScreen", "CostumeScreen" },
+            ["studioScreen"] = new[] { "StudioScreen" },
         };
 
         [MenuItem("HordeCall/UI v2/Build Toast")]

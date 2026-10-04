@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEditor;
@@ -48,13 +48,9 @@ namespace ZombieWar.EditorTools
                 switch (System.IO.Path.GetFileNameWithoutExtension(path))
                 {
                     case "UI_Hud": PolishHud(root, log); break;
-                    case "UI_LoadoutScreen": PolishLoadout(root, log); break;
-                    case "UI_ShopScreen": PolishShop(root, log); break;
                 }
                 log.Add($"press-feel {AddPressFeel(root)}");
                 log.Add($"outline-text {WhiteOnOutline(root)}");
-                if (System.IO.Path.GetFileNameWithoutExtension(path) == "UI_HubScreen") PolishHub(root, log);
-                if (System.IO.Path.GetFileNameWithoutExtension(path) == "UI_PassScreen") PolishPass(root, log);
                 log.Add($"slice-fit +{UiKitApply.AddSliceFit(root)}");
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }
@@ -184,36 +180,6 @@ namespace ZombieWar.EditorTools
             return n;
         }
 
-        /// Hub: the weapon plate's tile sits 16 px inside a 32 px plate, so it gets the tile radius.
-        /// <summary>
-        /// Pass (M8-F, owner: the reward row stopped dead at the edge): the track scrolls under a soft
-        /// edge. It runs to the screen edge, and the row padding keeps the first and last reward
-        /// clear of the fade when scrolled to either end.
-        /// </summary>
-        static void PolishPass(GameObject root, List<string> log)
-        {
-            var track = root.transform.Find("Safe/TrackScroll") as RectTransform;
-            if (track == null) return;
-            const int Fade = 96;
-            var mask = track.GetComponent<RectMask2D>();
-            if (mask != null) mask.softness = new Vector2Int(Fade, 0);
-            track.offsetMin = new Vector2(0f, track.offsetMin.y);
-            track.offsetMax = new Vector2(0f, track.offsetMax.y);
-            var row = track.Find("Content")?.GetComponent<HorizontalLayoutGroup>();
-            if (row != null) { row.padding.left = 32 + Fade / 2; row.padding.right = 32 + Fade / 2; }
-            log.Add("pass fade");
-        }
-
-        static void PolishHub(GameObject root, List<string> log)
-        {
-            var plate = root.transform.Find("Safe/Podium/WeaponPlate");
-            if (plate == null) return;
-            SetMultiplier(plate, UITheme.MultiplierFor("rounded_32", UITheme.M8RadiusPanel));
-            SetMultiplier(plate.Find("Tile"), UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusTile));
-            SetMultiplier(plate.Find("ChangeBtn"), UITheme.MultiplierFor("rounded_24", UITheme.M8RadiusTile));
-            log.Add("hub plate radii");
-        }
-
         /// Every button and toggle answers a tap: sound by role, lip buttons sink while held.
         public static int AddPressFeel(GameObject root)
         {
@@ -234,7 +200,6 @@ namespace ZombieWar.EditorTools
         {
             string n = sel.name.ToLowerInvariant();
             // Purchases and level-up picks have their own, richer sounds.
-            if (n.Contains("confirm") && sel.GetComponentInParent<ShopScreen>(true) != null) return UIPressFeel.Sound.None;
             if (n.StartsWith("perk")) return UIPressFeel.Sound.None;
             if (n.Contains("back") || n.Contains("close") || n.Contains("cancel") || n == "no" || n.Contains("home")
                 || n.Contains("skip") || n == "dim") return UIPressFeel.Sound.Back;
@@ -417,123 +382,6 @@ namespace ZombieWar.EditorTools
         }
 
         // ─────────────────────────────────────────────────────────── weapon cards
-
-        /// Solid rarity tile behind a weapon card's icon (coloured at runtime from WeaponData.TileColor).
-        static void CardTile(WeaponItemCardView card, float bottomReserve)
-        {
-            var icon = card.icon != null ? card.icon.transform : null;
-            if (icon == null) return;
-            var tileT = card.transform.Find("Tile");
-            if (tileT == null)
-            {
-                var go = new GameObject("Tile", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                go.layer = card.gameObject.layer;
-                tileT = go.transform; tileT.SetParent(card.transform, false);
-            }
-            // Tile directly under the icon; written so a second run keeps that order.
-            tileT.SetSiblingIndex(icon.GetSiblingIndex());
-            icon.SetSiblingIndex(tileT.GetSiblingIndex() + 1);
-            var trt = (RectTransform)tileT;
-            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.pivot = new Vector2(0.5f, 0.5f);
-            trt.offsetMin = new Vector2(14, bottomReserve); trt.offsetMax = new Vector2(-14, -14);
-            var ti = Rounded(tileT, "rounded_24", UITheme.M8Deep, TileRadius);
-            ti.raycastTarget = false;
-            card.tile = ti;
-
-            var irt = (RectTransform)icon;
-            irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one; irt.pivot = new Vector2(0.5f, 0.5f);
-            irt.offsetMin = new Vector2(22, bottomReserve + 8); irt.offsetMax = new Vector2(-22, -22);
-            card.icon.preserveAspect = true;
-            card.icon.raycastTarget = false;
-
-            var bg = card.transform.Find("Bg");
-            if (bg != null) Rounded(bg, "rounded_24", UITheme.M8Card, CardRadius24);
-            var frame = card.transform.Find("Border");
-            if (frame != null) SetMultiplier(frame, UITheme.MultiplierFor("frame_24", UITheme.M8RadiusCard));
-            // The owned badge sits 14 px inside the card corner: a full pill there was rounder than the card.
-            var badge = card.ownedBadge != null ? card.ownedBadge.GetComponent<Image>() : null;
-            if (badge != null) Rounded(badge.transform, "rounded_24", badge.color, TileRadius);
-            var lockOv = card.lockOverlay != null ? card.lockOverlay.GetComponent<Image>() : null;
-            if (lockOv != null) lockOv.color = new Color(0.047f, 0.055f, 0.078f, 0.35f);   // the silhouette already says "locked"
-            // The padlock sits on the tile's corner instead of over the gun.
-            if (card.lockOverlay != null && card.lockOverlay.transform.childCount > 0)
-                SetRect(card.lockOverlay.transform.GetChild(0), Vector2.one, Vector2.one, Vector2.one, new Vector2(-20, -20), new Vector2(56, 56));
-        }
-
-        static void PolishLoadout(GameObject root, List<string> log)
-        {
-            var safe = root.transform.Find("Safe");
-            int n = 0;
-            foreach (var card in root.GetComponentsInChildren<WeaponItemCardView>(true)) { CardTile(card, 64); n++; }
-
-            // Details card: plain card with a subtle edge (the rarity shows on the tile and the name).
-            var info = safe.Find("InfoPanel");
-            Card(info.Find("Bg"));
-            var border = info.Find("Border")?.GetComponent<Image>();
-            if (border != null) border.color = UITheme.M8Edge;
-            info.Find("Glow")?.gameObject.SetActive(false);
-            Rounded(info.Find("HeroBackdrop"), "rounded_24", UITheme.M8Deep, TileRadius);
-            var heroIcon = info.Find("HeroBackdrop/HeroWeaponIcon") as RectTransform;
-            if (heroIcon != null) { heroIcon.offsetMin = new Vector2(16, 16); heroIcon.offsetMax = new Vector2(-16, -16); }
-            foreach (Transform chip in info.Find("Signatures/Row"))
-                Rounded(chip, "rounded_24", Hex("3A2F22"), TileRadius);
-
-            // ARSENAL heading sits above the grid instead of on the details card's edge.
-            var kho = safe.Find("KhoArea");
-            var label = kho.Find("KhoLabel");
-            SetRect(label, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(4, 0), new Vector2(500, 64));
-            var lt = label.GetComponent<TMP_Text>(); if (lt != null) { lt.color = UITheme.M8Ink; lt.alignment = TextAlignmentOptions.MidlineLeft; }
-            var scroll = kho.Find("KhoScroll") as RectTransform;
-            if (scroll != null) { scroll.offsetMax = new Vector2(scroll.offsetMax.x, -72); }
-            log.Add($"loadout tiles {n}");
-        }
-
-        static void PolishShop(GameObject root, List<string> log)
-        {
-            int n = 0;
-            foreach (var card in root.GetComponentsInChildren<WeaponItemCardView>(true))
-            {
-                bool featured = card.name.StartsWith("Featured_");
-                CardTile(card, featured ? 104 : 104);
-                n++;
-            }
-            // Purchase confirm: card panel, the item on a tile, BUY / CANCEL lip buttons.
-            var modal = root.transform.Find("PurchaseModal");
-            if (modal != null)
-            {
-                var scrim = modal.GetComponent<Image>();
-                if (scrim != null) { var c = UITheme.M8Scrim; c.a = 0.9f; scrim.color = c; scrim.sprite = null; }
-                var panel = modal.Find("Panel");
-                ((RectTransform)panel).sizeDelta = new Vector2(820, 700);
-                Card(panel.Find("Bg"));
-                var edge = panel.Find("Border")?.GetComponent<Image>(); if (edge != null) edge.color = UITheme.M8Edge;
-                panel.Find("Glow")?.gameObject.SetActive(false);
-                var icon = panel.Find("Icon");
-                var tileT = panel.Find("IconTile");
-                if (tileT == null)
-                {
-                    var go = new GameObject("IconTile", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                    go.layer = panel.gameObject.layer; tileT = go.transform; tileT.SetParent(panel, false);
-                }
-                tileT.SetSiblingIndex(icon.GetSiblingIndex());
-                icon.SetSiblingIndex(tileT.GetSiblingIndex() + 1);
-                SetRect(tileT, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(420, 300));
-                Rounded(tileT, "rounded_24", UITheme.M8Deep, TileRadius).raycastTarget = false;
-                SetRect(icon, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(380, 260));
-                var iconImg = icon.GetComponent<Image>(); iconImg.preserveAspect = true; iconImg.raycastTarget = false;
-                Style(panel.Find("Title")?.GetComponent<TMP_Text>(), 56, UITheme.M8Ink);
-                var price = panel.Find("Price"); if (price != null) SetRect(price, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0.5f), new Vector2(0, 190), new Vector2(560, 70));
-                Style(price?.GetComponent<TMP_Text>(), 48, UITheme.M8Yellow);
-                LipButton(panel.Find("Cancel"), UITheme.M8Card, UITheme.M8CardLip, UITheme.M8Ink, 40);
-                LipButton(panel.Find("Confirm"), UITheme.M8Green, UITheme.M8GreenLip, UITheme.M8OnGreen, 44);
-                var buy = panel.Find("Confirm/Face/Label")?.GetComponent<TMP_Text>(); if (buy != null) buy.text = "BUY";
-                var screen = root.GetComponent<ShopScreen>();
-                var so = new SerializedObject(screen);
-                so.FindProperty("purchaseIconTile").objectReferenceValue = tileT.GetComponent<Image>();
-                so.ApplyModifiedPropertiesWithoutUndo();
-            }
-            log.Add($"shop tiles {n}");
-        }
 
         static Color Hex(string h) => ColorUtility.TryParseHtmlString("#" + h, out var c) ? c : Color.magenta;
     }

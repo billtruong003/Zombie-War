@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -57,7 +57,7 @@ namespace ZombieWar.Editor.UI
 
         /// <summary>
         /// Gán initialScreen (private [SerializeField]) cho UIManager qua SerializedObject —
-        /// đây là màn được push tự động khi vào Play (vd HubScreen ở Menu).
+        /// đây là màn được push tự động khi vào Play (vd HomeScreen V2 ở Menu).
         /// </summary>
         public static void SetInitialScreen(UIScreen screen)
         {
@@ -74,20 +74,20 @@ namespace ZombieWar.Editor.UI
         }
 
         /// <summary>
-        /// One-click fix cho scene hiện tại: ensure UIRoot đầy đủ + wire HubScreen làm initialScreen nếu có.
+        /// One-click fix cho scene hiện tại: ensure UIRoot đầy đủ + wire HomeScreen (V2) làm initialScreen nếu có.
         /// </summary>
         [MenuItem("ZombieWar/UI/Ensure UIRoot (Canvas + UIManager)")]
         public static void Build()
         {
             var canvas = EnsureRoot();
-            var hub = Object.FindFirstObjectByType<HubScreen>(FindObjectsInactive.Include);
+            var hub = Object.FindFirstObjectByType<HomeScreen>(FindObjectsInactive.Include);
             if (hub != null) SetInitialScreen(hub);
-            else Debug.LogWarning("[UIRootInstaller] Chưa có HubScreen trong scene — build Hub trước để set initialScreen.");
+            else Debug.LogWarning("[UIRootInstaller] Chưa có HomeScreen (V2) trong scene — chạy V2 Menu Installer trước để set initialScreen.");
 
             EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
             EditorSceneManager.SaveScene(canvas.gameObject.scene);
             Debug.Log("[UIRootInstaller] UIRoot ensured (Canvas + UIManager + EventSystem)"
-                      + (hub != null ? " + initialScreen=HubScreen." : " — CHƯA set initialScreen (thiếu Hub)."));
+                      + (hub != null ? " + initialScreen=HomeScreen." : " — CHƯA set initialScreen (thiếu Home)."));
         }
     }
 }

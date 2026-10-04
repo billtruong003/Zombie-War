@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ZombieWar.UI
 {
@@ -20,13 +20,13 @@ namespace ZombieWar.UI
         [SerializeField] private RenderTexture previewTexture;
         [SerializeField] private Animator animator;
 
-        /// <summary>Applier của preview character — CostumeScreen dùng cho preview-only apply.</summary>
+        /// <summary>Applier của preview character — StudioScreen dùng cho preview-only apply.</summary>
         public CharacterModularApplier ModularApplier => modularApplier;
 
         /// <summary>RT asset các RawImage (Hub/Costume) reference trực tiếp trong Inspector.</summary>
         public RenderTexture Texture => previewTexture;
 
-        /// <summary>Root nhân vật preview — CostumeScreen drag-rotate quay quanh Y (không đụng camera).</summary>
+        /// <summary>Root nhân vật preview — StudioScreen drag-rotate quay quanh Y (không đụng camera).</summary>
         public Transform CharacterRoot => characterRoot;
 
         private void Start()

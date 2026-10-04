@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -21,15 +21,6 @@ namespace ZombieWar.Editor.UI
         const string MenuScene = "Assets/_Project/Scenes/Menu.unity";
         const string MapScene = "Assets/_Project/Scenes/Map_Level1.unity";
 
-        static readonly (string name, System.Type type)[] MenuScreens =
-        {
-            ("HubScreen", typeof(HubScreen)),
-            ("LoadoutScreen", typeof(LoadoutScreen)),
-            ("CostumeScreen", typeof(CostumeScreen)),
-            ("ShopScreen", typeof(ShopScreen)),
-            ("PassScreen", typeof(PassScreen)),
-        };
-
         // ================================================================ ENSURE
 
         [MenuItem("ZombieWar/UI/Authoring/Ensure Menu Scene Contract")]
@@ -46,44 +37,15 @@ namespace ZombieWar.Editor.UI
                 dirty = true;
                 Debug.Log("[Ensure] Tạo UIRoot (thiếu).");
             }
-            var canvasRt = (RectTransform)canvasGo.transform;
 
-            foreach (var (name, type) in MenuScreens)
-            {
-                if (Object.FindFirstObjectByType(type, FindObjectsInactive.Include) != null) continue;
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{UIPrefabizer.ScreensDir}/UI_{name}.prefab");
-                if (prefab == null)
-                {
-                    Debug.LogWarning($"[Ensure] Menu thiếu {name} và chưa có prefab UI_{name} — chạy Rebuild (Destructive) để scaffold lần đầu.");
-                    continue;
-                }
-                var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-                inst.transform.SetParent(canvasRt, false);
-                inst.name = name;
-                dirty = true;
-                Debug.Log($"[Ensure] Instantiate {name} từ prefab (thiếu trong scene).");
-            }
 
             if (MenuCharacterStageInstaller.EnsureInOpenScene() != null) { }
 
-            // wire các reference đang NULL (không overwrite reference đã gán)
-            var hub = Object.FindFirstObjectByType<HubScreen>(FindObjectsInactive.Include);
-            var loadout = Object.FindFirstObjectByType<LoadoutScreen>(FindObjectsInactive.Include);
-            var costume = Object.FindFirstObjectByType<CostumeScreen>(FindObjectsInactive.Include);
-            var shop = Object.FindFirstObjectByType<ShopScreen>(FindObjectsInactive.Include);
-            var pass = Object.FindFirstObjectByType<PassScreen>(FindObjectsInactive.Include);
-            var stage = Object.FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
-
-            dirty |= WireIfNull(hub, "loadoutScreen", loadout);
-            dirty |= WireIfNull(hub, "shopScreen", shop);
-            dirty |= WireIfNull(hub, "costumeScreen", costume);
-            dirty |= WireIfNull(hub, "passScreen", pass);
-            dirty |= WireIfNull(loadout, "shopScreen", shop);
-            dirty |= WireIfNull(pass, "shopScreen", shop);
-            dirty |= WireIfNull(costume, "previewStage", stage);
-
+            // wire các reference đang NULL (không overwrite reference đã gán). The menu is the V2 set
+            // (V1 screens removed 04/10); the first screen is the V2 Home.
+            var home = Object.FindFirstObjectByType<HomeScreen>(FindObjectsInactive.Include);
             var mgr = Object.FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
-            dirty |= WireIfNull(mgr, "initialScreen", hub);
+            dirty |= WireIfNull(mgr, "initialScreen", home);
 
             // RawImage preview texture null → gán RT asset
             var rt = MenuCharacterStageInstaller.EnsureRenderTexture();
@@ -178,84 +140,11 @@ namespace ZombieWar.Editor.UI
             var ess = Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (ess.Length != 1) Fail($"EventSystem count = {ess.Length} (phải 1)"); else Ok("1 EventSystem");
 
-            foreach (var (name, type) in MenuScreens)
-            {
-                var obj = Object.FindFirstObjectByType(type, FindObjectsInactive.Include) as Component;
-                if (obj == null) { Fail($"thiếu screen {name}"); continue; }
-                if (PrefabUtility.GetCorrespondingObjectFromSource(obj.gameObject) == null)
-                    Fail($"{name} KHÔNG phải prefab instance");
-                else Ok($"{name} là prefab instance");
-            }
+            var homeScreen = Object.FindFirstObjectByType<HomeScreen>(FindObjectsInactive.Include);
+            if (homeScreen == null) Fail("thiếu HomeScreen (V2)"); else Ok("HomeScreen (V2)");
 
             if (mgrs.Length > 0)
                 CheckRef(mgrs[0], "initialScreen", r, ref fails);
-            var hub = Object.FindFirstObjectByType<HubScreen>(FindObjectsInactive.Include);
-            if (hub != null)
-                foreach (var f in new[] { "playButton", "loadoutButton", "shopButton", "costumeButton", "passButton",
-                                          "recordLabel", "loadoutScreen", "shopScreen", "costumeScreen", "passScreen" })
-                    CheckRef(hub, f, r, ref fails);
-            var loadout = Object.FindFirstObjectByType<LoadoutScreen>(FindObjectsInactive.Include);
-            if (loadout != null)
-                foreach (var f in new[] { "backButton", "shopLinkButton", "shopScreen", "catalog", "infoNameLabel" })
-                    CheckRef(loadout, f, r, ref fails);
-            var shop = Object.FindFirstObjectByType<ShopScreen>(FindObjectsInactive.Include);
-            if (shop != null)
-            {
-                foreach (var f in new[] { "backButton", "catalog" })
-                    CheckRef(shop, f, r, ref fails);
-                // Card coverage: đủ 25 khẩu roster, không null/trùng WeaponData.
-                var soShop = new SerializedObject(shop);
-                var cardsProp = soShop.FindProperty("weaponCards");
-                if (cardsProp == null || !cardsProp.isArray || cardsProp.arraySize == 0)
-                    Fail("ShopScreen.weaponCards rỗng");
-                else
-                {
-                    var seenData = new System.Collections.Generic.HashSet<Object>();
-                    int nulls = 0, dups = 0;
-                    for (int i = 0; i < cardsProp.arraySize; i++)
-                    {
-                        var view = cardsProp.GetArrayElementAtIndex(i).objectReferenceValue as ZombieWar.UI.WeaponItemCardView;
-                        if (view == null || view.data == null) { nulls++; continue; }
-                        if (!seenData.Add(view.data)) dups++;
-                    }
-                    if (nulls > 0) Fail($"ShopScreen có {nulls} card null/thiếu WeaponData");
-                    if (dups > 0) Fail($"ShopScreen có {dups} card trùng WeaponData");
-                    var cat = AssetDatabase.LoadAssetAtPath<UIPrototypeCatalog>(UIThumbnailGenerator.CatalogAssetPath);
-                    if (cat != null && seenData.Count != cat.weapons.Count)
-                        Fail($"ShopScreen card ({seenData.Count}) ≠ roster catalog ({cat.weapons.Count})");
-                    else if (nulls == 0 && dups == 0) Ok($"ShopScreen {seenData.Count} card khớp roster");
-                }
-            }
-
-            var costume = Object.FindFirstObjectByType<CostumeScreen>(FindObjectsInactive.Include);
-            if (costume != null)
-            {
-                foreach (var f in new[] { "backButton", "randomButton", "resetOutfitButton", "catalog", "uiCatalog",
-                                          "previewStage", "dragRotator", "pagePrevButton", "pageNextButton", "pageLabel" })
-                    CheckRef(costume, f, r, ref fails);
-
-                // Slice 4: hang chip 14 logical slot phai duoc author + wire (8 chip, khong null).
-                var soCostume = new SerializedObject(costume);
-                var chipsProp = soCostume.FindProperty("slotChips");
-                if (chipsProp == null || chipsProp.arraySize < 8)
-                    Fail($"CostumeScreen.slotChips = {(chipsProp == null ? "thiếu field" : chipsProp.arraySize + " chip")} (cần 8 — chạy Ensure Costume Slot Selector)");
-                else
-                {
-                    int nullChips = 0;
-                    for (int i = 0; i < chipsProp.arraySize; i++)
-                        if (chipsProp.GetArrayElementAtIndex(i).objectReferenceValue == null) nullChips++;
-                    if (nullChips > 0) Fail($"CostumeScreen.slotChips có {nullChips} chip null");
-                    else Ok("CostumeScreen 8 slot chip wired");
-                }
-                var cellsProp = soCostume.FindProperty("cells");
-                if (cellsProp != null && cellsProp.arraySize > 50)
-                    Fail($"CostumeScreen.cells = {cellsProp.arraySize} (pool phải bounded, không bake 978 cell)");
-            }
-            var pass = Object.FindFirstObjectByType<PassScreen>(FindObjectsInactive.Include);
-            if (pass != null)
-                foreach (var f in new[] { "backButton", "gachaLinkButton", "shopScreen" })
-                    CheckRef(pass, f, r, ref fails);
-
             // preview stage
             var stage = Object.FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
             if (stage == null) Fail("thiếu MenuCharacterPreviewStage");

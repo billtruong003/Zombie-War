@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -60,7 +60,7 @@ namespace ZombieWar.EditorTools
             foreach (var mb in root.GetComponentsInChildren<MonoBehaviour>(true))
             {
                 // Only screens that drive a bar value; tabs and chips also name their tint image "fill".
-                if (mb == null || !(mb is HudController || mb is HubScreen || mb is LoadoutScreen || mb is PassScreen)) continue;
+                if (mb == null || !(mb is HudController)) continue;
                 var so = new SerializedObject(mb);
                 var it = so.GetIterator();
                 while (it.Next(true))

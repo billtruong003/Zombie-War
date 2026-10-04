@@ -201,7 +201,7 @@ namespace ZombieWar.UI
             var icon = catalog != null ? catalog.GetWeaponIcon(d, true) : null;
             if (gunIcon != null) { gunIcon.enabled = icon != null; if (icon != null) { gunIcon.sprite = icon; gunIcon.preserveAspect = true; } }
             int stars = Mathf.Clamp(PlayerProfile.GetWeaponLevel(d.WeaponId), 1, 3);
-            Set(gunMeta, $"{HubScreen.FamilyName(d.weaponClass)} · POWER {Mathf.RoundToInt(CombatPower.WeaponPower(d, stars)):N0}");
+            Set(gunMeta, $"{WeaponClassNames.Family(d.weaponClass)} · POWER {Mathf.RoundToInt(CombatPower.WeaponPower(d, stars)):N0}");
         }
 
         void SetStat(int i, string v) { if (i < stats.Length) Set(stats[i], v); }

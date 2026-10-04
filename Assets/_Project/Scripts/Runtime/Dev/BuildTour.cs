@@ -62,7 +62,7 @@ namespace ZombieWar.Dev
             Section("FIRST LAUNCH WALLET", Wallet());
 
             if (!_runOnly)
-            foreach (var screen in new[] { typeof(HubScreen), typeof(LoadoutScreen), typeof(ShopScreen), typeof(CostumeScreen), typeof(PassScreen) })
+            foreach (var screen in new[] { typeof(HomeScreen), typeof(ArsenalScreen), typeof(ShopScreenV2), typeof(StudioScreen), typeof(GachaScreen), typeof(PassScreenV2) })
                 yield return ExploreScreen(screen);
 
             yield return PlayRun();
@@ -119,8 +119,8 @@ namespace ZombieWar.Dev
         {
             var ui = UIManager.Instance;
             if (ui == null) yield break;
-            ui.Replace<HubScreen>();
-            if (type != typeof(HubScreen) && Object.FindFirstObjectByType(type, FindObjectsInactive.Include) is UIScreen screen)
+            ui.Replace<HomeScreen>();
+            if (type != typeof(HomeScreen) && Object.FindFirstObjectByType(type, FindObjectsInactive.Include) is UIScreen screen)
                 ui.Push(screen);
             yield return new WaitForSecondsRealtime(0.6f);
         }
@@ -129,9 +129,9 @@ namespace ZombieWar.Dev
         IEnumerator PlayRun()
         {
             _log.AppendLine("\n## RUN");
-            yield return OpenScreen(typeof(HubScreen));
+            yield return OpenScreen(typeof(HomeScreen));
             var play = Buttons(UIManager.Instance.Top.transform).FirstOrDefault(b => (Label(b) ?? b.name).ToUpperInvariant().Contains("PLAY"));
-            if (play == null) { _log.AppendLine("no PLAY button on the Hub"); yield break; }
+            if (play == null) { _log.AppendLine("no PLAY button on Home"); yield break; }
             float t0 = Time.realtimeSinceStartup;
             Press(play);
             yield return new WaitUntil(() => RunState.Current != null || Time.realtimeSinceStartup - t0 > 30f);

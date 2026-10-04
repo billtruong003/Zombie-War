@@ -310,7 +310,7 @@ namespace ZombieWar.UI
             for (int i = 0; i < gunStars.Length; i++)
                 StarPips.Paint(gunStars[i], i < stars);
             int power = Mathf.RoundToInt(CombatPower.WeaponPower(d, stars) * (1f + Skins.WeaponSkins.DamageBonus(PlayerProfile.GetEquippedSkin(d.WeaponId))));
-            Set(gunMeta, $"{HubScreen.FamilyName(d.weaponClass)} · POWER {power:N0}");
+            Set(gunMeta, $"{WeaponClassNames.Family(d.weaponClass)} · POWER {power:N0}");
         }
 
         static int ClaimableMissions() =>

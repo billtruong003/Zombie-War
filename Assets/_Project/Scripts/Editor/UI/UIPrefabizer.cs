@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -15,29 +15,15 @@ namespace ZombieWar.Editor.UI
     public static class UIPrefabizer
     {
         public const string ScreensDir = "Assets/_Project/UI/Prefabs/Screens";
-        const string MenuScene = "Assets/_Project/Scenes/Menu.unity";
         const string MapScene = "Assets/_Project/Scenes/Map_Level1.unity";
-
-        static readonly string[] MenuScreens = { "HubScreen", "LoadoutScreen", "CostumeScreen", "ShopScreen", "PassScreen" };
 
         [MenuItem("ZombieWar/UI/Authoring/Create Missing UI Prefabs")]
         public static void CreateMissing()
         {
             Directory.CreateDirectory(ScreensDir);
 
-            var scene = EditorSceneManager.OpenScene(MenuScene, OpenSceneMode.Single);
-            var canvas = GameObject.Find("UIRoot");
-            if (canvas == null) { Debug.LogError("[Prefabizer] Menu không có UIRoot."); return; }
-            bool dirty = false;
-            foreach (var name in MenuScreens)
-            {
-                var t = canvas.transform.Find(name);
-                if (t == null) { Debug.LogWarning($"[Prefabizer] Menu thiếu screen '{name}' — bỏ qua."); continue; }
-                dirty |= ConnectIfPlain(t.gameObject, $"{ScreensDir}/UI_{name}.prefab");
-            }
-            if (dirty) EditorSceneManager.SaveScene(scene);
-
-            scene = EditorSceneManager.OpenScene(MapScene, OpenSceneMode.Single);
+            // The menu screens are the V2 prefabs (UI_V2_*); only the HUD is connected here.
+            var scene = EditorSceneManager.OpenScene(MapScene, OpenSceneMode.Single);
             var hud = GameObject.Find("HUD");
             if (hud != null)
             {
