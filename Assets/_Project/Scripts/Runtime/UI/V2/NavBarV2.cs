@@ -50,7 +50,10 @@ namespace ZombieWar.UI
             if (index != 0 && target != null) ui.Push(target);
         }
 
-        private void OnEnable() => Refresh();
+        // Account level can rise while the bar is already enabled (run result -> Home): refresh then too,
+        // or an unlocked tab kept its dimmed look until the next OnEnable.
+        private void OnEnable() { PlayerProfile.AccountChanged += Refresh; Refresh(); }
+        private void OnDisable() => PlayerProfile.AccountChanged -= Refresh;
 
         /// Locked tabs (first run pending, or account level) are dimmed.
         public void Refresh()

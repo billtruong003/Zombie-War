@@ -18,10 +18,15 @@ namespace ZombieWar.UI
         Quaternion _rest;
         bool _hasRest, _dragging;
         float _yaw, _velocity, _idle;
+        bool _stageSearched;
 
         Transform Target()
         {
-            if (_stage == null) _stage = FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
+            if (_stage == null && !_stageSearched)
+            {
+                _stageSearched = true;
+                _stage = FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
+            }
             var t = _stage != null ? _stage.CharacterRoot : null;
             if (t != null && !_hasRest) { _rest = t.localRotation; _hasRest = true; }
             return t;

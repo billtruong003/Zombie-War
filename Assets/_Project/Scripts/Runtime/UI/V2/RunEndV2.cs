@@ -125,14 +125,25 @@ namespace ZombieWar.UI
 
         void Start() => HookPlayer();
 
-        void Update() { if (_player == null) HookPlayer(); }
+        // Lives in the run's HUD, so one player per lifetime: search (throttled) only until hooked.
+        // The old per-frame search kept running for the whole result screen once the player was gone.
+        bool _hooked;
+        float _nextHookTry;
+
+        void Update()
+        {
+            if (_hooked || Time.unscaledTime < _nextHookTry) return;
+            _nextHookTry = Time.unscaledTime + 0.25f;
+            HookPlayer();
+        }
 
         void HookPlayer()
         {
+            if (_hooked) return;
             var pc = FindFirstObjectByType<PlayerController>();
             if (pc == null) return;
             _player = pc.GetComponent<Health>();
-            if (_player != null) _player.ReviveGate = OfferRevive;
+            if (_player != null) { _player.ReviveGate = OfferRevive; _hooked = true; }
         }
 
         void OnDestroy()

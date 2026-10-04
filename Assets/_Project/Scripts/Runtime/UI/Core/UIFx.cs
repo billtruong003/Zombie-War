@@ -12,7 +12,22 @@ namespace ZombieWar.UI
     public static class UIFx
     {
         public const string ReducedMotionKey = "reduced_motion";
-        public static bool ReducedMotion => PlayerPrefs.GetInt(ReducedMotionKey, 0) == 1;
+        // Read once and cached: Punch runs on every HUD coin change, and PlayerPrefs is not free.
+        static int _reducedMotion = -1;
+        public static bool ReducedMotion
+        {
+            get
+            {
+                if (_reducedMotion < 0) _reducedMotion = PlayerPrefs.GetInt(ReducedMotionKey, 0);
+                return _reducedMotion == 1;
+            }
+        }
+
+        public static void SetReducedMotion(bool on)
+        {
+            _reducedMotion = on ? 1 : 0;
+            PlayerPrefs.SetInt(ReducedMotionKey, _reducedMotion);
+        }
 
         /// <summary>Value-changed feedback (currency tick, claim): scale punch 1→1.12→1.
         /// Reduced Motion / trước bootstrap → bỏ qua.</summary>
@@ -44,7 +59,7 @@ namespace ZombieWar.UI
         static readonly System.Collections.Generic.Dictionary<int, float> AuthoredAlpha = new();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => AuthoredAlpha.Clear();
+        static void ResetStatics() { AuthoredAlpha.Clear(); ShakeOrigins.Clear(); _reducedMotion = -1; }
 
         /// <summary>M8: a graphic (a modal's dim) fades from clear to its authored alpha.</summary>
         public static void FadeIn(UnityEngine.UI.Graphic g, float duration = 0.18f)
@@ -89,11 +104,16 @@ namespace ZombieWar.UI
         {
             if (rt == null || ReducedMotion || !Bill.IsReady) return;
             BillTween.KillTarget(rt);
-            var origin = rt.anchoredPosition;
+            // A shake that interrupts a shake must return to the first one's origin, not to the
+            // offset the killed tween left behind.
+            int id = rt.GetInstanceID();
+            if (!ShakeOrigins.TryGetValue(id, out var origin)) ShakeOrigins[id] = origin = rt.anchoredPosition;
             BillTween.Float(0f, 1f, 0.3f,
                     t => rt.anchoredPosition = origin + new Vector2(Mathf.Sin(t * 40f) * 4f * (1f - t), 0f))
-                .OnComplete(() => rt.anchoredPosition = origin)
+                .OnComplete(() => { rt.anchoredPosition = origin; ShakeOrigins.Remove(id); })
                 .SetUnscaled().SetTarget(rt);
         }
+
+        static readonly System.Collections.Generic.Dictionary<int, Vector2> ShakeOrigins = new();
     }
 }

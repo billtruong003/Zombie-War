@@ -11,9 +11,12 @@ namespace ZombieWar.UI
     public static class UITransition
     {
         /// <summary>Fade 0→1 + slide từ dưới lên SlidePixels. unscaled time (chạy được khi pause).</summary>
-        public static IEnumerator Show(CanvasGroup cg, RectTransform rt, Action onDone = null)
+        /// <param name="rest">Where the screen sits when shown. Passed in rather than read from the
+        /// transform: a slide cut short left the screen mid-offset, and reading that back as the base
+        /// stacked 40 px per interrupted tab tap (QA 04/10).</param>
+        public static IEnumerator Show(CanvasGroup cg, RectTransform rt, Vector2 rest, Action onDone = null)
         {
-            var basePos = rt.anchoredPosition;
+            var basePos = rest;
             var from = basePos + Vector2.down * UITheme.SlidePixels;
             float t = 0f;
             cg.alpha = 0f;

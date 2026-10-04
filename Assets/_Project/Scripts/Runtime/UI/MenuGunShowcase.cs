@@ -27,6 +27,7 @@ namespace ZombieWar.UI
         MenuGunIK _ik;
         Transform _pivot, _shoulderR, _shoulderL;
         HomeScreen _home;
+        bool _homeSearched;
         CanvasGroup _homeGroup;
         GameObject _gun;
         WeaponData _gunData;
@@ -55,7 +56,9 @@ namespace ZombieWar.UI
             var controller = Resources.Load<RuntimeAnimatorController>(ControllerPath);
             if (_animator == null || controller == null || !_animator.isHuman) return;
             _animator.runtimeAnimatorController = controller;
-            _ik = _animator.GetComponent<MenuGunIK>() ?? _animator.gameObject.AddComponent<MenuGunIK>();
+            // TryGetComponent, not GetComponent() ?? Add(): in the Editor a missing component is a
+            // "fake null" that ?? treats as real, so the IK was never added in Play Mode.
+            if (!_animator.TryGetComponent(out _ik)) _ik = _animator.gameObject.AddComponent<MenuGunIK>();
             _shoulderR = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
             _shoulderL = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
             var lower = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
@@ -66,7 +69,12 @@ namespace ZombieWar.UI
 
         bool HomeOnTop()
         {
-            if (_home == null) { _home = FindFirstObjectByType<HomeScreen>(FindObjectsInactive.Include); _homeGroup = _home != null ? _home.GetComponent<CanvasGroup>() : null; }
+            if (_home == null && !_homeSearched)
+            {
+                _homeSearched = true;   // one scene search, not one per frame (Update calls this twice)
+                _home = FindFirstObjectByType<HomeScreen>(FindObjectsInactive.Include);
+                _homeGroup = _home != null ? _home.GetComponent<CanvasGroup>() : null;
+            }
             return _home != null && _home.IsShown && _homeGroup != null && _homeGroup.interactable;
         }
 

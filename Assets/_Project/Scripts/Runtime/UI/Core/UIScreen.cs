@@ -23,11 +23,13 @@ namespace ZombieWar.UI
         private CanvasGroup _cg;
         private RectTransform _rt;
         private Coroutine _anim;
+        private Vector2 _restPos;   // authored position, captured once; every transition returns here
 
         protected virtual void Awake()
         {
             _cg = GetComponent<CanvasGroup>();
             _rt = (RectTransform)transform;
+            _restPos = _rt.anchoredPosition;
             _cg.alpha = 0f;
             SetInteractable(false);
         }
@@ -40,7 +42,10 @@ namespace ZombieWar.UI
             gameObject.SetActive(true);
             SetInteractable(true);
             OnShow();
-            Restart(UITransition.Show(_cg, _rt));
+            // OnShow may push another screen (a menu intent), which hides this one; starting the
+            // fade-in afterwards cancelled that hide and left this screen drawn under the new one.
+            if (!IsShown) return;
+            Restart(UITransition.Show(_cg, _rt, _restPos));
         }
 
         public void Hide(bool instant = false)
@@ -51,11 +56,13 @@ namespace ZombieWar.UI
             OnHide();
             if (instant || !gameObject.activeInHierarchy)
             {
+                if (_anim != null) { StopCoroutine(_anim); _anim = null; }
                 if (_cg != null) _cg.alpha = 0f;
+                if (_rt != null) _rt.anchoredPosition = _restPos;
                 gameObject.SetActive(false);
                 return;
             }
-            Restart(UITransition.Hide(_cg, () => gameObject.SetActive(false)));
+            Restart(UITransition.Hide(_cg, () => { _rt.anchoredPosition = _restPos; gameObject.SetActive(false); }));
         }
 
         /// <summary>Màn phía trên bị pop → màn này trở lại top stack.</summary>
