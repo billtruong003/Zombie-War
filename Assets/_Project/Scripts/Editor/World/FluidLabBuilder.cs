@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -55,7 +55,7 @@ namespace ZombieWar.EditorTools
                 Camera first = null;
                 for (int i = 0; i < Maps.Length; i++)
                 {
-                    var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + Maps[i] + ".asset");
+                    var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(ZombieWar.World.MapTheme.AssetFolder + "MapTheme_" + Maps[i] + ".asset");
                     if (theme == null || theme.chunks == null) continue;
                     var chunk = MostFluid(theme, out float area);
                     if (chunk == null) { log.Append(Maps[i]).Append(": no fluid; "); continue; }

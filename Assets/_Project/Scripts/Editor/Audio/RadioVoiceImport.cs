@@ -1,10 +1,10 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace ZombieWar.Editor.Audio
 {
     /// <summary>
-    /// Import settings for the agents' radio voice-over (Assets/_Project/Audio/VO/Resources/VO).
+    /// Import settings for the agents' radio voice-over (Assets/_Project/Audio/VO/Clips, Addressables "vo/<id>").
     /// The WAVs arrive already mastered (-18 LUFS, peak -1 dBFS, mono 44.1 kHz), so import keeps
     /// them as they are: mono, Vorbis 60 % compressed in memory, loaded on demand by RadioVoice.
     /// </summary>

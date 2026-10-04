@@ -1,17 +1,24 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace ZombieWar.World
 {
     /// <summary>
     /// One playable map (2026-10-01): the baked 32 m chunks of a theme's wrapping map, written by the
-    /// Env map baker (Editor/World/EnvMapBaker.cs) into Resources/MapThemes, so only the theme in
-    /// play is loaded. The map repeats in both directions; chunk (x, z) of the endless world is
+    /// Env map baker (Editor/World/EnvMapBaker.cs) into <see cref="AssetFolder"/>. Themes are
+    /// Addressables ("map/&lt;id&gt;", G12.10): only the theme in play is downloaded and loaded, during the
+    /// loading screen (<see cref="PreloadForRun"/>); they used to sit in Resources, which put every
+    /// map's chunks into the WebGL first download. The map repeats in both directions; chunk (x, z) of the endless world is
     /// chunk (x mod N, z mod N) of the map.
     /// </summary>
     [CreateAssetMenu(menuName = "HordeCall/Map Theme")]
     public sealed class MapTheme : ScriptableObject
     {
-        public const string ResourceFolder = "MapThemes/";
+        public const string AssetFolder = "Assets/_Project/Data/MapThemes/";
+        public const string AddressPrefix = "map/", Label = "maptheme";
 
         public string id;
         public string displayName;
@@ -97,7 +104,102 @@ namespace ZombieWar.World
             set { PlayerPrefs.SetString(PrefKey, value); PlayerPrefs.Save(); }
         }
 
-        public static MapTheme Load(string id) => Resources.Load<MapTheme>(ResourceFolder + "MapTheme_" + id);
+        // ── loading ──────────────────────────────────────────────────────────────────────
+        static readonly Dictionary<string, AsyncOperationHandle<MapTheme>> Loaded = new();
+        static readonly List<string> Known = new();
+
+        /// A theme that has been preloaded (null otherwise). In the editor a theme that was not
+        /// preloaded is read from its asset, for the editor tools and the tests.
+        public static MapTheme Load(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            if (Loaded.TryGetValue(id, out var h) && h.IsValid() && h.Status == AsyncOperationStatus.Succeeded) return h.Result;
+#if UNITY_EDITOR
+            return UnityEditor.AssetDatabase.LoadAssetAtPath<MapTheme>(AssetFolder + "MapTheme_" + id + ".asset");
+#else
+            return null;
+#endif
+        }
+
+        /// Loads <paramref name="id"/> (downloading its bundle if needed) and calls back with it, or
+        /// with null when there is no such map. The previously loaded theme is let go.
+        public static void Preload(string id, Action<MapTheme> done)
+        {
+            if (string.IsNullOrEmpty(id) || id == ProceduralId) { done?.Invoke(null); return; }
+            if (Loaded.TryGetValue(id, out var have) && have.IsValid())
+            {
+                if (have.IsDone) done?.Invoke(have.Status == AsyncOperationStatus.Succeeded ? have.Result : null);
+                else have.Completed += h => done?.Invoke(h.Status == AsyncOperationStatus.Succeeded ? h.Result : null);
+                return;
+            }
+            // A saved id can outlive its map (renamed or cut): ask the catalog first, so a stale id
+            // falls back quietly instead of Addressables throwing InvalidKeyException.
+            Addressables.LoadResourceLocationsAsync(AddressPrefix + id, typeof(MapTheme)).Completed += where =>
+            {
+                bool exists = where.Status == AsyncOperationStatus.Succeeded && where.Result.Count > 0;
+                Addressables.Release(where);
+                if (!exists) { Debug.LogWarning($"[MapTheme] No map '{id}' in the content catalog."); done?.Invoke(null); return; }
+                if (Loaded.TryGetValue(id, out var raced) && raced.IsValid()) { Preload(id, done); return; }
+                var handle = Addressables.LoadAssetAsync<MapTheme>(AddressPrefix + id);
+                Loaded[id] = handle;
+                handle.Completed += h =>
+                {
+                    if (h.Status != AsyncOperationStatus.Succeeded)
+                    {
+                        Debug.LogWarning($"[MapTheme] Map '{id}' failed to load ({h.OperationException?.Message}).");
+                        Loaded.Remove(id);
+                        Addressables.Release(h);
+                        done?.Invoke(null);
+                        return;
+                    }
+                    ReleaseAllBut(id);
+                    done?.Invoke(h.Result);
+                };
+            };
+        }
+
+        /// The loading screen's step: the next run's map (or the default one when that is gone) is
+        /// in memory before the gameplay scene wakes up, since BakedMapStreamer reads it in Awake.
+        public static void PreloadForRun(Action ready)
+        {
+            string id = CurrentId;
+            if (id == ProceduralId) { ready(); return; }
+            Preload(id, t =>
+            {
+                if (t != null || id == DefaultTheme) ready();
+                else Preload(DefaultTheme, _ => ready());
+            });
+        }
+
+        static void ReleaseAllBut(string keep)
+        {
+            var drop = new List<string>();
+            foreach (var kv in Loaded) if (kv.Key != keep && kv.Value.IsDone) drop.Add(kv.Key);
+            foreach (var k in drop) { if (Loaded[k].IsValid()) Addressables.Release(Loaded[k]); Loaded.Remove(k); }
+        }
+
+        /// The baked maps in the content catalog (QA map list); filled by <see cref="RefreshKnown"/>.
+        public static IReadOnlyList<string> KnownIds => Known;
+        public static bool IsKnown(string id) => Known.Contains(id);
+
+        // Domain reload is off: the last session's handles are dead in the next Play.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { Loaded.Clear(); Known.Clear(); }
+
+        public static void RefreshKnown(Action done = null)
+        {
+            Addressables.LoadResourceLocationsAsync(Label, typeof(MapTheme)).Completed += h =>
+            {
+                Known.Clear();
+                if (h.Status == AsyncOperationStatus.Succeeded)
+                    foreach (var loc in h.Result)
+                        if (loc.PrimaryKey.StartsWith(AddressPrefix) && !Known.Contains(loc.PrimaryKey.Substring(AddressPrefix.Length)))
+                            Known.Add(loc.PrimaryKey.Substring(AddressPrefix.Length));
+                Known.Sort(StringComparer.Ordinal);
+                Addressables.Release(h);
+                done?.Invoke();
+            };
+        }
 
         public const string SharedRunMusic = "music.run.stage1";
 

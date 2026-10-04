@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -428,7 +428,7 @@ namespace ZombieWar.EditorTools
                    $"{dr.singles} singles, {dr.cover} cover, {dr.blockers} blockers ({dr.removedForPaths} removed to keep paths), {dr.rejected} rejected for overlap";
         }
 
-        /// The game reads the map through a MapTheme in Resources/MapThemes (only the theme in play
+        /// The game reads the map through a MapTheme in MapTheme.AssetFolder (an Addressable) (only the theme in play
         /// is loaded). The spawn spot is the open ground nearest the map centre: no obstacle cell and
         /// no blocking piece within 7 m.
         /// Each map's light (2026-10-01, owner: "every map is too dark"): a three-colour ambient that
@@ -453,7 +453,7 @@ namespace ZombieWar.EditorTools
 
         static void WriteMapTheme(MapData d, Zone z, GameObject[,] prefabs, List<PropSpot> props)
         {
-            const string folder = "Assets/Resources/MapThemes/";
+            const string folder = ZombieWar.World.MapTheme.AssetFolder;
             Directory.CreateDirectory(folder);
             string path = folder + "MapTheme_" + d.def.id + ".asset";
             var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(path);
@@ -469,6 +469,7 @@ namespace ZombieWar.EditorTools
             theme.ambientFx = AmbientFxFor(d.def.id);
             ApplyMonsterRoster(theme);
             ApplyThemeLight(theme);
+            ZombieWar.EditorTools.ContentAddressables.RegisterMapTheme(theme);   // the game loads maps as Addressables
 
             bool Open(Vector2 p)
             {

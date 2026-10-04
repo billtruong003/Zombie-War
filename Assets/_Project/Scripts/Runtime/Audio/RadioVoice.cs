@@ -1,8 +1,10 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace ZombieWar.Audio
 {
@@ -16,7 +18,8 @@ namespace ZombieWar.Audio
     }
 
     /// <summary>
-    /// Plays the agents' radio voice-over (2026-10-03). Clips live in Resources/VO, named by line id
+    /// Plays the agents' radio voice-over (2026-10-03). Clips are Addressables "vo/&lt;line id&gt;" (G12.10;
+    /// they lived in Resources/VO, inside the WebGL first download), named by line id
     /// (vo_riley_ftue_home …); they are mastered to the same loudness (-18 LUFS, peak -1 dBFS) so no
     /// line jumps out, and carry a baked radio layer (120 Hz–5.5 kHz band, light saturation, squelch)
     /// because WebGL has no runtime audio filters. Clean masters and the scripts that make both live in
@@ -27,7 +30,7 @@ namespace ZombieWar.Audio
     /// </summary>
     public sealed class RadioVoice : MonoBehaviour
     {
-        const string Folder = "VO/";
+        public const string AddressPrefix = "vo/";
         const int MaxQueuedBlocks = 3;
 
         /// What wins when the queue is full: a first-time FTUE line beats a conversation, which beats
@@ -203,16 +206,18 @@ namespace ZombieWar.Audio
         {
             _current = id;
             _loading = true;
-            var request = Resources.LoadAsync<AudioClip>(Folder + id);
+            var request = Addressables.LoadAssetAsync<AudioClip>(AddressPrefix + id);
             yield return request;
             _loading = false;
-            var clip = request.asset as AudioClip;
+            var clip = request.Status == AsyncOperationStatus.Succeeded ? request.Result : null;
             if (clip == null)
             {
-                Debug.LogWarning($"[RadioVoice] Missing clip Resources/{Folder}{id}");
+                Debug.LogWarning($"[RadioVoice] Missing voice clip {AddressPrefix}{id}");
+                if (request.IsValid()) Addressables.Release(request);
                 _current = null;
                 yield break;
             }
+            _clipHandle = request;
             Duck(true);
             _source.clip = clip;
             _source.volume = Volume();
@@ -222,9 +227,8 @@ namespace ZombieWar.Audio
 
         void Finish()
         {
-            var clip = _source.clip;
             _source.clip = null;
-            if (clip != null) Resources.UnloadAsset(clip);
+            ReleaseClip();
             _current = null;
             _nextAt = Time.unscaledTime + Gap;
             if (_queue.Count == 0) Duck(false);
@@ -257,8 +261,18 @@ namespace ZombieWar.Audio
             return parts[parts.Length - 1];
         }
 
+        AsyncOperationHandle<AudioClip> _clipHandle;
+
+        // A played line is let go, so the VO costs no memory at rest.
+        void ReleaseClip()
+        {
+            if (_clipHandle.IsValid()) Addressables.Release(_clipHandle);
+            _clipHandle = default;
+        }
+
         void OnDestroy()
         {
+            ReleaseClip();
             Duck(false);
             if (_instance == this) _instance = null;
         }

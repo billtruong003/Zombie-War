@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BillGameCore;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -125,8 +125,9 @@ namespace ZombieWar
         }
 #endif
 
+        // The map is loaded first (Addressables, async): the world's streamer reads it on Awake.
         private static void LoadGameplay() =>
-            Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay);
+            World.MapTheme.PreloadForRun(() => Bill.Scene.LoadAdditive(GameplayScene, ActivateAndPlay));
 
         private static void ActivateAndPlay() => ActivateAndPlay(SceneManager.GetSceneByName(GameplayScene));
 

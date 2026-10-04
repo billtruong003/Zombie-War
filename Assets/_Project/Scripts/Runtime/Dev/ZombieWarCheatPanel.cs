@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using BillGameCore;
 using UnityEngine;
 using UnityEngine.UI;
@@ -195,8 +195,12 @@ namespace ZombieWar
 
         // ------------------------------------------------------------------ tabs
 
+        private int _shownTab;
+        private bool _mapsRequested;
+
         private void ShowTab(int tab)
         {
+            _shownTab = tab;
             for (int i = 0; i < _tabButtons.Length; i++)
                 if (_tabButtons[i] != null) _tabButtons[i].color = i == tab ? AccentColor : ButtonColor;
             for (int i = _content.childCount - 1; i >= 0; i--) Destroy(_content.GetChild(i).gameObject);
@@ -758,7 +762,7 @@ namespace ZombieWar
             return GameFlow.InGameplay ? World.MapTheme.ProceduralId : "-";
         }
 
-        /// Every baked map in Resources/MapThemes, plus the old procedural world. Tapping one loads it
+        /// Every baked map in the content catalog, plus the old procedural world. Tapping one loads it
         /// at once: the run restarts on that map (from the menu, a run starts on it).
         private void AddMapList()
         {
@@ -772,12 +776,14 @@ namespace ZombieWar
                     : "Colliders off");
             });
             AddSection(_content, "TAP TO LOAD NOW (THE RUN RESTARTS)");
-            var themes = Resources.LoadAll<World.MapTheme>(World.MapTheme.ResourceFolder.TrimEnd('/'));
-            Array.Sort(themes, (a, b) => string.CompareOrdinal(a.id, b.id));
-            foreach (var t in themes)
+            if (!_mapsRequested)
             {
-                if (t == null || string.IsNullOrEmpty(t.id)) continue;
-                string id = t.id;
+                _mapsRequested = true;   // once: an empty catalog must not re-ask on every redraw
+                World.MapTheme.RefreshKnown(() => { if (_content != null) ShowTab(_shownTab); });
+            }
+            foreach (var known in World.MapTheme.KnownIds)
+            {
+                string id = known;
                 AddAction(_content, id.ToUpperInvariant(), () => LoadMap(id));
             }
             AddAction(_content, "OLD PROCEDURAL WORLD", () => LoadMap(World.MapTheme.ProceduralId));
@@ -787,7 +793,7 @@ namespace ZombieWar
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Map id missing.");
             id = id.Trim().ToLowerInvariant();
-            if (id != World.MapTheme.ProceduralId && World.MapTheme.Load(id) == null)
+            if (id != World.MapTheme.ProceduralId && !World.MapTheme.IsKnown(id))
                 throw new ArgumentException($"No baked map '{id}'.");
             World.MapTheme.CurrentId = id;
             Time.timeScale = 1f;

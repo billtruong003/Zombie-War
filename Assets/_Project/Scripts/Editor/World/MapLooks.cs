@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace ZombieWar.EditorTools
@@ -280,7 +280,7 @@ namespace ZombieWar.EditorTools
             System.IO.Directory.CreateDirectory(optDir);
             foreach (var id in MapIds)
             {
-                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + id + ".asset");
+                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(ZombieWar.World.MapTheme.AssetFolder + "MapTheme_" + id + ".asset");
                 if (theme == null) continue;
                 var looks = new System.Collections.Generic.List<ZombieWar.World.MapTheme.LookOption>();
                 foreach (var (name, label, grade) in LookShot.GradeOptions(id))
@@ -386,7 +386,7 @@ namespace ZombieWar.EditorTools
             System.IO.Directory.CreateDirectory(postDir);
             foreach (var id in MapIds)
             {
-                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + id + ".asset");
+                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(ZombieWar.World.MapTheme.AssetFolder + "MapTheme_" + id + ".asset");
                 if (theme == null) continue;
                 var grade = LookShot.PickedGrade(id);
                 if (grade == null) { theme.post = null; EditorUtility.SetDirty(theme); continue; }
@@ -411,7 +411,7 @@ namespace ZombieWar.EditorTools
             }
 
             // Snow maps press trails (SnowTrails reads the shader from the theme so it ships in builds).
-            var tundra = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_tundra.asset");
+            var tundra = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(ZombieWar.World.MapTheme.AssetFolder + "MapTheme_tundra.asset");
             if (tundra != null)
             {
                 tundra.snowTrails = Shader.Find("Hidden/HordeCall/SnowTrail");

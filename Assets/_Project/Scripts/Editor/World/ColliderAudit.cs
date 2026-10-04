@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -39,7 +39,7 @@ namespace ZombieWar.EditorTools
             var summary = new StringBuilder();
             foreach (var id in Maps)
             {
-                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>("Assets/Resources/MapThemes/MapTheme_" + id + ".asset");
+                var theme = AssetDatabase.LoadAssetAtPath<ZombieWar.World.MapTheme>(ZombieWar.World.MapTheme.AssetFolder + "MapTheme_" + id + ".asset");
                 if (theme == null) continue;
                 var found = AuditMap(theme, out int blockers, out int pieces);
                 all.AddRange(found);
