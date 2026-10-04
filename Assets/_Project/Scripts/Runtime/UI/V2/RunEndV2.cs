@@ -108,6 +108,7 @@ namespace ZombieWar.UI
         {
             FtueRadio.RegisterModal(reviveRoot);   // radio subtitles hide during the revive offer and unlock popups
             FtueRadio.RegisterModal(unlockRoot);
+            FtueRadio.RegisterModal(resultRoot);   // and on the result, where a chatter line covered the run time
             if (reviveRoot != null) reviveRoot.SetActive(false);
             if (resultRoot != null) resultRoot.SetActive(false);
             On(adButton, () =>

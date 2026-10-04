@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using BillGameCore;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
 using System.Collections;
@@ -83,6 +83,8 @@ namespace ZombieWar
             cheat.Register("zw.horde.watch", () => StartMeasuring("run"), "Measure the current run");
             cheat.Register("zw.horde.stress", StartStress, "Hold StressTargetAlive (default 100) zombies for 30s and report");
             cheat.Register("zw.horde.report", Report, "Print + end the current measurement window");
+            cheat.Register("zw.ui.watch", ZombieWar.Dev.UiCanvasProbe.Watch, "Measure the uGUI cost per frame (canvas rebuild + batching)");
+            cheat.Register("zw.ui.report", () => ZombieWar.Dev.UiCanvasProbe.Report(), "Print + end the uGUI measurement");
             _registered = true;
         }
 
