@@ -28,6 +28,9 @@ namespace ZombieWar
         [Header("Magnet")]
         [Tooltip("How close the player must get before loot flies to them.")]
         [SerializeField] private float magnetRadius = 4.5f;
+        [Tooltip("05/10 owner: XP orbs are walked to, not pulled from afar. Only this close (times " +
+                 "Pickup Range) do they fly in; a Magnet item still sweeps them all.")]
+        [SerializeField] private float xpPullRadius = 1.2f;
 
         [Header("Drops")]
         [Tooltip("Coins are split into at most this many physical pickups, so a boss worth 40 coin " +
@@ -97,11 +100,12 @@ namespace ZombieWar
             Scratch.Clear();
             Scratch.AddRange(Live);
             // A4 Pickup Range grows the pull radius.
-            float pull = magnetRadius * (ZombieWar.Skills.SkillRuntime.Active?.PickupRangeMultiplier ?? 1f);
+            float range = ZombieWar.Skills.SkillRuntime.Active?.PickupRangeMultiplier ?? 1f;
+            float pull = magnetRadius * range, xpPull = xpPullRadius * range;
             for (int i = 0; i < Scratch.Count; i++)
             {
                 var p = Scratch[i];
-                if (p != null) p.Tick(dt, playerPos, pull, _magnetSweepUntil > Time.time);
+                if (p != null) p.Tick(dt, playerPos, p.Effect == PickupEffect.Xp ? xpPull : pull, _magnetSweepUntil > Time.time);
             }
         }
 
