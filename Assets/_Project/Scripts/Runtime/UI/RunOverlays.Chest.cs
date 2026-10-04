@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using ZombieWar.UI;
@@ -16,28 +16,11 @@ namespace ZombieWar
     {
         const float ChestTimeoutSeconds = 10f;
 
-        GameObject _chestRoot;
         int _pendingChests, _chestsOpened, _chestShownLeft = -1;
         float _chestShownAt;
         ZombieWar.Skills.SkillRuntime.ChestReward _chest;
 
-        GameObject ChestRoot
-        {
-            get
-            {
-                if (_chestRoot == null && levelUpRoot != null)
-                {
-                    var t = levelUpRoot.transform.parent != null ? levelUpRoot.transform.parent.Find("ChestOverlay") : null;
-                    if (t != null)
-                    {
-                        _chestRoot = t.gameObject;
-                        var claim = t.Find("Claim")?.GetComponent<Button>();
-                        if (claim != null) claim.onClick.AddListener(ClaimChest);
-                    }
-                }
-                return _chestRoot;
-            }
-        }
+        GameObject ChestRoot => chest.root;
 
         bool ChestOpen => ChestRoot != null && ChestRoot.activeSelf;
 
@@ -52,7 +35,6 @@ namespace ZombieWar
             if (_pendingChests <= 0 || TerminalOverlayActive || ChestRoot == null || ChestOpen) return;
             if (levelUpRoot != null && levelUpRoot.activeSelf) return;
             if (pauseRoot != null && pauseRoot.activeSelf) return;
-            if (reviveRoot != null && reviveRoot.activeSelf) return;
             var run = RunState.Current;
             var skills = ZombieWar.Skills.SkillRuntime.Active;
             if (run == null || run.IsOver || skills == null) { _pendingChests = 0; return; }
@@ -64,70 +46,59 @@ namespace ZombieWar
             _chestShownLeft = -1;
             // FTUE v2: the first chest ever has no timer and says how evolutions come about.
             _ftueChest = !Ftue.Done(Ftue.Chest);
-            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(false);   // v2 widget; the radio card explains
-            if (_ftueChest) SetText(ChestRoot.transform, "Hint", "No timer on your first chest");
+            if (chest.ftueEvo != null) chest.ftueEvo.SetActive(false);   // v2 widget; the radio card explains
+            if (_ftueChest) SetText(chest.hint, "No timer on your first chest");
             if (_ftueChest) ZombieWar.Audio.FtueVoice.ChestOpened();
-            if (_ftueChest) ZombieWar.UI.FtueV3.Chest(ChestRoot.transform.Find("Claim") as RectTransform
-                                                       ?? ChestRoot.GetComponentInChildren<Button>(true)?.transform as RectTransform);
+            if (_ftueChest) ZombieWar.UI.FtueV3.Chest(chest.claim != null ? (RectTransform)chest.claim.transform : null);
             Time.timeScale = 0f;
             Show(ChestRoot, true);
 
-            var t = ChestRoot.transform;
             UIFeedback.LevelUp();
-            UIFx.FadeIn(t.Find("Dim")?.GetComponent<Graphic>(), 0.2f);
-            UIFx.PopIn(t.Find("Chest"), 0f, 0.5f, 0.4f);
-            UIFx.PopIn(t.Find("Card"), 0.25f, 0.8f, 0.35f);
+            UIFx.FadeIn(chest.dim, 0.2f);
+            UIFx.PopIn(chest.chest, 0f, 0.5f, 0.4f);
+            UIFx.PopIn(chest.card, 0.25f, 0.8f, 0.35f);
         }
 
         void BindChest(ZombieWar.Skills.SkillRuntime.ChestReward reward, ZombieWar.Skills.SkillRuntime skills)
         {
-            var t = ChestRoot.transform;
             var def = reward.card;
             bool evo = reward.kind == ZombieWar.Skills.SkillRuntime.ChestKind.Evolution;
             bool bonus = reward.kind == ZombieWar.Skills.SkillRuntime.ChestKind.Bonus;
             var colour = evo ? new Color(1f, 0.8f, 0.2f) : ZombieWar.Skills.SkillDescriptions.LayerColor(def);
 
-            SetText(t, "Card/Tag/Label", evo ? "EVOLUTION" : bonus ? "BONUS" : "RANK UP");
-            var tagBg = t.Find("Card/Tag")?.GetComponent<Image>();
-            if (tagBg != null) tagBg.color = colour;
-            var frame = t.Find("Card/Frame")?.GetComponent<Image>();
-            if (frame != null) frame.color = colour;
-            BindTile(t.Find("Card/Icon"), def, colour);
-            SetText(t, "Card/Name", evo || bonus ? def.displayName : $"{def.displayName}  Lv {reward.rank}");
-            SetText(t, "Card/Desc", ZombieWar.Skills.SkillDescriptions.Describe(def, Mathf.Max(1, reward.rank)));
+            SetText(chest.tag, evo ? "EVOLUTION" : bonus ? "BONUS" : "RANK UP");
+            if (chest.tagBg != null) chest.tagBg.color = colour;
+            if (chest.frame != null) chest.frame.color = colour;
+            BindTile(chest.icon, def, colour);
+            SetText(chest.title, evo || bonus ? def.displayName : $"{def.displayName}  Lv {reward.rank}");
+            SetText(chest.desc, ZombieWar.Skills.SkillDescriptions.Describe(def, Mathf.Max(1, reward.rank)));
 
-            var recipe = t.Find("Card/Recipe");
-            if (recipe != null) recipe.gameObject.SetActive(evo);
+            if (chest.recipe != null) chest.recipe.SetActive(evo);
             if (evo)
             {
                 var a = ZombieWar.Skills.SkillCatalogDefs.ById(def.evolvesFrom);
                 var b = ZombieWar.Skills.SkillCatalogDefs.ById(def.partner);
-                BindTile(recipe.Find("A"), a, ZombieWar.Skills.SkillDescriptions.LayerColor(a));
-                BindTile(recipe.Find("B"), b, ZombieWar.Skills.SkillDescriptions.LayerColor(b));
-                BindTile(recipe.Find("Evo"), def, colour);
-                SetText(t, "Card/Req", $"{a.displayName.ToUpperInvariant()} RANK 5 + {b.displayName.ToUpperInvariant()}");
+                BindTile(chest.recipeA, a, ZombieWar.Skills.SkillDescriptions.LayerColor(a));
+                BindTile(chest.recipeB, b, ZombieWar.Skills.SkillDescriptions.LayerColor(b));
+                BindTile(chest.recipeEvo, def, colour);
+                SetText(chest.req, $"{a.displayName.ToUpperInvariant()} RANK 5 + {b.displayName.ToUpperInvariant()}");
             }
-            else SetText(t, "Card/Req", bonus ? "Your build is full and maxed: a bonus instead"
+            else SetText(chest.req, bonus ? "Your build is full and maxed: a bonus instead"
                                               : "Not ready to evolve yet: +1 rank on a card you own");
         }
 
-        void BindTile(Transform tile, ZombieWar.Skills.SkillDef def, Color colour)
+        void BindTile(SkillTileView tile, ZombieWar.Skills.SkillDef def, Color colour)
         {
             if (tile == null || def == null) return;
-            var bg = tile.GetComponent<Image>();
-            if (bg != null) bg.color = Color.Lerp(CardBg, colour, 0.35f);
+            if (tile.frame != null) tile.frame.color = Color.Lerp(CardBg, colour, 0.35f);
             var sprite = skillIcons != null ? skillIcons.For(def.id) : null;
-            var art = tile.Find("Art")?.GetComponent<Image>();
+            var art = tile.art;
             if (art != null) { art.enabled = sprite != null; art.sprite = sprite; }
-            var badge = tile.Find("Badge")?.GetComponent<TMP_Text>();
+            var badge = tile.badge;
             if (badge != null) { badge.enabled = sprite == null; badge.text = ZombieWar.UI.SkillIconSet.Abbreviation(def.displayName); }
         }
 
-        static void SetText(Transform root, string path, string value)
-        {
-            var t = root.Find(path)?.GetComponent<TMP_Text>();
-            if (t != null) t.text = value;
-        }
+        static void SetText(TMP_Text t, string value) { if (t != null) t.text = value; }
 
         bool _ftueChest;
 
@@ -139,7 +110,7 @@ namespace ZombieWar
             if (left != _chestShownLeft)
             {
                 _chestShownLeft = left;
-                SetText(ChestRoot.transform, "Hint", $"Auto-claims in {Mathf.Max(0, left)} s");
+                SetText(chest.hint, $"Auto-claims in {Mathf.Max(0, left)} s");
             }
             if (waited >= ChestTimeoutSeconds) ClaimChest();
         }
@@ -154,7 +125,7 @@ namespace ZombieWar
                 ZombieWar.Skills.SkillCombatDriver.Instance?.OnEvolutionTaken();
             if (skills != null) ApplyPendingMaxHealth(skills);   // a chest can rank up Max Health
             if (_ftueChest) { _ftueChest = false; Ftue.Complete(Ftue.Chest); }
-            ChestRoot.transform.Find("Card/FtueEvo")?.gameObject.SetActive(false);
+            if (chest.ftueEvo != null) chest.ftueEvo.SetActive(false);
             Show(ChestRoot, false);
             Time.timeScale = 1f;
             TryShowChest();

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +16,8 @@ namespace ZombieWar.UI
         public sealed class Cell { public Button button; public AvatarView view; public GameObject locked; public TMP_Text label; public GameObject selected; }
 
         [SerializeField] private GameObject root;
+        [Tooltip("G12.8: the sheet that pops in.")]
+        [SerializeField] private RectTransform sheet;
         [SerializeField] private Button closeButton;
         [SerializeField] private AvatarView preview;
         [SerializeField] private TMP_Text previewName;
@@ -50,7 +52,6 @@ namespace ZombieWar.UI
             if (root == null) return;
             root.SetActive(true);
             root.transform.SetAsLastSibling();
-            var sheet = root.transform.Find("Sheet");
             if (sheet != null) UIFx.PopIn(sheet, 0f, 0.92f, 0.22f);
             UIFeedback.Tap();
             Refresh();
@@ -122,5 +123,17 @@ namespace ZombieWar.UI
             ThemeTint.Set(b.targetGraphic, on ? ThemeRole.Ink : ThemeRole.Card);
             ThemeTint.Set(b.GetComponentInChildren<TMP_Text>(true), on ? ThemeRole.OnInk : ThemeRole.Dim);
         }
-    }
+    
+#if UNITY_EDITOR
+        /// G12.8: wires the sheet the picker used to find by path; returns the paths not found.
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var m = new System.Collections.Generic.List<string>();
+            sheet = WireUtil.Find<RectTransform>(root != null ? root.transform : null, "Sheet", m);
+            return m;
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => WireUtil.Nulls(("sheet", sheet));
+#endif
+}
 }

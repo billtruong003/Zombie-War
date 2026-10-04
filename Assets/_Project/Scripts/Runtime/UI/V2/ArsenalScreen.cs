@@ -39,6 +39,8 @@ namespace ZombieWar.UI
             public GameObject selected;
         }
 
+        [Tooltip("G12.8: the retired v2 first-gun overlay, kept hidden (the radio call draws the step).")]
+        [SerializeField] private GameObject ftueGunOverlay;
         [SerializeField] private TMP_Text coinLabel;
         [SerializeField] private TMP_Text gemLabel;
 
@@ -140,7 +142,7 @@ namespace ZombieWar.UI
         /// "FtueGun" overlay stays in the prefab, hidden.
         void ShowFtueGun(bool on)
         {
-            transform.Find("FtueGun")?.gameObject.SetActive(false);
+            if (ftueGunOverlay != null) ftueGunOverlay.SetActive(false);
             if (!on) { FtueRadio.Hide("gun"); return; }
             Canvas.ForceUpdateCanvases();   // the grid lays its cells out late; the spotlight reads their corners
             int g = _guns.IndexOf(_ftueGun);
@@ -342,5 +344,17 @@ namespace ZombieWar.UI
         }
 
         static void Star(Image i, bool lit) => StarPips.Paint(i, lit);
-    }
+    
+#if UNITY_EDITOR
+        /// G12.8: wires the retired overlay the screen used to find by path (optional).
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var t = transform.Find("FtueGun");
+            ftueGunOverlay = t != null ? t.gameObject : null;
+            return new System.Collections.Generic.List<string>();
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => new();
+#endif
+}
 }

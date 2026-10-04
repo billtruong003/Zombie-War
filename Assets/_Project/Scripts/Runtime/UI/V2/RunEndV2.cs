@@ -40,6 +40,10 @@ namespace ZombieWar.UI
         [SerializeField] private Image bestFill;
         [SerializeField] private TMP_Text costNote;
         [SerializeField] private Button adButton;
+        [Tooltip("G12.8: the ad button's video icon, its label, and the retired v2 FTUE tag (kept hidden).")]
+        [SerializeField] private GameObject adVideo;
+        [SerializeField] private TMP_Text adLabel;
+        [SerializeField] private GameObject adFtueTag;
         [Tooltip("Bar inside the free button that drains with the countdown.")]
         [SerializeField] private Image adDrain;
         [SerializeField] private Button coinButton;
@@ -63,6 +67,7 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text[] progressText = new TMP_Text[3];
         [SerializeField] private TMP_Text[] progressTag = new TMP_Text[3];
         [SerializeField] private Button shopLink;
+        [SerializeField] private TMP_Text shopLinkLabel;
         [SerializeField] private GameObject progressCard;
         [SerializeField] private Button playAgain;
         [SerializeField] private Button home;
@@ -77,6 +82,11 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text unlockBadge;
         [SerializeField] private TMP_Text unlockName;
         [SerializeField] private TMP_Text unlockDesc;
+        [Tooltip("G12.8: the unlock panel's sub line, try label and collection row.")]
+        [SerializeField] private TMP_Text unlockSub;
+        [SerializeField] private TMP_Text unlockTryLabel;
+        [SerializeField] private TMP_Text unlockCollectionLabel;
+        [SerializeField] private GameObject unlockCollectionBar;
         [SerializeField] private TMP_Text unlockHint;
         [SerializeField] private TMP_Text unlockCount;
         [SerializeField] private Image unlockFill;
@@ -192,10 +202,10 @@ namespace ZombieWar.UI
             if (adButton != null)
             {
                 adButton.gameObject.SetActive(_freeRevive || ReviveRules.AdAvailable);
-                adButton.transform.Find("Face/Video")?.gameObject.SetActive(!_freeRevive);
-                adButton.transform.Find("FtueTag")?.gameObject.SetActive(false);   // v2 tag; the radio card explains
+                if (adVideo != null) adVideo.SetActive(!_freeRevive);
+                if (adFtueTag != null) adFtueTag.SetActive(false);   // v2 tag; the radio card explains
                 // The label says what the button costs: the first-ever revive is free with no ad.
-                Set(adButton.transform.Find("Face/Label")?.GetComponent<TMP_Text>(), _freeRevive ? "REVIVE FREE" : "WATCH AD · REVIVE");
+                Set(adLabel, _freeRevive ? "REVIVE FREE" : "WATCH AD · REVIVE");
                 if (_freeRevive) FtueV3.Revive(adButton.transform as RectTransform);
             }
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
@@ -367,7 +377,7 @@ namespace ZombieWar.UI
                             .OrderByDescending(w => w.price).FirstOrDefault();
             // The last row is the next-buy row; its link goes to the Arsenal, where guns are bought.
             if (next != null) SetRow(progressRows.Length - 1, $"{next.weaponName} now affordable", "");
-            if (shopLink != null) Set(shopLink.transform.Find("T")?.GetComponent<TMP_Text>(), "Arsenal ›");
+            Set(shopLinkLabel, "Arsenal ›");
             if (progressCard != null) progressCard.SetActive(gift > 0 || done.Count > 0 || next != null);
             Time.timeScale = 0f;
             QueueUnlocks(result.AccountLevelsGained);
@@ -432,10 +442,10 @@ namespace ZombieWar.UI
             }
             if (feature >= 0) { ShowFeature(lv, feature); return; }
             _featureIntent = null;
-            Set(unlockRoot.transform.Find("Safe/Col/Sub")?.GetComponent<TMP_Text>(), "New skill unlocked!");
-            Set(unlockRoot.transform.Find("Safe/Col/Try/Face/Label")?.GetComponent<TMP_Text>(), "TRY IT NOW");
-            unlockRoot.transform.Find("Safe/Col/Collection/Bar")?.gameObject.SetActive(true);
-            Set(unlockRoot.transform.Find("Safe/Col/Collection/L")?.GetComponent<TMP_Text>(), "SKILL COLLECTION");
+            Set(unlockSub, "New skill unlocked!");
+            Set(unlockTryLabel, "TRY IT NOW");
+            if (unlockCollectionBar != null) unlockCollectionBar.SetActive(true);
+            Set(unlockCollectionLabel, "SKILL COLLECTION");
 
             Set(unlockLevel, $"ACCOUNT LEVEL {lv}");
             var color = ZombieWar.Skills.SkillDescriptions.LayerColor(def);
@@ -489,9 +499,8 @@ namespace ZombieWar.UI
                       "Stars open on every gun you own", "UPGRADE MY GUN", MenuIntent.Arsenal, new Color(1f, 0.69f, 0.16f)),
             };
             _featureIntent = intent;
-            var col = unlockRoot.transform.Find("Safe/Col");
             Set(unlockLevel, $"ACCOUNT LEVEL {lv}");
-            Set(col?.Find("Sub")?.GetComponent<TMP_Text>(), "New feature unlocked!");
+            Set(unlockSub, "New feature unlocked!");
             Set(unlockTag, "NEW FEATURE");
             if (unlockTagBg != null) unlockTagBg.color = color;
             if (unlockFrame != null) unlockFrame.color = Color.Lerp(new Color(0.12f, 0.14f, 0.19f), color, 0.35f);
@@ -501,13 +510,13 @@ namespace ZombieWar.UI
             Set(unlockName, name);
             Set(unlockDesc, desc);
             Set(unlockHint, "");
-            Set(col?.Find("Collection/L")?.GetComponent<TMP_Text>(), panel);
+            Set(unlockCollectionLabel, panel);
             Set(unlockCount, "NEW");
-            col?.Find("Collection/Bar")?.gameObject.SetActive(false);
-            Set(col?.Find("Try/Face/Label")?.GetComponent<TMP_Text>(), cta);
+            if (unlockCollectionBar != null) unlockCollectionBar.SetActive(false);
+            Set(unlockTryLabel, cta);
             Set(unlockNextLabel, "LATER");
             UIFeedback.LevelUp();
-            FtueV3.Unlock(feature, col?.Find("Try") as RectTransform, () => _featureIntent == intent && unlockRoot != null && unlockRoot.activeInHierarchy);
+            FtueV3.Unlock(feature, unlockTry != null ? (RectTransform)unlockTry.transform : null, () => _featureIntent == intent && unlockRoot != null && unlockRoot.activeInHierarchy);
         }
 
         void SetRow(int i, string text, string tag)
@@ -534,6 +543,30 @@ namespace ZombieWar.UI
         }
 
         static void Leave(Action go) { Time.timeScale = 1f; go(); }
+#if UNITY_EDITOR
+        /// G12.8: wires the widgets the screen used to find by path; returns the paths not found.
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var m = new System.Collections.Generic.List<string>();
+            var ad = adButton != null ? adButton.transform : null;
+            adVideo = WireUtil.Node(ad, "Face/Video", m);
+            adLabel = WireUtil.Find<TMP_Text>(ad, "Face/Label", m);
+            var tag = ad != null ? ad.Find("FtueTag") : null;
+            adFtueTag = tag != null ? tag.gameObject : null;   // optional: a retired widget
+            shopLinkLabel = WireUtil.Find<TMP_Text>(shopLink != null ? shopLink.transform : null, "T", m);
+            var col = unlockRoot != null ? unlockRoot.transform.Find("Safe/Col") : null;
+            unlockSub = WireUtil.Find<TMP_Text>(col, "Sub", m);
+            unlockTryLabel = WireUtil.Find<TMP_Text>(col, "Try/Face/Label", m);
+            unlockCollectionLabel = WireUtil.Find<TMP_Text>(col, "Collection/L", m);
+            unlockCollectionBar = WireUtil.Node(col, "Collection/Bar", m);
+            return m;
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => WireUtil.Nulls(
+            ("adVideo", adVideo), ("adLabel", adLabel), ("shopLinkLabel", shopLinkLabel), ("unlockSub", unlockSub),
+            ("unlockTryLabel", unlockTryLabel), ("unlockCollectionLabel", unlockCollectionLabel),
+            ("unlockCollectionBar", unlockCollectionBar));
+#endif
     }
 
     /// <summary>Where the menu should go right after it opens (e.g. the result's Shop link).</summary>
@@ -545,5 +578,6 @@ namespace ZombieWar.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => Next = null;
         public static string Take() { var n = Next; Next = null; return n; }
-    }
+    
+}
 }

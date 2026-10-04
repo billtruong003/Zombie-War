@@ -1,4 +1,4 @@
-using BillGameCore;
+﻿using BillGameCore;
 using UnityEngine;
 using UnityEngine.UI;
 using ZombieWar.Stations;
@@ -21,8 +21,10 @@ namespace ZombieWar
     {
         const float ScanEvery = 0.2f, GlowKills = 3;
 
-        RectTransform _toast;
-        Image _glow;
+        [Tooltip("G12.8: the XP bar glow, the item icons the radio card shows, and the retired v2 widgets (kept hidden).")]
+        [SerializeField] Image xpGlow;
+        [SerializeField] Image magnetIcon, bombIcon, freezeIcon;
+        [SerializeField] GameObject itemToast, stationCallout;
         Station _target;
         float _nextScan;
         int _killsAtStart = -1;
@@ -31,22 +33,18 @@ namespace ZombieWar
         static readonly StationKind[] StationKinds = (StationKind[])System.Enum.GetValues(typeof(StationKind));
         static readonly PickupEffect[] ItemKinds = { PickupEffect.Magnet, PickupEffect.Bomb, PickupEffect.Freeze };
 
-        static string IconFor(PickupEffect e) => e switch
+        Image IconFor(PickupEffect e) => e switch
         {
-            PickupEffect.Magnet => "Magnet",
-            PickupEffect.Bomb => "Bomb",
-            _ => "Freeze",
+            PickupEffect.Magnet => magnetIcon,
+            PickupEffect.Bomb => bombIcon,
+            _ => freezeIcon,
         };
 
         void Awake()
         {
-            var canvas = GetComponentInParent<Canvas>()?.rootCanvas;
-            var canvasRect = canvas != null ? canvas.transform as RectTransform : null;
-            transform.Find("StationCallout")?.gameObject.SetActive(false);   // v2 widget
-            _toast = transform.Find("ItemToast") as RectTransform;
-            if (_toast != null) _toast.gameObject.SetActive(false);          // v2 widget; icons only
-            _glow = canvasRect != null ? canvasRect.Find("Safe/XpBar/FtueGlow")?.GetComponent<Image>() : null;
-            if (_glow != null) _glow.gameObject.SetActive(false);
+            if (stationCallout != null) stationCallout.SetActive(false);   // v2 widget
+            if (itemToast != null) itemToast.SetActive(false);             // v2 widget; icons only
+            if (xpGlow != null) xpGlow.gameObject.SetActive(false);
             if (AllDone()) enabled = false;
         }
 
@@ -75,15 +73,15 @@ namespace ZombieWar
         // ------------------------------------------------------------ XP glow
         void TickGlow()
         {
-            if (_glow == null || Ftue.Done(Ftue.XpGlow)) { if (_glow != null && _glow.gameObject.activeSelf) _glow.gameObject.SetActive(false); return; }
+            if (xpGlow == null || Ftue.Done(Ftue.XpGlow)) { if (xpGlow != null && xpGlow.gameObject.activeSelf) xpGlow.gameObject.SetActive(false); return; }
             var run = RunState.Current;
             if (run == null) return;
             if (_killsAtStart < 0) _killsAtStart = run.Kills;
             int kills = run.Kills - _killsAtStart;
-            if (kills >= GlowKills) { _glow.gameObject.SetActive(false); Ftue.Complete(Ftue.XpGlow); return; }
-            if (kills >= 1 && !_xpCalled) { _xpCalled = true; FtueV3.Xp(_glow.rectTransform.parent as RectTransform); }
-            if (!_glow.gameObject.activeSelf) _glow.gameObject.SetActive(true);
-            var c = _glow.color; c.a = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 5f)); _glow.color = c;
+            if (kills >= GlowKills) { xpGlow.gameObject.SetActive(false); Ftue.Complete(Ftue.XpGlow); return; }
+            if (kills >= 1 && !_xpCalled) { _xpCalled = true; FtueV3.Xp(xpGlow.rectTransform.parent as RectTransform); }
+            if (!xpGlow.gameObject.activeSelf) xpGlow.gameObject.SetActive(true);
+            var c = xpGlow.color; c.a = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 5f)); xpGlow.color = c;
         }
 
         // ------------------------------------------------------------ stations
@@ -134,8 +132,29 @@ namespace ZombieWar
             string step = Ftue.Item(e.Effect);
             if (Ftue.Done(step)) return;
             Ftue.Complete(step);
-            var icon = _toast != null ? _toast.Find("Icon/" + IconFor(e.Effect)) : null;
-            FtueV3.Item(e.Effect, icon != null && icon.TryGetComponent(out Image img) ? img.sprite : null);
+            var icon = IconFor(e.Effect);
+            FtueV3.Item(e.Effect, icon != null ? icon.sprite : null);
         }
-    }
+    
+#if UNITY_EDITOR
+        /// G12.8: wires what the coach used to find by path; returns the paths not found.
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var m = new System.Collections.Generic.List<string>();
+            var canvas = GetComponentInParent<Canvas>(true);
+            var root = canvas != null ? canvas.rootCanvas.transform : transform.root;
+            xpGlow = WireUtil.Find<Image>(root, "Safe/XpBar/FtueGlow", m);
+            itemToast = WireUtil.Node(transform, "ItemToast", m);
+            magnetIcon = WireUtil.Find<Image>(transform, "ItemToast/Icon/Magnet", m);
+            bombIcon = WireUtil.Find<Image>(transform, "ItemToast/Icon/Bomb", m);
+            freezeIcon = WireUtil.Find<Image>(transform, "ItemToast/Icon/Freeze", m);
+            var callout = transform.Find("StationCallout");
+            stationCallout = callout != null ? callout.gameObject : null;   // optional: a retired widget
+            return m;
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => WireUtil.Nulls(
+            ("xpGlow", xpGlow), ("itemToast", itemToast), ("magnetIcon", magnetIcon), ("bombIcon", bombIcon), ("freezeIcon", freezeIcon));
+#endif
+}
 }

@@ -62,6 +62,7 @@ namespace ZombieWar
         {
             HideAll();
             Wire(resumeButton, ResumeWithCountdown);
+            Wire(chest.claim, ClaimChest);
             // The quit question replaces the pause panel instead of sitting on top of it.
             Wire(exitButton, () => { Show(pauseRoot, false); Show(confirmRoot, true); UIFx.ModalIn(confirmRoot != null ? confirmRoot.transform : null); });
             Wire(confirmNoButton, () => { Show(confirmRoot, false); Show(pauseRoot, true); });

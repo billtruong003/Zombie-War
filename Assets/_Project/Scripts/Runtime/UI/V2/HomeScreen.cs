@@ -76,6 +76,9 @@ namespace ZombieWar.UI
         [SerializeField] private Button stripDaily;
         [SerializeField] private TMP_Text stripDailyText;
         [SerializeField] private Button stripGacha;
+        [Tooltip("G12.8: the gacha strip's title and sub line.")]
+        [SerializeField] private TMP_Text stripGachaTitle;
+        [SerializeField] private TMP_Text stripGachaSub;
         [SerializeField] private Button stripPass;
         [SerializeField] private TMP_Text stripPassText;
         [SerializeField] private Button missionsCard;
@@ -180,7 +183,7 @@ namespace ZombieWar.UI
             ZombieWar.Audio.FtueVoice.HomeShown(() => this != null && isActiveAndEnabled && !_launching);
             if (FirstRunPending && playButton != null)
             {
-                transform.Find("Safe/PlayRow/Hint")?.gameObject.SetActive(false);   // v2 hint; v3 uses the hologram hand
+                if (playHint != null) playHint.SetActive(false);   // v2 hint; v3 uses the hologram hand
                 FtueV3.Home(playButton.transform as RectTransform);
             }
             // A link from the run result or an unlock popup lands here first, then goes on.
@@ -213,8 +216,8 @@ namespace ZombieWar.UI
             GachaBanners.Banner evt = null;
             foreach (var b in GachaBanners.All) if (b.kind == GachaBanners.Kind.Event) { evt = b; break; }
             if (evt == null) return;
-            var title = stripGacha.transform.Find("Title")?.GetComponent<TMP_Text>();
-            var sub = stripGacha.transform.Find("Sub")?.GetComponent<TMP_Text>();
+            var title = stripGachaTitle;
+            var sub = stripGachaSub;
             if (title != null) title.text = System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(evt.title.ToLowerInvariant());
             if (sub != null)
             {
@@ -365,5 +368,20 @@ namespace ZombieWar.UI
             v >= 1_000_000 ? (v / 1_000_000f).ToString("0.#") + "M" :
             v >= 100_000 ? (v / 1000f).ToString("0") + "K" :   // "118K", not "117.6K": pills are narrow
             v >= 10_000 ? (v / 1000f).ToString("0.#") + "K" : v.ToString("N0");
-    }
+    
+#if UNITY_EDITOR
+        /// G12.8: wires what Home used to find by path; returns the paths not found.
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var m = new System.Collections.Generic.List<string>();
+            var strip = stripGacha != null ? stripGacha.transform : null;
+            stripGachaTitle = WireUtil.Find<TMP_Text>(strip, "Title", m);
+            stripGachaSub = WireUtil.Find<TMP_Text>(strip, "Sub", m);
+            return m;
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => WireUtil.Nulls(
+            ("stripGachaTitle", stripGachaTitle), ("stripGachaSub", stripGachaSub));
+#endif
+}
 }

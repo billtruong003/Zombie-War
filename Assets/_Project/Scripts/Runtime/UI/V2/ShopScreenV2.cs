@@ -33,6 +33,8 @@ namespace ZombieWar.UI
         [SerializeField] private Button[] chips = new Button[5];
         [SerializeField] private ScrollRect page;
         [SerializeField] private RectTransform[] sections = new RectTransform[5];
+        [Tooltip("G12.8: the guns section's sub line (COINS / ALL OWNED).")]
+        [SerializeField] private TMP_Text gunSectionSub;
 
         [Header("Deals")]
         [SerializeField] private TMP_Text dealsTimer;
@@ -258,7 +260,7 @@ namespace ZombieWar.UI
             }
 
             _forSale = all.Where(w => w != null && w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId)).OrderBy(w => w.price).ToList();
-            var gunSub = sections.Length > 3 && sections[3] != null ? sections[3].Find("Sub")?.GetComponent<TMP_Text>() : null;
+            var gunSub = gunSectionSub;
             Set(gunSub, _forSale.Count > 0 ? "COINS" : "ALL OWNED");
             for (int i = 0; i < guns.Length; i++)
             {
@@ -273,5 +275,17 @@ namespace ZombieWar.UI
             }
         }
 
-    }
+    
+#if UNITY_EDITOR
+        /// G12.8: wires what the shop used to find by path; returns the paths not found.
+        public System.Collections.Generic.List<string> EditorWire()
+        {
+            var m = new System.Collections.Generic.List<string>();
+            gunSectionSub = WireUtil.Find<TMP_Text>(sections.Length > 3 ? sections[3] : null, "Sub", m);
+            return m;
+        }
+
+        public System.Collections.Generic.List<string> EditorUnwired() => WireUtil.Nulls(("gunSectionSub", gunSectionSub));
+#endif
+}
 }
