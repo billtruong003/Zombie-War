@@ -192,6 +192,31 @@ map keeps offering destinations, and pressure never stops climbing - the run end
 - Not a collection of isolated biome chunks with hard borders.
 - Not an aimless endless session: pressure must rise and the map must keep offering destinations.
 
+### Genre rules checklist (owner-approved 2026-10-05)
+
+Device playtest 05/10: the best run ended at 2:35. HordeCall had broken most of the rules that
+survivor-likes (Vampire Survivors, Survivor.io, 20 Minutes Till Dawn, Brotato, Magic Survival) keep.
+Most were broken by **anti-exploit rules** that each made sense alone: a crowd that refills
+instantly, catch-up speed, a tier fed by distance. Together they punished normal play. These rules
+**override §15 and §16 where they conflict**. Every difficulty change, new enemy or drop change is
+checked against this list. Breaking a rule needs a written reason next to the change.
+
+| # | Rule | Check | Broken on 05/10 by |
+|---|---|---|---|
+| 1 | **The player outgrows the crowd early.** The first 2-3 minutes are a power fantasy; the crowd wins later, through attrition. | By 2:00 a new player clears the standing crowd faster than it refills. | 48 DPS pistol vs a 40-enemy crowd that refills instantly from second 0. |
+| 2 | **The crowd is fodder; danger comes from density.** Specialists (ranged, pouncers) are a small, capped share. | Ranged ≤ 15% of alive enemies, none before 2:00; at most 1-2 pounces at once. | Uniform roster pick: about 43% ranged from tier 1; each dog pounces on its own 5 s timer. |
+| 3 | **Enemies on screen are slower than the player.** Kiting is the core skill, and good play escapes. | No on-screen enemy outpaces player run speed; catch-up only off screen. | Pursuit ×2.2 (CatBolt about 11 m/s vs player 5 m/s). |
+| 4 | **Movement has a purpose beyond fleeing.** Something worth walking into danger for lies on the ground. | XP (or an equivalent) is collected from the floor; pickups pull the player toward risk. | XP is credited on kill (`RunState.cs:142`); only coins drop. |
+| 5 | **Mistakes are recoverable.** Health comes back through play. | A hurt player finds healing within about 20-30 s; below 25% HP a heal is guaranteed within 8 s. | No heal source left (breakable props removed); no regen. |
+| 6 | **Damage is attrition, not burst.** | Per-hit i-frames; at most 25% max HP lost per second, however many attackers. | 4 attackers at 16-27 DPS on 100 HP, no i-frames. |
+| 7 | **The run is readable.** The player can see what comes next: chest, boss, horde. | A HUD milestone bar; tier rises mostly with time and objectives, not distance run. | Tier fed by distance (90 m per band); only a surge countdown on the HUD. |
+| 8 | **Threats are telegraphed.** A boss reads as a boss; a horde announces itself. | Boss: red ground ring, health bar, entrance. Horde: warning, countdown, direction. | Boss wears the elite's gold aura; the surge only plays a stinger. |
+| 9 | **Help feels like luck.** Drops answer the player's need without looking scripted. | A need-aware drop table (heal / bomb / freeze / magnet), with a cooldown and a per-run cap on rescues. | Items dropped only from elites (15%), who rarely appear before tier 3. |
+| 10 | **Tension breathes.** Build-up, peak, then relief. | After a peak or when player stress is high, a rest window spawns fodder only. | Constant pressure; the player has to keep running. |
+
+HordeCall's own identity sits **on top of** these rules, never instead of them: the dense crowd, the
+Horde Call / Boss Beacon stations and the radio agents.
+
 ## 5. Complete player flow
 
 > **M6 draft:** `M6_ENDLESS_RUN_SYSTEM_DESIGN.md` section 5. Summarised here, not duplicated.
@@ -473,6 +498,10 @@ All six share one grammar: `Signal + Trigger + Cost/Risk + Completion + Reward +
 ## 15. Difficulty progression
 
 Difficulty grows through composition, behavior, space and decision pressure before health inflation.
+
+> 2026-10-05: the genre rules checklist (§4) overrides this section where they conflict. In particular,
+> ranged enemies are gated by time and capped (rule 2), not unlocked by tier 1, and distance feeds the
+> tier only weakly (rule 7).
 
 ### Threat model
 
