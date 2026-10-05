@@ -111,6 +111,37 @@ namespace ZombieWar
             }
         }
 
+        /// <summary>
+        /// Owner rule 2026-10-05: getting back up kills every enemy on the map, so a revive buys the
+        /// player real time. Same blast as the bomb, but no screen or reach limit and elites die too.
+        /// </summary>
+        public static void ReviveClear(Vector3 at)
+        {
+            var host = Host; var a = A;
+            at.y = 0f;
+            if (host != null)
+            {
+                if (a?.bombFx != null) PowerKit.PlaySized(a.bombFx, at + Vector3.up * 0.2f, 4f, a.bombNativeRadius);
+                host.Shockwave(at, 0.5f, Reach, Blast, 0.6f);
+                host.Sfx("sfx.player.bomb.explode", at, 1f, 0.1f);
+                host.Shake(0.6f);
+            }
+            int budget = FxBudget;
+            var alive = ZombieManager.Alive;   // a kill leaves the list at once, so walk it backwards
+            for (int i = alive.Count - 1; i >= 0; i--)
+            {
+                if (i >= alive.Count) continue;
+                var e = alive[i];
+                if (e == null || e.IsDead) continue;
+                var hp = e.Life;
+                PowerKit.Hit(e, (hp != null ? hp.Max : 100f) * 10f + 1f, 1.2f, ReviveSource);
+                if (budget-- > 0 && a?.bombHitFx != null && host != null && host.OnScreen(e.transform.position))
+                    FxPool.Play(a.bombHitFx, PowerKit.Chest(e), PowerKit.Flat(a.bombHitFx), 0.8f);
+            }
+        }
+
+        public const string ReviveSource = "revive.clear";
+
         /// <summary>Freezes every enemy on screen solid (elites for less).</summary>
         public static void Freeze(Vector3 at)
         {

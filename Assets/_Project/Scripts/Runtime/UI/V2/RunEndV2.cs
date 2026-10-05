@@ -248,7 +248,9 @@ namespace ZombieWar.UI
             ReleaseStills();
             Time.timeScale = 1f;
             UIFeedback.Confirm();
-            _player?.Revive();
+            if (_player == null) return;
+            _player.Revive();
+            MechanicItems.ReviveClear(_player.transform.position);
         }
 
         void GiveUp()

@@ -75,6 +75,20 @@
 > The M4.6CD.1 environment asset selection and the environment-outline contract are locked; see
 > `WORLD_STREAMING_TECHNICAL_DESIGN.md`.
 
+> **Concept Lock (owner, 2026-10-05).** This block overrides anything below that disagrees with it.
+>
+> | | |
+> | --- | --- |
+> | Main audience | Casual mobile players. A newcomer understands the run with no explanation. |
+> | Loyal audience | Survivor-like players. The run follows the 10 genre rules in §4. |
+> | Long-term retention | Guns and their upgrades: stars, mastery, evolution. Outfits are secondary. |
+> | Content size | **6 maps** is enough for the game. |
+> | Revive | Getting back up **kills every enemy on the map** at that moment (`MechanicItems.ReviveClear`). |
+> | Languages | vi, en, ja, ko. The default comes from the player's country. The store listing ships in all four. |
+>
+> Work order: every task that needs no Android build (`Docs/BACKLOG.md`) up to the bot lab → bot
+> simulation and game-mode content plan → VFX / shader / AO review → boss lab → SDK and store → localization.
+
 ## 1. Design state
 
 ### Project facts retained
