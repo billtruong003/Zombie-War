@@ -119,6 +119,14 @@ namespace ZombieWar.UI
         {
             if (_gun == null) return;
             var block = PlayerProfile.EvolveBlock(_gun.WeaponId);
+            if (block == GunEvolution.Block.Stars)
+            {
+                // Stars are bought in the Arsenal, which opened this screen: take the player back there.
+                UIFeedback.Error();
+                Toast.Show($"{GunEvolution.BlockText(block)} · upgrade them in the Arsenal");
+                UIManager.Instance?.Pop();
+                return;
+            }
             if (block != GunEvolution.Block.None) { UIFeedback.Error(); Toast.Show(GunEvolution.BlockText(block)); return; }
             if (!PlayerProfile.TryEvolveGun(_gun.WeaponId)) return;
             UIFeedback.LevelUp();
