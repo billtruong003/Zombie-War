@@ -285,6 +285,12 @@ namespace ZombieWar
             {
                 skills.EquippedFamily = data.weaponClass;
                 skills.ApplyAccount(GunMastery.Current(), GetComponentInParent<Health>());   // mastery bonuses (#21)
+                if (PlayerProfile.IsGunEvolved(data.WeaponId))   // evolved gun: its family trait, free (#23)
+                {
+                    var (card, rank) = GunEvolution.TraitOf(data.weaponClass);
+                    skills.SetInnate(card, rank);
+                }
+                else skills.SetInnate(null, 0);
             }
 
             // Doi sung KHONG duoc don mot loat dan: xoa sach thoi gian ban con no lai.

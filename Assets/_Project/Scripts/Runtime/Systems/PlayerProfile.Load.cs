@@ -21,6 +21,7 @@ namespace ZombieWar
             d.weaponShards ??= new List<WeaponShardEntry>();
             d.gunStats ??= new List<GunStatEntry>();
             d.achievements ??= new List<string>();
+            d.evolvedGuns ??= new List<string>();
             d.ownedBodyColors = DedupeNonEmpty(d.ownedBodyColors);
             d.ownedBodyEars = DedupeNonEmpty(d.ownedBodyEars);
             d.gachaPity ??= new List<GachaPityEntry>();

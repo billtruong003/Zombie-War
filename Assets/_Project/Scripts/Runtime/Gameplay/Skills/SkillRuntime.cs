@@ -91,7 +91,17 @@ namespace ZombieWar.Skills
         public WeaponClass EquippedFamily { get; set; } = WeaponClass.Sidearm;
 
         // ── build state ────────────────────────────────────────────────────────────────
-        public int RankOf(string skillId) => _ranks.TryGetValue(skillId, out var r) ? r : 0;
+        public int RankOf(string skillId)
+        {
+            int r = _ranks.TryGetValue(skillId, out var taken) ? taken : 0;
+            return _innateCard == skillId && _innateRank > r ? _innateRank : r;
+        }
+
+        // An evolved gun's built-in card (backlog #23): counts as ranks of that card, takes no slot.
+        string _innateCard; int _innateRank;
+
+        public void SetInnate(string card, int rank) { _innateCard = card; _innateRank = rank; }
+        public string InnateCard => _innateCard;
         public bool Has(string skillId) => RankOf(skillId) > 0;
         public IReadOnlyDictionary<string, int> Ranks => _ranks;
 
@@ -479,6 +489,7 @@ namespace ZombieWar.Skills
             _siphonTriggered = _guardianUsed = false;
             PendingMaxHealthBonus = 0f;
             Account = default; _accountHealthApplied = false;
+            _innateCard = null; _innateRank = 0;
             PendingHealFraction = 0f;
             PendingCoin = 0;
             PendingMagnet = false;
