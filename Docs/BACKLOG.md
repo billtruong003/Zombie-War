@@ -48,13 +48,22 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
    - #46 mode 2 (Thử thách ngày)
 3. **Meta: súng và kinh tế**
    - **3a · #16 đổi phần dư khi súng full → coin** (A/B): mảnh của súng đã 3 sao tự đổi ra coin khi nhận (toast báo), kho mảnh cũ đổi ở Arsenal. Tỉ lệ đề xuất theo độ hiếm: Common 10 · Uncommon 15 · Rare 20 · Epic 25 · Legendary 40 coin/mảnh (~một nửa giá trị mảnh khi mua súng). Chỉnh lại sau #33.
-   - **3b · Mở súng tự nhiên** (C duyệt rồi A/B):
-     - Legendary bỏ giá coin; mở khi đủ mảnh (đề xuất 100 mảnh) hoặc trúng gacha. Epic: coin hoặc mảnh.
-     - Daily Ops gọi tên **từng khẩu** (không chỉ nhóm súng), xoay qua mọi súng đã có → khẩu nào cũng có ngày được dùng.
-     - Mảnh súng chưa có đến từ nhiều đường: banner Shards (pity), chế độ thử súng (#24) với đúng khẩu đó, Pass, rương ngày thứ 7, thành tựu.
-     - Thành tựu sưu tập: sở hữu 5 / 10 / 25 / tất cả súng, đủ một nhóm súng, Legendary đầu tiên.
-     - Bộ sưu tập theo nhóm: đủ cả nhóm súng thì có thưởng nhỏ toàn tài khoản (giống thưởng thông thạo).
-     - Gợi ý "khẩu tiếp theo" ở Home/Result chỉ vào khẩu gần mở nhất (đủ mảnh, đủ coin).
+   - **3b · Súng chỉ ra từ gacha, gacha ra MẢNH** (owner 05/10 đêm; bản số dưới đây chờ duyệt, mockup trước khi code):
+     - Bỏ mua súng bằng coin ở Arsenal. Súng mở khi đủ mảnh: Common 20 · Uncommon 30 · Rare 40 · Epic 60 · Legendary 100.
+     - Gacha chia 2 nhóm: **Skin** (Neon Nights, Street) và **Súng** (2 hòm). Mảnh thấp ra dễ, mảnh cao hiếm nên quý.
+     - **Gun Crate (coin, tối đa tím):** mảnh Common ×5 50% · Uncommon ×5 30% · Rare ×4 15% · Epic ×3 5%; chắc chắn 10 mảnh Epic trong 40 lượt; ~1.500 coin/lượt (chốt ở #33, đây là chỗ tiêu coin chính).
+     - **Elite Crate (gem):** mảnh Rare ×6 55% · Epic ×4 38% · Legendary ×5 6,4% · **trúng nguyên khẩu Legendary 0,6%**; chắc chắn nguyên khẩu Legendary trong 90 lượt; 30 gem hoặc 1 vé/lượt. Một pool chung, không featured.
+     - Mảnh rơi ưu tiên khẩu người chơi đang gom dở (60%), còn lại ngẫu nhiên trong độ hiếm đó → mảnh dồn về một khẩu, không rải đều.
+     - Mảnh dư của khẩu đã có dùng lên sao; khẩu full đổi ra coin (3a).
+     - Đường mảnh không cần quay: Daily Ops gọi tên từng khẩu, chế độ thử súng (#24), thành tựu sưu tập (5/10/25/tất cả súng, đủ nhóm, Legendary đầu tiên), Pass, rương ngày 7.
+     - FTUE: bỏ bù 400 coin để mua súng; lượt Gun Crate đầu miễn phí, chắc chắn đủ mảnh mở 1 khẩu Rare.
+     - Home "NEXT BUY" → "khẩu sắp mở" (thanh mảnh gần đủ nhất).
+   - **3c · Shop GUNS → gacha hoặc tiền thật, gói nạp và VIP** (chờ duyệt giá):
+     - Tab GUNS: lối tắt tới 2 hòm + các gói tiền thật.
+     - **Starter Pack $4,99** (1 lần): nhận ngay **Vector** (Legendary yếu nhất) + 300 gem + 5 vé.
+     - **VIP Pack $19,99** (1 lần mỗi mùa): chọn 1 Legendary mạnh (AWM / HK416 / Thumper GL) + bộ skin Neon Circuit + 1.000 gem.
+     - **Hạng VIP theo tổng nạp:** VIP1 $5 · VIP2 $20 · VIP3 $50 · VIP4 $100 · VIP5 $250 · VIP6 $500. Quyền lợi tăng dần: gem mỗi ngày (10→60), thêm 1 lượt rương ngày, giảm 5–15% gói ×10, khung avatar + huy hiệu VIP. Không bán sức mạnh vượt Legendary.
+     - Danh sách IAP #57 làm lại theo các gói này; giá theo vùng PH/ID/VN.
    - #26b món featured 50/50 cho banner Outfits/Shards — C
    - #27 skin súng mùa 1 (chọn style shader) — C rồi B
    - Q6 súng Pistol (model Tec-9) — C
@@ -100,7 +109,7 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
    - #72 tick chung cho quái, giảm SetParent trong pool, giới hạn flow-field, ngân sách khung hình, bộ nhớ < 1,3 GB
 10. **Sau launch**: #59 Firebase Auth + lưu đám mây, leaderboard, bạn bè (chỉ thiết kế), campaign.
 
-**Còn chờ owner chốt:** Q4 dọn thư mục · Q5 build sớm · Q6 súng Pistol · duyệt 3b mở súng tự nhiên · #26b · #24 · #27 · #38 · #55 · #65.
+**Còn chờ owner chốt:** Q4 dọn thư mục · Q5 build sớm · Q6 súng Pistol · duyệt 3b gacha mảnh súng + 3c gói nạp/VIP · #26b · #24 · #27 · #38 · #55 · #65.
 
 **Đã xong 05/10** (chưa build, chờ owner chơi thử):
 - hồi sinh giết toàn bộ quái trên map (`MechanicItems.ReviveClear`); Concept Lock ghi vào `GAME_DESIGN.md`
