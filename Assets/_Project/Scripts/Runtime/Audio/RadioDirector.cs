@@ -346,7 +346,7 @@ namespace ZombieWar.Audio
             if (s.Kills == 404 && d.SayOnce("vo_jiho_egg_kills_404")) return;
             if (s.Kills == 1337 && d.SayOnce("vo_kaito_egg_kills_1337")) return;
             if (s.Duration >= 600f && d.Converse(15)) return;
-            if (result.NewSurvivalRecord) { d.Say("vo_riley_meta_record"); return; }
+            if (result.NewScoreRecord) { d.Say("vo_riley_meta_record"); return; }   // the record is the score (27/09)
             if (result.AccountLevelsGained > 0) { d.Say("vo_chen_meta_acc_up"); return; }
             d.Say(Pick("vo_riley_run_end_01", "vo_riley_run_end_02"));
         }

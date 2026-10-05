@@ -172,13 +172,21 @@ namespace ZombieWar
                 case Kind.Gem: PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, r.amount); break;
                 case Kind.Ticket: PlayerProfile.AddTickets(r.amount); break;
                 case Kind.Frame: PlayerProfile.AddFrame(StampMasterFrame); break;
-                case Kind.Shards: PlayerProfile.AddWeaponShards(PlayerProfile.EquippedWeaponId, r.amount); break;
+                case Kind.Shards: PlayerProfile.AddWeaponShards(ShardGun(), r.amount); break;
                 case Kind.Gun:
                     var gun = WelcomeGun();
                     if (gun != null) PlayerProfile.AddOwnedWeapon(gun.WeaponId);
                     else PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, WelcomeGunFallbackGems);
                     break;
             }
+        }
+
+        /// <summary>The gun stamp shards go to: the carried one, else the first owned, else the starter.</summary>
+        static string ShardGun()
+        {
+            if (!string.IsNullOrEmpty(PlayerProfile.EquippedWeaponId)) return PlayerProfile.EquippedWeaponId;
+            if (PlayerProfile.OwnedWeaponIds.Count > 0) return PlayerProfile.OwnedWeaponIds[0];
+            return WeaponCatalog.Active?.Starter?.data?.WeaponId;
         }
 
         /// <summary>The cheapest rare-or-better gun the player does not own yet, or null.</summary>

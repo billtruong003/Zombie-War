@@ -104,6 +104,9 @@ namespace ZombieWar
             // Daily Ops chest (05/10): the game day it was last opened and the streak of days in a row.
             public int dailyChestDay;
             public int dailyStreak;
+            // The day's Daily Ops, dealt once (QA 05/10).
+            public int dailyOpsDay;
+            public List<string> dailyOpsIds = new();
             // M9 account level (AccountProgress turns XP into a level and feature gates).
             public int accountXp;
             // M10 Profile: a display name and a stable 8-digit player id (made on first load).

@@ -219,7 +219,7 @@ namespace ZombieWar.Audio
             CancelResultSequence();
             // An endless run always ends in a loss; beating the personal best is the one ending worth
             // celebrating, so a new record gets the triumphant stinger.
-            _resultRoutine = StartCoroutine(ResultSequence(e.Result.NewSurvivalRecord));
+            _resultRoutine = StartCoroutine(ResultSequence(e.Result.NewScoreRecord));
         }
 
         /// <summary>

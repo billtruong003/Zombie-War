@@ -104,8 +104,7 @@ namespace ZombieWar
         {
             var result = new List<PassMission>(DailyCount + WeeklyCount);
             // Daily Ops (05/10) replace the old daily rotation: gun missions for owned families.
-            result.AddRange(DailyOps.For(DayKey(utcNow), DailyOps.SeedFor(PlayerProfile.PlayerId),
-                                         OwnedFamilies(), PlayerProfile.AccountLevel));
+            result.AddRange(DailyOpsFor(DayKey(utcNow)));
             result.AddRange(Rotate(MissionScope.Weekly, WeekKey(utcNow), WeeklyCount));
             return result;
         }
@@ -124,6 +123,24 @@ namespace ZombieWar
                 return c != 0 ? c : a.scope.CompareTo(b.scope);
             });
             return list;
+        }
+
+        /// <summary>
+        /// The day's Daily Ops, dealt once and kept in the profile for that day (QA 05/10): a gun bought
+        /// or a level gained at noon must not swap the set and lose the progress made on it.
+        /// </summary>
+        static List<PassMission> DailyOpsFor(int day)
+        {
+            var kept = PlayerProfile.DailyOpsKept(day);
+            if (kept != null)
+            {
+                var list = new List<PassMission>(kept.Count);
+                foreach (var id in kept) { var m = DailyOps.Decode(id); if (m != null) list.Add(m); }
+                if (list.Count == DailyOps.Count) return list;
+            }
+            var dealt = DailyOps.For(day, DailyOps.SeedFor(PlayerProfile.PlayerId), OwnedFamilies(), PlayerProfile.AccountLevel);
+            PlayerProfile.KeepDailyOps(day, dealt.ConvertAll(m => m.id));
+            return dealt;
         }
 
         /// <summary>Gun families the player owns (catalog lookup); tests can replace it.</summary>
@@ -148,10 +165,20 @@ namespace ZombieWar
         /// <summary>The family of the gun the player carries now, or null when unknown.</summary>
         public static WeaponClass? CarriedFamily()
         {
+            // Asked on every kill: the catalog list is only built when the carried gun changes.
+            string id = PlayerProfile.EquippedWeaponId;
+            if (_carriedId == id && _carriedKnown) return _carried;
             var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
-            var w = all != null ? LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all) : null;
-            return w != null ? w.weaponClass : (WeaponClass?)null;
+            if (all == null) return null;
+            var w = LoadoutState.Resolve(id, all);
+            _carriedId = id; _carriedKnown = true;
+            _carried = w != null ? w.weaponClass : (WeaponClass?)null;
+            return _carried;
         }
+
+        static string _carriedId;
+        static bool _carriedKnown;
+        static WeaponClass? _carried;
 
         /// <summary>Whether progress made with <paramref name="carried"/> counts for this mission.</summary>
         public static bool CountsWith(PassMission m, WeaponClass? carried)

@@ -34,7 +34,7 @@ namespace ZombieWar
                     case GunMastery.RewardKind.Shards: AddWeaponShardsInMemory(weaponId, r.amount); break;
                     case GunMastery.RewardKind.Coin: Add(CurrencyKind.Coin, r.amount); break;
                     case GunMastery.RewardKind.Gem: Add(CurrencyKind.Gem, r.amount); break;
-                    default: Data.tickets += r.amount; break;
+                    default: AddTickets(r.amount); break;
                 }
             }
             if (after > before) Notify(Change.Loadout);

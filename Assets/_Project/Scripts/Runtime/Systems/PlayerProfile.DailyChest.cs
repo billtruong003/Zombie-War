@@ -21,6 +21,18 @@ namespace ZombieWar
             public string shardGun, newGun;
         }
 
+        /// <summary>Today's Daily Ops ids if they were dealt for <paramref name="day"/>, else null.</summary>
+        public static IReadOnlyList<string> DailyOpsKept(int day) =>
+            Data.dailyOpsDay == day && Data.dailyOpsIds.Count > 0 ? Data.dailyOpsIds : null;
+
+        public static void KeepDailyOps(int day, List<string> ids)
+        {
+            Data.dailyOpsDay = day;
+            Data.dailyOpsIds.Clear();
+            Data.dailyOpsIds.AddRange(ids);
+            MarkDirty();
+        }
+
         /// <summary>Days in a row the chest was opened; 0 once a day was missed.</summary>
         public static int DailyStreakOn(int today) =>
             Data.dailyChestDay == today || Data.dailyChestDay == today - 1 ? Data.dailyStreak : 0;

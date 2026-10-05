@@ -109,6 +109,17 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void TodaysSet_StaysPut_WhenTheArsenalChangesMidDay()
+        {
+            var before = PassMissions.ActiveFor(Day).Select(m => m.id).ToList();
+            PassMissions.OwnedFamiliesProvider = () => new[] { WeaponClass.Sidearm, WeaponClass.Shotgun, WeaponClass.LMG, WeaponClass.Marksman };
+            var after = PassMissions.ActiveFor(Day.AddHours(3)).Select(m => m.id).ToList();
+            CollectionAssert.AreEqual(before, after, "a gun bought at noon must not swap today's missions");
+            var tomorrow = PassMissions.ActiveFor(Day.AddDays(1)).Select(m => m.id).ToList();
+            CollectionAssert.AreNotEqual(before, tomorrow);
+        }
+
+        [Test]
         public void AGunMission_CountsOnlyWithItsFamily()
         {
             var op = DailyOps.Make(DailyOps.Template.Kill, WeaponClass.Shotgun, 3);
