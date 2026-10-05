@@ -53,6 +53,24 @@ namespace ZombieWar.UI
             FtueRadio.Show(c);
         }
 
+        // U4 · First Studio visit (owner-approved 05/10): Tiger, corners + hand on the TOP hotspot.
+        // The card sits low over the piece strip so the HEAD and FACE hotspots stay visible; the chip
+        // goes above the corners, clear of the hand. Text only until the owner picks how the new Tiger
+        // line is voiced (backlog Q1).
+        public static void Studio(RectTransform hotspot)
+        {
+            if (hotspot == null || Ftue.Done(Ftue.Studio)) return;
+            var c = Card("studio", null, "mai", null, "TAP A PART TO CHANGE IT",
+                "Hat, face, top, back, pants, shoes. Try anything on for free.", FtueRadio.Size.Normal, 452);
+            c.Chip = "TAP THE TOP";
+            c.ChipAbove = true;
+            c.Target = () => FtueRadio.ScreenRect(hotspot);
+            c.Hand = () => FtueRadio.TapPoint(hotspot);
+            c.Alive = () => Live(hotspot) && !Ftue.Done(Ftue.Studio);
+            c.Modal = true;
+            FtueRadio.Show(c);
+        }
+
         // Horde Call telegraph (mockup U2 05/10): Raptor calls the side, the HUD draws the arrows and
         // the 3-2-1. Not an FTUE step, so it never waits on Ftue flags; it ends itself.
         public static void HordeCall(string side, float seconds)

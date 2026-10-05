@@ -83,7 +83,7 @@ namespace ZombieWar.UI
         {
             base.Awake();
             if (backButton != null) backButton.onClick.AddListener(() => { UIFeedback.Back(); UIManager.Instance?.Pop(); });
-            for (int i = 0; i < hotspots.Length; i++) { int idx = i; if (hotspots[i] != null) hotspots[i].onClick.AddListener(() => SelectSlot(HotspotSlots[idx])); }
+            for (int i = 0; i < hotspots.Length; i++) { int idx = i; if (hotspots[i] != null) hotspots[i].onClick.AddListener(() => { Ftue.Complete(Ftue.Studio); SelectSlot(HotspotSlots[idx]); }); }
             for (int i = 0; i < chips.Length; i++) { int idx = i; if (chips[i] != null) chips[i].onClick.AddListener(() => { if (idx < _groupSlots.Count) SelectSlot(_groupSlots[idx].id); }); }
             for (int i = 0; i < films.Length; i++) { int idx = i; if (films[i]?.button != null) films[i].button.onClick.AddListener(() => Pick(idx)); }
             for (int i = 0; i < looks.Length; i++) { int idx = i; if (looks[i] != null) looks[i].onClick.AddListener(() => WearLook(idx)); }
@@ -97,12 +97,14 @@ namespace ZombieWar.UI
 
         protected override void OnShow()
         {
-            ZombieWar.Audio.RadioDirector.StudioShown();
+            if (Ftue.Done(Ftue.Studio)) ZombieWar.Audio.RadioDirector.StudioShown();   // first visit: Tiger speaks
             _stage = FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
             if (character != null && _stage != null) character.texture = _stage.Texture;
             _slots = catalog != null ? catalog.slotDefinitions.Where(d => !catalog.IsTechnicalCasualSlot(d.id)).OrderBy(d => d.sortOrder).ToList() : new();
             if (catalog != null) PlayerProfile.EnsureValidCostumeLoadout(catalog);
             SelectSlot(_slot);
+            // Hotspot order HEAD, FACE, TOP...: the first visit points at TOP.
+            if (hotspots.Length > 2) FtueV3.Studio(hotspots[2] != null ? hotspots[2].transform as RectTransform : null);
         }
 
         protected override void OnHide() => RestoreOutfit();

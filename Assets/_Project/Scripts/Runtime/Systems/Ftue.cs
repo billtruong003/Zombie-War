@@ -27,6 +27,7 @@ namespace ZombieWar
         public const string Gun = "gun";         // the Arsenal pointed at the first gun to buy
         public const string StarGift = "stars";  // LV5: the equipped gun got the shards for its first star
         public const string FirstPull = "pull1"; // the first free gacha pull ever gave a gun
+        public const string Studio = "studio";   // the first Studio visit: Tiger says tap a part (mockup U4 05/10)
 
         /// <summary>The first time each station kind is met (a callout with its name and use).</summary>
         public static string Station(ZombieWar.Stations.StationKind kind) => StationKeys[(int)kind];
