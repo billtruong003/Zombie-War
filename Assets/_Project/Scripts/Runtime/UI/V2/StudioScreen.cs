@@ -203,19 +203,38 @@ namespace ZombieWar.UI
             }
         }
 
+        // The outline is a second renderer sharing the piece's mesh and bones, with the highlight
+        // material on EVERY submesh (05/10: appended as an extra material it only drew over the
+        // last submesh, so multi-part pieces showed a broken line).
+        SkinnedMeshRenderer _hlCopy;
+
         void StartHighlight(SkinnedMeshRenderer r)
         {
             _hlRenderer = r;
             _hlMat = new Material(highlight) { name = "PieceHighlight (picked)" };
-            var mats = r.sharedMaterials.ToList(); mats.Add(_hlMat); r.sharedMaterials = mats.ToArray();
+            var go = new GameObject("PieceHighlight");
+            go.layer = r.gameObject.layer;
+            go.transform.SetParent(r.transform.parent, false);
+            go.transform.SetLocalPositionAndRotation(r.transform.localPosition, r.transform.localRotation);
+            go.transform.localScale = r.transform.localScale;
+            _hlCopy = go.AddComponent<SkinnedMeshRenderer>();
+            _hlCopy.sharedMesh = r.sharedMesh;
+            _hlCopy.rootBone = r.rootBone;
+            _hlCopy.bones = r.bones;
+            _hlCopy.localBounds = r.localBounds;
+            _hlCopy.updateWhenOffscreen = true;
+            _hlCopy.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _hlCopy.receiveShadows = false;
+            var mats = new Material[Mathf.Max(1, r.sharedMesh != null ? r.sharedMesh.subMeshCount : 1)];
+            for (int i = 0; i < mats.Length; i++) mats[i] = _hlMat;
+            _hlCopy.sharedMaterials = mats;
         }
 
         void StopHighlight()
         {
-            if (_hlRenderer != null && _hlMat != null)
-                _hlRenderer.sharedMaterials = _hlRenderer.sharedMaterials.Where(m => m != _hlMat).ToArray();
+            if (_hlCopy != null) Destroy(_hlCopy.gameObject);
             if (_hlMat != null) Destroy(_hlMat);
-            _hlRenderer = null; _hlMat = null;
+            _hlCopy = null; _hlRenderer = null; _hlMat = null;
         }
 
         void Act()

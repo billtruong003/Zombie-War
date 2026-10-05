@@ -26,14 +26,17 @@ Shader "ZombieWar/PieceHighlight"
             fixed4 _Color;
             float _Width;
 
-            struct appdata { float4 vertex : POSITION; float3 normal : NORMAL; };
+            // TEXCOORD3: one averaged normal per position, baked on import (OutlineNormalsBaker), so the
+            // hull stays closed at hard edges. Meshes without it fall back to their own normals.
+            struct appdata { float4 vertex : POSITION; float3 normal : NORMAL; float3 smooth : TEXCOORD3; };
             struct v2f { float4 pos : SV_POSITION; };
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                float3 n = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.normal));
+                float3 src = dot(v.smooth, v.smooth) > 0.25 ? v.smooth : v.normal;
+                float3 n = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, src));
                 float2 off = normalize(TransformViewToProjection(n.xy) + 1e-5);
                 // Constant on screen: scale by w, and by aspect so it is round, not oval.
                 off.x *= _ScreenParams.y / _ScreenParams.x;
