@@ -70,8 +70,22 @@ namespace ZombieWar.Tests
             for (int d = 0; d < 7; d++) Assert.IsTrue(DailyRewards.Stamp(Day0 + d, out _));
             Assert.IsFalse(DailyRewards.Stamp(Day0 + 6, out _));
             Assert.AreEqual(7, DailyRewards.Stamps);
-            Assert.AreEqual(c0 + 600, PlayerProfile.Coin);   // six plain stamps
-            Assert.AreEqual(g0 + 50, PlayerProfile.Gem);     // day 7 milestone
+            Assert.AreEqual(c0 + 300 + 400, PlayerProfile.Coin);   // days 1 and 3 (owner 05/10: no plain 100-coin days)
+            Assert.AreEqual(g0 + 10 + 50, PlayerProfile.Gem);      // day 6, and the day 7 milestone
+        }
+
+        [Test]
+        public void EveryStampIsWorthTaking_AndTheCardGrows()
+        {
+            for (int d = 1; d <= DailyRewards.CardDays; d++)
+            {
+                var r = DailyRewards.StampReward(d);
+                Assert.IsFalse(r.kind == DailyRewards.Kind.Coin && r.amount <= 100, $"day {d} is a plain 100-coin day");
+                Assert.Greater(r.amount, 0, $"day {d}");
+            }
+            // The same kind pays more in week 4 than in week 1.
+            Assert.Greater(DailyRewards.StampReward(22).amount, DailyRewards.StampReward(1).amount);   // coins
+            Assert.Greater(DailyRewards.StampReward(26).amount, DailyRewards.StampReward(2).amount);   // shards
         }
 
         [Test]

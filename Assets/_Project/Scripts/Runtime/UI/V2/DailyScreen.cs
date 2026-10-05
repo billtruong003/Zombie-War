@@ -107,6 +107,7 @@ namespace ZombieWar.UI
             DailyRewards.Kind.Gem => $"{r.amount:N0} gems",
             DailyRewards.Kind.Ticket => r.amount == 1 ? "1 ticket" : $"{r.amount} tickets",
             DailyRewards.Kind.Gun => "a new gun",
+            DailyRewards.Kind.Shards => $"{r.amount} shards for your gun",
             _ => r.label,
         };
 

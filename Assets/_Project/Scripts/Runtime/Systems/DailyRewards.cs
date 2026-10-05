@@ -15,7 +15,7 @@ namespace ZombieWar
         public const int WelcomeDays = 7, CardDays = 28, MakeUpsPerCycle = 2, MakeUpGemCost = 20;
         public const string StampMasterFrame = "frame.stamp_master";
 
-        public enum Kind { Coin, Gem, Ticket, Gun, Frame }
+        public enum Kind { Coin, Gem, Ticket, Gun, Frame, Shards }
 
         public readonly struct Reward
         {
@@ -26,13 +26,14 @@ namespace ZombieWar
             {
                 Kind.Gun => "Rare gun",
                 Kind.Frame => "Stamp Master frame",
+                Kind.Shards => $"{amount} shards",
                 _ => amount >= 1000 && amount % 1000 == 0 ? $"{amount / 1000}K" : amount.ToString(),
             };
             /// <summary>Icon name in the Layer Lab item icon set.</summary>
             public string Icon => kind switch
             {
                 Kind.Coin => "Money_Coin", Kind.Gem => "Gem_Diamond_Purple", Kind.Ticket => "Ticket_Gold",
-                Kind.Gun => "Chest_Premium", _ => "Medal_Gold_1",
+                Kind.Gun => "Chest_Premium", Kind.Shards => "Chest_Gold", _ => "Medal_Gold_1",
             };
         }
 
@@ -47,13 +48,23 @@ namespace ZombieWar
 
         public static Reward WelcomeReward(int day1to7) => Welcome[Mathf.Clamp(day1to7, 1, WelcomeDays) - 1];
 
+        // Owner 05/10: no more plain 100-coin days. Every stamp is worth taking and the card grows
+        // week by week: coins, shards of the carried gun, tickets and gems. Milestones unchanged.
+        static readonly Reward[] Plain =
+        {
+            new(Kind.Coin, 300), new(Kind.Shards, 5), new(Kind.Coin, 400), new(Kind.Ticket, 1), new(Kind.Shards, 8), new(Kind.Gem, 10),
+            new(Kind.Coin, 500), new(Kind.Shards, 10), new(Kind.Ticket, 1), new(Kind.Gem, 15), new(Kind.Shards, 12), new(Kind.Coin, 600),
+            new(Kind.Shards, 12), new(Kind.Gem, 20), new(Kind.Coin, 800), new(Kind.Ticket, 1), new(Kind.Shards, 15), new(Kind.Gem, 20),
+            new(Kind.Coin, 1000), new(Kind.Shards, 15), new(Kind.Ticket, 2), new(Kind.Gem, 25), new(Kind.Shards, 20), new(Kind.Gem, 30),
+        };
+
         public static Reward StampReward(int stamp1to28) => stamp1to28 switch
         {
             7 => new Reward(Kind.Gem, 50),
             14 => new Reward(Kind.Ticket, 3),
             21 => new Reward(Kind.Gem, 40),
             28 => new Reward(Kind.Frame, 1),
-            _ => new Reward(Kind.Coin, 100),
+            _ => Plain[Mathf.Clamp(stamp1to28 - 1 - (stamp1to28 - 1) / 7, 0, Plain.Length - 1)],
         };
 
         public static bool IsMilestone(int stamp) => stamp % 7 == 0;
@@ -161,6 +172,7 @@ namespace ZombieWar
                 case Kind.Gem: PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, r.amount); break;
                 case Kind.Ticket: PlayerProfile.AddTickets(r.amount); break;
                 case Kind.Frame: PlayerProfile.AddFrame(StampMasterFrame); break;
+                case Kind.Shards: PlayerProfile.AddWeaponShards(PlayerProfile.EquippedWeaponId, r.amount); break;
                 case Kind.Gun:
                     var gun = WelcomeGun();
                     if (gun != null) PlayerProfile.AddOwnedWeapon(gun.WeaponId);
