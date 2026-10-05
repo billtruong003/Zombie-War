@@ -246,8 +246,13 @@ namespace ZombieWar
             SpawnMuzzleFlash(data, muzzlePosition, muzzleForward);
 
             PlayFireAudio(data);
-            ApplyRecoil(data);
-            ShakeCamera(cameraShakeOnFire);
+            // 05/10 owner: a fast gun (Vector at 20 shots/s, more with Fire Rate) stacked recoil and
+            // shake every shot until the view was unbearable. Both now scale with the shot interval,
+            // so a gun kicks the same amount per SECOND whatever its rate, and firing alone never
+            // shakes the camera past a small ceiling (hits and blasts still can).
+            float rateScale = FireFeelScale(ShotInterval(data));
+            ApplyRecoil(data, rateScale);
+            ShakeCamera(cameraShakeOnFire * rateScale, FireShakeCeiling);
             return true;
         }
 
@@ -313,12 +318,22 @@ namespace ZombieWar
 
         // Screen shake is what actually reads as "recoil" in 3rd-person; the gun-mount spring is
         // largely cancelled by the hand IK chasing the grips. Camera lookup is cached.
-        private void ShakeCamera(float amount)
+        private void ShakeCamera(float amount, float ceiling = 1f)
         {
             if (amount <= 0f) return;
             if (_cameraFollow == null && Camera.main != null)
                 Camera.main.TryGetComponent(out _cameraFollow);
-            if (_cameraFollow != null) _cameraFollow.Shake(amount);
+            if (_cameraFollow != null) _cameraFollow.Shake(amount, ceiling);
         }
+
+        /// <summary>Shots per second at which recoil and shake are felt at full strength per shot.</summary>
+        public const float FullFeelShotsPerSecond = 5f;
+        /// <summary>Most camera trauma that firing alone can build (offset = trauma^2 x max).</summary>
+        public const float FireShakeCeiling = 0.35f;
+
+        /// <summary>Per-shot recoil and shake multiplier: 1 up to 5 shots/s, then shrinking so the
+        /// kick per second stays constant.</summary>
+        public static float FireFeelScale(float shotInterval) =>
+            shotInterval <= 0f || float.IsInfinity(shotInterval) ? 1f : Mathf.Min(1f, shotInterval * FullFeelShotsPerSecond);
     }
 }

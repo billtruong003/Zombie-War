@@ -59,6 +59,17 @@ namespace ZombieWar
             if (number != null) number.Show(amount, crit);
         }
 
+        /// <summary>A pickup label above the player (05/10: nothing said what was picked up).
+        /// Never throttled - pickups are rare compared with hits.</summary>
+        public static void SpawnLabel(string label, Color color, Vector3 position)
+        {
+            var prefab = ResolvePrefab();
+            if (prefab == null || Bill.Pool == null) return;
+            Bill.Pool.Register(PoolKey, prefab.gameObject, WarmCount);
+            var number = Bill.Pool.Spawn<DamageNumber>(PoolKey, position, Quaternion.identity);
+            if (number != null) number.ShowLabel(label, color);
+        }
+
         private static DamageNumber ResolvePrefab()
         {
             if (_loadAttempted) return _prefab;

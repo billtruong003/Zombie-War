@@ -362,7 +362,7 @@ namespace ZombieWar
         // Recoil = 1 impulse day vao spring tren recoilPivot. Spring (UpdateRecoilSpring) tu keo
         // ve rest. Grip nam tren mount nen tay IK bam theo => tay rung cung sung. Duong dan KHONG
         // bi anh huong (raycast doc lap). Recoil = HAT LEN (pitch) + LECH TRAI/PHAI ngau nhien (yaw).
-        private void ApplyRecoil(WeaponData data)
+        private void ApplyRecoil(WeaponData data, float scale = 1f)
         {
             if (recoilPivot == null) return;
 
@@ -373,7 +373,7 @@ namespace ZombieWar
             Vector2 noise = NoiseTextureSampler.Sample(recoilNoiseTexture, _recoilNoisePhase, _recoilNoiseSeed);
             float side = Mathf.Abs(noise.x) > 0.0001f ? noise.x : (_recoilNoisePhase * 2f - 1f);
 
-            float inv = 1f / Mathf.Max(0.01f, data.recoilKickDuration);
+            float inv = scale / Mathf.Max(0.01f, data.recoilKickDuration);
 
             // Giat lui theo -Z.
             _recoilPosVel += new Vector3(0f, 0f, -data.recoilKickDistance) * inv;

@@ -144,7 +144,9 @@ Shader "HordeCall/Env/Foliage"
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                ZW_SeeThroughClip(input.positionWS, input.positionCS);
+                // 05/10 owner: grass, flowers and low bushes bend around the player instead of
+                // fading; only what stands tall enough to hide them (a canopy) still thins out.
+                if (input.positionWS.y > _ZW_SeeThrough.y + 1.2) ZW_SeeThroughClip(input.positionWS, input.positionCS);
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 clip(albedo.a - _Cutoff);
                 albedo.rgb *= _BaseColor.rgb * input.color.rgb * _TintScale;
@@ -186,7 +188,7 @@ Shader "HordeCall/Env/Foliage"
             #pragma fragment DF
             struct V { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 n : TEXCOORD1; float3 w : TEXCOORD2; };
             V DV(Attributes i) { V o; float3 d = Displace(i.positionOS.xyz, i.color.a, i.windData); o.pos = TransformObjectToHClip(d); o.w = TransformObjectToWorld(d); o.uv = i.uv; o.n = TransformObjectToWorldNormal(i.normalOS); return o; }
-            half4 DF(V i) : SV_Target { ZW_SeeThroughClip(i.w, i.pos); clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a - _Cutoff); return half4(NormalizeNormalPerPixel(i.n), 0); }
+            half4 DF(V i) : SV_Target { if (i.w.y > _ZW_SeeThrough.y + 1.2) ZW_SeeThroughClip(i.w, i.pos); clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a - _Cutoff); return half4(NormalizeNormalPerPixel(i.n), 0); }
             ENDHLSL
         }
     }

@@ -76,9 +76,14 @@ namespace ZombieWar
         public Vector3 Offset => offset;
         public Vector3 LookEuler => lookEulerAngles;
 
-        public void Shake(float amount)
+        public void Shake(float amount) => Shake(amount, 1f);
+
+        /// <summary>Adds trauma, but never past <paramref name="ceiling"/> (a source that may only
+        /// shake a little, like sustained fire, cannot pile up to the full shake).</summary>
+        public void Shake(float amount, float ceiling)
         {
-            _trauma = Mathf.Clamp01(_trauma + amount);
+            if (_trauma >= ceiling) return;
+            _trauma = Mathf.Min(Mathf.Clamp01(ceiling), _trauma + amount);
         }
 
         // ONE authoritative base pose, with shake composed on top of it each frame.

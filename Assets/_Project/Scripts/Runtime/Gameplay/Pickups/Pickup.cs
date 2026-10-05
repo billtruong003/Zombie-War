@@ -234,6 +234,24 @@ namespace ZombieWar
                 Collect();
         }
 
+        /// <summary>05/10 owner: the map is chaos, so every item says what it was over the player's
+        /// head. XP orbs and coins stay silent (their sound is enough).</summary>
+        void AnnounceCollected()
+        {
+            string label = effect switch
+            {
+                PickupEffect.Health => $"+{Mathf.RoundToInt(healAmount)} HP",
+                PickupEffect.Magnet => "MAGNET!",
+                PickupEffect.Bomb => "BOMB!",
+                PickupEffect.Freeze => "FREEZE!",
+                PickupEffect.Chest => "CHEST!",
+                _ => _kind == PlayerProfile.CurrencyKind.Gem ? $"+{_amount} GEM" : null,
+            };
+            var player = PlayerMovement.Instance;
+            if (label == null || player == null) return;
+            DamageNumberSpawner.SpawnLabel(label, BeamColour() * 0.75f + Color.white * 0.25f, player.transform.position + Vector3.up * 2.6f);
+        }
+
         private void Collect()
         {
             if (_collected) return;
@@ -278,6 +296,7 @@ namespace ZombieWar
             }
 
             Bill.Events?.Fire(new PickupCollectedEvent(_kind, _amount, effect));
+            AnnounceCollected();
 
             if (!string.IsNullOrEmpty(_poolKey) && Bill.Pool != null) Bill.Pool.Return(gameObject);
             else gameObject.SetActive(false);

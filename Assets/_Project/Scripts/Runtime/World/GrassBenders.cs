@@ -21,7 +21,7 @@ namespace ZombieWar.World
         static readonly float[] Dist = new float[Max];
         static GrassBenders _runner;
 
-        public static float PlayerRadius = 1.1f;
+        public static float PlayerRadius = 1.4f;   // 05/10: wider so grass visibly parts around the player (it no longer fades)
 
         /// The walkers sent to the shaders last frame (position, radius), the player first: snow
         /// trails press the same feet into the snow.

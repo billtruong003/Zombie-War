@@ -76,6 +76,7 @@ namespace ZombieWar
             Instance = this;
             EnsureMagnetRegistered();
             if (!TryGetComponent<SupplyCrates>(out _)) gameObject.AddComponent<SupplyCrates>();
+            if (!TryGetComponent<FootDust>(out _)) gameObject.AddComponent<FootDust>();
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
         }
 

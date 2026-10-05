@@ -75,6 +75,21 @@ namespace ZombieWar
             FaceCamera();
         }
 
+        /// <summary>05/10: a word instead of a number - what the player just picked up ("+20 HP",
+        /// "MAGNET"), bigger and slower so it reads over the chaos.</summary>
+        public void ShowLabel(string label, Color color)
+        {
+            CacheRefs();
+            _elapsed = 0f;
+            _text.SetText(label);
+            _text.color = color;
+            _text.alpha = 1f;
+            _targetScale = critScale * 1.15f;
+            _velocity = new Vector3(0f, riseSpeed * 0.8f, 0f);
+            _tf.localScale = Vector3.zero;
+            FaceCamera();
+        }
+
         private void Update()
         {
             float dt = Time.deltaTime;
