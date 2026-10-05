@@ -99,6 +99,9 @@ namespace ZombieWar
             public int missionDayKey;
             public int missionWeekKey;
             public int passXp;
+            // Daily Ops chest (05/10): the game day it was last opened and the streak of days in a row.
+            public int dailyChestDay;
+            public int dailyStreak;
             // M9 account level (AccountProgress turns XP into a level and feature gates).
             public int accountXp;
             // M10 Profile: a display name and a stable 8-digit player id (made on first load).
@@ -156,6 +159,8 @@ namespace ZombieWar
         {
             public string missionId;
             public int amount;
+            /// <summary>The gun carried when progress was last made: Daily Ops pay its shards.</summary>
+            public string weaponId;
         }
 
         /// Vi tien doi (mua sung/costume o slice sau se nghe event nay de refresh so du).

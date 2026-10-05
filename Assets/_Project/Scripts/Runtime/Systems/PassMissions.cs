@@ -82,6 +82,8 @@ namespace ZombieWar
 
         public static PassMission Find(string id)
         {
+            var op = DailyOps.Decode(id);   // Daily Ops ids describe themselves
+            if (op != null) return op;
             for (int i = 0; i < All.Count; i++)
                 if (All[i].id == id) return All[i];
             return null;
@@ -101,7 +103,9 @@ namespace ZombieWar
         public static List<PassMission> ActiveFor(DateTime utcNow)
         {
             var result = new List<PassMission>(DailyCount + WeeklyCount);
-            result.AddRange(Rotate(MissionScope.Daily, DayKey(utcNow), DailyCount));
+            // Daily Ops (05/10) replace the old daily rotation: gun missions for owned families.
+            result.AddRange(DailyOps.For(DayKey(utcNow), DailyOps.SeedFor(PlayerProfile.PlayerId),
+                                         OwnedFamilies(), PlayerProfile.AccountLevel));
             result.AddRange(Rotate(MissionScope.Weekly, WeekKey(utcNow), WeeklyCount));
             return result;
         }
@@ -120,6 +124,40 @@ namespace ZombieWar
                 return c != 0 ? c : a.scope.CompareTo(b.scope);
             });
             return list;
+        }
+
+        /// <summary>Gun families the player owns (catalog lookup); tests can replace it.</summary>
+        public static Func<IReadOnlyList<WeaponClass>> OwnedFamiliesProvider;
+
+        static IReadOnlyList<WeaponClass> OwnedFamilies()
+        {
+            if (OwnedFamiliesProvider != null) return OwnedFamiliesProvider();
+            var list = new List<WeaponClass>();
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            if (all == null) return list;
+            foreach (var id in PlayerProfile.OwnedWeaponIds)
+            {
+                var w = LoadoutState.Resolve(id, all);
+                if (w != null && !list.Contains(w.weaponClass)) list.Add(w.weaponClass);
+            }
+            var equipped = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all);
+            if (equipped != null && !list.Contains(equipped.weaponClass)) list.Add(equipped.weaponClass);
+            return list;
+        }
+
+        /// <summary>The family of the gun the player carries now, or null when unknown.</summary>
+        public static WeaponClass? CarriedFamily()
+        {
+            var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+            var w = all != null ? LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, all) : null;
+            return w != null ? w.weaponClass : (WeaponClass?)null;
+        }
+
+        /// <summary>Whether progress made with <paramref name="carried"/> counts for this mission.</summary>
+        public static bool CountsWith(PassMission m, WeaponClass? carried)
+        {
+            var need = DailyOps.FamilyOf(m);
+            return !need.HasValue || (carried.HasValue && carried.Value == need.Value);
         }
 
         static int Rank(PassMission m) =>

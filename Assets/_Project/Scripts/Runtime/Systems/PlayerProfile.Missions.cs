@@ -88,12 +88,12 @@ namespace ZombieWar
             for (int i = 0; i < Data.missionProgress.Count; i++)
             {
                 if (Data.missionProgress[i].missionId != missionId) continue;
-                Data.missionProgress[i] = new MissionProgressEntry { missionId = missionId, amount = next };
+                Data.missionProgress[i] = new MissionProgressEntry { missionId = missionId, amount = next, weaponId = Data.weapon };
                 found = true;
                 break;
             }
             if (!found)
-                Data.missionProgress.Add(new MissionProgressEntry { missionId = missionId, amount = next });
+                Data.missionProgress.Add(new MissionProgressEntry { missionId = missionId, amount = next, weaponId = Data.weapon });
 
             MarkDirty();   // per kill: coalesced, not a disk write per zombie
             Notify(Change.Missions);
@@ -117,9 +117,23 @@ namespace ZombieWar
             SaveNow();
 
             if (mission.coinReward > 0) Add(CurrencyKind.Coin, mission.coinReward);
+            // Daily Ops: 5 shards of the gun that finished it (owner 05/10: play a gun, it grows).
+            if (mission is DailyOps.DailyOp)
+            {
+                string gun = MissionGun(missionId);
+                AddWeaponShards(string.IsNullOrEmpty(gun) ? Data.weapon : gun, DailyOps.ShardsPerMission);
+            }
 
             Notify(Change.Missions);
             return true;
+        }
+
+        /// <summary>The gun carried when the mission last moved (its shard reward goes there).</summary>
+        public static string MissionGun(string missionId)
+        {
+            for (int i = 0; i < Data.missionProgress.Count; i++)
+                if (Data.missionProgress[i].missionId == missionId) return Data.missionProgress[i].weaponId;
+            return null;
         }
 
         /// Xoa tien do Pass. Chi dung cho test/dev.

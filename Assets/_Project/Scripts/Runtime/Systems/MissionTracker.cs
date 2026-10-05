@@ -97,17 +97,19 @@ namespace ZombieWar
         {
             if (amount <= 0) return;
             EnsureActiveSet();
+            var carried = PassMissions.CarriedFamily();
             for (int i = 0; i < _active.Count; i++)
-                if (_active[i].metric == metric)
+                if (_active[i].metric == metric && PassMissions.CountsWith(_active[i], carried))
                     PlayerProfile.AddMissionProgress(_active[i].id, amount);
         }
 
         private void RaiseTo(MissionMetric metric, int value)
         {
             EnsureActiveSet();
+            var carried = PassMissions.CarriedFamily();
             for (int i = 0; i < _active.Count; i++)
             {
-                if (_active[i].metric != metric) continue;
+                if (_active[i].metric != metric || !PassMissions.CountsWith(_active[i], carried)) continue;
                 int current = PlayerProfile.GetMissionProgress(_active[i].id);
                 if (value > current) PlayerProfile.AddMissionProgress(_active[i].id, value - current);
             }
@@ -118,8 +120,9 @@ namespace ZombieWar
         private static void ReportStatic(MissionMetric metric, int amount)
         {
             if (amount <= 0) return;
+            var carried = PassMissions.CarriedFamily();
             foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
-                if (m.metric == metric)
+                if (m.metric == metric && PassMissions.CountsWith(m, carried))
                     PlayerProfile.AddMissionProgress(m.id, amount);
         }
     }
