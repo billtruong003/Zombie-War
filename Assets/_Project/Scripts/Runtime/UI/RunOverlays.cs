@@ -166,6 +166,7 @@ namespace ZombieWar
             // Radio subtitles hide while any of these is up (owner decision 04/10).
             foreach (var m in new[] { pauseRoot, confirmRoot, settingsRoot, levelUpRoot, ChestRoot }) FtueRadio.RegisterModal(m);
             foreach (var m in new[] { pauseRoot, confirmRoot, settingsRoot }) FtueRadio.RegisterBlocker(m);
+            foreach (var m in new[] { levelUpRoot, ChestRoot }) FtueRadio.RegisterBlocker(m, hard: false);
 
             Show(ftueRoot, false);   // the v2 move overlay (prefab) stays hidden; the radio draws the step
             if (!Ftue.Done(Ftue.Move))

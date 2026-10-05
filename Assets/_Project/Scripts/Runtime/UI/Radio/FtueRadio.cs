@@ -121,20 +121,24 @@ namespace ZombieWar.UI
         // Screens that cover the run completely (pause, settings, quit confirm): the whole radio,
         // step card, corners and hand included, waits behind them (QA 05/10: the move card sat on
         // top of the pause menu).
-        static readonly List<GameObject> Blockers = new();
+        // A soft blocker (level-up, chest) hides only in-run steps: the modal steps that point at
+        // that very screen (first card, first chest) stay. A hard one hides everything.
+        static readonly List<(GameObject root, bool hard)> Blockers = new();
 
-        public static void RegisterBlocker(GameObject root)
+        public static void RegisterBlocker(GameObject root, bool hard = true)
         {
-            if (root != null && !Blockers.Contains(root)) Blockers.Add(root);
+            if (root == null) return;
+            for (int i = 0; i < Blockers.Count; i++) if (Blockers[i].root == root) return;
+            Blockers.Add((root, hard));
         }
 
-        static bool AnyBlockerOpen()
+        static bool AnyBlockerOpen(bool modalCall)
         {
             for (int i = Blockers.Count - 1; i >= 0; i--)
             {
-                var m = Blockers[i];
+                var (m, hard) = Blockers[i];
                 if (m == null) { Blockers.RemoveAt(i); continue; }
-                if (m.activeInHierarchy) return true;
+                if (m.activeInHierarchy && (hard || !modalCall)) return true;
             }
             return false;
         }
@@ -366,7 +370,7 @@ namespace ZombieWar.UI
             }
             if (_call != null) { ReleaseWaitingCard(); Track(_call); }
 
-            bool blocked = AnyBlockerOpen();
+            bool blocked = AnyBlockerOpen(_call != null && _call.Modal);
             if (_rootGroup == null && blocked) _rootGroup = Group(this);
             if (_rootGroup != null)
             {
