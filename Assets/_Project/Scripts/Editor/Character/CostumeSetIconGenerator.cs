@@ -31,7 +31,8 @@ namespace ZombieWar.Editor
             Directory.CreateDirectory(OutputDir);
             Directory.CreateDirectory(Path.GetDirectoryName(AuditPath));
 
-            GameObject inst = null, camGo = null, keyGo = null, fillGo = null;
+            GameObject inst = null, camGo = null;
+            ZombieWar.EditorTools.IconLighting lighting = null;
             RenderTexture rt = null;
             try
             {
@@ -46,8 +47,8 @@ namespace ZombieWar.Editor
                 foreach (var r in inst.GetComponentsInChildren<Renderer>(true))
                     if (!r.gameObject.name.StartsWith("Costume_", StringComparison.Ordinal)) r.enabled = false;
 
-                keyGo = Light("SetIconKey", new Vector3(28, 145, 0), 1.15f);
-                fillGo = Light("SetIconFill", new Vector3(10, -25, 0), .5f);
+                // 05/10: three-quarter front key, rim and flat ambient (IconLighting), aimed per shot.
+                lighting = new ZombieWar.EditorTools.IconLighting();
                 camGo = new GameObject("SetIconCamera");
                 var cam = camGo.AddComponent<Camera>();
                 cam.clearFlags = CameraClearFlags.SolidColor;
@@ -85,19 +86,13 @@ namespace ZombieWar.Editor
                     Vector3 target = b.center + Vector3.up * b.size.y * .03f;
                     float extent = Mathf.Max(b.size.y, b.size.x * 1.35f) * 1.13f;
                     float dist = extent * .5f / Mathf.Tan(cam.fieldOfView * .5f * Mathf.Deg2Rad);
-                    // The idle turns the body; frame the character from where it actually faces.
-                    Vector3 facing = Vector3.forward;
-                    var lArm = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftUpperArm) : null;
-                    var rArm = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightUpperArm) : null;
-                    if (lArm != null && rArm != null)
-                    {
-                        // Facing is square to the shoulder line (left to right, turned a quarter).
-                        var across = rArm.position - lArm.position; across.y = 0f;
-                        if (across.sqrMagnitude > 1e-4f) facing = Vector3.Cross(across.normalized, Vector3.up);
-                    }
-                    Vector3 dir = Quaternion.LookRotation(facing) * (Quaternion.Euler(-2, 10, 0) * Vector3.forward);
+                    // 05/10 owner: the shoulder line of the idle pose framed most sets almost side-on
+                    // with the face away from the light. With the idle sampled the character faces +X
+                    // here (measured from the renders), so the camera sits there, turned 15 degrees.
+                    Vector3 dir = Quaternion.Euler(-4, 75, 0) * Vector3.forward;
                     cam.transform.position = target + dir * dist;
                     cam.transform.LookAt(target);
+                    lighting.Aim(cam.transform);
                     string path = $"{OutputDir}/{set.setId}.png";
                     Render(cam, path);
                     audit.AppendLine($"{set.setId}\t{set.displayName}\t{set.rarity}\t{set.gemPrice} Gem\t{set.sourcePreset}\t{string.Join(",", set.itemIds)}");
@@ -109,8 +104,7 @@ namespace ZombieWar.Editor
                 if (AnimationMode.InAnimationMode()) AnimationMode.StopAnimationMode();
                 if (rt != null) { rt.Release(); UnityEngine.Object.DestroyImmediate(rt); }
                 if (camGo != null) UnityEngine.Object.DestroyImmediate(camGo);
-                if (keyGo != null) UnityEngine.Object.DestroyImmediate(keyGo);
-                if (fillGo != null) UnityEngine.Object.DestroyImmediate(fillGo);
+                lighting?.Dispose();
                 if (inst != null) UnityEngine.Object.DestroyImmediate(inst);
             }
 
