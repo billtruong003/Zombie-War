@@ -270,7 +270,12 @@ namespace ZombieWar.UI
             _lastY = c.Y; _lastAt = Time.unscaledTime;
             if (_subGroup != null) _subGroup.alpha = 0f;   // the step card replaces any subtitle
             _subUntil = 0f;
-            if (chipText != null) chipText.text = c.Chip ?? "";
+            if (chipText != null)
+            {
+                chipText.text = c.Chip ?? "";
+                // A tag as wide as its word: the fixed 420 px bar ran past the level-up card (QA #6).
+                if (chip != null) chip.sizeDelta = new Vector2(Mathf.Max(140f, chipText.GetPreferredValues(chipText.text).x + 48f), chip.sizeDelta.y);
+            }
         }
 
         static bool Alive(Call c)

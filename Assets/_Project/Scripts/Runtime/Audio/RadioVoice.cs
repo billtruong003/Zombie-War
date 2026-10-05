@@ -117,6 +117,7 @@ namespace ZombieWar.Audio
 
         static void Enqueue(List<string> lines, Priority priority)
         {
+            if (!Application.isPlaying) return;   // edit-mode tests reach profile events that speak
             var v = Instance;
             for (int i = lines.Count - 1; i >= 0; i--)
                 if (string.IsNullOrEmpty(lines[i]) || v._current == lines[i] || v.IsQueued(lines[i])) lines.RemoveAt(i);
@@ -163,7 +164,7 @@ namespace ZombieWar.Audio
         /// <paramref name="stillNeeded"/> still holds (a nudge for a player who has not acted).</summary>
         public static void Nudge(string id, float seconds, Func<bool> stillNeeded)
         {
-            if (Said(id)) return;
+            if (Said(id) || !Application.isPlaying) return;
             var v = Instance;
             v.StartTimer(id, v.CoNudge(id, seconds, stillNeeded));
         }
@@ -194,6 +195,7 @@ namespace ZombieWar.Audio
         /// <param name="key">Timers with the same key replace each other.</param>
         public static void After(string key, float seconds, Func<bool> stillNeeded, Action act)
         {
+            if (!Application.isPlaying) return;
             var v = Instance;
             v.StartTimer(key, v.CoAfter(seconds, stillNeeded, act));
         }

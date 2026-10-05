@@ -601,18 +601,22 @@ namespace ZombieWar.EditorTools.V2
         /// heights, so rows hidden at runtime close their gap.</summary>
         /// Scrolls vertically: the mockups are 390x844 (19.5:9) and a 16:9 phone is shorter, so a
         /// tall page must scroll rather than clip. Returns the content column.
+        public static readonly int PageSoftness = Mathf.RoundToInt(Px(12));
+
         public static RectTransform Page(RectTransform safe, float top, float bottom = 0)
         {
             var view = Fill(Node(safe, "Page"), 0, top, 0, bottom);
             Flat(view, new Color(0, 0, 0, 0), true);
-            view.gameObject.AddComponent<RectMask2D>();
+            // Soft edges (QA #6: a card cut flat at the page edge read as a layout bug); the top
+            // padding matches so the first card starts clear of the fade.
+            view.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(0, PageSoftness);
             var content = Node(view, "Content");
             content.anchorMin = new Vector2(0, 1); content.anchorMax = new Vector2(1, 1); content.pivot = new Vector2(0.5f, 1);
             content.offsetMin = content.offsetMax = Vector2.zero;
             var col = Column(content, 0);
             col.childForceExpandWidth = true;
             int side = Mathf.RoundToInt(Px(14));
-            col.padding = new RectOffset(side, side, 0, side);
+            col.padding = new RectOffset(side, side, PageSoftness, side);
             content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             var sr = view.gameObject.AddComponent<ScrollRect>();
             sr.content = content; sr.viewport = view; sr.horizontal = false; sr.vertical = true;

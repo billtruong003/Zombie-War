@@ -333,6 +333,13 @@ namespace ZombieWar.UI
             return main != null && weaponIcons != null ? weaponIcons.GetWeaponIcon(main, true) : null;
         }
 
+        static string TwoLines(string title)
+        {
+            if (string.IsNullOrEmpty(title) || title.Contains('\n')) return title;
+            int at = title.LastIndexOf(' ');
+            return at > 0 ? title.Substring(0, at) + "\n" + title.Substring(at + 1) : title;
+        }
+
         Sprite RateSprite(GachaBanners.Rate rate, int index)
         {
             var bn = B;
@@ -495,7 +502,8 @@ namespace ZombieWar.UI
             if (pityBar != null && pityBar.TryGetComponent<Image>(out var pityFill)) pityFill.color = glow;
             int daysLeft = GachaBanners.DaysLeft(bn, today);
             if (bannerTimer != null) bannerTimer.text = evt ? $"EVENT BANNER · ENDS IN {daysLeft}D" : daysLeft < 0 ? "PERMANENT BANNER" : $"OUTFIT BANNER · ENDS IN {daysLeft}D";
-            if (bannerTitle != null) bannerTitle.text = evt ? bn.title : bn.kind == GachaBanners.Kind.Shards ? "GUN\nSHARDS" : "STREET\nSTYLE";
+            // Two lines on the left like the mockup: one long line runs into the gun art (QA #6).
+            if (bannerTitle != null) bannerTitle.text = evt ? TwoLines(bn.title) : bn.kind == GachaBanners.Kind.Shards ? "GUN\nSHARDS" : "STREET\nSTYLE";
             var skin = evt ? Skins.WeaponSkins.Find(bn.featuredSkin) : null;
             if (featuredTag != null) featuredTag.text = evt ? $"FEATURED · {skin?.name.ToUpperInvariant()} SKIN SET" : bn.kind == GachaBanners.Kind.Shards ? "EVERY GUN · DUPES GIVE SHARDS" : "OUTFIT SETS";
             if (featuredSub != null) featuredSub.text = evt ? $"+{Skins.WeaponSkins.DamageBonus(skin) * 100f:0}% damage on any gun · only here" : bn.kind == GachaBanners.Kind.Shards ? "Shards buy stars in the Arsenal" : "Wear them in the Studio";
