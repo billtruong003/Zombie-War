@@ -46,8 +46,11 @@ namespace ZombieWar
                 {
                     var def = SkillCatalogDefs.ById(kv.Key);
                     if (def == null || kv.Value <= 0 || def.IsEvolution) continue;
-                    (def.layer == SkillLayer.Autonomous ? _powers : _passives).Add(def);
+                    // HUD 05/10: the grid is the six Skill slots (powers and gun cards alike); the
+                    // four stats live in the pause build panel.
+                    (def.Slot == SkillSlot.Skill ? _powers : _passives).Add(def);
                 }
+                _powers.Sort(PauseBuildView.CatalogOrder);
                 // Stats first: they are the four fixed slots. Gun cards follow.
                 _passives.Sort((a, b) => (a.layer == SkillLayer.Stat ? 0 : 1).CompareTo(b.layer == SkillLayer.Stat ? 0 : 1));
             }

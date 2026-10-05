@@ -118,6 +118,29 @@ namespace ZombieWar.UI
             if (root != null && !Modals.Contains(root)) Modals.Add(root);
         }
 
+        // Screens that cover the run completely (pause, settings, quit confirm): the whole radio,
+        // step card, corners and hand included, waits behind them (QA 05/10: the move card sat on
+        // top of the pause menu).
+        static readonly List<GameObject> Blockers = new();
+
+        public static void RegisterBlocker(GameObject root)
+        {
+            if (root != null && !Blockers.Contains(root)) Blockers.Add(root);
+        }
+
+        static bool AnyBlockerOpen()
+        {
+            for (int i = Blockers.Count - 1; i >= 0; i--)
+            {
+                var m = Blockers[i];
+                if (m == null) { Blockers.RemoveAt(i); continue; }
+                if (m.activeInHierarchy) return true;
+            }
+            return false;
+        }
+
+        CanvasGroup _rootGroup;
+
         static bool AnyModalOpen()
         {
             for (int i = Modals.Count - 1; i >= 0; i--)
@@ -342,6 +365,14 @@ namespace ZombieWar.UI
                 if (_subGroup.alpha != to) _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, to, dt);
             }
             if (_call != null) { ReleaseWaitingCard(); Track(_call); }
+
+            bool blocked = AnyBlockerOpen();
+            if (_rootGroup == null && blocked) _rootGroup = Group(this);
+            if (_rootGroup != null)
+            {
+                _rootGroup.alpha = blocked ? 0f : 1f;
+                _rootGroup.blocksRaycasts = !blocked;
+            }
         }
 
         void Track(Call c)
