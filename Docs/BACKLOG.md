@@ -25,9 +25,9 @@ Tạm bỏ qua build. Chạy liền một mạch, chỉ dừng ở chỗ ghi **D
 1. **1b Lồng tiếng** — xong 05/10 đêm. Gen xong → **DỪNG** chờ owner chọn bản → áp giọng vào game → chạy tiếp không dừng:
 2. **Đợt 4** — xong 06/10 (aca35c4f2, báo cáo `Review/QA/botlab_1006.md`); còn #36 chờ mockup, #38 chờ owner (lab bot, cân bằng, kinh tế, cảm giác thưởng, plan chế độ chơi #28b)
 3. **Súng và kinh tế** — phần logic xong 06/10 (3a đổi mảnh, Daily Ops từng khẩu, 5 thành tựu sưu tập, module hòm súng `GunCrates`, thông thạo → Arsenal); giao diện 3b/3c chờ mockup (`Docs/Plans/UI_MOCKUPS_NEEDED_1006.md`)
-4. **Đợt 5 Boss** ← *đang làm*
-5. **Đợt 7 Art, VFX, âm thanh**
-6. **DỪNG**: trao đổi kỹ thuật với owner. Owner có VPS, muốn một backend làm data server host trên VPS.
+4. **Đợt 5 Boss** — lab xong 06/10 (e4409cdb0, `Review/QA/bosslab_1006.md`), chờ owner chọn vòng rào / tường / màu / đám đông rồi mới tích hợp #40–#44
+5. **Đợt 7** — xong phần tự làm 06/10 (âm thanh 132/136 cue, kiểm VFX, `Review/QA/round7_1006.md`); chờ owner chấm 42 VFX, chọn màu viền, chọn fps VAT
+6. **DỪNG** ← *đang ở đây (06/10)*: trao đổi kỹ thuật với owner. Owner có VPS, muốn một backend làm data server host trên VPS.
 7. **Đợt 8 SDK/store + bản địa hoá**
 8. **Build kiểm trên máy + Đợt 9 dọn dẹp, hiệu năng**
 9. **Sau launch** (mục 10)
