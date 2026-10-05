@@ -37,6 +37,18 @@ namespace ZombieWar
             public int count;
         }
 
+        /// <summary>One gun's lifetime run stats (backlog #18). Mastery XP lives here too (#21).</summary>
+        [Serializable]
+        public struct GunStatEntry
+        {
+            public string weaponId;
+            public int runs;
+            public long kills;
+            public float seconds;
+            public long bestScore;
+            public int masteryXp;
+        }
+
         [Serializable]
         public struct GachaPityEntry
         {
@@ -76,6 +88,7 @@ namespace ZombieWar
             // Giu cho phase Upgrades — persist duoc ngay tu v1 de khoi phai migrate schema sau.
             public List<WeaponUpgradeEntry> weaponUpgrades = new();
             public List<WeaponShardEntry> weaponShards = new();
+            public List<GunStatEntry> gunStats = new();
             // Endless-run personal best (seconds survived in one run).
             public float bestSurvivalSeconds;
             // Battle Pass. Progress is keyed by mission ID; the reset keys record which UTC

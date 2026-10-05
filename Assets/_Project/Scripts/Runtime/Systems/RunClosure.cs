@@ -72,6 +72,7 @@ namespace ZombieWar
                 record = PlayerProfile.RecordSurvival(summary.Duration);
                 scoreRecord = PlayerProfile.RecordScore(summary.Score);
                 PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
+                PlayerProfile.RecordGunRun(PlayerProfile.EquippedWeaponId, summary.Kills, summary.Duration, summary.Score);
                 levels = PlayerProfile.AddAccountXp(xp);
             });
             PlayerProfile.FlushIfDirty();

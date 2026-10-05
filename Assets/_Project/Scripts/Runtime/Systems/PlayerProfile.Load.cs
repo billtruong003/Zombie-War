@@ -19,6 +19,7 @@ namespace ZombieWar
             d.equippedParts ??= new List<LoadoutState.PartSel>();
             d.weaponUpgrades ??= new List<WeaponUpgradeEntry>();
             d.weaponShards ??= new List<WeaponShardEntry>();
+            d.gunStats ??= new List<GunStatEntry>();
             d.ownedBodyColors = DedupeNonEmpty(d.ownedBodyColors);
             d.ownedBodyEars = DedupeNonEmpty(d.ownedBodyEars);
             d.gachaPity ??= new List<GachaPityEntry>();

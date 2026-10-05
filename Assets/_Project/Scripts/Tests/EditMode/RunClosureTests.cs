@@ -144,5 +144,45 @@ namespace ZombieWar.Tests
             Assert.IsFalse(RunClosure.Close(null, RunOutcome.Died).Closed);
             Assert.IsFalse(RunClosure.Close(BeginRunWorth(0), RunOutcome.InProgress).Closed);
         }
+    
+        [Test]
+        public void Close_RecordsTheGunsRunAndTheScoreRecord()
+        {
+            // A real run always carries a gun (EnsureValidLoadout seeds one before the run starts).
+            PlayerProfile.AddOwnedWeapon("test.gun");
+            PlayerProfile.SetEquippedWeapon("test.gun");
+            string gun = PlayerProfile.EquippedWeaponId;
+            var before = PlayerProfile.GunStat(gun);
+            var data = ScriptableObject.CreateInstance<ZombieData>();
+            var run = RunState.Begin();
+            for (int i = 0; i < 3; i++) run.RecordKill(data, bankCoin: false, grantXp: false);
+            run.Tick(42f);
+
+            var result = RunClosure.Close(run, RunOutcome.Died);
+
+            var after = PlayerProfile.GunStat(gun);
+            Assert.AreEqual(before.runs + 1, after.runs);
+            Assert.AreEqual(before.kills + 3, after.kills);
+            Assert.AreEqual(before.seconds + 42f, after.seconds, 0.01f);
+            Assert.AreEqual(30, after.bestScore);
+            Assert.IsTrue(result.NewScoreRecord, "the first scored run sets the record");
+            Assert.AreEqual(30, PlayerProfile.BestScore);
+            Object.DestroyImmediate(data);
+        }
+
+        [Test]
+        public void Close_LowerScoreIsNoRecord()
+        {
+            var data = ScriptableObject.CreateInstance<ZombieData>();
+            var first = RunState.Begin();
+            for (int i = 0; i < 5; i++) first.RecordKill(data, bankCoin: false, grantXp: false);
+            RunClosure.Close(first, RunOutcome.Died);
+            var second = RunState.Begin();
+            second.RecordKill(data, bankCoin: false, grantXp: false);
+            var result = RunClosure.Close(second, RunOutcome.Died);
+            Assert.IsFalse(result.NewScoreRecord);
+            Assert.AreEqual(50, PlayerProfile.BestScore);
+            Object.DestroyImmediate(data);
+        }
     }
 }
