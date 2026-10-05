@@ -22,8 +22,8 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
 
 ### Thứ tự phase lớn (owner chốt 05/10 đêm, đè mọi thứ tự cũ)
 Tạm bỏ qua build. Chạy liền một mạch, chỉ dừng ở chỗ ghi **DỪNG**:
-1. **1b Lồng tiếng** ← *đang làm*. Gen xong → **DỪNG** chờ owner chọn bản → áp giọng vào game → chạy tiếp không dừng:
-2. **Đợt 4 làm đủ** (lab bot, cân bằng, kinh tế, cảm giác thưởng, plan chế độ chơi #28b)
+1. **1b Lồng tiếng** — xong 05/10 đêm. Gen xong → **DỪNG** chờ owner chọn bản → áp giọng vào game → chạy tiếp không dừng:
+2. **Đợt 4 làm đủ** ← *tiếp theo* (lab bot, cân bằng, kinh tế, cảm giác thưởng, plan chế độ chơi #28b)
 3. **Súng và kinh tế** (3a, 3b, 3c và các mục meta còn lại)
 4. **Đợt 5 Boss**
 5. **Đợt 7 Art, VFX, âm thanh**
@@ -49,11 +49,12 @@ Tạm bỏ qua build. Chạy liền một mạch, chỉ dừng ở chỗ ghi **D
    - #33 kinh tế: coin hiện cộng thẳng theo kill nên phút 20 đã vài chục nghìn → công thức coin mới chống lạm phát, chạy `econ_sim.py`, đặt giá Common–Epic theo thu nhập — A
    - #32 cảm giác thưởng (chuỗi giết, banner kỷ lục, khoảnh khắc tiến hoá, phản hồi trúng/hạ/lên cấp) · #37 rương kiểu máy đánh bạc — B
    - #38 quái mới tới phút 10–12 (chọn trong 17 Blob hoặc mua asset) — C
-1b. **Lồng tiếng** (cách cũ, mỗi câu 2 bản tự nhiên / cảm xúc):
-   - 3 thẻ đang chỉ có chữ: Studio lần đầu (Tiger/Mai), WEAR NOW (Mai), Horde Call (Lukas) — B, owner nghe chọn
-   - câu cho khoảnh khắc mới: mở rương ngày, chuỗi ngày 7, lên cấp thông thạo, tiến hoá súng, nhận súng mới bằng mảnh — viết kịch bản cho owner duyệt trước — C
-   - nối 7 câu đã thu chưa có chỗ gọi; rà 35 clip không thấy tên trong code — A
-   - giọng theo thị trường khi bản địa hoá — C, cùng mục 8
+1b. **Lồng tiếng — XONG 05/10 đêm** (commit b20d56bfa): 12 câu mới theo bản owner chọn, đã chuẩn hoá + lọc bộ đàm, nối vào Studio, WEAR NOW, Horde Call (4 hướng), rương ngày, chuỗi 3/7, thông thạo, tiến hoá súng; chạm chân dung 5/10 lần. Câu đã thu còn chờ chỗ phát, chuyển sang phase tương ứng:
+   - `vo_lukas_meta_gun_shards` (đủ mảnh mở súng) → nối ở 3b
+   - `vo_kaito_sit_skip_beacon` (đi ngang Boss Beacon 3 lần), `vo_mai_sit_skip_drop` (thùng tiếp tế hết hạn — hiện thùng chưa có hạn) → Đợt 4
+   - `vo_riley_sit_bridge`, `vo_jiho_sit_basin`, `vo_riley_lore_s1..s5_brief`, `vo_kaito_meta_sector_new` → Đợt 6 (map, cầu, vùng lõm, chọn khu)
+   - `vo_chen_egg_cat` → khi Home có con mèo (art)
+   - giọng theo thị trường → Đợt 8 bản địa hoá
 
 ### Làm tiếp sau HOLD
 2. **Plan nội dung chế độ chơi** (#28b, sau lab bot) — C duyệt:
