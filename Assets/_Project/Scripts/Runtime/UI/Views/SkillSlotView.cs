@@ -15,9 +15,10 @@ namespace ZombieWar
         [SerializeField] private TMP_Text rank;
         [SerializeField] private GameObject content;
 
-        // The rank pill is cream; its number was cream too and could not be read (2026-09-30).
-        static readonly Color PillInk = new(0.12f, 0.14f, 0.19f, 1f);
-        static readonly Color PillCream = new(0.96f, 0.95f, 0.92f, 1f);
+        // HUD 05/10: a yellow rank pill with the light, outlined number every coloured fill uses
+        // (the cream pill with dark ink broke that rule).
+        static readonly Color PillInk = Color.white;
+        static readonly Color PillYellow = new(1f, 0.757f, 0.165f, 1f);   // #ffc12a
         Image _pill;
 
         public void Show(Sprite sprite, string abbreviation, Color color, string rankText, float cooldown01, bool evolved = false)
@@ -41,7 +42,7 @@ namespace ZombieWar
                 rank.text = rankText;
                 rank.color = PillInk;
                 if (_pill == null) _pill = rank.transform.parent != null ? rank.transform.parent.GetComponent<Image>() : null;
-                if (_pill != null) _pill.color = evolved ? color : PillCream;   // an evolution's pill is gold
+                if (_pill != null) _pill.color = evolved ? color : PillYellow;   // an evolution's pill is gold
             }
         }
 

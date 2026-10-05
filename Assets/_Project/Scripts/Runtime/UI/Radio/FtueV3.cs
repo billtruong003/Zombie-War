@@ -13,6 +13,9 @@ namespace ZombieWar.UI
     {
         static float Y(float boardTop) => boardTop * 1920f / 693f;
 
+        // In a run the top-left corner holds the 3x2 skill grid (HUD 05/10): run cards start under it.
+        const float RunTop = 152f;
+
         static FtueRadio.Call Card(string id, string voice, string agent, string ctx, string title, string body,
                                    FtueRadio.Size size, float boardTop) => new()
         {
@@ -38,13 +41,14 @@ namespace ZombieWar.UI
         public static void Move()
         {
             var c = Card("move", "vo_riley_ftue_move", "riley", null, "DRAG TO MOVE",
-                "Your gun fires at the nearest monster by itself.", FtueRadio.Size.Normal, 78);
+                "Your gun fires at the nearest monster by itself.", FtueRadio.Size.Normal, RunTop);
             c.Dim = 0.22f;
             c.Ring = true;
             c.Chip = "DRAG ANYWHERE";
-            // Board: a 114 px square 30 px from the left and 31 px above the bottom of a 390 px wide phone.
-            c.Target = () => { float u = Screen.width / 390f; return new Rect(30f * u, 31f * u, 114f * u, 114f * u); };
-            c.Hand = () => { float u = Screen.width / 390f; return new Vector2(87f * u, 90f * u); };
+            // The joystick rests at the bottom centre (HUD 05/10): a 114 px square centred on it, on a
+            // 390 px wide phone (rest centre 254 of 1080 px up = 92 of 390).
+            c.Target = () => { float u = Screen.width / 390f; return new Rect(138f * u, 35f * u, 114f * u, 114f * u); };
+            c.Hand = () => { float u = Screen.width / 390f; return new Vector2(195f * u, 92f * u); };
             c.Alive = () => !Ftue.Done(Ftue.Move);
             FtueRadio.Show(c);
         }
@@ -53,7 +57,7 @@ namespace ZombieWar.UI
         public static void Xp(RectTransform xpBar)
         {
             var c = Card("xp", "vo_kaito_ftue_xp", "kaito", null, "XP",
-                "The bar up top glows on each kill. Fill it to level up.", FtueRadio.Size.Small, 78);
+                "The bar up top glows on each kill. Fill it to level up.", FtueRadio.Size.Small, RunTop);
             c.Target = () => FtueRadio.ScreenRect(xpBar);
             // A short tip that steps in front of "drag to move" for a moment, then hands back.
             c.Seconds = 5f;
@@ -111,7 +115,7 @@ namespace ZombieWar.UI
                 PickupEffect.Bomb => ("lukas", "vo_lukas_ftue_bomb", "BOMB", "Wipes out the monsters on screen. Elites lose 30% health."),
                 _ => ("jiho", "vo_jiho_ftue_freeze", "FREEZE CLOCK", "Freezes every monster on screen for 4 s."),
             };
-            var c = Card("item." + effect, voice, agent, "NEW ITEM", title, body, FtueRadio.Size.Item, 78);
+            var c = Card("item." + effect, voice, agent, "NEW ITEM", title, body, FtueRadio.Size.Item, RunTop);
             c.Icon = icon;
             c.Seconds = 5f;
             FtueRadio.Show(c);
