@@ -11,6 +11,20 @@ namespace ZombieWar
 
         public const int MaxStars = 3;
 
+        /// <summary>Takes shards away (a gun unlocked by its shards, backlog 3b). False when short.</summary>
+        internal static bool SpendWeaponShardsInMemory(string weaponId, int amount)
+        {
+            if (string.IsNullOrEmpty(weaponId) || amount <= 0) return false;
+            for (int i = 0; i < Data.weaponShards.Count; i++)
+            {
+                if (Data.weaponShards[i].weaponId != weaponId) continue;
+                if (Data.weaponShards[i].count < amount) return false;
+                var e = Data.weaponShards[i]; e.count -= amount; Data.weaponShards[i] = e;
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>Turns every shard of a 3-star gun into coin. Returns (shards, coin) exchanged; zero
         /// when nothing was spare. Called where it is safe to show a toast (Home, Arsenal), never from
         /// the shard grant paths themselves.</summary>
