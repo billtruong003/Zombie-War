@@ -23,7 +23,7 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
 ### Quyết định owner 05/10 đêm
 - **Q1 → lồng tiếng theo cách cũ**, mỗi câu gen **2 bản: tự nhiên và có cảm xúc**, owner chọn.
 - **Q2 → súng full đổi phần dư ra coin**, tỉ lệ do Claude cân (xem mục 3a).
-- **Q3 → Legendary không mua bằng coin**, chỉ mở bằng gacha hoặc farm mảnh. Hướng chung: người chơi mở được hết súng một cách tự nhiên, không ép (xem mục 3b, cần owner duyệt).
+- **Q3 → mọi súng chỉ ra từ gacha, gacha ra mảnh**; hòm coin tối đa tím, hòm gem mới có Legendary; vẫn farm mảnh được; Shop GUNS bán gói tiền thật + VIP (xem 3b, 3c, chờ duyệt số).
 
 ### HOLD
 0. **Build và kiểm trên máy** (Đợt 1 #1–#3, m8):
@@ -64,7 +64,7 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
      - **VIP Pack $19,99** (1 lần mỗi mùa): chọn 1 Legendary mạnh (AWM / HK416 / Thumper GL) + bộ skin Neon Circuit + 1.000 gem.
      - **Hạng VIP theo tổng nạp:** VIP1 $5 · VIP2 $20 · VIP3 $50 · VIP4 $100 · VIP5 $250 · VIP6 $500. Quyền lợi tăng dần: gem mỗi ngày (10→60), thêm 1 lượt rương ngày, giảm 5–15% gói ×10, khung avatar + huy hiệu VIP. Không bán sức mạnh vượt Legendary.
      - Danh sách IAP #57 làm lại theo các gói này; giá theo vùng PH/ID/VN.
-   - #26b món featured 50/50 cho banner Outfits/Shards — C
+   - #26b món featured 50/50 cho banner Outfits (hòm súng không có featured) — C
    - #27 skin súng mùa 1 (chọn style shader) — C rồi B
    - Q6 súng Pistol (model Tec-9) — C
    - tiến hoá cần 3 sao: dẫn từ màn thông thạo sang nâng sao ở Arsenal — B
@@ -90,7 +90,7 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
 7. **Đợt 8 · SDK và store**:
    - #55 AdMob hay ironSource — C
    - #56 quảng cáo có thưởng (hồi sinh, x2 coin, deal) + interstitial sau trận dài
-   - #57 IAP 8 gói, xác thực hoá đơn
+   - #57 IAP theo 3c (gem, Starter Vector, VIP Pack, hạng VIP), xác thực hoá đơn
    - #58 Firebase Analytics, Crashlytics, Remote Config, funnel FTUE
    - #60 UMP consent, cấu hình 13+, gacha ở Bỉ
    - #61 các dòng Settings: Language, Help, Ad privacy, Privacy policy, Restore purchases
