@@ -148,7 +148,7 @@ namespace ZombieWar
 
             Kills++;
             Score += KillPoints(data);
-            if (bankCoin) Coin += ScaleCoin(Mathf.Max(0, data.coinReward));
+            if (bankCoin) Coin += KillCoin(Mathf.Max(0, data.coinReward));
             if (grantXp) AddXp(Mathf.Max(0, data.xpReward));
             Changed?.Invoke();
         }
@@ -177,6 +177,31 @@ namespace ZombieWar
             }
             else Coin += ScaleCoin(amount);
             Changed?.Invoke();
+        }
+
+        // ── 05/10 backlog #33: kill coin flattens after minute 5 ───────────────────────────────
+        // Bot lab 06/10: kill coin grew with the kill rate, so a 25-minute strong run banked 14,700
+        // (owner: "tens of thousands by minute 20"). After KillCoinFullMinutes each kill pays
+        // KillCoinFullMinutes / minutes of its coin, so coin per minute stays about flat while kills
+        // per minute keep rising: a 6-minute run is unchanged (~750), a 25-minute strong run ~6,300.
+        // Fractions carry over, which also makes Coin Gain Up count on 1-coin kills (it rounded away).
+        public const float KillCoinFullMinutes = 5f;
+        double _killCoinCarry;
+
+        /// <summary>Share of a kill's coin paid at a run time (1 until minute 5, then 5 / minutes).</summary>
+        public static float KillCoinFactor(float runSeconds)
+        {
+            float minutes = runSeconds / 60f;
+            return minutes <= KillCoinFullMinutes ? 1f : KillCoinFullMinutes / minutes;
+        }
+
+        long KillCoin(int reward)
+        {
+            if (reward <= 0) return 0;
+            _killCoinCarry += reward * (Skills.SkillRuntime.Active?.CoinMultiplier ?? 1f) * KillCoinFactor(Duration);
+            long whole = (long)Math.Floor(_killCoinCarry);
+            _killCoinCarry -= whole;
+            return whole;
         }
 
         // Coin Gain Up is consumed here - the single place Coin enters the ledger - so kill banking

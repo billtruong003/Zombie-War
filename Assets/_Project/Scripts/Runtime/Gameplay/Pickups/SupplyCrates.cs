@@ -12,7 +12,9 @@ namespace ZombieWar
     public sealed class SupplyCrates : MonoBehaviour
     {
         public const string PoolKey = "prop_crate";
-        public const float FirstAfter = 20f;
+        // Backlog #31 (reward ladder): the first crate at 0:45, between the first card (~0:30) and
+        // the golden zombie (1:00), so the first minute has a new thing to walk to every ~15 s.
+        public const float FirstAfter = 45f;
         public const float Every = 45f;
         public const int MaxOnMap = 2;
         public const float MinDistance = 7f, MaxDistance = 10f;

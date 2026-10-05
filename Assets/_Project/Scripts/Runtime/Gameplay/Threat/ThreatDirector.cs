@@ -478,7 +478,9 @@ namespace ZombieWar.Threat
 
             // Spawn a small burst per tick: one enemy every 2.2 s cannot build a crowd against a
             // player who is also killing them. Measured alive count was 5-7 with single spawns.
-            int burst = Mathf.Min(spawnBurst, target - ZombieManager.AliveCount);
+            // Late runs arrive in bigger bursts (BurstAt): a full build otherwise kills faster than one
+            // spawn per tick can refill, and the crowd never wins (bot lab 06/10). An elite is alone.
+            int burst = data.isElite ? 1 : Mathf.Min(BurstAt(run.Duration, spawnBurst), target - ZombieManager.AliveCount);
             // A Horde Call arrives from its one side, not all round.
             _spawner.ArcCenter = surging && HordeSide >= 0 ? Mathf.Atan2(HordeDirection.z, HordeDirection.x) : (float?)null;
             _spawner.ArcHalfWidth = HordeArcHalfWidth;
@@ -495,6 +497,18 @@ namespace ZombieWar.Threat
             _spawner.SpawnFocusOverride = null;   // never leak the override into other spawners
             _spawner.ArcCenter = null;
         }
+
+        // ── 06/10 genre rule 1: the crowd wins later ─────────────────────────────────────────────
+        // Bot lab 06/10: from minute 10 a full build (even the starter pistol at level 37) kept only
+        // ~20 enemies alive against a target of 160 and lived on forever. From BurstFrom the burst per
+        // spawn tick grows by one every BurstStepSeconds, up to BurstMax.
+        public const float BurstFrom = 600f, BurstStepSeconds = 120f;
+        public const int BurstMax = 6;
+
+        /// <summary>Enemies per spawn tick at a run time.</summary>
+        public static int BurstAt(float runSeconds, int baseBurst) =>
+            runSeconds < BurstFrom ? baseBurst
+            : Mathf.Min(BurstMax, baseBurst + 1 + Mathf.FloorToInt((runSeconds - BurstFrom) / BurstStepSeconds));
 
         public float SpawnIntervalFor(int tier) =>
             Mathf.Max(minSpawnInterval, baseSpawnInterval * Mathf.Pow(intervalTightenPerTier, Mathf.Max(0, tier)));
@@ -531,6 +545,19 @@ namespace ZombieWar.Threat
             return Mathf.Min(byTime, Mathf.Max(RangedStart, Mathf.CeilToInt(aliveTarget * RangedShare)));
         }
 
+        // ── 05/10 genre rule 2 / backlog #30: elites are rare spikes, never a pack ──────────────
+        // Bot lab 05/10 (Review/QA/botlab, base_new): uncapped, tier 3+ kept 14-40 elites alive and
+        // every new-player death came inside that pile. Now: none before 2:30, then 1, one more every
+        // 75 s, at most 6, and at least EliteGapSeconds between two elite spawns so they arrive alone.
+        public const float EliteFrom = 150f, EliteStepSeconds = 75f, EliteGapSeconds = 8f;
+        public const int EliteMax = 6;
+
+        /// <summary>Elites allowed alive at once at a run time.</summary>
+        public static int EliteCapAt(float runSeconds) =>
+            runSeconds < EliteFrom ? 0 : Mathf.Min(EliteMax, 1 + Mathf.FloorToInt((runSeconds - EliteFrom) / EliteStepSeconds));
+
+        float _nextEliteAt;
+
         /// <summary>Extra weight of the tier-0 fodder in the pick: 3 before 2:00, 2 before 4:00.</summary>
         public static int FodderWeightAt(float runSeconds) => runSeconds < 120f ? 3 : runSeconds < 240f ? 2 : 1;
 
@@ -545,11 +572,18 @@ namespace ZombieWar.Threat
             for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
             if (Pool.Count == 0) return null;
 
-            int rangedAlive = 0;
+            int rangedAlive = 0, elitesAlive = 0;
             var alive = ZombieManager.Alive;
             for (int i = 0; i < alive.Count; i++)
-                if (alive[i] != null && !alive[i].IsDead && alive[i].Data != null && alive[i].Data.archetype == ZombieArchetype.Ranged) rangedAlive++;
+            {
+                var z = alive[i];
+                if (z == null || z.IsDead || z.Data == null) continue;
+                if (z.Data.archetype == ZombieArchetype.Ranged) rangedAlive++;
+                if (z.Data.isElite) elitesAlive++;
+            }
             bool rangedOk = rangedAlive < RangedCapAt(runSeconds, aliveTarget);
+            if (_nextEliteAt > runSeconds + EliteGapSeconds) _nextEliteAt = 0f;   // a new run started
+            bool eliteOk = elitesAlive < EliteCapAt(runSeconds) && runSeconds >= _nextEliteAt;
 
             Weighted.Clear();
             int fodder = FodderWeightAt(runSeconds);
@@ -560,12 +594,19 @@ namespace ZombieWar.Threat
             {
                 var d = Pool[i];
                 if (d.archetype == ZombieArchetype.Ranged && !rangedOk) continue;
+                if (d.isElite && !eliteOk) continue;
                 int w = tier0.Contains(d) ? fodder : 1;
                 for (int k = 0; k < w; k++) Weighted.Add(d);
             }
-            if (Weighted.Count == 0) return Pool[Random.Range(0, Pool.Count)];
-            return Weighted[Random.Range(0, Weighted.Count)];
+            // Nothing left after the caps: the crowd's fodder, never a capped kind.
+            var pick = Weighted.Count > 0 ? Weighted[Random.Range(0, Weighted.Count)]
+                     : tier0.Count > 0 ? tier0[Random.Range(0, tier0.Count)] : Pool[Random.Range(0, Pool.Count)];
+            if (pick != null && pick.isElite) _nextEliteAt = runSeconds + EliteGapSeconds;
+            return pick;
         }
+
+        /// <summary>A tier-0 crowd enemy (the golden zombie is one of these, dressed up).</summary>
+        public ZombieData PickCrowdFodder() => PickFodder();
 
         ZombieData PickFodder()
         {
@@ -600,7 +641,14 @@ namespace ZombieWar.Threat
             return m;
         }
 
-        public static float TimeDamageMultiplier(float runSeconds) => 1f + (TimeHealthMultiplier(runSeconds) - 1f) * 0.5f;
+        // Bot lab 06/10: a strong build (Legendary 3 stars, evolved) lived the full 25 minutes with
+        // damage at half the health curve. From TimeCompoundFrom damage now follows the compound part
+        // at the full rate; the early linear part stays at half so new players are not hit harder.
+        public static float TimeDamageMultiplier(float runSeconds)
+        {
+            float linear = 1f + (TimeHealthMultiplier(Mathf.Min(runSeconds, TimeCompoundFrom)) - 1f) * 0.5f;
+            return runSeconds <= TimeCompoundFrom ? linear : linear * Mathf.Pow(TimeCompoundPerMinute, (runSeconds - TimeCompoundFrom) / 60f);
+        }
 
         public bool Resting { get; private set; }
         float _restUntil, _restReadyAt;

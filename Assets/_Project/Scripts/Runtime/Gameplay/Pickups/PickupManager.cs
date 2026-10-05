@@ -76,6 +76,8 @@ namespace ZombieWar
             Instance = this;
             EnsureMagnetRegistered();
             if (!TryGetComponent<SupplyCrates>(out _)) gameObject.AddComponent<SupplyCrates>();
+            if (!TryGetComponent<RewardLadder>(out _)) gameObject.AddComponent<RewardLadder>();
+            if (!TryGetComponent<RunMoments>(out _)) gameObject.AddComponent<RunMoments>();
             if (!TryGetComponent<FootDust>(out _)) gameObject.AddComponent<FootDust>();
             Bill.Events?.Subscribe<ZombieKilledEvent>(OnZombieKilled);
         }
@@ -344,6 +346,14 @@ namespace ZombieWar
         {
             if (amount <= 0) return;
             RunState.Current?.AddCurrency(PlayerProfile.CurrencyKind.Coin, amount);   // 05/10: coin is never on the floor
+        }
+
+        /// <summary>A shower of XP orbs worth <paramref name="totalXp"/> (the golden zombie's prize).</summary>
+        public void SpawnXpBurst(Vector3 at, int totalXp, int orbs)
+        {
+            orbs = Mathf.Clamp(orbs, 1, Mathf.Max(1, totalXp));
+            int per = Mathf.Max(1, totalXp / orbs), rest = totalXp - per * orbs;
+            for (int i = 0; i < orbs; i++) Spawn(PlayerProfile.CurrencyKind.Coin, per + (i == 0 ? rest : 0), xpPoolKey, at);
         }
 
         private void Spawn(PlayerProfile.CurrencyKind kind, int amount, string key, Vector3 origin)

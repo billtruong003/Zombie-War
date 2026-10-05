@@ -57,6 +57,43 @@ namespace ZombieWar
             UIFx.FadeIn(chest.dim, 0.2f);
             UIFx.PopIn(chest.chest, 0f, 0.5f, 0.4f);
             UIFx.PopIn(chest.card, 0.25f, 0.8f, 0.35f);
+            // #37: the reward spins like a slot reel before it lands (not on the first, taught chest).
+            if (_reel != null) StopCoroutine(_reel);
+            _reel = _ftueChest ? null : StartCoroutine(ReelChest(_chest));
+        }
+
+        Coroutine _reel;
+
+        /// <summary>Backlog #37 (slot-machine chest): the icon spins through other cards, slowing, with
+        /// a tick per stop, then lands on the real reward with a punch. Unscaled (the run is frozen).
+        /// The reward is already applied, so claiming mid-spin only skips the show.</summary>
+        System.Collections.IEnumerator ReelChest(ZombieWar.Skills.SkillRuntime.ChestReward reward)
+        {
+            var all = ZombieWar.Skills.SkillCatalogDefs.All;
+            var skills = ZombieWar.Skills.SkillRuntime.Active;
+            if (all == null || all.Count == 0 || reward.card == null) yield break;
+            string title = chest.title != null ? chest.title.text : null, desc = chest.desc != null ? chest.desc.text : null;
+            SetText(chest.title, "???");
+            SetText(chest.desc, "");
+            float delay = 0.045f;
+            int steps = 14;
+            for (int i = 0; i < steps; i++)
+            {
+                var d = all[Random.Range(0, all.Count)];
+                if (d == null || d == reward.card) continue;
+                BindTile(chest.icon, d, ZombieWar.Skills.SkillDescriptions.LayerColor(d));
+                BillGameCore.Bill.Audio?.PlayPitched("sfx.ui.tap", 0.8f + 0.5f * i / steps, 0.5f);
+                yield return new WaitForSecondsRealtime(delay);
+                delay *= 1.17f;   // slows to ~0.4 s between the last stops
+            }
+            if (!ChestOpen) yield break;
+            BindChest(reward, skills);
+            SetText(chest.title, title);
+            SetText(chest.desc, desc);
+            if (chest.icon?.frame != null) UIFx.Punch(chest.icon.frame.transform);
+            UIFeedback.Haptic(UIFeedback.Buzz.Medium);
+            UIFeedback.LevelUp();
+            _reel = null;
         }
 
         void BindChest(ZombieWar.Skills.SkillRuntime.ChestReward reward, ZombieWar.Skills.SkillRuntime skills)
@@ -118,6 +155,7 @@ namespace ZombieWar
         void ClaimChest()
         {
             if (!ChestOpen) return;
+            if (_reel != null) { StopCoroutine(_reel); _reel = null; }
             UIFeedback.Confirm();
             UIFeedback.Haptic(UIFeedback.Buzz.Tick);
             var skills = ZombieWar.Skills.SkillRuntime.Active;

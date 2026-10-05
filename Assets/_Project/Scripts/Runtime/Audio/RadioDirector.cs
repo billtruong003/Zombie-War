@@ -322,6 +322,20 @@ namespace ZombieWar.Audio
             d.Say(bonus ? "vo_chen_meta_mastery_bonus" : "vo_chen_meta_mastery_up", 5f);
         }
 
+        /// <summary>A Boss Beacon walked past without opting in (n-th this run): Kaito teases at 3.</summary>
+        public static void BeaconPassed(int n)
+        {
+            var d = _instance;
+            if (d != null && !FtueActive && n >= 3) d.SayOnce("vo_kaito_sit_skip_beacon", 20f);
+        }
+
+        /// <summary>A Supply Drop walked past unopened: Mai is a little hurt.</summary>
+        public static void DropPassed(int n)
+        {
+            var d = _instance;
+            if (d != null && !FtueActive && n >= 1) d.SayOnce("vo_mai_sit_skip_drop", 20f);
+        }
+
         /// <summary>The player keeps poking a radio portrait.</summary>
         public static void PortraitTapped(int taps)
         {

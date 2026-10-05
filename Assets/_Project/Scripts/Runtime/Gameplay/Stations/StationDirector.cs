@@ -40,6 +40,12 @@ namespace ZombieWar.Stations
         readonly Dictionary<ZombieBase, long> _bossAnchors = new(4);
         readonly List<long> _scratch = new(8);
         readonly List<long> _gone = new(4);
+
+        // Walked-past tracking for the radio (05/10): came within PassNear of a Boss Beacon or a
+        // Supply Drop without using it, then went past PassFar. Counted per run.
+        const float PassNear = 7f, PassFar = 22f;
+        readonly HashSet<long> _near = new();
+        int _beaconsPassed, _dropsPassed;
         static readonly StationAnchors.Anchor[] AnchorBuffer = new StationAnchors.Anchor[32];
 
         Transform _player;
@@ -77,6 +83,7 @@ namespace ZombieWar.Stations
             // Registered on the day it was written — the rule M7.2c introduced.
             StationRegistry.EnsureRegisteredWithRunScope();
             RunScope.Register(ReleaseAllStations);
+            RunScope.Register(ResetPassTracking);
         }
 
         void OnDestroy()
@@ -133,6 +140,7 @@ namespace ZombieWar.Stations
                 if (st.Gone) { _gone.Add(kv.Key); continue; }
 
                 float sqr = (st.transform.position - p).sqrMagnitude;
+                TrackPass(kv.Key, st, sqr);
                 if (sqr > releaseDistance * releaseDistance) { _scratch.Add(kv.Key); continue; }
 
                 st.Tick(dt, p);
@@ -209,6 +217,19 @@ namespace ZombieWar.Stations
         [SerializeField, Range(0f, 1f)] private float supplyChestChance = 0.2f;
 
         /// <summary>A Supply Drop opens: coin, a mechanic item (if none is out), sometimes a chest.</summary>
+        void ResetPassTracking() { _near.Clear(); _beaconsPassed = _dropsPassed = 0; }
+
+        void TrackPass(long id, Station st, float sqr)
+        {
+            var kind = st.Anchor.kind;
+            if (kind != StationKind.BossBeacon && kind != StationKind.SupplyDrop) return;
+            if (st.Finished) { _near.Remove(id); return; }
+            if (sqr < PassNear * PassNear) { _near.Add(id); return; }
+            if (sqr < PassFar * PassFar || !_near.Remove(id)) return;
+            if (kind == StationKind.BossBeacon) ZombieWar.Audio.RadioDirector.BeaconPassed(++_beaconsPassed);
+            else ZombieWar.Audio.RadioDirector.DropPassed(++_dropsPassed);
+        }
+
         public void GrantSupplyDrop(Vector3 at)
         {
             var pickups = PickupManager.Instance;

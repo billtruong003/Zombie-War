@@ -73,6 +73,11 @@ namespace ZombieWar
         // and the joystick lives on the persistent HUD.
         public void SetJoystick(VirtualJoystick j) => joystick = j;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
+        /// <summary>Dev only: the bot lab steers the player through this instead of the joystick.</summary>
+        public static System.Func<Vector2> BotInput;
+#endif
+
         private void FixedUpdate()
         {
             // Mobile joystick is the primary input; fall back to keyboard (WASD/arrows) when there's
@@ -80,6 +85,9 @@ namespace ZombieWar
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
             if (input.sqrMagnitude < 0.01f)
                 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || ZW_CHEATS
+            if (BotInput != null) input = BotInput();
+#endif
             if (input.sqrMagnitude > 1f) input.Normalize();
 
             Vector3 move = new Vector3(input.x, 0f, input.y);
