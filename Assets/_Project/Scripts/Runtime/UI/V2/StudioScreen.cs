@@ -70,6 +70,24 @@ namespace ZombieWar.UI
         };
 
 
+        // ------------------------------------------------------------ WEAR NOW (backlog #13, flow F6)
+        static string _focusItem;
+        string _newItem;   // the gifted piece this visit opened on: first in its strip, tagged NEW
+
+        /// <summary>
+        /// Every gift of an outfit piece ends with WEAR NOW (owner 05/10): the Studio opens on that
+        /// piece's slot with the piece first in the strip, tried on, and Tiger says tap it to wear it.
+        /// </summary>
+        public static void OpenFor(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId)) return;
+            var studio = FindFirstObjectByType<StudioScreen>(FindObjectsInactive.Include);
+            if (studio == null || UIManager.Instance == null) return;
+            _focusItem = itemId;
+            if (studio.IsShown) studio.OnShow();
+            else UIManager.Instance.Push(studio);
+        }
+
         MenuCharacterStage _stage;
         List<ModularCostumeCatalog.SlotDefinition> _slots = new();
         string _slot = "Chest";
@@ -97,14 +115,53 @@ namespace ZombieWar.UI
 
         protected override void OnShow()
         {
-            if (Ftue.Done(Ftue.Studio)) ZombieWar.Audio.RadioDirector.StudioShown();   // first visit: Tiger speaks
+            string focus = _focusItem; _focusItem = null;
+            if (Ftue.Done(Ftue.Studio) && focus == null) ZombieWar.Audio.RadioDirector.StudioShown();   // first visit / a gift: Tiger speaks
             _stage = FindFirstObjectByType<MenuCharacterStage>(FindObjectsInactive.Include);
             if (character != null && _stage != null) character.texture = _stage.Texture;
             _slots = catalog != null ? catalog.slotDefinitions.Where(d => !catalog.IsTechnicalCasualSlot(d.id)).OrderBy(d => d.sortOrder).ToList() : new();
             if (catalog != null) PlayerProfile.EnsureValidCostumeLoadout(catalog);
+            _newItem = null;
+            string focusSlot = focus != null ? SlotOf(focus) : null;
+            if (focusSlot != null)
+            {
+                _newItem = focus;
+                SelectSlot(focusSlot);
+                TryOn(focus);
+                Ftue.Complete(Ftue.Studio);   // the gift teaches the same thing: tap a piece to wear it
+                if (films.Length > 0 && films[0]?.button != null)
+                {
+                    var def = catalog.GetSlotDefinition(focusSlot);
+                    FtueV3.WearNew(films[0].button.transform as RectTransform, def != null ? def.displayName : focusSlot,
+                                   () => PlayerProfile.GetPart(focusSlot) == focus);
+                }
+                return;
+            }
             SelectSlot(_slot);
             // Hotspot order HEAD, FACE, TOP...: the first visit points at TOP.
             if (hotspots.Length > 2) FtueV3.Studio(hotspots[2] != null ? hotspots[2].transform as RectTransform : null);
+        }
+
+        /// The slot whose strip holds this piece, or null.
+        string SlotOf(string itemId)
+        {
+            if (catalog == null) return null;
+            foreach (var d in _slots)
+            {
+                var s = catalog.GetSlot(d.id);
+                if (s != null && s.parts.Any(p => p.itemId == itemId)) return d.id;
+            }
+            return null;
+        }
+
+        /// Shows a piece on the character without wearing it (the strip's try-on).
+        void TryOn(string itemId)
+        {
+            var p = _parts.FirstOrDefault(x => x.itemId == itemId);
+            if (string.IsNullOrEmpty(p.itemId)) return;
+            _picked = itemId;
+            if (_stage != null && _stage.ModularApplier != null) _stage.ModularApplier.Apply(_slot, p);
+            Refresh();
         }
 
         protected override void OnHide() => RestoreOutfit();
@@ -136,6 +193,7 @@ namespace ZombieWar.UI
 
         int SortRank(string id, string worn)
         {
+            if (id == _newItem) return -1;
             if (id == worn) return 0;
             if (PlayerProfile.IsCostumeOwned(id)) return 1;
             if (economy == null || !economy.TryGetCostume(id, out var e)) return 5;
@@ -149,7 +207,11 @@ namespace ZombieWar.UI
             var p = _parts[i];
             _picked = p.itemId;
             UIFeedback.Tap();
-            if (PlayerProfile.IsCostumeOwned(p.itemId)) { if (catalog != null) PlayerProfile.TryEquipCostume(catalog, p.itemId); }
+            if (PlayerProfile.IsCostumeOwned(p.itemId))
+            {
+                if (catalog != null && PlayerProfile.TryEquipCostume(catalog, p.itemId) == PlayerProfile.CostumeEquipResult.Equipped && p.itemId == _newItem)
+                    UIFeedback.Equip();
+            }
             else if (_stage != null && _stage.ModularApplier != null) _stage.ModularApplier.Apply(_slot, p);   // try on
             Refresh();
         }
@@ -242,7 +304,13 @@ namespace ZombieWar.UI
         void Act()
         {
             if (string.IsNullOrEmpty(_picked) || economy == null) return;
-            if (PlayerProfile.IsCostumeOwned(_picked)) { Toast.Show("Wearing it"); return; }
+            if (PlayerProfile.IsCostumeOwned(_picked))
+            {
+                if (PlayerProfile.GetPart(_slot) == _picked) { Toast.Show("Wearing it"); return; }
+                if (catalog != null && PlayerProfile.TryEquipCostume(catalog, _picked) == PlayerProfile.CostumeEquipResult.Equipped) UIFeedback.Equip();
+                Refresh();
+                return;
+            }
             if (!economy.TryGetCostume(_picked, out var item)) return;
             if (item.source == AcquireSource.Gacha)
             {
@@ -362,7 +430,7 @@ namespace ZombieWar.UI
                 if (f.icon != null) { f.icon.sprite = p.icon; f.icon.enabled = p.icon != null; f.icon.preserveAspect = true; }
                 if (f.price != null)
                 {
-                    f.price.text = own ? "OWNED" : !known ? "-" : item.source == AcquireSource.Gacha ? "GACHA" : $"{item.price:N0}";
+                    f.price.text = p.itemId == _newItem ? "NEW" : own ? "OWNED" : !known ? "-" : item.source == AcquireSource.Gacha ? "GACHA" : $"{item.price:N0}";
                     ThemeTint.Set(f.price, own ? ThemeRole.ClaimLip : known && item.source == AcquireSource.Gacha ? ThemeRole.Rarity4 : known && item.currency == WalletCurrency.Gem ? ThemeRole.GemLip : ThemeRole.TextOnSurface);
                 }
                 if (f.selected != null) f.selected.SetActive(p.itemId == _picked);
@@ -374,10 +442,14 @@ namespace ZombieWar.UI
             bool piKnown = economy != null && !string.IsNullOrEmpty(_picked) && economy.TryGetCostume(_picked, out pi);
             if (pickedIcon != null) { pickedIcon.sprite = picked.icon; pickedIcon.enabled = picked.icon != null; pickedIcon.preserveAspect = true; }
             if (pickedName != null) pickedName.text = piKnown ? pi.displayName : string.IsNullOrEmpty(picked.name) ? "Nothing" : picked.name;
-            if (pickedState != null) pickedState.text = (pickedOwned ? "WEARING" : "TRYING ON") + (piKnown ? " · " + pi.rarity.ToString().ToUpperInvariant() : "");
+            bool pickedWorn = pickedOwned && PlayerProfile.GetPart(_slot) == _picked;
+            string state = pickedWorn ? "WEARING" : pickedOwned ? (_picked == _newItem ? "NEW · OWNED" : "OWNED") : "TRYING ON";
+            if (pickedState != null) pickedState.text = state + (piKnown ? " · " + pi.rarity.ToString().ToUpperInvariant() : "");
             if (actionLabel != null)
-                actionLabel.text = pickedOwned || !piKnown ? "WEARING" : pi.source == AcquireSource.Gacha ? "IN GACHA" : $"BUY {pi.price:N0}{(pi.currency == WalletCurrency.Gem ? " GEMS" : "")}";
-            if (actionButton != null) actionButton.gameObject.SetActive(!pickedOwned && piKnown);
+                actionLabel.text = pickedOwned ? (pickedWorn ? "WEARING" : "WEAR") : !piKnown ? "WEARING"
+                    : pi.source == AcquireSource.Gacha ? "IN GACHA" : $"BUY {pi.price:N0}{(pi.currency == WalletCurrency.Gem ? " GEMS" : "")}";
+            // Owned but only tried on (a gift opened here): the bar offers WEAR, like the tile does.
+            if (actionButton != null) actionButton.gameObject.SetActive(pickedOwned ? !pickedWorn : piKnown);
         }
     }
 }

@@ -45,6 +45,12 @@ namespace ZombieWar.UI
         [SerializeField] private Image[] stars = new Image[5];
         [SerializeField] private GameObject newTag;
         [SerializeField] private Image namePanel;
+        [Tooltip("WEAR NOW / LATER under an outfit prize (backlog #13): the gift's last step is wearing it.")]
+        [SerializeField] private Button wearNow;
+        [SerializeField] private Button later;
+
+        /// <summary>True when the last show ended on WEAR NOW.</summary>
+        public bool WearChosen { get; private set; }
 
         public static readonly Color[] TierGlow =
         {
@@ -80,6 +86,8 @@ namespace ZombieWar.UI
         void Awake()
         {
             if (tapArea != null) tapArea.onClick.AddListener(() => _tapped = true);
+            if (wearNow != null) wearNow.onClick.AddListener(() => { WearChosen = true; _tapped = true; UIFeedback.Confirm(); });
+            if (later != null) later.onClick.AddListener(() => { _tapped = true; UIFeedback.Back(); });
             if (root != null) root.SetActive(false);
             FtueRadio.RegisterModal(root);   // radio subtitles wait while a chest opens (QA 05/10)
             if (stageFx != null && stageFx.material != null)
@@ -92,8 +100,10 @@ namespace ZombieWar.UI
         public bool Showing => root != null && root.activeSelf;
 
         /// <summary>The whole show for one chest. <paramref name="skip"/> jumps to the card.</summary>
-        public IEnumerator Play(int tier, Sprite chestSprite, Sprite prize, string prizeName, string note, Func<bool> skip)
+        public IEnumerator Play(int tier, Sprite chestSprite, Sprite prize, string prizeName, string note, Func<bool> skip, bool offerWear = false)
         {
+            WearChosen = false;
+            ShowWear(false);
             tier = Mathf.Clamp(tier, 0, 4);
             var col = TierGlow[tier];
             // A tap during the build-up hurries to the card; the card then waits for its own tap.
@@ -211,7 +221,10 @@ namespace ZombieWar.UI
             // ---- wait for a tap (a trickle of sparkles for Epic and up)
             _tapped = false;
             skip = outer;
-            if (hint != null) { hint.gameObject.SetActive(true); hint.text = "TAP TO CONTINUE"; }
+            if (hint != null) { hint.gameObject.SetActive(!offerWear); hint.text = "TAP TO CONTINUE"; }
+            ShowWear(offerWear);
+            // With the two buttons up, only they end the show: a stray tap must not skip WEAR NOW.
+            if (tapArea != null) tapArea.interactable = !offerWear;
             float rain = 0f;
             while (!_tapped && !skip())
             {
@@ -223,10 +236,18 @@ namespace ZombieWar.UI
                 if (tier >= 3 && !shader) rays.rectTransform.localRotation *= Quaternion.Euler(0, 0, -20f * Dt());
                 yield return null;
             }
+            ShowWear(false);
+            if (tapArea != null) tapArea.interactable = true;
             for (float t = 0f; t < 0.18f; t += Dt()) { SetGroupAlpha(1f - t / 0.18f); yield return null; }
             SetGroupAlpha(1f);
             particles.Clear();
             root.SetActive(false);
+        }
+
+        void ShowWear(bool on)
+        {
+            if (wearNow != null) { wearNow.gameObject.SetActive(on); if (on) UIFx.PopIn(wearNow.transform); }
+            if (later != null) later.gameObject.SetActive(on);
         }
 
         // The shock wave and flash of the burst, drawn by the stage shader.

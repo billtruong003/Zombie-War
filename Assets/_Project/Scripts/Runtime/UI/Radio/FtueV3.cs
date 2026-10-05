@@ -71,6 +71,22 @@ namespace ZombieWar.UI
             FtueRadio.Show(c);
         }
 
+        // F6 · WEAR NOW (backlog #13): the Studio opened on a gifted piece; Tiger points at it until
+        // it is worn or the Studio closes. Shown on every gift, not once: it is the gift's last step.
+        public static void WearNew(RectTransform tile, string slotName, System.Func<bool> worn)
+        {
+            if (tile == null) return;
+            string name = string.IsNullOrEmpty(slotName) ? "PIECE" : slotName.ToUpperInvariant();
+            var c = Card("wear", null, "mai", null, $"NEW {name}! WEAR IT",
+                $"It opened on the {name.ToLowerInvariant()} slot. Tap it to put it on.", FtueRadio.Size.Small, 52);
+            c.Chip = "NEW · TAP TO WEAR";
+            c.Target = () => FtueRadio.ScreenRect(tile);
+            c.Hand = () => FtueRadio.TapPoint(tile);
+            c.Alive = () => Live(tile) && (worn == null || !worn());
+            c.Modal = true;
+            FtueRadio.Show(c);
+        }
+
         // Horde Call telegraph (mockup U2 05/10): Raptor calls the side, the HUD draws the arrows and
         // the 3-2-1. Not an FTUE step, so it never waits on Ftue flags; it ends itself.
         public static void HordeCall(string side, float seconds)

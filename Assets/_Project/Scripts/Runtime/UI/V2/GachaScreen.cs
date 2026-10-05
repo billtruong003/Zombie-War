@@ -216,8 +216,10 @@ namespace ZombieWar.UI
                     // hint and the still-closed box would show behind the card (QA 04/10 #11). The
                     // spotlight takes its own taps.
                     SetSheetChrome(false, resultTiles[best]);
-                    yield return spotlight.Play(tier, chestSprite, prize, r.label, NoteFor(r), () => _skip);
+                    string wear = WearItemFor(r, false);
+                    yield return spotlight.Play(tier, chestSprite, prize, r.label, NoteFor(r), () => _skip, wear != null);
                     SetSheetChrome(true, resultTiles[best]);
+                    if (spotlight.WearChosen && wear != null) { _wearAfter = WearItemFor(r, true); _skip = true; }
                 }
                 Open(resultTiles[best], r);
                 if (!_skip) spotlight.MiniBurst((RectTransform)resultTiles[best].root.transform, (int)r.tier);
@@ -226,6 +228,33 @@ namespace ZombieWar.UI
             if (resultsSkip != null) resultsSkip.gameObject.SetActive(false);
             if (resultsOk != null) { resultsOk.gameObject.SetActive(true); UIFx.PopIn(resultsOk.transform); }
             _reveal = null;
+            if (_wearAfter != null)
+            {
+                // WEAR NOW: the rest of the boxes opened at once; straight to the Studio on the piece.
+                string item = _wearAfter; _wearAfter = null;
+                resultsSheet.SetActive(false);
+                StudioScreen.OpenFor(item);
+            }
+        }
+
+        string _wearAfter;
+
+        /// <summary>
+        /// The piece WEAR NOW opens the Studio on, or null for a prize that is not clothing. A set is
+        /// put on whole first, then the Studio opens on its top (or its first piece).
+        /// </summary>
+        string WearItemFor(GachaBanners.Result r, bool putOnSet)
+        {
+            if (string.IsNullOrEmpty(r.id)) return null;
+            if (r.prize == GachaBanners.Prize.Costume) return r.id;
+            if (r.prize != GachaBanners.Prize.CostumeSet || economy == null || !economy.TryGetCostumeSet(r.id, out var set) || set.itemIds.Count == 0) return null;
+            if (putOnSet && costumes != null) foreach (var id in set.itemIds) PlayerProfile.TryEquipCostume(costumes, id);
+            foreach (var id in set.itemIds)
+            {
+                var slot = costumes != null ? costumes.slotDefinitions.FirstOrDefault(d => costumes.GetSlot(d.id)?.parts.Any(p => p.itemId == id) == true) : null;
+                if (slot != null && slot.id == "Chest") return id;
+            }
+            return set.itemIds[0];
         }
 
         void SetSheetChrome(bool on, Tile spotlit)
