@@ -17,6 +17,33 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 5. SDK và store (Đợt 8).
 6. Bản địa hóa **vi, en, ja, ko**: ngôn ngữ mặc định theo quốc gia của người chơi, trang store cũng đủ 4 thứ tiếng.
 
+## Toàn bộ việc còn lại tới khi xong game (chốt 05/10 khuya)
+Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cần owner. **HOLD** = owner bảo giữ lại.
+
+0. **HOLD · Build và kiểm trên máy** (Đợt 1 #1–#3, m8): build Android dev có cheat, cài, ghi log; so `perf_baseline`; đo lại cú giật 300 ms, thời gian vào trận 13 s; cảm giác tay (rung, độ khó, Horde Call, HUD mới) — C.
+1. **HOLD · Đợt 4 cân bằng + lab bot**:
+   - #28 lab bot tự chơi: người mới sống 6–8 phút, ai cũng chết — A
+   - #29 mạnh lên sớm, #30 elite thưa, #31 thang thưởng 0:45/1:00/2:00/4:00, #34 tỉ lệ rơi, #35 nhịp thẻ, #36 đổi/loại thẻ — A
+   - #33 econ_sim + công thức coin (giá Legendary = Q3) — A/C
+   - #32 cảm giác thưởng, #37 rương máy đánh bạc — B
+   - #38 quái mới tới phút 10–12 (chọn trong 17 Blob hoặc mua asset) — C
+2. **Plan nội dung chế độ chơi** (#28b, sau bot) — C duyệt: #24 chế độ thử súng, #46 mode 2 (Thử thách ngày).
+3. **Meta còn sót**:
+   - #16 Arsenal đổi phần dư khi súng full (Q2) — C rồi B
+   - #26b món featured 50/50 cho banner Outfits/Shards — C
+   - #27 skin súng mùa 1 (chọn style shader) — C rồi B
+   - Q1 giọng Tiger cho Studio; nối 7 câu thoại còn lại — A
+   - Q6 súng Pistol (model Tec-9) — C
+   - tiến hoá cần 3 sao: dẫn từ màn thông thạo sang nâng sao ở Arsenal — B
+   - quà trang phục từ Pass/Daily/thành tựu gọi WEAR NOW (`StudioScreen.OpenFor`) khi có loại quà này — B
+4. **Đợt 7 · Art, VFX, âm thanh** (luôn đưa option): #50 VFX skill đồng bộ, #51 trúng đạn theo vật liệu (chỉ Epic Toon), #52 bóng/AO rẻ + shader đất/chất lỏng/lava/tuyết + màu viền, #53 phủ âm thanh (105/397 key), #54 tối ưu quái và súng (nén VAT, Addressables, giảm poly) — B/C.
+5. **Đợt 5 · Boss**: #39 lab boss trong Unity cho owner duyệt → #40 Kaiju_04 → #41 AI Titan → #42 tường, thanh máu, màn xuất hiện, thưởng → #43 Titan phút 5/10/15/20 + thanh mốc HUD → #44 boss trạm Boss Beacon — B/C.
+6. **Đợt 6 · Nội dung và map**: đủ **6 map** (concept → sandbox → owner duyệt → ô map bake), #45 theme V1 + màn chọn map, #47 MegaCity, #48 nhạc Sa mạc; #49 campaign để sau V1 — B/C.
+7. **Đợt 8 · SDK và store**: #55 AdMob hay ironSource (C) → #56 rewarded + interstitial → #57 IAP 8 gói + xác thực → #58 Firebase Analytics/Crashlytics/Remote Config + funnel FTUE → #60 UMP consent, 13+, gacha ở Bỉ → #61 các dòng Settings → #63 mã hoá save, chống chỉnh giờ → #64 build release (keystore, tắt ZW_CHEATS, icon, dung lượng) → #65 trang store + chính sách + tên súng → #66 kiểm WebGL → #67 soft launch PH/ID/VN. Tài khoản, khoá, thanh toán: C.
+8. **Bản địa hoá** (#62): vi/en/ja/ko, mặc định theo quốc gia, trang store 4 thứ tiếng; owner duyệt bản ja/ko — A/C.
+9. **Đợt 9 · Dọn dẹp và hiệu năng**: #68 dọn thư mục (Q4), #69 comment cũ + widget FTUE v2 ẩn + thừa trong UI_Hud, #70 cập nhật CURRENT_STATE/MVP_SHIP_PLAN, #71 Board + `.utmp`, #72 tick chung cho quái, pool, flow-field, ngân sách khung hình/bộ nhớ < 1,3 GB — A.
+10. **Sau launch**: #59 Firebase Auth + lưu đám mây, leaderboard, bạn bè (chỉ thiết kế, chưa làm); campaign.
+
 **Đã xong 05/10** (chưa build, chờ owner chơi thử):
 - hồi sinh giết toàn bộ quái trên map (`MechanicItems.ReviveClear`); Concept Lock ghi vào `GAME_DESIGN.md`
 - #2 báo cáo hiệu năng `Review/QA/perf_device_1005.md`
@@ -36,8 +63,10 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 | Q3 | #26 Giá súng Legendary | 18.000 (memory) / 12.000 (dữ liệu) | chạy `econ_sim.py` rồi chốt |
 | Q4 | #68 Dọn thư mục | xoá Screenshots 118 MB, VATEnemy 170 MB, DuNguyn 59 MB, Monsters, _Recovery? | xoá Screenshots, _Recovery; giữ cái còn dùng |
 | Q5 | Build sớm | build 1 lần sau Đợt 2 (toàn UI) / giữ "không build tới lab bot" | build sau Đợt 2 |
+| Q6 | Súng khởi đầu "Pistol" dùng model Pistol_A trong pack (dáng Tec-9, trông như SMG) | đổi model sang súng ngắn cổ điển trong pack (Pistol_B…J) / đổi tên thành "Auto Pistol" / giữ | đổi model, icon tự sinh lại |
 
 ## Rà soát tổng 05/10 tối
+**Trạng thái (05/10 khuya):** B1–B4, m1–m3, m5–m7 đã sửa. m4 thành Q6 (là model, không phải icon). m8 đo trên máy (Đợt 1 mục 1).
 Lỗi lớn:
 - B1 Bộ Daily Ops đổi giữa ngày khi mua súng mới hoặc lên cấp tài khoản → tiến độ đang làm biến mất. Sửa: chốt bộ nhiệm vụ của ngày vào profile.
 - B2 Rương ngày chưa có nút nhận → làm xong 4 nhiệm vụ cũng không mở được.
@@ -76,6 +105,8 @@ Thứ tự chạy (A/B):
 17. #33 econ_sim, công thức coin (A; giá chốt = Q3)
 18. #32 cảm giác thưởng (B) · #37 rương máy đánh bạc (B)
 19. #28 Lab bot: bot tự chơi, số liệu sống 6–8 phút / ai cũng chết (A)
+
+**Đã xong 05/10 khuya (bước 1–4 sau rà soát):** sửa B1 m1 m2 m6 m7 · UI Daily Ops, rương ngày, thông thạo, tiến hoá, thành tựu, thẻ Home, 3 dòng Result, thẻ thành tựu trong trận · B4 avatar Profile (chờ stage thì hiện placeholder) · #6 tiêu đề Gacha 2 dòng, mép cuộn mờ cho mọi trang dài (thẻ Pass không còn bị cắt cứng), chip SUGGESTED co theo chữ · #17 render 13 màn × 4 tỉ lệ (`Review/V2/shots/resp_*`): không tràn ngang, nút chính ghim đáy · RadioVoice không chạy ngoài Play (test EditMode).
 
 **Đã xong trong lượt chạy dài 05/10 (chiều):** #11 Studio lần đầu (Tiger, chữ) · #12 màn mở gacha bằng shader · #13 WEAR NOW · #14a điểm theo kill + kỷ lục · #18 thống kê theo súng · #19 Daily Ops + rương ngày + chuỗi · #20 điểm danh 28 ngày tăng dần · #21 thông thạo súng (logic + bonus toàn tài khoản) · #22 thành tựu (logic + câu thoại) · #23 tiến hoá súng (logic + thuộc tính) · #25 nối 13 câu thoại · #26a giá gói 2 vé hợp lý (25 gem/lượt < 27).
 Còn lại của hàng A/B: phần UI cho #15/#14b/#19-#23 (thẻ Daily Ops, rương ngày, màn thông thạo U7, tab thành tựu U8, màn tiến hoá F3, toast thành tựu trong trận F4), #6, #17, Đợt 4, #28.
