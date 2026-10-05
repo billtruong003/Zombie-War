@@ -17,36 +17,90 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 5. SDK và store (Đợt 8).
 6. Bản địa hóa **vi, en, ja, ko**: ngôn ngữ mặc định theo quốc gia của người chơi, trang store cũng đủ 4 thứ tiếng.
 
-## Toàn bộ việc còn lại tới khi xong game (chốt 05/10 khuya)
-Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cần owner. **HOLD** = owner bảo giữ lại.
+## Toàn bộ việc còn lại tới khi xong game (cập nhật 05/10 đêm)
+Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cần owner. **HOLD** = owner bảo giữ lại, chỉ làm khi được gọi.
 
-0. **HOLD · Build và kiểm trên máy** (Đợt 1 #1–#3, m8): build Android dev có cheat, cài, ghi log; so `perf_baseline`; đo lại cú giật 300 ms, thời gian vào trận 13 s; cảm giác tay (rung, độ khó, Horde Call, HUD mới) — C.
-1. **HOLD · Đợt 4 cân bằng + lab bot**:
+### Quyết định owner 05/10 đêm
+- **Q1 → lồng tiếng theo cách cũ**, mỗi câu gen **2 bản: tự nhiên và có cảm xúc**, owner chọn.
+- **Q2 → súng full đổi phần dư ra coin**, tỉ lệ do Claude cân (xem mục 3a).
+- **Q3 → Legendary không mua bằng coin**, chỉ mở bằng gacha hoặc farm mảnh. Hướng chung: người chơi mở được hết súng một cách tự nhiên, không ép (xem mục 3b, cần owner duyệt).
+
+### HOLD
+0. **Build và kiểm trên máy** (Đợt 1 #1–#3, m8):
+   - build Android dev có cheat, cài, ghi log
+   - so `perf_baseline`, đo lại cú giật 300 ms và 13 s vào trận
+   - cảm giác tay: rung, độ khó, Horde Call, HUD mới — C
+1. **Đợt 4 · Cân bằng + lab bot**:
    - #28 lab bot tự chơi: người mới sống 6–8 phút, ai cũng chết — A
-   - #29 mạnh lên sớm, #30 elite thưa, #31 thang thưởng 0:45/1:00/2:00/4:00, #34 tỉ lệ rơi, #35 nhịp thẻ, #36 đổi/loại thẻ — A
-   - #33 econ_sim + công thức coin (giá Legendary = Q3) — A/C
-   - #32 cảm giác thưởng, #37 rương máy đánh bạc — B
+   - #29 mạnh lên sớm · #30 elite thưa, không tụ cục · #31 thang thưởng 0:45 / 1:00 / 2:00 / 4:00 · #34 tỉ lệ rơi · #35 nhịp thẻ 30–45 s · #36 đổi/loại thẻ — A
+   - #33 kinh tế: coin hiện cộng thẳng theo kill nên phút 20 đã vài chục nghìn → công thức coin mới chống lạm phát, chạy `econ_sim.py`, đặt giá Common–Epic theo thu nhập — A
+   - #32 cảm giác thưởng (chuỗi giết, banner kỷ lục, khoảnh khắc tiến hoá, phản hồi trúng/hạ/lên cấp) · #37 rương kiểu máy đánh bạc — B
    - #38 quái mới tới phút 10–12 (chọn trong 17 Blob hoặc mua asset) — C
-1b. **HOLD · Lồng tiếng** (owner 05/10: phải có giọng cho hướng dẫn Studio; gom làm một đợt):
-   - 3 thẻ bộ đàm mới đang chỉ có chữ: Studio lần đầu (Tiger/Mai), WEAR NOW (Mai), Horde Call (Lukas) — viết câu, gen đúng giọng đã chọn, chuẩn hoá + lọc radio, sinh envelope (`Tools/vo_envelopes.py`), owner nghe duyệt — B/C
-   - câu cho các khoảnh khắc mới chưa có giọng: mở rương ngày, chuỗi ngày 7, lên cấp thông thạo, tiến hoá súng — viết kịch bản cho owner duyệt trước — C
-   - nối các câu đã thu nhưng chưa có chỗ gọi (đếm 7 câu); rà 35 clip không thấy tên trong code (một phần được ghép tên lúc chạy) — A
-   - giọng theo thị trường khi bản địa hoá (6 đặc vụ theo thị trường; phụ đề vi/en/ja/ko) — C, làm cùng mục 8
-2. **Plan nội dung chế độ chơi** (#28b, sau bot) — C duyệt: #24 chế độ thử súng, #46 mode 2 (Thử thách ngày).
-3. **Meta còn sót**:
-   - #16 Arsenal đổi phần dư khi súng full (Q2) — C rồi B
+1b. **Lồng tiếng** (cách cũ, mỗi câu 2 bản tự nhiên / cảm xúc):
+   - 3 thẻ đang chỉ có chữ: Studio lần đầu (Tiger/Mai), WEAR NOW (Mai), Horde Call (Lukas) — B, owner nghe chọn
+   - câu cho khoảnh khắc mới: mở rương ngày, chuỗi ngày 7, lên cấp thông thạo, tiến hoá súng, nhận súng mới bằng mảnh — viết kịch bản cho owner duyệt trước — C
+   - nối 7 câu đã thu chưa có chỗ gọi; rà 35 clip không thấy tên trong code — A
+   - giọng theo thị trường khi bản địa hoá — C, cùng mục 8
+
+### Làm tiếp sau HOLD
+2. **Plan nội dung chế độ chơi** (#28b, sau lab bot) — C duyệt:
+   - #24 chế độ thử súng (riêng, không cho mượn súng trong trận thường)
+   - #46 mode 2 (Thử thách ngày)
+3. **Meta: súng và kinh tế**
+   - **3a · #16 đổi phần dư khi súng full → coin** (A/B): mảnh của súng đã 3 sao tự đổi ra coin khi nhận (toast báo), kho mảnh cũ đổi ở Arsenal. Tỉ lệ đề xuất theo độ hiếm: Common 10 · Uncommon 15 · Rare 20 · Epic 25 · Legendary 40 coin/mảnh (~một nửa giá trị mảnh khi mua súng). Chỉnh lại sau #33.
+   - **3b · Mở súng tự nhiên** (C duyệt rồi A/B):
+     - Legendary bỏ giá coin; mở khi đủ mảnh (đề xuất 100 mảnh) hoặc trúng gacha. Epic: coin hoặc mảnh.
+     - Daily Ops gọi tên **từng khẩu** (không chỉ nhóm súng), xoay qua mọi súng đã có → khẩu nào cũng có ngày được dùng.
+     - Mảnh súng chưa có đến từ nhiều đường: banner Shards (pity), chế độ thử súng (#24) với đúng khẩu đó, Pass, rương ngày thứ 7, thành tựu.
+     - Thành tựu sưu tập: sở hữu 5 / 10 / 25 / tất cả súng, đủ một nhóm súng, Legendary đầu tiên.
+     - Bộ sưu tập theo nhóm: đủ cả nhóm súng thì có thưởng nhỏ toàn tài khoản (giống thưởng thông thạo).
+     - Gợi ý "khẩu tiếp theo" ở Home/Result chỉ vào khẩu gần mở nhất (đủ mảnh, đủ coin).
    - #26b món featured 50/50 cho banner Outfits/Shards — C
    - #27 skin súng mùa 1 (chọn style shader) — C rồi B
    - Q6 súng Pistol (model Tec-9) — C
    - tiến hoá cần 3 sao: dẫn từ màn thông thạo sang nâng sao ở Arsenal — B
-   - quà trang phục từ Pass/Daily/thành tựu gọi WEAR NOW (`StudioScreen.OpenFor`) khi có loại quà này — B
-4. **Đợt 7 · Art, VFX, âm thanh** (luôn đưa option): #50 VFX skill đồng bộ, #51 trúng đạn theo vật liệu (chỉ Epic Toon), #52 bóng/AO rẻ + shader đất/chất lỏng/lava/tuyết + màu viền, #53 phủ âm thanh (105/397 key), #54 tối ưu quái và súng (nén VAT, Addressables, giảm poly) — B/C.
-5. **Đợt 5 · Boss**: #39 lab boss trong Unity cho owner duyệt → #40 Kaiju_04 → #41 AI Titan → #42 tường, thanh máu, màn xuất hiện, thưởng → #43 Titan phút 5/10/15/20 + thanh mốc HUD → #44 boss trạm Boss Beacon — B/C.
-6. **Đợt 6 · Nội dung và map**: đủ **6 map** (concept → sandbox → owner duyệt → ô map bake), #45 theme V1 + màn chọn map, #47 MegaCity, #48 nhạc Sa mạc; #49 campaign để sau V1 — B/C.
-7. **Đợt 8 · SDK và store**: #55 AdMob hay ironSource (C) → #56 rewarded + interstitial → #57 IAP 8 gói + xác thực → #58 Firebase Analytics/Crashlytics/Remote Config + funnel FTUE → #60 UMP consent, 13+, gacha ở Bỉ → #61 các dòng Settings → #63 mã hoá save, chống chỉnh giờ → #64 build release (keystore, tắt ZW_CHEATS, icon, dung lượng) → #65 trang store + chính sách + tên súng → #66 kiểm WebGL → #67 soft launch PH/ID/VN. Tài khoản, khoá, thanh toán: C.
-8. **Bản địa hoá** (#62): vi/en/ja/ko, mặc định theo quốc gia, trang store 4 thứ tiếng; owner duyệt bản ja/ko — A/C.
-9. **Đợt 9 · Dọn dẹp và hiệu năng**: #68 dọn thư mục (Q4), #69 comment cũ + widget FTUE v2 ẩn + thừa trong UI_Hud, #70 cập nhật CURRENT_STATE/MVP_SHIP_PLAN, #71 Board + `.utmp`, #72 tick chung cho quái, pool, flow-field, ngân sách khung hình/bộ nhớ < 1,3 GB — A.
-10. **Sau launch**: #59 Firebase Auth + lưu đám mây, leaderboard, bạn bè (chỉ thiết kế, chưa làm); campaign.
+   - quà trang phục từ Pass/Daily/thành tựu có WEAR NOW (`StudioScreen.OpenFor`) — B
+4. **Đợt 7 · Art, VFX, âm thanh** (luôn đưa option) — B/C:
+   - #50 VFX mọi skill đã mắt, đồng bộ một style
+   - #51 trúng đạn theo vật liệu (chỉ Epic Toon, máu được phép)
+   - #52 bóng/AO rẻ, shader đất và chất lỏng theo map, lava, vệt chân trên tuyết, màu viền
+   - #53 phủ âm thanh (mới 105/397 key)
+   - #54 tối ưu quái và súng: nén VAT, nạp quái qua Addressables, giảm poly súng nặng
+5. **Đợt 5 · Boss** (lab trong Unity cho owner duyệt trước) — B/C:
+   - #39 lab: vòng đấu rộng bao nhiêu, va tường rào thì sao, đòn boss, quái con
+   - #40 Kaiju_04 (đòn FreeFighter, di chuyển/chết/trúng đòn MalbersHumanAnims)
+   - #41 AI Titan: đập đất + vòng đỏ, lao tới, gọi quái con, nổi điên sau 90 s
+   - #42 tường vòng đấu, thanh máu boss, màn xuất hiện, thưởng khi hạ
+   - #43 Titan phút 5/10/15/20 mạnh dần + thanh mốc trên HUD
+   - #44 boss trạm Boss Beacon: vòng sáng đỏ + thanh máu
+6. **Đợt 6 · Nội dung và map** — B/C:
+   - đủ **6 map**: concept → khu trong sandbox → owner duyệt → ô map bake sẵn
+   - #45 theme V1 + màn chọn map
+   - #47 MegaCity · #48 nhạc riêng map Sa mạc
+   - #49 campaign: sau V1
+7. **Đợt 8 · SDK và store**:
+   - #55 AdMob hay ironSource — C
+   - #56 quảng cáo có thưởng (hồi sinh, x2 coin, deal) + interstitial sau trận dài
+   - #57 IAP 8 gói, xác thực hoá đơn
+   - #58 Firebase Analytics, Crashlytics, Remote Config, funnel FTUE
+   - #60 UMP consent, cấu hình 13+, gacha ở Bỉ
+   - #61 các dòng Settings: Language, Help, Ad privacy, Privacy policy, Restore purchases
+   - #63 mã hoá save, chống chỉnh giờ máy
+   - #64 build release: keystore, tắt ZW_CHEATS, ReleaseGuard, icon app, dung lượng
+   - #65 trang store, chính sách riêng tư + domain, ảnh bìa, tên súng thật hay tự đặt — C
+   - #66 kiểm WebGL với Addressables
+   - #67 soft launch PH/ID/VN
+   - tài khoản, khoá, thanh toán — C
+8. **Bản địa hoá** (#62): vi / en / ja / ko, mặc định theo quốc gia, trang store 4 thứ tiếng; owner duyệt bản ja/ko — A/C
+9. **Đợt 9 · Dọn dẹp và hiệu năng** — A:
+   - #68 dọn thư mục (Q4)
+   - #69 bỏ comment cũ (AppLovin, Blueprint), widget FTUE v2 ẩn, đồ thừa trong UI_Hud
+   - #70 cập nhật CURRENT_STATE, MVP_SHIP_PLAN
+   - #71 HordeCall Board, dọn `.utmp`
+   - #72 tick chung cho quái, giảm SetParent trong pool, giới hạn flow-field, ngân sách khung hình, bộ nhớ < 1,3 GB
+10. **Sau launch**: #59 Firebase Auth + lưu đám mây, leaderboard, bạn bè (chỉ thiết kế), campaign.
+
+**Còn chờ owner chốt:** Q4 dọn thư mục · Q5 build sớm · Q6 súng Pistol · duyệt 3b mở súng tự nhiên · #26b · #24 · #27 · #38 · #55 · #65.
 
 **Đã xong 05/10** (chưa build, chờ owner chơi thử):
 - hồi sinh giết toàn bộ quái trên map (`MechanicItems.ReviveClear`); Concept Lock ghi vào `GAME_DESIGN.md`
@@ -62,9 +116,9 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
 ## Chờ owner quyết (ghi 05/10)
 | # | Câu hỏi | Lựa chọn | Đề xuất |
 | --- | --- | --- | --- |
-| Q1 | #11 Lồng tiếng câu hướng dẫn Studio (Tiger) | làm giọng như các câu FTUE cũ / tạm chỉ chữ, giọng sau | tạm chữ, giọng gom 1 đợt sau |
-| Q2 | #16 Súng full đổi phần dư ra gì | coin / gem / mảnh súng khác / vé gacha; tỉ lệ | mảnh dư → mảnh "đa năng" dùng cho súng khác |
-| Q3 | #26 Giá súng Legendary | 18.000 (memory) / 12.000 (dữ liệu) | chạy `econ_sim.py` rồi chốt |
+| Q1 | #11 Lồng tiếng câu hướng dẫn Studio (Tiger) | **Chốt 05/10:** cách cũ, mỗi câu 2 bản tự nhiên / cảm xúc | — |
+| Q2 | #16 Súng full đổi phần dư ra gì | **Chốt 05/10:** coin, Claude cân tỉ lệ | 10/15/20/25/40 coin mỗi mảnh theo độ hiếm |
+| Q3 | #26 Giá súng Legendary | **Chốt 05/10:** không bán bằng coin; gacha hoặc farm mảnh | 100 mảnh để mở; plan 3b chờ duyệt |
 | Q4 | #68 Dọn thư mục | xoá Screenshots 118 MB, VATEnemy 170 MB, DuNguyn 59 MB, Monsters, _Recovery? | xoá Screenshots, _Recovery; giữ cái còn dùng |
 | Q5 | Build sớm | build 1 lần sau Đợt 2 (toàn UI) / giữ "không build tới lab bot" | build sau Đợt 2 |
 | Q6 | Súng khởi đầu "Pistol" dùng model Pistol_A trong pack (dáng Tec-9, trông như SMG) | đổi model sang súng ngắn cổ điển trong pack (Pistol_B…J) / đổi tên thành "Auto Pistol" / giữ | đổi model, icon tự sinh lại |
