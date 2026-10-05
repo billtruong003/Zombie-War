@@ -282,8 +282,9 @@ namespace ZombieWar.EditorTools.V2
             hint.alignment = TextAlignmentOptions.MidlineRight;
 
             var so = new SerializedObject(s);
-            var rows = so.FindProperty("rows"); rows.arraySize = 10;
-            for (int i = 0; i < 10; i++)
+            int count = Achievements.All.Count;
+            var rows = so.FindProperty("rows"); rows.arraySize = count;
+            for (int i = 0; i < count; i++)
             {
                 var row = Node(page, "A" + i); Size(row, -1, 60);
                 Surface(row, Card, RCard);

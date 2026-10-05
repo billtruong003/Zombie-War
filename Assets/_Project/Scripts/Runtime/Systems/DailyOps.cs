@@ -24,16 +24,24 @@ namespace ZombieWar
         /// <summary>A mission's gun family, or null for "any gun".</summary>
         public static WeaponClass? FamilyOf(PassMission m) => m is DailyOp op ? op.family : null;
 
+        /// <summary>The one gun a mission asks for (owner 05/10: "each gun by name"), or null.</summary>
+        public static string WeaponOf(PassMission m) => m is DailyOp op ? op.weaponId : null;
+
+        /// <summary>A gun's display name and family by id (the catalog; set by PassMissions, tests may
+        /// replace it). Null when the id is unknown.</summary>
+        public static Func<string, (string name, WeaponClass family)?> GunInfo;
+
         /// <summary>One Daily Ops mission: a pass mission with an optional gun family.</summary>
         public sealed class DailyOp : PassMission
         {
             public readonly WeaponClass? family;
             public readonly Template template;
+            public readonly string weaponId;
 
-            public DailyOp(string id, string title, MissionMetric metric, int target, int passXp, int coin, WeaponClass? family, Template template)
+            public DailyOp(string id, string title, MissionMetric metric, int target, int passXp, int coin, WeaponClass? family, Template template, string weaponId = null)
                 : base(id, title, MissionScope.Daily, metric, target, passXp, coin)
             {
-                this.family = family; this.template = template;
+                this.family = family; this.template = template; this.weaponId = weaponId;
             }
         }
 
@@ -67,6 +75,49 @@ namespace ZombieWar
             list.Add(Make(Hash(dayKey, seed, 4) % 2u == 0u ? Template.Station : Template.Elite, null, level));
             list.Add(Make(Template.Runs, null, level));
             return list;
+        }
+
+        /// <summary>
+        /// Today's four missions naming owned guns one by one (owner 05/10): the gun missions walk the
+        /// owned list a step a day, so every gun a player owns gets its day. Same shape as the family
+        /// deal otherwise.
+        /// </summary>
+        public static List<PassMission> ForGuns(int dayKey, int seed, IReadOnlyList<string> ownedGunIds, int accountLevel)
+        {
+            var guns = new List<string>();
+            if (ownedGunIds != null)
+                foreach (var g in ownedGunIds) if (!string.IsNullOrEmpty(g) && !guns.Contains(g) && GunInfo?.Invoke(g) != null) guns.Add(g);
+            if (guns.Count == 0) return For(dayKey, seed, null, accountLevel);
+            guns.Sort(StringComparer.Ordinal);
+
+            int level = Math.Max(1, accountLevel);
+            var list = new List<PassMission>(Count);
+            int start = (int)(((uint)dayKey + (uint)seed) % (uint)guns.Count);
+            bool killFirst = (dayKey & 1) == 0;
+            list.Add(MakeGun(killFirst ? Template.Kill : Template.Survive, guns[start], level));
+            if (guns.Count >= 2 && Hash(dayKey, seed, 2) % 2u == 0u)
+                list.Add(MakeGun(killFirst ? Template.Survive : Template.Kill, guns[(start + 1) % guns.Count], level));
+            else list.Add(Make(Template.Card, null, level));
+            list.Add(Make(Hash(dayKey, seed, 4) % 2u == 0u ? Template.Station : Template.Elite, null, level));
+            list.Add(Make(Template.Runs, null, level));
+            return list;
+        }
+
+        /// <summary>A gun mission naming one gun; the id carries the gun ("ops.kill.@weapon~smg~mp5.160").</summary>
+        public static DailyOp MakeGun(Template t, string weaponId, int level)
+        {
+            var info = GunInfo?.Invoke(weaponId);
+            if (info == null) return Make(t, null, level);
+            int target = TargetFor(t, level);
+            return BuildGun(t, weaponId, info.Value.name, info.Value.family, target);
+        }
+
+        static DailyOp BuildGun(Template t, string weaponId, string name, WeaponClass family, int target)
+        {
+            string id = $"{Prefix}{t.ToString().ToLowerInvariant()}.@{weaponId.Replace('.', '~')}.{target}";
+            return t == Template.Survive
+                ? new DailyOp(id, $"Survive {target} minutes with the {name}", MissionMetric.SurviveMinutes, target, 150, 300, family, t, weaponId)
+                : new DailyOp(id, $"Kill {target} monsters with the {name}", MissionMetric.KillAny, target, 150, 300, family, t, weaponId);
         }
 
         /// <summary>Builds a mission from its template; the id round-trips through <see cref="Decode"/>.</summary>
@@ -116,6 +167,13 @@ namespace ZombieWar
             var parts = id.Substring(Prefix.Length).Split('.');
             if (parts.Length != 3) return null;
             if (!Enum.TryParse(parts[0], true, out Template t)) return null;
+            if (parts[1].StartsWith("@", StringComparison.Ordinal))
+            {
+                string weaponId = parts[1].Substring(1).Replace('~', '.');
+                var info = GunInfo?.Invoke(weaponId);
+                if (info == null || !int.TryParse(parts[2], out int gunTarget) || gunTarget <= 0) return null;
+                return BuildGun(t, weaponId, info.Value.name, info.Value.family, gunTarget);
+            }
             WeaponClass? family = null;
             if (parts[1] != "any")
             {

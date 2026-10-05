@@ -96,6 +96,13 @@ namespace ZombieWar.UI
         private void OnEnable() { PlayerProfile.LoadoutChanged += Refresh; PlayerProfile.WalletChanged += Refresh; }
         private void OnDisable() { PlayerProfile.LoadoutChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; }
 
+        /// <summary>Backlog 3a: shards of 3-star guns become coin, with a toast saying so.</summary>
+        public static void SpareShardsToCoin()
+        {
+            var (shards, coin) = PlayerProfile.ExchangeMaxedShards(WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null);
+            if (coin > 0) Toast.Show($"Maxed guns: {shards} spare shards → +{coin:N0} coins", 2.6f);
+        }
+
         protected override void OnShow()
         {
             if (bigView != null) bigView.SetActive(false);
@@ -104,6 +111,7 @@ namespace ZombieWar.UI
                 .OrderByDescending(w => PlayerProfile.IsWeaponOwned(w.WeaponId)).ThenBy(w => w.tier).ThenBy(w => w.price).ToList();
             _selected = LoadoutState.Resolve(PlayerProfile.EquippedWeaponId, _guns);
             GiftFirstStarShards();
+            SpareShardsToCoin();
             // FTUE v2 (mockup FTUE2_09): the first visit after the first run points at the gun the
             // newcomer gift paid for.
             _ftueGun = !Ftue.Done(Ftue.Gun) && !HomeScreen.FirstRunPending ? FirstAffordable() : null;

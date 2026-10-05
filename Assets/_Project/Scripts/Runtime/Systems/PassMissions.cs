@@ -138,9 +138,34 @@ namespace ZombieWar
                 foreach (var id in kept) { var m = DailyOps.Decode(id); if (m != null) list.Add(m); }
                 if (list.Count == DailyOps.Count) return list;
             }
-            var dealt = DailyOps.For(day, DailyOps.SeedFor(PlayerProfile.PlayerId), OwnedFamilies(), PlayerProfile.AccountLevel);
+            EnsureGunInfo();
+            // Tests that pin families keep the family deal; the game names owned guns one by one.
+            var dealt = OwnedFamiliesProvider != null
+                ? DailyOps.For(day, DailyOps.SeedFor(PlayerProfile.PlayerId), OwnedFamilies(), PlayerProfile.AccountLevel)
+                : DailyOps.ForGuns(day, DailyOps.SeedFor(PlayerProfile.PlayerId), OwnedGunIds(), PlayerProfile.AccountLevel);
             PlayerProfile.KeepDailyOps(day, dealt.ConvertAll(m => m.id));
             return dealt;
+        }
+
+        static List<string> OwnedGunIds()
+        {
+            var ids = new List<string>(PlayerProfile.OwnedWeaponIds);
+            if (!string.IsNullOrEmpty(PlayerProfile.EquippedWeaponId) && !ids.Contains(PlayerProfile.EquippedWeaponId)) ids.Add(PlayerProfile.EquippedWeaponId);
+            return ids;
+        }
+
+        /// <summary>Points DailyOps at the weapon catalog for gun names (unless a test set its own).</summary>
+        public static void EnsureGunInfo()
+        {
+            if (DailyOps.GunInfo != null) return;
+            DailyOps.GunInfo = id =>
+            {
+                var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.AllData() : null;
+                if (all == null || string.IsNullOrEmpty(id)) return null;
+                var w = LoadoutState.Resolve(id, all);
+                if (w == null || w.WeaponId != id) return null;
+                return (w.weaponName, w.weaponClass);
+            };
         }
 
         /// <summary>Gun families the player owns (catalog lookup); tests can replace it.</summary>
@@ -184,7 +209,10 @@ namespace ZombieWar
         public static bool CountsWith(PassMission m, WeaponClass? carried)
         {
             var need = DailyOps.FamilyOf(m);
-            return !need.HasValue || (carried.HasValue && carried.Value == need.Value);
+            if (need.HasValue && !(carried.HasValue && carried.Value == need.Value)) return false;
+            // A mission naming one gun counts only with that gun in hand.
+            var gun = DailyOps.WeaponOf(m);
+            return gun == null || gun == PlayerProfile.EquippedWeaponId;
         }
 
         static int Rank(PassMission m) =>

@@ -215,5 +215,45 @@ namespace ZombieWar.Tests
             Assert.IsTrue(PlayerProfile.IsWeaponOwned("gun.rare"));
             UnityEngine.Object.DestroyImmediate(rare);
         }
+    
+        [Test]
+        public void GunOps_NameEachOwnedGun_InTurn_AndCountOnlyWithIt()
+        {
+            var names = new System.Collections.Generic.Dictionary<string, (string, WeaponClass)>
+            {
+                ["weapon.a.one"] = ("One", WeaponClass.Sidearm),
+                ["weapon.b.two"] = ("Two", WeaponClass.SMG),
+                ["weapon.c.three"] = ("Three", WeaponClass.Shotgun),
+            };
+            var keep = DailyOps.GunInfo;
+            DailyOps.GunInfo = id => names.TryGetValue(id, out var v) ? v : null;
+            try
+            {
+                var owned = new System.Collections.Generic.List<string>(names.Keys);
+                var seen = new System.Collections.Generic.HashSet<string>();
+                for (int d = 0; d < 3; d++)
+                {
+                    var set = DailyOps.ForGuns(1000 + d, 7, owned, 3);
+                    Assert.AreEqual(DailyOps.Count, set.Count);
+                    var gun = DailyOps.WeaponOf(set[0]);
+                    Assert.IsNotNull(gun);
+                    seen.Add(gun);
+                    StringAssert.Contains(names[gun].Item1, set[0].title);
+                    var back = DailyOps.Decode(set[0].id);
+                    Assert.IsNotNull(back, set[0].id);
+                    Assert.AreEqual(gun, DailyOps.WeaponOf(back));
+                    Assert.AreEqual(set[0].title, back.title);
+                }
+                Assert.AreEqual(3, seen.Count, "three days walk three guns");
+
+                var op = DailyOps.MakeGun(DailyOps.Template.Kill, "weapon.b.two", 3);
+                PlayerProfile.AddOwnedWeapon("weapon.b.two");
+                PlayerProfile.SetEquippedWeapon("weapon.a.one");
+                Assert.IsFalse(PassMissions.CountsWith(op, WeaponClass.SMG), "another gun of the family does not count");
+                PlayerProfile.SetEquippedWeapon("weapon.b.two");
+                Assert.IsTrue(PassMissions.CountsWith(op, WeaponClass.SMG));
+            }
+            finally { DailyOps.GunInfo = keep; }
+        }
     }
 }

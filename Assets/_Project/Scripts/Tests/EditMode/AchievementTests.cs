@@ -53,17 +53,19 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void TenAchievements_EachWithGemsAndARecordedLine()
+        public void Achievements_EachWithGems_RecordedLinesForTheFirstTen()
         {
-            Assert.AreEqual(10, Achievements.All.Count);
+            Assert.AreEqual(15, Achievements.All.Count);
             CollectionAssert.AllItemsAreUnique(Achievements.All.Select(a => a.id).ToList());
             var json = Resources.Load<TextAsset>("VO/vo_subtitles");
             Assert.IsNotNull(json);
             foreach (var a in Achievements.All)
             {
                 Assert.Greater(a.gems, 0, a.id);
-                StringAssert.Contains($"\"{a.voice}\"", json.text, $"{a.id} has no recorded line");
+                if (a.voice != null) StringAssert.Contains($"\"{a.voice}\"", json.text, $"{a.id} has no recorded line");
             }
+            // The five gun-collection achievements (06/10) wait for the owner's next voice pick.
+            Assert.AreEqual(5, Achievements.All.Count(a => a.voice == null));
         }
 
         [Test]

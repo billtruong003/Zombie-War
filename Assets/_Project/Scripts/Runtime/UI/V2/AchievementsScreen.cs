@@ -25,7 +25,7 @@ namespace ZombieWar.UI
 
         [SerializeField] private Button backButton;
         [SerializeField] private TMP_Text coinLabel, gemLabel, countLabel;
-        [SerializeField] private Row[] rows = new Row[10];
+        [SerializeField] private Row[] rows = new Row[15];
         [SerializeField] private Sprite lockedIcon, unlockedIcon;
 
         protected override void Awake()

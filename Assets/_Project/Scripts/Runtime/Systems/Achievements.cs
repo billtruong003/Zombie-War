@@ -21,7 +21,10 @@ namespace ZombieWar
 
         public const string FirstAlpha = "first_alpha", Run1000 = "run_1000", Survive10 = "survive_10",
             AllStations = "all_stations", FirstEvolution = "first_evo", Guns10 = "guns_10", Coins50K = "coins_50k",
-            Whiteout = "whiteout", Threat10 = "threat_10", NoHit3 = "nohit_3m";
+            Whiteout = "whiteout", Threat10 = "threat_10", NoHit3 = "nohit_3m",
+            // Gun collection (owner 05/10, backlog 3b): owning guns is a goal of its own. Voice lines
+            // for these are written and wait for the owner's pick with the next voice batch.
+            Guns5 = "guns_5", Guns25 = "guns_25", GunsAll = "guns_all", FamilyFull = "family_full", FirstLegend = "first_legend";
 
         public static readonly IReadOnlyList<Def> All = new List<Def>
         {
@@ -35,7 +38,16 @@ namespace ZombieWar
             new(Whiteout,       "Whiteout",         "Play a run on the Tundra map",                20,  "vo_kaito_ach_whiteout"),
             new(Guns10,         "Collector",        "Own 10 guns",                                 60,  "vo_lukas_ach_guns_10"),
             new(Coins50K,       "Deep Pockets",     "Hold 50,000 coins",                           40,  "vo_mai_ach_coins_50k"),
+            new(Guns5,          "Armory",           "Own 5 guns",                                  30,  null),
+            new(FamilyFull,     "Full Set",         "Own every gun of one family",                 80,  null),
+            new(FirstLegend,    "Legend",           "Own a Legendary gun",                         60,  null),
+            new(Guns25,         "Arsenal",          "Own 25 guns",                                 120, null),
+            new(GunsAll,        "Every Gun",        "Own every gun in the game",                   300, null),
         };
+
+        /// <summary>The guns in the game (the catalog; tests may replace it).</summary>
+        public static Func<IReadOnlyList<WeaponData>> GunsProvider = () =>
+            WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
 
         public static Def Find(string id)
         {
@@ -85,6 +97,11 @@ namespace ZombieWar
             Threat10 => PlayerProfile.PeakThreat / 10f,
             Run1000 => PlayerProfile.BestKills / 1000f,
             Guns10 => PlayerProfile.OwnedWeaponIds.Count / 10f,
+            Guns5 => PlayerProfile.OwnedWeaponIds.Count / 5f,
+            Guns25 => PlayerProfile.OwnedWeaponIds.Count / 25f,
+            GunsAll => OwnedShare(),
+            FamilyFull => BestFamilyShare(),
+            FirstLegend => OwnsTier(WeaponTier.Legendary) ? 1f : 0f,
             Coins50K => PlayerProfile.Coin / 50000f,
             _ => 0f,
         };
@@ -94,6 +111,51 @@ namespace ZombieWar
         {
             if (PlayerProfile.OwnedWeaponIds.Count >= 10) Unlock(Guns10);
             if (PlayerProfile.Coin >= 50000) Unlock(Coins50K);
+            int owned = PlayerProfile.OwnedWeaponIds.Count;
+            if (owned >= 5) Unlock(Guns5);
+            if (owned >= 25) Unlock(Guns25);
+            if (OwnedShare() >= 1f) Unlock(GunsAll);
+            if (BestFamilyShare() >= 1f) Unlock(FamilyFull);
+            if (OwnsTier(WeaponTier.Legendary)) Unlock(FirstLegend);
+        }
+
+        static float OwnedShare()
+        {
+            var guns = GunsProvider?.Invoke();
+            if (guns == null || guns.Count == 0) return 0f;
+            int have = 0, all = 0;
+            foreach (var g in guns) { if (g == null) continue; all++; if (PlayerProfile.IsWeaponOwned(g.WeaponId)) have++; }
+            return all == 0 ? 0f : have / (float)all;
+        }
+
+        /// <summary>The best share of one family owned (1 = a family complete).</summary>
+        static float BestFamilyShare()
+        {
+            var guns = GunsProvider?.Invoke();
+            if (guns == null) return 0f;
+            var all = new Dictionary<WeaponClass, int>(); var have = new Dictionary<WeaponClass, int>();
+            foreach (var g in guns)
+            {
+                if (g == null) continue;
+                all.TryGetValue(g.weaponClass, out int a); all[g.weaponClass] = a + 1;
+                if (PlayerProfile.IsWeaponOwned(g.WeaponId)) { have.TryGetValue(g.weaponClass, out int h); have[g.weaponClass] = h + 1; }
+            }
+            float best = 0f;
+            foreach (var kv in all)
+            {
+                if (kv.Value < 2) continue;   // a one-gun family is not a set
+                have.TryGetValue(kv.Key, out int h);
+                best = Math.Max(best, h / (float)kv.Value);
+            }
+            return best;
+        }
+
+        static bool OwnsTier(WeaponTier tier)
+        {
+            var guns = GunsProvider?.Invoke();
+            if (guns == null) return false;
+            foreach (var g in guns) if (g != null && g.tier == tier && PlayerProfile.IsWeaponOwned(g.WeaponId)) return true;
+            return false;
         }
 
         /// <summary>Station kinds a run must use for <see cref="AllStations"/>.</summary>

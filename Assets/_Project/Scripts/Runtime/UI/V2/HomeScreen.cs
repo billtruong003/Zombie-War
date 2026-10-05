@@ -179,6 +179,7 @@ namespace ZombieWar.UI
 
         protected override void OnShow()
         {
+            ArsenalScreen.SpareShardsToCoin();
             Refresh();
             if (revealRoot != null) revealRoot.SetActive(false);   // v2 "ARSENAL + SHOP" popup: replaced by the v3 gun step
             ZombieWar.Audio.FtueVoice.HomeShown(() => this != null && isActiveAndEnabled && !_launching);

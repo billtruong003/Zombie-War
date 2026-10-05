@@ -92,7 +92,10 @@ namespace ZombieWar
         static bool DailyOpsAsk(WeaponClass family)
         {
             foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
-                if (DailyOps.FamilyOf(m) == family) return true;
+            {
+                var gun = DailyOps.WeaponOf(m);
+                if (gun != null ? gun == PlayerProfile.EquippedWeaponId : DailyOps.FamilyOf(m) == family) return true;
+            }
             return false;
         }
     }

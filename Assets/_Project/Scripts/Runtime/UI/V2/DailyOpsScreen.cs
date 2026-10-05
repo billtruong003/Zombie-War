@@ -124,6 +124,11 @@ namespace ZombieWar.UI
         Sprite IconFor(PassMission m)
         {
             if (m is not DailyOps.DailyOp op) return null;
+            if (op.weaponId != null && weaponIcons != null)
+            {
+                var named = WeaponCatalog.Active != null ? WeaponCatalog.Active.DataById(op.weaponId) : null;
+                if (named != null) return weaponIcons.GetWeaponIcon(named, true);
+            }
             if (op.family.HasValue && weaponIcons != null)
             {
                 var all = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
