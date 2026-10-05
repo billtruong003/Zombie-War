@@ -19,6 +19,14 @@ namespace ZombieWar.UI
         public static void Error() { Play("sfx.ui.error"); Haptic(Buzz.Light); }
         public static void Purchase() { Play("sfx.ui.purchase"); Haptic(Buzz.Medium); }
         public static void Equip() { Play("sfx.ui.equip"); Haptic(Buzz.Tick); }
+
+        /// <summary>Equip with the gun's own handling sound on top (rifle / handgun / shotgun).</summary>
+        public static void Equip(WeaponData gun)
+        {
+            Equip();
+            string k = gun != null ? ZombieWar.Audio.AudioKeys.Sibling(gun.fireSfxKey, "equip") : null;
+            if (k != null) Play(k);
+        }
         public static void LevelUp() { Play("sfx.ui.levelup"); Haptic(Buzz.Medium); }
 
         public static bool HapticsOn => GameSettings.Haptics;

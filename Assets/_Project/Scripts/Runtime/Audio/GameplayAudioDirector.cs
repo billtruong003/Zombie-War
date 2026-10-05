@@ -277,6 +277,8 @@ namespace ZombieWar.Audio
             // "stinger.long" was never in the catalog, so every surge started in silence. The wave-start
             // stinger at a louder level is the closest cue the curated library has.
             StartCoroutine(WaveCue(e.Started ? "stinger.wave.start" : "stinger.wave.clear", e.Started ? 0.95f : 0.6f));
+            // The horde arriving: a bed of many feet under the stinger (audio coverage 06/10).
+            if (e.Started) Bill.Audio?.PlayCue("sfx.horde.movement_bed", SfxPriority.Low, 0.7f);
         }
 
         /// <summary>Threat cues dip the bed briefly so they cut through without a full result-style duck.</summary>

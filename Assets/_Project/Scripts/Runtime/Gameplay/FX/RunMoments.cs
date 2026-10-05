@@ -45,6 +45,17 @@ namespace ZombieWar
         void OnKilled(ZombieKilledEvent e)
         {
             if (RunState.Current == null || RunState.Current.IsOver) return;
+            // An elite goes down with a heavy body hit in its own material (audio coverage 06/10).
+            if (e.Data != null && e.Data.isElite)
+            {
+                string body = SurfaceImpact.FromImpactKey(e.Data.impactSfxKey) switch
+                {
+                    SurfaceKind.Bone => "sfx.impact.bone.heavy",
+                    SurfaceKind.Fur => "sfx.impact.fur.heavy",
+                    _ => "sfx.impact.flesh.heavy",
+                };
+                Bill.Audio?.PlayCue(body, e.Position, SfxPriority.High, 0.9f);
+            }
             float now = Time.time;
             _kills.Enqueue(now);
             while (_kills.Count > 0 && now - _kills.Peek() > StreakWindow) _kills.Dequeue();

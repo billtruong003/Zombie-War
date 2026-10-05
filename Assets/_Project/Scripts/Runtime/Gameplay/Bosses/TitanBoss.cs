@@ -49,7 +49,7 @@ namespace ZombieWar.Bosses
         public bool IsTargetable => !Dead && isActiveAndEnabled;
 
         Animator _anim;
-        float _born, _nextCallAt, _nextContactAt;
+        float _born, _nextCallAt, _nextContactAt, _nextStepAt;
         static readonly int SpeedId = Animator.StringToHash("Speed");
 
         void OnEnable()
@@ -116,7 +116,7 @@ namespace ZombieWar.Bosses
             Trigger("Slam");
             yield return new WaitForSeconds(wind);
             HitCircle(transform.position, slamRadius, slamDamage);
-            Bill.Audio?.PlayCue("sfx.skill.evolve", transform.position, SfxPriority.High, 0.9f);
+            Bill.Audio?.PlayCue("sfx.impact.bone.heavy", transform.position, SfxPriority.High, 1f);
             FindFirstObjectByType<CameraFollow>()?.Shake(0.5f);
             yield return new WaitForSeconds(0.5f);
         }
@@ -195,6 +195,11 @@ namespace ZombieWar.Bosses
             dir.Normalize();
             Vector3 next = transform.position + dir * speed * Time.deltaTime;
             if (!WorldNav.MapNavigator.Blocked(next)) transform.position = next;
+            if (Time.time >= _nextStepAt)
+            {
+                _nextStepAt = Time.time + 0.55f / Mathf.Max(0.5f, speed / walkSpeed);
+                Bill.Audio?.PlayCue("sfx.creature.flesh.step", transform.position, SfxPriority.Low, 0.9f);
+            }
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir, Vector3.up), 6f * Time.deltaTime);
             SetSpeed(1f);
         }

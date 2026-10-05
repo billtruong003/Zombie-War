@@ -208,6 +208,7 @@ namespace ZombieWar
         private void Update()
         {
             TickAutoFire(Time.deltaTime);
+            TickFireTail();
             UpdateRecoilSpring();
         }
 

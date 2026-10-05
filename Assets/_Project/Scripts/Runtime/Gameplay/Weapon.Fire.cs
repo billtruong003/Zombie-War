@@ -297,6 +297,11 @@ namespace ZombieWar
         private void PlayFireAudio(WeaponData data)
         {
             if (string.IsNullOrEmpty(data.fireSfxKey)) return;
+            // Burst bookkeeping for the tail (TickFireTail): when the gun stops after a real burst,
+            // the room answers with the family's tail (audio coverage 06/10).
+            if (_burstStartAt < 0f) _burstStartAt = Time.time;
+            _lastShotAt = Time.time;
+            _tailData = data;
 
             bool discrete = WantsDiscreteReports(data) && ShotInterval(data) >= HighRateAudioInterval;
             if (discrete)
@@ -315,6 +320,21 @@ namespace ZombieWar
         }
 
         private void OnDisable() => StopFireAudio();
+
+        float _burstStartAt = -1f, _lastShotAt;
+        WeaponData _tailData;
+        public const float TailAfterSilence = 0.22f, TailMinBurst = 0.35f;
+
+        /// <summary>Plays the family's tail once a burst of at least TailMinBurst has stopped.</summary>
+        private void TickFireTail()
+        {
+            if (_burstStartAt < 0f || Time.time - _lastShotAt < TailAfterSilence) return;
+            bool longEnough = _lastShotAt - _burstStartAt >= TailMinBurst;
+            _burstStartAt = -1f;
+            if (!longEnough || _tailData == null) return;
+            string tail = ZombieWar.Audio.AudioKeys.Sibling(_tailData.fireSfxKey, "tail");
+            if (tail != null) Bill.Audio?.PlayCue(tail, transform.position, SfxPriority.Low, 0.7f);
+        }
 
         // Screen shake is what actually reads as "recoil" in 3rd-person; the gun-mount spring is
         // largely cancelled by the hand IK chasing the grips. Camera lookup is cached.

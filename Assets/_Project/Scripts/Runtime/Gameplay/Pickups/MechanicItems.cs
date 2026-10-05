@@ -77,6 +77,7 @@ namespace ZombieWar
             var host = Host; var a = A;
             if (host == null) return;
             at.y = 0f;
+            BillGameCore.Bill.Audio?.PlayCue("sfx.pickup.bomb", at, BillGameCore.SfxPriority.High, 0.85f);   // the grab, under the blast (audio 06/10)
             if (a?.bombFx != null) PowerKit.PlaySized(a.bombFx, at + Vector3.up * 0.2f, 3.2f, a.bombNativeRadius);
             host.Shockwave(at, 0.5f, Reach, Blast, 0.55f);
             host.Sfx("sfx.player.bomb.explode", at, 1f, 0.1f);

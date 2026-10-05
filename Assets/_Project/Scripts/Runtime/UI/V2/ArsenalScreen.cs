@@ -194,7 +194,7 @@ namespace ZombieWar.UI
             _selected = d;
             if (PlayerProfile.IsWeaponOwned(d.WeaponId))
             {
-                if (PlayerProfile.EquippedWeaponId != d.WeaponId) { PlayerProfile.SetEquippedWeapon(d.WeaponId); UIFeedback.Equip(); }
+                if (PlayerProfile.EquippedWeaponId != d.WeaponId) { PlayerProfile.SetEquippedWeapon(d.WeaponId); UIFeedback.Equip(d); }
                 else UIFeedback.Tap();
             }
             else UIFeedback.Tap();
