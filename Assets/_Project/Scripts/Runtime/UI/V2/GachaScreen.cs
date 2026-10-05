@@ -152,6 +152,7 @@ namespace ZombieWar.UI
             foreach (var res in results) if (res.tier >= WeaponTier.Legendary) { PlayerProfile.AddFrame("frame.royal"); break; }
             ShowResults(results);
             ZombieWar.Audio.FtueVoice.GachaPulled(results.Exists(r => r.tier >= WeaponTier.Legendary));
+            if (count >= 10 && !results.Exists(r => r.tier >= WeaponTier.Epic)) ZombieWar.Audio.RadioDirector.GachaDry();
             Refresh();
         }
 

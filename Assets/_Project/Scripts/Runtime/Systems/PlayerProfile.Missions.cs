@@ -11,6 +11,8 @@ namespace ZombieWar
         // ===== Battle Pass missions =====
 
         public static event Action MissionsChanged;
+        /// <summary>A mission was claimed (the radio reacts: done, or a pass level up).</summary>
+        public static event Action<PassMission> MissionClaimed;
 
         public static int PassXp => Data.passXp;
 
@@ -117,6 +119,7 @@ namespace ZombieWar
             SaveNow();
 
             if (mission.coinReward > 0) Add(CurrencyKind.Coin, mission.coinReward);
+            MissionClaimed?.Invoke(mission);
             // Daily Ops: 5 shards of the gun that finished it (owner 05/10: play a gun, it grows).
             if (mission is DailyOps.DailyOp)
             {

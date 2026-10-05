@@ -135,6 +135,7 @@ namespace ZombieWar.Audio
             if (d == null || FtueActive) return;
             int hour = DateTime.Now.Hour, runs = PlayerProfile.RunsPlayed;
             if (hour >= 2 && hour < 4 && d.SayDaily("vo_riley_egg_night3am")) return;
+            if (d.CameBack()) return;
             if (d.Holiday()) return;
             if (runs == 3 && d.Converse(7)) return;
             if (runs >= 10 && d.Converse(17)) return;
@@ -182,6 +183,8 @@ namespace ZombieWar.Audio
             var d = _instance;
             if (d == null || FtueActive) return;
             if (Random.value < 0.08f && (d.SayOnce("vo_chen_lore_dragon") || d.SayOnce("vo_chen_lore_powers"))) return;
+            // Every Daily Op done today: rest is training too.
+            if (PlayerProfile.DailyOpsAllClaimed(GameClock.UtcNow) && d.SayDaily("vo_chen_meta_missions_empty")) return;
             if (Random.value < 0.35f) d.Say("vo_chen_meta_missions", 30f);
         }
 
@@ -189,6 +192,7 @@ namespace ZombieWar.Audio
         {
             var d = _instance;
             if (d == null || FtueActive) return;
+            if (PlayerProfile.GetPity("gacha.weapon") >= PityNearAt && d.SayDaily("vo_mai_meta_gacha_pity")) return;
             if (Random.value < 0.35f) d.Say("vo_mai_meta_gacha", 30f);
         }
 
@@ -236,6 +240,9 @@ namespace ZombieWar.Audio
         {
             var d = _instance;
             if (d == null || FtueActive) return;
+            var skills = ZombieWar.Skills.SkillRuntime.Active;
+            if (skills != null && skills.SlotsUsed(ZombieWar.Skills.SkillSlot.Stat) >= ZombieWar.Skills.SkillCatalogDefs.MaxStatSlots
+                && skills.SlotsUsed(ZombieWar.Skills.SkillSlot.Skill) == 0 && d.SayOnce("vo_chen_sit_all_stats")) return;
             if (Random.value < 0.2f) d.Say("vo_chen_run_levelup", 90f);
         }
 
@@ -251,6 +258,65 @@ namespace ZombieWar.Audio
         {
             var d = _instance;
             if (d != null && !string.IsNullOrEmpty(voiceId)) d.SayOnce(voiceId);
+        }
+
+        const int PityNearAt = 75;   // of 90: "it's getting close"
+
+        /// <summary>A gun the player tried to buy costs more than they carry.</summary>
+        public static void CantAfford()
+        {
+            var d = _instance;
+            if (d != null && !FtueActive) d.SayDaily("vo_lukas_meta_poor");
+        }
+
+        /// <summary>A x10 pull with nothing Epic or better.</summary>
+        public static void GachaDry()
+        {
+            var d = _instance;
+            if (d != null && !FtueActive) d.SayDaily("vo_mai_egg_gacha_10x");
+        }
+
+        /// <summary>The player put a mask on (Ji-ho's whole look is the mask).</summary>
+        public static void MaskWorn()
+        {
+            var d = _instance;
+            if (d != null && !FtueActive) d.SayOnce("vo_jiho_meta_studio_smog");
+        }
+
+        /// <summary>The player renamed themselves; an agent's name gets Riley's egg.</summary>
+        public static void NameSet(string name)
+        {
+            var d = _instance;
+            if (d == null || string.IsNullOrEmpty(name)) return;
+            string n = name.Trim().ToLowerInvariant();
+            foreach (var agent in new[] { "riley", "lukas", "chen", "kaito", "ji-ho", "jiho", "mai", "nightfin", "raptor", "dragon", "shark", "smog", "tiger" })
+                if (n == agent) { d.SayOnce("vo_riley_egg_name_agent"); return; }
+        }
+
+        int _passLevel = -1;
+
+        void OnMissionClaimed(PassMission m)
+        {
+            if (FtueActive) return;
+            int level = PassRewards.Level;
+            bool up = _passLevel >= 0 && level > _passLevel;
+            _passLevel = level;
+            if (up) Say("vo_chen_meta_pass_up", 10f);
+            else Say("vo_chen_meta_mission_done", 20f);
+        }
+
+        void OnDailyChest(PlayerProfile.DailyChestReward r)
+        {
+            if (r.streak > 0 && r.streak % PlayerProfile.StreakGunEvery == 0) Say("vo_mai_meta_streak7");
+        }
+
+        /// <summary>Home after three or more days away: Riley's welcome back (once per return).</summary>
+        bool CameBack()
+        {
+            const string key = "vo.lastHomeDay";
+            int today = DailyRewards.Today, last = PlayerPrefs.GetInt(key, today);
+            PlayerPrefs.SetInt(key, today);
+            return today - last >= 3 && Say("vo_riley_meta_comeback");
         }
 
         public static void EvolutionTaken()
@@ -298,6 +364,9 @@ namespace ZombieWar.Audio
         {
             _subscribed = true;
             Bill.Events.Subscribe<ThreatTierChangedEvent>(OnTier);
+            _passLevel = PassRewards.Level;
+            PlayerProfile.MissionClaimed += OnMissionClaimed;
+            PlayerProfile.DailyChestClaimed += OnDailyChest;
             Bill.Events.Subscribe<HordeSurgeEvent>(OnSurge);
             Bill.Events.Subscribe<ZombieKilledEvent>(OnKill);
             Bill.Events.Subscribe<StationCompletedEvent>(OnStation);

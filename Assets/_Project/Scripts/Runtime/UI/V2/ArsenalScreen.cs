@@ -224,6 +224,7 @@ namespace ZombieWar.UI
                     return;
                 }
                 UIFeedback.Tap();
+                if (_selected.price > 0) ZombieWar.Audio.RadioDirector.CantAfford();
                 if (shopScreen != null) UIManager.Instance?.Push(shopScreen); else Toast.Show("Get it in the Shop");
                 return;
             }
@@ -241,7 +242,7 @@ namespace ZombieWar.UI
                     Toast.Show(AccountProgress.LockedMessage(AccountProgress.Feature.GunStars));
                     break;
                 case PlayerProfile.WeaponUpgradeResult.InsufficientShards: UIFeedback.Error(); Toast.Show("Need more shards · Gacha gives shards"); break;
-                case PlayerProfile.WeaponUpgradeResult.InsufficientGold: UIFeedback.Error(); Toast.Show("Not enough coins"); break;
+                case PlayerProfile.WeaponUpgradeResult.InsufficientGold: UIFeedback.Error(); Toast.Show("Not enough coins"); ZombieWar.Audio.RadioDirector.CantAfford(); break;
                 default: UIFeedback.Error(); Toast.Show("Could not upgrade"); break;
             }
         }

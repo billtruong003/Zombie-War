@@ -12,6 +12,9 @@ namespace ZombieWar
         public const int DailyChestGems = 40, DailyChestTickets = 1, DailyChestShards = 15;
         public const int StreakDoubleAt = 3, StreakGunEvery = 7;
 
+        /// <summary>The daily chest opened (the radio celebrates a seventh day).</summary>
+        public static event Action<DailyChestReward> DailyChestClaimed;
+
         public struct DailyChestReward
         {
             public int gems, tickets, shards, streak;
@@ -81,6 +84,7 @@ namespace ZombieWar
                 }
             }
             Notify(Change.Missions);
+            DailyChestClaimed?.Invoke(reward);
             return true;
         }
     }

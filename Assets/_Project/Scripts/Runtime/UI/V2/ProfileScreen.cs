@@ -121,7 +121,7 @@ namespace ZombieWar.UI
         {
             if (nameInput != null) nameInput.gameObject.SetActive(false);
             if (string.IsNullOrWhiteSpace(value) || value.Trim() == PlayerProfile.DisplayName) return;
-            if (PlayerProfile.SetDisplayName(value)) { UIFeedback.Confirm(); Toast.Show("Name saved"); }
+            if (PlayerProfile.SetDisplayName(value)) { UIFeedback.Confirm(); Toast.Show("Name saved"); ZombieWar.Audio.RadioDirector.NameSet(value); }
         }
 
         void CopyId()

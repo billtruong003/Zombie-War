@@ -209,8 +209,11 @@ namespace ZombieWar.UI
             UIFeedback.Tap();
             if (PlayerProfile.IsCostumeOwned(p.itemId))
             {
-                if (catalog != null && PlayerProfile.TryEquipCostume(catalog, p.itemId) == PlayerProfile.CostumeEquipResult.Equipped && p.itemId == _newItem)
-                    UIFeedback.Equip();
+                if (catalog != null && PlayerProfile.TryEquipCostume(catalog, p.itemId) == PlayerProfile.CostumeEquipResult.Equipped)
+                {
+                    if (p.itemId == _newItem) UIFeedback.Equip();
+                    if (_slot == "Mask") ZombieWar.Audio.RadioDirector.MaskWorn();
+                }
             }
             else if (_stage != null && _stage.ModularApplier != null) _stage.ModularApplier.Apply(_slot, p);   // try on
             Refresh();
