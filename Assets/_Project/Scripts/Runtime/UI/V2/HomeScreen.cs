@@ -153,7 +153,8 @@ namespace ZombieWar.UI
             On(stripDaily, () => { if (!GateFirstRun()) Open(dailyScreen); });
             On(stripGacha, () => OpenGated(gachaScreen, AccountProgress.Feature.Gacha));
             On(stripPass, () => OpenGated(passScreen, AccountProgress.Feature.Pass));
-            On(missionsCard, () => OpenGated(passScreen, AccountProgress.Feature.Missions));
+            // Mockup F2 (05/10): the card is Daily Ops; it opens the Daily Ops screen.
+            On(missionsCard, () => { if (!Gate(AccountProgress.Feature.Missions)) { UIFeedback.Tap(); LateScreens.Open<DailyOpsScreen>(); } });
             On(nextBuyCard, () => { if (!GateFirstRun()) Open(shopScreen); });
             On(playButton, Play);
             // Server features are designed, not built (owner rule).
@@ -324,19 +325,39 @@ namespace ZombieWar.UI
         {
             bool unlocked = AccountProgress.IsUnlocked(AccountProgress.Feature.Missions);
             // The day's missions, as the Pass lists them (owner 04/10: Home shows the dailies).
-            var daily = PassMissions.Listed(GameClock.UtcNow).Where(m => m.scope == MissionScope.Daily && !PlayerProfile.IsMissionClaimed(m.id)).ToList();
-            int ready = daily.Count(PlayerProfile.IsMissionComplete);
-            Set(missionsHeader, unlocked ? (ready > 0 ? $"DAILY MISSIONS · {ready} READY" : "DAILY MISSIONS")
-                                         : $"MISSIONS · LV {AccountProgress.RequiredLevel(AccountProgress.Feature.Missions)}");
-            var list = daily.Take(missionRows.Length).ToList();
-            for (int i = 0; i < missionRows.Length; i++)
+            var now = GameClock.UtcNow;
+            var all = PassMissions.Listed(now).Where(m => m.scope == MissionScope.Daily).ToList();
+            int claimedOps = all.Count(m => PlayerProfile.IsMissionClaimed(m.id));
+            var daily = all.Where(m => !PlayerProfile.IsMissionClaimed(m.id)).ToList();
+            Set(missionsHeader, unlocked ? $"DAILY OPS · {claimedOps} / {all.Count}"
+                                         : $"DAILY OPS · LV {AccountProgress.RequiredLevel(AccountProgress.Feature.Missions)}");
+            // First row: the daily chest (mockup F2); then the ops still open.
+            bool chestReady = PlayerProfile.CanClaimDailyChest(now);
+            bool chestOpened = PlayerProfile.DailyChestOpenedOn(PassMissions.DayKey(now));
+            int row0 = 0;
+            if (missionRows.Length > 0 && missionRows[0]?.root != null)
+            {
+                var c = missionRows[0];
+                c.root.SetActive(true);
+                Set(c.title, chestOpened ? "Daily chest · opened" : "Daily chest");
+                if (c.claimTag != null) c.claimTag.SetActive(chestReady && unlocked);
+                if (c.bar != null)
+                {
+                    c.bar.parent.gameObject.SetActive(!chestReady);
+                    UIBarClip.Set(c.bar, all.Count == 0 ? 0f : claimedOps / (float)all.Count);
+                }
+                row0 = 1;
+            }
+            var list = daily.Take(Mathf.Max(0, missionRows.Length - row0)).ToList();
+            for (int i = row0; i < missionRows.Length; i++)
             {
                 var row = missionRows[i];
                 if (row == null || row.root == null) continue;
-                bool has = i < list.Count;
+                int k = i - row0;
+                bool has = k < list.Count;
                 row.root.SetActive(has);
                 if (!has) continue;
-                var m = list[i];
+                var m = list[k];
                 bool done = PlayerProfile.IsMissionComplete(m);
                 Set(row.title, m.title);
                 if (row.claimTag != null) row.claimTag.SetActive(done && unlocked);

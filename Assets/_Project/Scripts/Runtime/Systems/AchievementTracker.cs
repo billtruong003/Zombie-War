@@ -20,6 +20,9 @@ namespace ZombieWar
         float _lastHitAt, _nextPoll;
         readonly HashSet<StationKind> _stations = new();
 
+        /// <summary>Achievements unlocked during the current run (the result screen lists them).</summary>
+        public static readonly List<Achievements.Def> ThisRun = new();
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => _instance = null;
 
@@ -71,6 +74,7 @@ namespace ZombieWar
             {
                 _run = run;
                 _stations.Clear();
+                if (run != null) ThisRun.Clear();
                 _lastHitAt = 0f;
                 if (run != null && MapTheme.CurrentId == "tundra") Achievements.Unlock(Achievements.Whiteout);
             }
@@ -105,7 +109,16 @@ namespace ZombieWar
 
         static void OnUnlocked(Achievements.Def def)
         {
-            ZombieWar.UI.Toast.Show($"ACHIEVEMENT · {def.title} · +{def.gems} GEMS", 2.6f);
+            var run = RunState.Current;
+            if (run != null) ThisRun.Add(def);
+            if (run != null && !run.IsOver)
+            {
+                // Mockup F4: a radio card in the run, the agent's own line, gems claimed afterwards.
+                ZombieWar.UI.FtueV3.Achievement(def);
+                ZombieWar.Audio.RadioVoice.Say(def.voice);
+                return;
+            }
+            ZombieWar.UI.Toast.Show($"Achievement: {def.title}", 2.6f);   // short: the toast is one line
             ZombieWar.Audio.RadioDirector.AchievementUnlocked(def.voice);
         }
     }

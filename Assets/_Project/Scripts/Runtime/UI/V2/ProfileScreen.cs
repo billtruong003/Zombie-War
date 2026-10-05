@@ -49,6 +49,11 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text framesLabel;
         [SerializeField] private AvatarPicker picker;
 
+        [Header("Achievements (mockup F4, 05/10)")]
+        [SerializeField] private Button achievementsButton;
+        [SerializeField] private TMP_Text achievementsTitle, achievementsSub, achievementsTagText;
+        [SerializeField] private GameObject achievementsTag;
+
         [Header("Badges")]
         [SerializeField] private TMP_Text badgesHeader;
         [SerializeField] private Image[] badgeTiles = new Image[Badges.Length];
@@ -82,6 +87,7 @@ namespace ZombieWar.UI
         {
             if (avatarButton != null) avatarButton.onClick.AddListener(() => picker?.Open(false));
             if (framesButton != null) framesButton.onClick.AddListener(() => picker?.Open(true));
+            if (achievementsButton != null) achievementsButton.onClick.AddListener(() => { UIFeedback.Tap(); LateScreens.Open<AchievementsScreen>(); });
             base.Awake();
             if (backButton != null) backButton.onClick.AddListener(Back);
             if (editNameButton != null) editNameButton.onClick.AddListener(BeginEditName);
@@ -177,6 +183,16 @@ namespace ZombieWar.UI
             if (framesLabel != null) framesLabel.text = $"{frames} / {AvatarCatalog.Frames.Length} FRAMES";
 
             RefreshGun(guns);
+
+            int claimable = Achievements.ClaimableCount;
+            if (achievementsTitle != null) achievementsTitle.text = $"Achievements {Achievements.UnlockedCount} / {Achievements.All.Count}";
+            if (achievementsSub != null) achievementsSub.text = claimable > 0 ? (claimable == 1 ? "1 REWARD TO CLAIM" : $"{claimable} REWARDS TO CLAIM") : "EACH ONE HAS A RADIO LINE";
+            if (achievementsTag != null) achievementsTag.SetActive(claimable > 0);
+            if (achievementsTagText != null)
+            {
+                int gems = 0; foreach (var a in Achievements.All) if (Achievements.IsUnlocked(a.id) && !Achievements.IsClaimed(a.id)) gems += a.gems;
+                achievementsTagText.text = $"+{gems} ›";
+            }
 
             int earned = 0;
             for (int i = 0; i < Badges.Length && i < badgeTiles.Length; i++)

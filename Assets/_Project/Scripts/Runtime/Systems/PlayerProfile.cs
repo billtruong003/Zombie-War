@@ -90,6 +90,7 @@ namespace ZombieWar
             public List<WeaponShardEntry> weaponShards = new();
             public List<GunStatEntry> gunStats = new();
             public List<string> achievements = new();
+            public List<string> achievementsClaimed = new();
             public List<string> evolvedGuns = new();
             // Endless-run personal best (seconds survived in one run).
             public float bestSurvivalSeconds;

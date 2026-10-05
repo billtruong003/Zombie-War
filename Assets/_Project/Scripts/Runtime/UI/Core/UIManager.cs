@@ -60,6 +60,19 @@ namespace ZombieWar.UI
         }
 
         // ------------------------------------------------ public API
+        /// <summary>
+        /// Adds a screen created at runtime (LateScreens: screens added after Menu.unity was authored,
+        /// so the owner's scene is never edited). Ignored when that type is already registered.
+        /// </summary>
+        public void Register(UIScreen s)
+        {
+            if (s == null || _screens.ContainsKey(s.GetType())) return;
+            _screens.Add(s.GetType(), s);
+            s.gameObject.SetActive(false);
+        }
+
+        public UIScreen Get(System.Type t) => t != null && _screens.TryGetValue(t, out var s) ? s : null;
+
         public T Get<T>() where T : UIScreen
             => _screens.TryGetValue(typeof(T), out var s) ? (T)s : null;
 

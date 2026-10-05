@@ -331,6 +331,10 @@ namespace ZombieWar.UI
             // Under the step card that just ended (done/nudge lines), else under the HUD top strip.
             float y = _call == null && Time.unscaledTime - _lastAt < 30f && _lastY >= 0f ? _lastY : subtitleTop;
             if (_call != null && Mathf.Abs(_call.Y - subtitleTop) < 260f) y = _call.Y + 300f;
+            // Menus (QA 05/10): chatter at the top covered each screen's title and first card. Out of a
+            // run it sits at the bottom, over the tab bar, where a few seconds of cover cost nothing.
+            if (_call == null && RunState.Current == null && safe != null)
+                y = Mathf.Max(subtitleTop, safe.rect.height - ((RectTransform)cardSub.transform).rect.height - 12f);
             Place((RectTransform)cardSub.transform, y);
             cardSub.CharsPerSecond = CpsFor(line.en, e.Duration);
             cardSub.Say("● HQ · " + call, name, line.en, Face(agent), e.Id);

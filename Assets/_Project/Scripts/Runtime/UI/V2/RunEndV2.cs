@@ -381,14 +381,27 @@ namespace ZombieWar.UI
             for (int i = 0; i < progressRows.Length; i++) if (progressRows[i] != null) progressRows[i].SetActive(false);
             int row = 0;
             if (gift > 0) SetRow(row++, $"Newcomer gift +{gift:N0} · total {_banked + gift:N0}", "FIRST RUN");
-            foreach (var m in done) { if (row >= progressRows.Length - 1) break; SetRow(row++, m.title, $"DONE +{m.passXp} XP"); }
+            // Mockup F1 (05/10): Daily Ops, the gun's mastery, achievements - each says where to claim.
+            var ops = PassMissions.ActiveFor(GameClock.UtcNow).Where(m => m.scope == MissionScope.Daily).ToList();
+            int opsDone = ops.Count(PlayerProfile.IsMissionComplete), opsReady = ops.Count(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id));
+            if (opsReady > 0 && row < progressRows.Length) SetRow(row++, $"Daily Ops {opsDone} / {ops.Count} · +{DailyOps.ShardsPerMission * opsReady} shards", "CLAIM ›");
+            var gunData = WeaponCatalog.Active?.DataById(PlayerProfile.EquippedWeaponId);
+            if (result.MasteryXp > 0 && row < progressRows.Length)
+                SetRow(row++, $"{(gunData != null ? gunData.weaponName : "Gun")} mastery +{result.MasteryXp:N0} XP · level {result.MasteryAfter}",
+                       result.MasteryAfter > result.MasteryBefore ? "LV UP ›" : "");
+            foreach (var a in AchievementTracker.ThisRun) { if (row >= progressRows.Length) break; SetRow(row++, $"Achievement: {a.title}", $"+{a.gems} GEMS ›"); }
+            foreach (var m in done) { if (row >= progressRows.Length - 1) break; if (m.scope == MissionScope.Daily) continue; SetRow(row++, m.title, $"DONE +{m.passXp} XP"); }
             var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : null;
             var next = guns?.Where(w => w.price > 0 && !PlayerProfile.IsWeaponOwned(w.WeaponId) && w.price <= PlayerProfile.Coin)
                             .OrderByDescending(w => w.price).FirstOrDefault();
             // The last row is the next-buy row; its link goes to the Arsenal, where guns are bought.
-            if (next != null) SetRow(progressRows.Length - 1, $"{next.weaponName} now affordable", "");
+            bool nextRow = next != null && row < progressRows.Length;
+            if (nextRow) SetRow(row++, $"{next.weaponName} now affordable", "");
             Set(shopLinkLabel, "Arsenal ›");
-            if (progressCard != null) progressCard.SetActive(gift > 0 || done.Count > 0 || next != null);
+            // The link sits on the last row: only when that row is the next-buy one (or the FTUE
+            // newcomer gift points at it), or it lands on another row's tag (QA 05/10).
+            if (shopLink != null) shopLink.gameObject.SetActive(gift > 0 || (nextRow && row == progressRows.Length));
+            if (progressCard != null) progressCard.SetActive(row > 0 || next != null);
             Time.timeScale = 0f;
             QueueUnlocks(result.AccountLevelsGained);
         }

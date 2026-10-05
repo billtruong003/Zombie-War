@@ -56,6 +56,8 @@ namespace ZombieWar.UI
         [SerializeField] private TMP_Text dmgBonus;
         [SerializeField] private RectTransform rateBar;
         [SerializeField] private Button starButton;
+        [Tooltip("Opens the gun's mastery and evolution (mockups U7/F3, 05/10).")]
+        [SerializeField] private Button masteryButton;
         [SerializeField] private TMP_Text starLabel;
         [SerializeField] private Button viewButton;
         [SerializeField] private GameObject bigView;
@@ -86,6 +88,7 @@ namespace ZombieWar.UI
             for (int i = 0; i < cells.Length; i++) { int idx = i; if (cells[i]?.button != null) cells[i].button.onClick.AddListener(() => TapGun(idx)); }
             for (int i = 0; i < skins.Length; i++) { int idx = i; if (skins[i]?.button != null) skins[i].button.onClick.AddListener(() => TapSkin(idx)); }
             if (starButton != null) starButton.onClick.AddListener(Star);
+            if (masteryButton != null) masteryButton.onClick.AddListener(() => { UIFeedback.Tap(); MasteryScreen.Open(_selected); });
             if (viewButton != null) viewButton.onClick.AddListener(() => { UIFeedback.Tap(); if (bigView != null) bigView.SetActive(true); });
             if (bigClose != null) bigClose.onClick.AddListener(() => { UIFeedback.Back(); if (bigView != null) bigView.SetActive(false); });
         }

@@ -49,16 +49,45 @@ namespace ZombieWar
         public static bool IsUnlocked(string id) => PlayerProfile.HasAchievement(id);
         public static int UnlockedCount => PlayerProfile.AchievementCount;
 
-        /// <summary>Grants an achievement once: recorded and saved first, then the gems.</summary>
+        /// <summary>Unlocks an achievement once. Its gems wait to be claimed (mockups U8/F4: "claim +50
+        /// gems after the run"), so an unlock mid-run never interrupts anything.</summary>
         public static bool Unlock(string id)
         {
             var def = Find(id);
             if (def == null || IsUnlocked(id)) return false;
             PlayerProfile.MarkAchievement(id);
-            if (def.gems > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, def.gems);
             Unlocked?.Invoke(def);
             return true;
         }
+
+        public static bool IsClaimed(string id) => PlayerProfile.HasClaimedAchievement(id);
+
+        /// <summary>Achievements unlocked whose gems are still to be claimed.</summary>
+        public static int ClaimableCount
+        {
+            get { int n = 0; foreach (var a in All) if (IsUnlocked(a.id) && !IsClaimed(a.id)) n++; return n; }
+        }
+
+        /// <summary>Pays an unlocked achievement's gems once (recorded before the gems).</summary>
+        public static bool ClaimReward(string id)
+        {
+            var def = Find(id);
+            if (def == null || !IsUnlocked(id) || IsClaimed(id)) return false;
+            PlayerProfile.MarkAchievementClaimed(id);
+            if (def.gems > 0) PlayerProfile.Add(PlayerProfile.CurrencyKind.Gem, def.gems);
+            return true;
+        }
+
+        /// <summary>0..1 toward an achievement, from what the profile records (0 when it keeps no count).</summary>
+        public static float Progress(string id) => id switch
+        {
+            Survive10 => PlayerProfile.BestSurvivalSeconds / 600f,
+            Threat10 => PlayerProfile.PeakThreat / 10f,
+            Run1000 => PlayerProfile.BestKills / 1000f,
+            Guns10 => PlayerProfile.OwnedWeaponIds.Count / 10f,
+            Coins50K => PlayerProfile.Coin / 50000f,
+            _ => 0f,
+        };
 
         /// <summary>Profile-side checks that need no run (guns owned, coins held).</summary>
         public static void CheckProfile()

@@ -87,6 +87,17 @@ namespace ZombieWar.UI
             FtueRadio.Show(c);
         }
 
+        // F4 · An achievement unlocked in a run: the agent who recorded its line says it on a card.
+        public static void Achievement(Achievements.Def def)
+        {
+            if (def == null) return;
+            string agent = def.voice != null && def.voice.StartsWith("vo_") ? def.voice.Substring(3, def.voice.IndexOf('_', 3) - 3) : "riley";
+            var c = Card("ach." + def.id, def.voice, agent, null, $"ACHIEVEMENT · {def.title.ToUpperInvariant()}",
+                $"{def.description}. Claim +{def.gems} gems after the run.", FtueRadio.Size.Small, RunTop);
+            c.Seconds = 6f;
+            FtueRadio.Show(c);
+        }
+
         // Horde Call telegraph (mockup U2 05/10): Raptor calls the side, the HUD draws the arrows and
         // the 3-2-1. Not an FTUE step, so it never waits on Ftue flags; it ends itself.
         public static void HordeCall(string side, float seconds)

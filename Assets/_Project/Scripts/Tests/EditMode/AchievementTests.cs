@@ -79,7 +79,12 @@ namespace ZombieWar.Tests
                 Assert.IsFalse(Achievements.Unlock(Achievements.FirstAlpha));
             }
             finally { Achievements.Unlocked -= Count; }
+            Assert.AreEqual(gem, PlayerProfile.Gem, "the gems wait to be claimed");
+            Assert.AreEqual(1, Achievements.ClaimableCount);
+            Assert.IsTrue(Achievements.ClaimReward(Achievements.FirstAlpha));
+            Assert.IsFalse(Achievements.ClaimReward(Achievements.FirstAlpha));
             Assert.AreEqual(gem + Achievements.Find(Achievements.FirstAlpha).gems, PlayerProfile.Gem);
+            Assert.AreEqual(0, Achievements.ClaimableCount);
             Assert.AreEqual(1, fired);
             Assert.IsTrue(Achievements.IsUnlocked(Achievements.FirstAlpha));
             Assert.AreEqual(1, Achievements.UnlockedCount);
