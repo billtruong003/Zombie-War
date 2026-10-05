@@ -37,9 +37,13 @@ namespace ZombieWar
             public readonly int AccountLevelsGained;
             /// <summary>The run beat the best score (the record that counts, owner 27/09).</summary>
             public readonly bool NewScoreRecord;
+            /// <summary>Mastery the carried gun earned (backlog #21) and its level before/after.</summary>
+            public readonly int MasteryXp, MasteryBefore, MasteryAfter;
 
-            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord, int accountXpGained = 0, int accountLevelsGained = 0, bool newScoreRecord = false)
+            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord, int accountXpGained = 0, int accountLevelsGained = 0, bool newScoreRecord = false,
+                          int masteryXp = 0, int masteryBefore = 0, int masteryAfter = 0)
             {
+                MasteryXp = masteryXp; MasteryBefore = masteryBefore; MasteryAfter = masteryAfter;
                 NewScoreRecord = newScoreRecord;
                 Closed = closed;
                 Summary = summary;
@@ -65,6 +69,7 @@ namespace ZombieWar
             // One write for the whole closing (payout, record, stats, XP and the run's pending
             // mission/voice flags), not four, and the change events after it.
             bool record = false, scoreRecord = false;
+            int masteryXp = 0, masteryBefore = 0, masteryAfter = 0;
             int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills), levels = 0;
             PlayerProfile.Batch(() =>
             {
@@ -73,10 +78,22 @@ namespace ZombieWar
                 scoreRecord = PlayerProfile.RecordScore(summary.Score);
                 PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
                 PlayerProfile.RecordGunRun(PlayerProfile.EquippedWeaponId, summary.Kills, summary.Duration, summary.Score);
+                var family = PassMissions.CarriedFamily();
+                masteryXp = GunMastery.XpForRun(summary.Kills, summary.Duration, family ?? WeaponClass.AssaultRifle,
+                                                family.HasValue && DailyOpsAsk(family.Value));
+                (masteryBefore, masteryAfter) = PlayerProfile.AddMasteryXp(PlayerProfile.EquippedWeaponId, masteryXp);
                 levels = PlayerProfile.AddAccountXp(xp);
             });
             PlayerProfile.FlushIfDirty();
-            return new Result(true, summary, run.BankedCoin, record, xp, levels, scoreRecord);
+            return new Result(true, summary, run.BankedCoin, record, xp, levels, scoreRecord, masteryXp, masteryBefore, masteryAfter);
+        }
+
+        /// <summary>Today's Daily Ops ask for this family: mastery XP doubles (mockup U7).</summary>
+        static bool DailyOpsAsk(WeaponClass family)
+        {
+            foreach (var m in PassMissions.ActiveFor(GameClock.UtcNow))
+                if (DailyOps.FamilyOf(m) == family) return true;
+            return false;
         }
     }
 }

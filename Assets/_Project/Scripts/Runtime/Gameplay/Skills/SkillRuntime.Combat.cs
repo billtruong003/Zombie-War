@@ -267,7 +267,11 @@ namespace ZombieWar.Skills
         }
 
         /// <summary>Critical Rounds: this hit is a crit (x<see cref="CritMultiplier"/>, gold number).</summary>
-        public bool RollCrit() => Has(SkillCatalogDefs.UniCrit) && Roll(Value(SkillCatalogDefs.UniCrit));
+        public bool RollCrit()
+        {
+            float chance = (Has(SkillCatalogDefs.UniCrit) ? Value(SkillCatalogDefs.UniCrit) : 0f) + Account.crit;   // + pistol mastery (#21)
+            return chance > 0f && Roll(chance);
+        }
 
         /// <summary>Explosive Rounds: this hit bursts.</summary>
         public bool RollExplosive() => Has(SkillCatalogDefs.UniExplosive) && Roll(Value(SkillCatalogDefs.UniExplosive));

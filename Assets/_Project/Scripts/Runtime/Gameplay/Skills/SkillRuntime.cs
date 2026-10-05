@@ -368,15 +368,28 @@ namespace ZombieWar.Skills
 
         // ══════════════════════════════════════════════════════════ STAT (P8 soft caps)
 
+        /// <summary>Account-wide gun mastery bonuses (backlog #21), set when the gun is equipped.</summary>
+        public GunMastery.Bonuses Account;
+        bool _accountHealthApplied;
+
+        /// <summary>Takes the account bonuses; the max-health one is applied once per run.</summary>
+        public void ApplyAccount(GunMastery.Bonuses bonuses, Health health)
+        {
+            Account = bonuses;
+            if (_accountHealthApplied || health == null) return;
+            _accountHealthApplied = true;
+            if (bonuses.maxHealth > 0f) health.IncreaseMax(1f + bonuses.maxHealth);
+        }
+
         /// <summary>Damage Up. Plain multiplier — the only stat with no cap, by design.</summary>
-        public float DamageMultiplier => (1f + Value(SkillCatalogDefs.StatDamage)) * (1f + MightStacks * MightPerStack);
+        public float DamageMultiplier => (1f + Value(SkillCatalogDefs.StatDamage)) * (1f + MightStacks * MightPerStack) * (1f + Account.damage);
 
         /// <summary>Fire Rate Up + Run &amp; Gun + Bullet Hose, then P8's 2.2/2.5 soft cap.</summary>
         public float FireRateMultiplier
         {
             get
             {
-                float raw = 1f + Value(SkillCatalogDefs.StatFireRate);
+                float raw = 1f + Value(SkillCatalogDefs.StatFireRate) + Account.fireRate;
                 if (Has(SkillCatalogDefs.SidearmRunGun) && EquippedFamily == WeaponClass.Sidearm)
                     raw += Value(SkillCatalogDefs.SidearmRunGun) * _runGunMoving.Value;
                 if (Has(SkillCatalogDefs.SmgBulletHose) && EquippedFamily == WeaponClass.SMG)
@@ -390,7 +403,7 @@ namespace ZombieWar.Skills
         {
             get
             {
-                float raw = 1f + Value(SkillCatalogDefs.StatMoveSpeed);
+                float raw = 1f + Value(SkillCatalogDefs.StatMoveSpeed) + Account.moveSpeed;
                 if (Has(SkillCatalogDefs.LmgHeavyPressure) && EquippedFamily == WeaponClass.LMG)
                     raw *= Mathf.Lerp(1f, 0.75f, _heavyPressure.Value);   // the cost of the ramp
                 return SoftCap.MoveSpeed.Apply(raw);
@@ -401,11 +414,11 @@ namespace ZombieWar.Skills
 
         // ── A4 stats ──
         /// <summary>Cooldown: every timed power's recharge is multiplied by this.</summary>
-        public float CooldownMultiplier => 1f - Value(SkillCatalogDefs.StatCooldown);
+        public float CooldownMultiplier => 1f - Value(SkillCatalogDefs.StatCooldown) - Account.cooldown;
         /// <summary>Area: every power area (nova, burst, blast, orbit, burning ground) grows by this.</summary>
-        public float AreaMultiplier => 1f + Value(SkillCatalogDefs.StatArea);
+        public float AreaMultiplier => 1f + Value(SkillCatalogDefs.StatArea) + Account.area;
         /// <summary>Pickup Range: the radius pickups start flying to the player from.</summary>
-        public float PickupRangeMultiplier => 1f + Value(SkillCatalogDefs.StatPickup);
+        public float PickupRangeMultiplier => 1f + Value(SkillCatalogDefs.StatPickup) + Account.pickupRange;
         /// <summary>Regeneration: share of max health healed each second.</summary>
         public float RegenPerSecond => Value(SkillCatalogDefs.StatRegen);
         /// <summary>Luck: item and chest drop chances are multiplied by this (coins are not items).</summary>
@@ -465,6 +478,7 @@ namespace ZombieWar.Skills
             _shotsSinceBreach = _shotsSinceShockwave = _shotsSinceSplit = _siphonKills = 0;
             _siphonTriggered = _guardianUsed = false;
             PendingMaxHealthBonus = 0f;
+            Account = default; _accountHealthApplied = false;
             PendingHealFraction = 0f;
             PendingCoin = 0;
             PendingMagnet = false;

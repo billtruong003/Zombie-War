@@ -281,7 +281,11 @@ namespace ZombieWar
             // Signature cards are gated by the family in hand, so the build learns it at equip time -
             // not only when a level-up happens to open.
             var skills = ZombieWar.Skills.SkillRuntime.Active;
-            if (skills != null) skills.EquippedFamily = data.weaponClass;
+            if (skills != null)
+            {
+                skills.EquippedFamily = data.weaponClass;
+                skills.ApplyAccount(GunMastery.Current(), GetComponentInParent<Health>());   // mastery bonuses (#21)
+            }
 
             // Doi sung KHONG duoc don mot loat dan: xoa sach thoi gian ban con no lai.
             _fireAccumulator = 0f;
