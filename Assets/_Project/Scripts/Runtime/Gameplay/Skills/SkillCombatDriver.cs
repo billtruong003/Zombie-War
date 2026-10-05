@@ -136,6 +136,7 @@ namespace ZombieWar.Skills
         {
             _arsenal?.PlayEvolve();
             ZombieWar.Audio.RadioDirector.EvolutionTaken();
+            Achievements.Unlock(Achievements.FirstEvolution);
         }
 
         /// <summary>Kinetic Shield ate a hit — make it legible, or the card reads as a bug.</summary>

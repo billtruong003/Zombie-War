@@ -246,6 +246,13 @@ namespace ZombieWar.Audio
             if (d != null && !FtueActive) d.SayDaily("vo_chen_sit_reroll");
         }
 
+        /// <summary>An achievement unlocked: its own line, once (backlog #22).</summary>
+        public static void AchievementUnlocked(string voiceId)
+        {
+            var d = _instance;
+            if (d != null && !string.IsNullOrEmpty(voiceId)) d.SayOnce(voiceId);
+        }
+
         public static void EvolutionTaken()
         {
             var d = _instance;
