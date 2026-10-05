@@ -17,7 +17,16 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 5. SDK và store (Đợt 8).
 6. Bản địa hóa **vi, en, ja, ko**: ngôn ngữ mặc định theo quốc gia của người chơi, trang store cũng đủ 4 thứ tiếng.
 
-**Đã xong 05/10:** hồi sinh giết toàn bộ quái trên map (`MechanicItems.ReviveClear`). Concept Lock đã ghi vào `GAME_DESIGN.md`.
+**Đã xong 05/10** (chưa build, chờ owner chơi thử):
+- hồi sinh giết toàn bộ quái trên map (`MechanicItems.ReviveClear`); Concept Lock ghi vào `GAME_DESIGN.md`
+- #2 báo cáo hiệu năng `Review/QA/perf_device_1005.md`
+- #3 cú giật 300 ms: nguyên nhân là log có stack trace; đã bỏ trace cho Log/Warning (`LogCost`) — cần đo lại trên máy
+- #4 lỗi quái cũ không còn trong log máy; trạm có tiếng tick khi nạp
+- #5 ẩn nút Events
+- #7 HUD: cần điều khiển giữa đáy, lưới skill 3×2 dưới thanh máu (thanh mốc rương/Horde/Titan còn chờ Titan)
+- #8 Pause có thẻ build (6 skill, 4 chỉ số, tiến hóa), nút RESUME/SETTINGS/LEAVE RUN
+- #9 viền đỏ nhịp tim khi máu dưới 25%
+- #10 Horde Call: báo trước 10 s, 1 hướng, mũi tên, 3-2-1, HORDE CLEARED + rương
 
 ## Đợt 1 · Lên máy và sửa lỗi
 1. *(Để sau, chưa build)* Build Android có mọi bản sửa 05/10, cài lên máy, ghi log. Kiểm tra:
