@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEngine;
 using ZombieWar.Threat;
 
 namespace ZombieWar.Tests
@@ -30,6 +31,15 @@ namespace ZombieWar.Tests
             Assert.AreEqual(0, ZombiePouncer.PounceSlotsAt(30f));
             Assert.AreEqual(1, ZombiePouncer.PounceSlotsAt(90f));
             Assert.AreEqual(2, ZombiePouncer.PounceSlotsAt(300f));
+        }
+
+        [Test]
+        public void EnemiesGrowWithTime_SlowThenCompounding()
+        {
+            Assert.AreEqual(1f, ThreatDirector.TimeHealthMultiplier(170f), 1e-4f);
+            Assert.AreEqual(1.7f, ThreatDirector.TimeHealthMultiplier(600f), 1e-3f);
+            Assert.AreEqual(1.7f * Mathf.Pow(1.12f, 10f), ThreatDirector.TimeHealthMultiplier(1200f), 1e-2f);
+            Assert.AreEqual(1f + (ThreatDirector.TimeHealthMultiplier(1200f) - 1f) * 0.5f, ThreatDirector.TimeDamageMultiplier(1200f), 1e-4f);
         }
 
         [Test]

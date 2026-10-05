@@ -21,9 +21,9 @@ namespace ZombieWar.Tests
 
         static readonly Dictionary<string, int> Levels = new()
         {
-            { SkillCatalogDefs.AutoStormCloud, 18 }, { SkillCatalogDefs.AutoIceShards, 16 }, { SkillCatalogDefs.AutoFlameBurst, 22 },
-            { SkillCatalogDefs.AutoLandmine, 28 }, { SkillCatalogDefs.AutoAxe, 30 }, { SkillCatalogDefs.AutoWarDog, 33 },
-            { SkillCatalogDefs.AutoStomp, 24 }, { SkillCatalogDefs.AutoTimeWarp, 32 },
+            { SkillCatalogDefs.AutoStormCloud, 6 }, { SkillCatalogDefs.AutoIceShards, 5 }, { SkillCatalogDefs.AutoFlameBurst, 7 },
+            { SkillCatalogDefs.AutoLandmine, 10 }, { SkillCatalogDefs.AutoAxe, 11 }, { SkillCatalogDefs.AutoWarDog, 12 },
+            { SkillCatalogDefs.AutoStomp, 8 }, { SkillCatalogDefs.AutoTimeWarp, 12 },
         };
 
         [Test]

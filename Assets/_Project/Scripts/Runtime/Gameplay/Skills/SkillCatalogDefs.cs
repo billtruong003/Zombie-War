@@ -210,11 +210,11 @@ namespace ZombieWar.Skills
             new(StatMaxHealth, "Max Health Up", SkillLayer.Stat, null, R(0.20f, 0.35f, 0.50f, 0.65f, 0.80f), "MUST"),
             new(StatCoinGain,  "Coin Gain Up",  SkillLayer.Stat, null, R(0.25f, 0.325f, 0.40f, 0.475f, 0.55f), "SHOULD"),
             // ── A4 STAT (5) — a build now picks 4 of 10 stats ──
-            new(StatCooldown,  "Cooldown",      SkillLayer.Stat, null, R(0.07f, 0.14f, 0.21f, 0.28f, 0.35f), "MUST", 4),   // power recharge time cut
-            new(StatArea,      "Area",          SkillLayer.Stat, null, R(0.08f, 0.16f, 0.24f, 0.32f, 0.40f), "MUST", 8),   // power area size
-            new(StatPickup,    "Pickup Range",  SkillLayer.Stat, null, R(0.25f, 0.50f, 0.75f, 1.00f, 1.25f), "MUST", 13),  // pickup pull radius
-            new(StatRegen,     "Regeneration",  SkillLayer.Stat, null, R(0.004f, 0.008f, 0.012f, 0.016f, 0.020f), "MUST", 21), // max health a second
-            new(StatLuck,      "Luck",          SkillLayer.Stat, null, R(0.10f, 0.20f, 0.30f, 0.40f, 0.50f), "MUST", 29),  // item and chest drop chance
+            new(StatCooldown,  "Cooldown",      SkillLayer.Stat, null, R(0.07f, 0.14f, 0.21f, 0.28f, 0.35f), "MUST", 1),   // power recharge time cut
+            new(StatArea,      "Area",          SkillLayer.Stat, null, R(0.08f, 0.16f, 0.24f, 0.32f, 0.40f), "MUST", 2),   // power area size
+            new(StatPickup,    "Pickup Range",  SkillLayer.Stat, null, R(0.25f, 0.50f, 0.75f, 1.00f, 1.25f), "MUST", 3),  // pickup pull radius
+            new(StatRegen,     "Regeneration",  SkillLayer.Stat, null, R(0.004f, 0.008f, 0.012f, 0.016f, 0.020f), "MUST", 4), // max health a second
+            new(StatLuck,      "Luck",          SkillLayer.Stat, null, R(0.10f, 0.20f, 0.30f, 0.40f, 0.50f), "MUST", 6),  // item and chest drop chance
 
             // ── SIGNATURE (12) — two per family, resolved by FAMILY, never by weapon id ──
             new(SidearmRunGun,      "Run & Gun",       SkillLayer.Signature, WeaponClass.Sidearm, R(0.25f, 0.31f, 0.37f, 0.43f, 0.49f), "MUST"),
@@ -248,11 +248,11 @@ namespace ZombieWar.Skills
             new(AutoChainLightning, "Chain Lightning",      SkillLayer.Autonomous, null, R(3f, 3f, 4f, 4f, 5f), "MUST", 1,
                 tables: Power(("cd", R(6f, 5.5f, 5f, 4.5f, 4f)))),
             // value = blast radius
-            new(AutoOrdnance,       "Ordnance Core",        SkillLayer.Autonomous, null, R(3.5f, 3.8f, 4.1f, 4.4f, 4.7f), "MUST", 14,
+            new(AutoOrdnance,       "Ordnance Core",        SkillLayer.Autonomous, null, R(3.5f, 3.8f, 4.1f, 4.4f, 4.7f), "MUST", 4,
                 tables: Power(("cd", R(7f, 6.5f, 6f, 5.5f, 5f)))),
-            new(AutoSoulBurst,      "Soul Burst",           SkillLayer.Autonomous, null, R(4f, 4.4f, 4.8f, 5.2f, 5.6f), "MUST", 17,
+            new(AutoSoulBurst,      "Soul Burst",           SkillLayer.Autonomous, null, R(4f, 4.4f, 4.8f, 5.2f, 5.6f), "MUST", 5,
                 tables: Power()),
-            new(AutoEmergency,      "Emergency Detonation", SkillLayer.Autonomous, null, R(5f, 5.5f, 6f, 6.5f, 7f), "SHOULD", 26,
+            new(AutoEmergency,      "Emergency Detonation", SkillLayer.Autonomous, null, R(5f, 5.5f, 6f, 6.5f, 7f), "SHOULD", 9,
                 tables: Power(("cd", R(30f, 27.5f, 25f, 22.5f, 20f)))),
 
             // ── UNIVERSAL (2) ───────────────────────────────────────────────────────────
@@ -261,32 +261,32 @@ namespace ZombieWar.Skills
                 tables: T(("threshold", R(0.20f, 0.225f, 0.25f, 0.275f, 0.30f)))),
             // M8: 40/32/24 m recharged every ~5 s at run speed; a circling test bot then went eight
             // minutes without losing a single hit point (44 hits, all absorbed). value = metres per charge.
-            new(UniKinetic,   "Kinetic Shield",  SkillLayer.Universal, null, R(60f, 56f, 52f, 48f, 44f), "SHOULD", 11),
+            new(UniKinetic,   "Kinetic Shield",  SkillLayer.Universal, null, R(60f, 56f, 52f, 48f, 44f), "SHOULD", 3),
 
             // ── A3 UNIVERSAL (10) — what every bullet of the equipped gun does, and a few run rules ──
             // value = extra enemies a bullet passes; dmg = damage kept per enemy passed
             new(UniPierce,    "Piercing Rounds",  SkillLayer.Universal, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 1,
                 tables: T(("dmg", R(0.85f, 0.90f, 0.90f, 0.95f, 0.95f)))),
             // value = bounces; dmg = damage of a bounce, share of the hit
-            new(UniRicochet,  "Ricochet",         SkillLayer.Universal, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 9,
+            new(UniRicochet,  "Ricochet",         SkillLayer.Universal, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 2,
                 tables: T(("dmg", R(0.50f, 0.60f, 0.60f, 0.70f, 0.70f)))),
             // value = extra bullets in the fan; every = shots between fans
-            new(UniSplit,     "Split Shot",       SkillLayer.Universal, null, R(2f, 3f, 3f, 4f, 4f), "MUST", 6,
+            new(UniSplit,     "Split Shot",       SkillLayer.Universal, null, R(2f, 3f, 3f, 4f, 4f), "MUST", 1,
                 tables: T(("every", R(5f, 5f, 4f, 4f, 3f)))),
             // value = chance of a x2 hit
-            new(UniCrit,      "Critical Rounds",  SkillLayer.Universal, null, R(0.08f, 0.11f, 0.14f, 0.17f, 0.20f), "MUST", 3),
+            new(UniCrit,      "Critical Rounds",  SkillLayer.Universal, null, R(0.08f, 0.11f, 0.14f, 0.17f, 0.20f), "MUST", 1),
             // value = kills per 3% heal
-            new(UniSiphon,    "Blood Siphon",     SkillLayer.Universal, null, R(25f, 21f, 18f, 15f, 12f), "MUST", 15),
+            new(UniSiphon,    "Blood Siphon",     SkillLayer.Universal, null, R(25f, 21f, 18f, 15f, 12f), "MUST", 4),
             // value = poison damage per second per stack (stacks to 5, 3 s)
-            new(UniAcid,      "Acid Rounds",      SkillLayer.Universal, null, R(3f, 3.5f, 4f, 4.5f, 5f), "MUST", 19),
+            new(UniAcid,      "Acid Rounds",      SkillLayer.Universal, null, R(3f, 3.5f, 4f, 4.5f, 5f), "MUST", 6),
             // value = chance a hit bursts (1.2 m, half the hit's damage)
-            new(UniExplosive, "Explosive Rounds", SkillLayer.Universal, null, R(0.20f, 0.25f, 0.30f, 0.35f, 0.40f), "MUST", 23),
+            new(UniExplosive, "Explosive Rounds", SkillLayer.Universal, null, R(0.20f, 0.25f, 0.30f, 0.35f, 0.40f), "MUST", 8),
             // value = chance of a free extra bullet
-            new(UniDoubleTap, "Double Tap",       SkillLayer.Universal, null, R(0.10f, 0.15f, 0.20f, 0.25f, 0.30f), "MUST", 27),
+            new(UniDoubleTap, "Double Tap",       SkillLayer.Universal, null, R(0.10f, 0.15f, 0.20f, 0.25f, 0.30f), "MUST", 10),
             // value = share of max health restored, once per run, by a hit that would kill
-            new(UniGuardian,  "Guardian Angel",   SkillLayer.Universal, null, R(0.30f, 0.40f, 0.50f, 0.60f, 0.70f), "MUST", 31),
+            new(UniGuardian,  "Guardian Angel",   SkillLayer.Universal, null, R(0.30f, 0.40f, 0.50f, 0.60f, 0.70f), "MUST", 11),
             // value = coin bonus; hp = extra health on enemies that spawn from now on
-            new(UniGreed,     "Greed",            SkillLayer.Universal, null, R(0.20f, 0.30f, 0.40f, 0.50f, 0.60f), "MUST", 34,
+            new(UniGreed,     "Greed",            SkillLayer.Universal, null, R(0.20f, 0.30f, 0.40f, 0.50f, 0.60f), "MUST", 13,
                 tables: T(("hp", R(0.10f, 0.15f, 0.20f, 0.25f, 0.30f)))),
 
             // ── M8 AUTONOMOUS (6) — value = the number each rank grows ─────────────────────
@@ -294,40 +294,40 @@ namespace ZombieWar.Skills
             new(AutoDrone,     "Drone Buddy",   SkillLayer.Autonomous, null, R(2.5f, 2.875f, 3.25f, 3.625f, 4f), "MUST", 1, tables: Power()), // shots/s
             new(AutoFrostNova, "Frost Nova",    SkillLayer.Autonomous, null, R(4.5f, 4.875f, 5.25f, 5.625f, 6f), "MUST", 1,                   // radius m
                 tables: Power(("cd", R(5f, 5f, 5f, 5f, 5f)), ("slow", R(0.35f, 0.40f, 0.45f, 0.50f, 0.55f)))),
-            new(AutoFireTrail, "Fire Trail",    SkillLayer.Autonomous, null, R(14f, 17.5f, 21f, 24.5f, 28f), "MUST", 2, tables: Power()),     // burn dps
+            new(AutoFireTrail, "Fire Trail",    SkillLayer.Autonomous, null, R(14f, 17.5f, 21f, 24.5f, 28f), "MUST", 1, tables: Power()),     // burn dps
             new(AutoBoomerang, "Boomerang",     SkillLayer.Autonomous, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 1,                               // blades
                 tables: Power(("cd", R(2.5f, 2.4f, 2.3f, 2.2f, 2.1f)))),
-            new(AutoAirstrike, "Airstrike",     SkillLayer.Autonomous, null, R(3f, 3f, 4f, 4f, 5f), "MUST", 5,                               // blasts
+            new(AutoAirstrike, "Airstrike",     SkillLayer.Autonomous, null, R(3f, 3f, 4f, 4f, 5f), "MUST", 1,                               // blasts
                 tables: Power(("cd", R(8f, 7.75f, 7.5f, 7.25f, 7f)))),
 
             // ── A5 AUTONOMOUS (5) ──────────────────────────────────────────────────────
-            new(AutoToxic,   "Toxic Cloud",   SkillLayer.Autonomous, null, R(2.6f, 2.8f, 3.0f, 3.2f, 3.4f), "MUST", 7,     // cloud radius m
+            new(AutoToxic,   "Toxic Cloud",   SkillLayer.Autonomous, null, R(2.6f, 2.8f, 3.0f, 3.2f, 3.4f), "MUST", 1,     // cloud radius m
                 tables: Power(("cd", R(6f, 5.75f, 5.5f, 5.25f, 5f)))),
-            new(AutoGravity, "Gravity Well",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 10,       // pull radius m
+            new(AutoGravity, "Gravity Well",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 2,       // pull radius m
                 tables: Power(("cd", R(9f, 8.5f, 8f, 7.5f, 7f)))),
-            new(AutoThorns,  "Thorn Aura",    SkillLayer.Autonomous, null, R(10f, 13f, 16f, 19f, 22f), "MUST", 12,         // damage a second on touch
+            new(AutoThorns,  "Thorn Aura",    SkillLayer.Autonomous, null, R(10f, 13f, 16f, 19f, 22f), "MUST", 3,         // damage a second on touch
                 tables: Power()),
-            new(AutoTurret,  "Sentry Turret", SkillLayer.Autonomous, null, R(3f, 3.4f, 3.8f, 4.2f, 4.6f), "MUST", 20,      // shots a second
+            new(AutoTurret,  "Sentry Turret", SkillLayer.Autonomous, null, R(3f, 3.4f, 3.8f, 4.2f, 4.6f), "MUST", 7,      // shots a second
                 tables: Power(("cd", R(12f, 11.5f, 11f, 10.5f, 10f)))),
-            new(AutoMeteor,  "Meteor",        SkillLayer.Autonomous, null, R(3f, 3.2f, 3.4f, 3.6f, 3.8f), "MUST", 25,      // impact radius m
+            new(AutoMeteor,  "Meteor",        SkillLayer.Autonomous, null, R(3f, 3.2f, 3.4f, 3.6f, 3.8f), "MUST", 9,      // impact radius m
                 tables: Power(("cd", R(15f, 14f, 13f, 12f, 11f)))),
 
             // ── A6 AUTONOMOUS (8) ──────────────────────────────────────────────────────
-            new(AutoStormCloud, "Storm Cloud",   SkillLayer.Autonomous, null, R(0.8f, 0.75f, 0.7f, 0.65f, 0.6f), "MUST", 18,  // seconds between strikes
+            new(AutoStormCloud, "Storm Cloud",   SkillLayer.Autonomous, null, R(0.8f, 0.75f, 0.7f, 0.65f, 0.6f), "MUST", 6,  // seconds between strikes
                 tables: Power()),
-            new(AutoIceShards,  "Ice Shards",    SkillLayer.Autonomous, null, R(6f, 6f, 8f, 8f, 10f), "MUST", 16,            // shards
+            new(AutoIceShards,  "Ice Shards",    SkillLayer.Autonomous, null, R(6f, 6f, 8f, 8f, 10f), "MUST", 5,            // shards
                 tables: Power(("cd", R(4f, 3.75f, 3.5f, 3.25f, 3f)))),
-            new(AutoFlameBurst, "Flame Burst",   SkillLayer.Autonomous, null, R(5f, 5.3f, 5.6f, 5.9f, 6.2f), "MUST", 22,       // cone reach m
+            new(AutoFlameBurst, "Flame Burst",   SkillLayer.Autonomous, null, R(5f, 5.3f, 5.6f, 5.9f, 6.2f), "MUST", 7,       // cone reach m
                 tables: Power(("cd", R(5f, 4.75f, 4.5f, 4.25f, 4f)))),
-            new(AutoLandmine,   "Landmines",     SkillLayer.Autonomous, null, R(3f, 2.8f, 2.6f, 2.4f, 2.2f), "MUST", 28,       // metres walked per mine
+            new(AutoLandmine,   "Landmines",     SkillLayer.Autonomous, null, R(3f, 2.8f, 2.6f, 2.4f, 2.2f), "MUST", 10,       // metres walked per mine
                 tables: Power()),
-            new(AutoAxe,        "Spinning Axe",  SkillLayer.Autonomous, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 30,               // axes
+            new(AutoAxe,        "Spinning Axe",  SkillLayer.Autonomous, null, R(1f, 1f, 2f, 2f, 3f), "MUST", 11,               // axes
                 tables: Power(("cd", R(3f, 2.8f, 2.6f, 2.4f, 2.2f)))),
-            new(AutoWarDog,     "War Dog",       SkillLayer.Autonomous, null, R(1.2f, 1.35f, 1.5f, 1.65f, 1.8f), "MUST", 33,   // bites a second
+            new(AutoWarDog,     "War Dog",       SkillLayer.Autonomous, null, R(1.2f, 1.35f, 1.5f, 1.65f, 1.8f), "MUST", 12,   // bites a second
                 tables: Power()),
-            new(AutoStomp,      "Ground Stomp",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 24,       // radius m
+            new(AutoStomp,      "Ground Stomp",  SkillLayer.Autonomous, null, R(4f, 4.25f, 4.5f, 4.75f, 5f), "MUST", 8,       // radius m
                 tables: Power(("cd", R(6f, 5.5f, 5f, 4.5f, 4f)))),
-            new(AutoTimeWarp,   "Time Warp",     SkillLayer.Autonomous, null, R(3f, 3.25f, 3.5f, 3.75f, 4f), "MUST", 32,       // seconds of slow time
+            new(AutoTimeWarp,   "Time Warp",     SkillLayer.Autonomous, null, R(3f, 3.25f, 3.5f, 3.75f, 4f), "MUST", 12,       // seconds of slow time
                 tables: Power(("cd", R(20f, 19f, 18f, 17f, 16f)))),
 
             // ── M8 EVOLUTIONS (6) — one rank, offered once the power is maxed and the partner owned ─

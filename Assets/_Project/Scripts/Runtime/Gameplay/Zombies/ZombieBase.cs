@@ -67,7 +67,8 @@ namespace ZombieWar
 
         /// <summary>This enemy's hit damage: authored damage times the threat scale it spawned with.
         /// Every attack - contact, pounce, slam, charge, spit - must read this, not data.damage.</summary>
-        protected float Damage => data.damage * _statScale;
+        protected float Damage => data.damage * _statScale * _timeDamage;
+        private float _timeDamage = 1f;
         private Health _health;
         private VAT_Animator _vatAnimator;
         private MaterialPropertyBlock _dissolvePropertyBlock;
@@ -264,8 +265,10 @@ namespace ZombieWar
             // threat scales health and damage; it is read ONCE here, so an enemy keeps the stats it
             // arrived with instead of growing mid-fight.
             _statScale = Threat.ThreatDirector.EnemyStatMultiplier;
+            _timeDamage = Threat.ThreatDirector.EnemyTimeDamage;
             // Greed's price is paid by enemies that arrive after it is taken (read once, like threat).
-            _health.Configure(data.maxHealth * _statScale * (Skills.SkillRuntime.Active?.EnemyHealthMultiplier ?? 1f));
+            _health.Configure(data.maxHealth * _statScale * Threat.ThreatDirector.EnemyTimeHealth
+                              * (Skills.SkillRuntime.Active?.EnemyHealthMultiplier ?? 1f));
             _motor.ConfigureFromData(data.moveSpeed);
             _motor.ResetMotion();
             _state = State.Idle;

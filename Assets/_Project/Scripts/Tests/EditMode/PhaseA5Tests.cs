@@ -72,8 +72,8 @@ namespace ZombieWar.Tests
                     foreach (var id in ((PowerModule)System.Activator.CreateInstance(t)).ProcIds) claimed.Add(id);
             var levels = new Dictionary<string, int>
             {
-                { SkillCatalogDefs.AutoToxic, 7 }, { SkillCatalogDefs.AutoGravity, 10 }, { SkillCatalogDefs.AutoThorns, 12 },
-                { SkillCatalogDefs.AutoTurret, 20 }, { SkillCatalogDefs.AutoMeteor, 25 },
+                { SkillCatalogDefs.AutoToxic, 1 }, { SkillCatalogDefs.AutoGravity, 2 }, { SkillCatalogDefs.AutoThorns, 3 },
+                { SkillCatalogDefs.AutoTurret, 7 }, { SkillCatalogDefs.AutoMeteor, 9 },
             };
             foreach (var kv in levels)
             {

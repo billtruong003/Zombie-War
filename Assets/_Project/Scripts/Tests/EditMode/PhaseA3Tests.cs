@@ -23,10 +23,10 @@ namespace ZombieWar.Tests
         {
             var expected = new Dictionary<string, int>
             {
-                { SkillCatalogDefs.UniPierce, 1 }, { SkillCatalogDefs.UniCrit, 3 }, { SkillCatalogDefs.UniSplit, 6 },
-                { SkillCatalogDefs.UniRicochet, 9 }, { SkillCatalogDefs.UniSiphon, 15 }, { SkillCatalogDefs.UniAcid, 19 },
-                { SkillCatalogDefs.UniExplosive, 23 }, { SkillCatalogDefs.UniDoubleTap, 27 },
-                { SkillCatalogDefs.UniGuardian, 31 }, { SkillCatalogDefs.UniGreed, 34 },
+                { SkillCatalogDefs.UniPierce, 1 }, { SkillCatalogDefs.UniCrit, 1 }, { SkillCatalogDefs.UniSplit, 1 },
+                { SkillCatalogDefs.UniRicochet, 2 }, { SkillCatalogDefs.UniSiphon, 4 }, { SkillCatalogDefs.UniAcid, 6 },
+                { SkillCatalogDefs.UniExplosive, 8 }, { SkillCatalogDefs.UniDoubleTap, 10 },
+                { SkillCatalogDefs.UniGuardian, 11 }, { SkillCatalogDefs.UniGreed, 13 },
             };
             foreach (var kv in expected)
             {
@@ -39,13 +39,16 @@ namespace ZombieWar.Tests
         }
 
         [Test]
-        public void EachAccountLevelUnlocksAtMostOneCard()
+        // 05/10 owner: the old road (one card a level up to 34) felt stingy. Now 12 skills open at
+        // level 1, then a few cards a level, and everything by level 13.
+        public void EachAccountLevelUnlocksAFewCards_AndAllAreOpenByThirteen()
         {
             var at = new List<SkillDef>();
             for (int lv = 2; lv <= 40; lv++)
             {
                 SkillCatalogDefs.UnlockedAt(lv, at);
-                Assert.LessOrEqual(at.Count, 1, $"level {lv} unlocks {at.Count} cards");
+                Assert.LessOrEqual(at.Count, 3, $"level {lv} unlocks {at.Count} cards");
+                if (lv > 13) Assert.AreEqual(0, at.Count, $"level {lv} still unlocks cards");
             }
         }
 

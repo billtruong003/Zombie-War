@@ -81,8 +81,8 @@ namespace ZombieWar.Tests
         {
             var expected = new System.Collections.Generic.Dictionary<string, int>
             {
-                { SkillCatalogDefs.StatCooldown, 4 }, { SkillCatalogDefs.StatArea, 8 }, { SkillCatalogDefs.StatPickup, 13 },
-                { SkillCatalogDefs.StatRegen, 21 }, { SkillCatalogDefs.StatLuck, 29 },
+                { SkillCatalogDefs.StatCooldown, 1 }, { SkillCatalogDefs.StatArea, 2 }, { SkillCatalogDefs.StatPickup, 3 },
+                { SkillCatalogDefs.StatRegen, 4 }, { SkillCatalogDefs.StatLuck, 6 },
             };
             foreach (var kv in expected)
             {

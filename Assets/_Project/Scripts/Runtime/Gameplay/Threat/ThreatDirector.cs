@@ -134,6 +134,7 @@ namespace ZombieWar.Threat
         {
             _objectiveProgress = 0;
             _enemyStatMultiplier = 1f;
+            _timeHealth = _timeDamage = 1f;
         }
 
         /// <summary>Health and damage multiplier for enemies spawned now. 1 until the roster is
@@ -333,6 +334,8 @@ namespace ZombieWar.Threat
             int tier = ComputeTier(_objectiveProgress, distance, run.Duration,
                                    metresPerDistanceBand, secondsPerTimeStep, maxTier);
             _enemyStatMultiplier = StatMultiplierFor(tier, statScalingStartsAtTier, statGrowthPerTier);
+            _timeHealth = TimeHealthMultiplier(run.Duration);
+            _timeDamage = TimeDamageMultiplier(run.Duration);
             QueueWarm(tier + 1);
             WarmNext();
             if (tier != CurrentTier)
@@ -492,6 +495,26 @@ namespace ZombieWar.Threat
         public const float StressWindow = 6f, StressLossFraction = 0.35f, StressLowHealth = 0.3f;
         public const float RestSeconds = 10f, RestCooldown = 30f, RestIntervalScale = 2f;
         public const float DistanceBandEverySeconds = 120f;
+
+        // ── 05/10 genre rule 1: the crowd wins later, through growing strength ───────────────
+        // The owner maxed a build by minute 10 and was still alive at 21: enemies were x1.32 at
+        // minute 20. Enemies now grow with time on their own (powers do NOT scale with this, unlike
+        // EnemyStatMultiplier): +10% health a minute from 3:00, then x1.12 a minute from 10:00 -
+        // about x3 at 15:00, x5.3 at 20:00, x9.3 at 25:00. Damage grows half as fast.
+        public const float TimeScaleFrom = 180f, TimeLinearPerMinute = 0.10f, TimeCompoundFrom = 600f, TimeCompoundPerMinute = 1.12f;
+        static float _timeHealth = 1f, _timeDamage = 1f;
+        public static float EnemyTimeHealth => _timeHealth;
+        public static float EnemyTimeDamage => _timeDamage;
+
+        public static float TimeHealthMultiplier(float runSeconds)
+        {
+            if (runSeconds <= TimeScaleFrom) return 1f;
+            float m = 1f + TimeLinearPerMinute * (Mathf.Min(runSeconds, TimeCompoundFrom) - TimeScaleFrom) / 60f;
+            if (runSeconds > TimeCompoundFrom) m *= Mathf.Pow(TimeCompoundPerMinute, (runSeconds - TimeCompoundFrom) / 60f);
+            return m;
+        }
+
+        public static float TimeDamageMultiplier(float runSeconds) => 1f + (TimeHealthMultiplier(runSeconds) - 1f) * 0.5f;
 
         public bool Resting { get; private set; }
         float _restUntil, _restReadyAt;
