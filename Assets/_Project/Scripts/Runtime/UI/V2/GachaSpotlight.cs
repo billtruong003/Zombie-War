@@ -37,6 +37,15 @@ namespace ZombieWar.UI
         [SerializeField] private UIParticleBurst gridParticles;
         [SerializeField] private Sprite spark, star, confetti, dust;
 
+        [Header("Shader stage (backlog #12, mockup U5 05/10)")]
+        [Tooltip("Full-screen graphic with the GachaStage material: rays, glow, dust and the burst " +
+                 "wave are drawn by the shader. When set, the old sprite rays / beam / glow stay off.")]
+        [SerializeField] private Graphic stageFx;
+        [SerializeField] private Image tierPill;
+        [SerializeField] private Image[] stars = new Image[5];
+        [SerializeField] private GameObject newTag;
+        [SerializeField] private Image namePanel;
+
         public static readonly Color[] TierGlow =
         {
             new(0.85f, 0.9f, 1f), new(0.45f, 1f, 0.6f), new(0.4f, 0.75f, 1f), new(0.8f, 0.5f, 1f), new(1f, 0.78f, 0.25f),
@@ -46,11 +55,38 @@ namespace ZombieWar.UI
 
         bool _tapped;
         Vector2 _shakeRest;
+        Material _stage;
+        Vector2? _nameRest, _noteRest;
+        float _spin, _stageT;
+        static readonly int TierColorId = Shader.PropertyToID("_TierColor"), ChargeId = Shader.PropertyToID("_Charge"),
+            RaysId = Shader.PropertyToID("_Rays"), SpinId = Shader.PropertyToID("_Spin"), GlowId = Shader.PropertyToID("_Glow"),
+            BurstId = Shader.PropertyToID("_Burst"), TId = Shader.PropertyToID("_T"), AspectId = Shader.PropertyToID("_Aspect");
+
+        /// <summary>Stage values while the show runs; the shader does the drawing.</summary>
+        float _charge, _rays, _glow, _burst = 1f;
+
+        void LateUpdate()
+        {
+            if (_stage == null || root == null || !root.activeSelf) return;
+            float dt = Dt();
+            _stageT += dt;
+            _spin += dt * (0.12f + 0.5f * _charge);
+            var rt = stageFx.rectTransform.rect;
+            _stage.SetFloat(AspectId, rt.height > 1f ? rt.width / rt.height : 0.5625f);
+            _stage.SetFloat(ChargeId, _charge); _stage.SetFloat(RaysId, _rays); _stage.SetFloat(GlowId, _glow);
+            _stage.SetFloat(BurstId, _burst); _stage.SetFloat(SpinId, _spin); _stage.SetFloat(TId, _stageT);
+        }
 
         void Awake()
         {
             if (tapArea != null) tapArea.onClick.AddListener(() => _tapped = true);
             if (root != null) root.SetActive(false);
+            FtueRadio.RegisterModal(root);   // radio subtitles wait while a chest opens (QA 05/10)
+            if (stageFx != null && stageFx.material != null)
+            {
+                _stage = new Material(stageFx.material) { name = stageFx.material.name + " (show)" };
+                stageFx.material = _stage;
+            }
         }
 
         public bool Showing => root != null && root.activeSelf;
@@ -72,6 +108,13 @@ namespace ZombieWar.UI
             card.gameObject.SetActive(false);
             if (hint != null) hint.gameObject.SetActive(false);
             Tint(rays, col); Tint(beam, col); Tint(glow, col);
+            bool shader = _stage != null;
+            if (shader)
+            {
+                _stage.SetColor(TierColorId, col);
+                _charge = 0f; _rays = 0.12f; _glow = 0.25f; _burst = 1f;
+            }
+            ShowCardChrome(false, tier, note);
             chest.sprite = chestSprite; chest.gameObject.SetActive(true);
             var ct = chest.rectTransform;
             ct.localRotation = Quaternion.identity; ct.localScale = Vector3.one;
@@ -97,9 +140,18 @@ namespace ZombieWar.UI
             for (float t = 0f; t < charge && !skip(); t += Dt())
             {
                 float k = t / charge;
-                Alpha(beam, Mathf.SmoothStep(0f, 0.55f + tier * 0.1f, k));
-                Alpha(glow, (0.25f + 0.2f * tier) * k * (0.8f + 0.2f * Mathf.Sin(t * 18f)));
-                if (tier >= 3) { Alpha(rays, 0.5f * k); rays.rectTransform.localRotation = Quaternion.Euler(0, 0, -t * 40f); }
+                if (shader)
+                {
+                    _charge = k;
+                    _rays = Mathf.Lerp(0.1f, 0.45f + tier * 0.1f, k);
+                    _glow = Mathf.Lerp(0.2f, 0.8f + tier * 0.1f, k);
+                }
+                else
+                {
+                    Alpha(beam, Mathf.SmoothStep(0f, 0.55f + tier * 0.1f, k));
+                    Alpha(glow, (0.25f + 0.2f * tier) * k * (0.8f + 0.2f * Mathf.Sin(t * 18f)));
+                    if (tier >= 3) { Alpha(rays, 0.5f * k); rays.rectTransform.localRotation = Quaternion.Euler(0, 0, -t * 40f); }
+                }
                 ct.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(t * (20f + 30f * k)) * (3f + 9f * k * (1 + tier * 0.4f)));
                 ct.localScale = Vector3.one * (1f + 0.15f * k);
                 if ((sparkTimer -= Dt()) <= 0f)
@@ -115,8 +167,12 @@ namespace ZombieWar.UI
             {
                 chest.gameObject.SetActive(false);
                 StartCoroutine(Flash(0.35f + tier * 0.05f));
-                StartCoroutine(Ring(rings[0], 0f, 2.6f + tier * 0.3f));
-                if (rings.Length > 1) StartCoroutine(Ring(rings[1], 0.1f, 3.4f + tier * 0.4f));
+                if (shader) StartCoroutine(StageBurst(tier));
+                else
+                {
+                    StartCoroutine(Ring(rings[0], 0f, 2.6f + tier * 0.3f));
+                    if (rings.Length > 1) StartCoroutine(Ring(rings[1], 0.1f, 3.4f + tier * 0.4f));
+                }
                 int stars = 16 + tier * 10;
                 Emit(particles, Vector2.zero, star, stars, col, Color.white, new Vector2(420, 1150), new Vector2(40, 90), new Vector2(0.6f, 1.2f), 700f, 1.6f, 400f, 360f, 90f, 0.4f, Vector2.zero);
                 Emit(particles, Vector2.zero, spark, 24, col, Color.white, new Vector2(300, 900), new Vector2(20, 40), new Vector2(0.4f, 0.9f), 300f, 2f, 0f, 360f, 90f, 0.2f, Vector2.zero);
@@ -126,17 +182,24 @@ namespace ZombieWar.UI
                 else if (tier == 3) { UIFeedback.LevelUp(); }
                 else { Sfx("sfx.pickup.gem"); UIFeedback.Haptic(UIFeedback.Buzz.Light); }
                 StartCoroutine(Shake(0.3f + tier * 0.05f, 10f + tier * 6f, skip));
-                Alpha(beam, 0.35f);
+                if (!shader) Alpha(beam, 0.35f);
             }
             else chest.gameObject.SetActive(false);
+            if (shader) { _charge = 0f; _rays = 0.4f + tier * 0.1f; _glow = 0.6f + tier * 0.1f; }
 
             // ---- the card flips in
             card.gameObject.SetActive(true);
-            if (cardBg != null) { cardBg.color = TierGlow[tier] * 0.55f + new Color(0.15f, 0.15f, 0.2f, 1f); ItemTileFx.On(cardBg, tier); }
+            if (cardBg != null)
+            {
+                // On the shader stage the prize floats in the light (mockup U5): no box behind it.
+                cardBg.enabled = !shader;
+                if (!shader) { cardBg.color = TierGlow[tier] * 0.55f + new Color(0.15f, 0.15f, 0.2f, 1f); ItemTileFx.On(cardBg, tier); }
+            }
+            ShowCardChrome(shader, tier, note);
             if (cardIcon != null) { cardIcon.sprite = prize; cardIcon.enabled = prize != null; }
             if (cardName != null) cardName.text = prizeName;
-            if (cardNote != null) cardNote.text = note;
-            if (cardTier != null) { cardTier.text = TierName[tier]; cardTier.color = TierGlow[tier]; }
+            if (cardNote != null) cardNote.text = shader ? SubLine(note) : note;
+            if (cardTier != null) { cardTier.text = TierName[tier]; cardTier.color = shader ? Color.white : TierGlow[tier]; }
             for (float t = 0f; t < 0.4f && !skip(); t += Dt())
             {
                 float k = OutBack(t / 0.4f);
@@ -157,13 +220,74 @@ namespace ZombieWar.UI
                     rain = 0.12f;
                     Emit(particles, new Vector2(0, 700), star, 1, col, Color.white, new Vector2(60, 160), new Vector2(18, 36), new Vector2(1.2f, 2f), 120f, 0.3f, 90f, 30f, -90f, 0.3f, new Vector2(420, 0));
                 }
-                if (tier >= 3) rays.rectTransform.localRotation *= Quaternion.Euler(0, 0, -20f * Dt());
+                if (tier >= 3 && !shader) rays.rectTransform.localRotation *= Quaternion.Euler(0, 0, -20f * Dt());
                 yield return null;
             }
             for (float t = 0f; t < 0.18f; t += Dt()) { SetGroupAlpha(1f - t / 0.18f); yield return null; }
             SetGroupAlpha(1f);
             particles.Clear();
             root.SetActive(false);
+        }
+
+        // The shock wave and flash of the burst, drawn by the stage shader.
+        IEnumerator StageBurst(int tier)
+        {
+            float seconds = 0.6f + tier * 0.08f;
+            for (float t = 0f; t < seconds; t += Dt()) { _burst = t / seconds; yield return null; }
+            _burst = 1f;
+        }
+
+        /// <summary>Mockup U5 chrome on the stage: rarity pill, stars (one per rarity step), the NEW
+        /// tag and the dark name panel. Hidden on the old sprite stage.</summary>
+        void ShowCardChrome(bool on, int tier, string note)
+        {
+            if (tierPill != null)
+            {
+                tierPill.gameObject.SetActive(on);
+                var c = TierGlow[tier] * 0.55f; c.a = 1f; tierPill.color = c;   // dark enough for white text
+            }
+            if (stars != null)
+                for (int i = 0; i < stars.Length; i++)
+                {
+                    if (stars[i] == null) continue;
+                    stars[i].gameObject.SetActive(on && i <= tier);
+                    // The shown stars are centred: one star for Common sits in the middle.
+                    var sr = stars[i].rectTransform;
+                    sr.anchoredPosition = new Vector2((i - tier * 0.5f) * 54f, sr.anchoredPosition.y);
+                }
+            if (newTag != null) newTag.SetActive(on && IsNew(note));
+            if (namePanel != null) namePanel.gameObject.SetActive(on);
+            // Inside the panel: one line sits in its middle; two lines stack name over note.
+            if (cardName != null && namePanel != null)
+            {
+                if (_nameRest == null) _nameRest = cardName.rectTransform.anchoredPosition;
+                if (_noteRest == null && cardNote != null) _noteRest = cardNote.rectTransform.anchoredPosition;
+                if (!on)
+                {
+                    cardName.rectTransform.anchoredPosition = _nameRest.Value;
+                    if (cardNote != null) cardNote.rectTransform.anchoredPosition = _noteRest.Value;
+                }
+                else
+                {
+                    var pr = namePanel.rectTransform;
+                    float bottom = pr.anchoredPosition.y, h = pr.rect.height;
+                    bool single = string.IsNullOrEmpty(SubLine(note));
+                    CentreAt(cardName.rectTransform, bottom + h * (single ? 0.5f : 0.62f));
+                    if (cardNote != null) CentreAt(cardNote.rectTransform, bottom + h * 0.27f);
+                }
+            }
+        }
+
+        static void CentreAt(RectTransform t, float y) =>
+            t.anchoredPosition = new Vector2(t.anchoredPosition.x, y - t.rect.height * (0.5f - t.pivot.y));
+
+        public static bool IsNew(string note) => !string.IsNullOrEmpty(note) && (note == "NEW" || note.EndsWith(" · NEW"));
+
+        /// <summary>The panel's second line: the note without the NEW the tag already says.</summary>
+        public static string SubLine(string note)
+        {
+            if (string.IsNullOrEmpty(note) || note == "NEW") return string.Empty;
+            return note.EndsWith(" · NEW") ? note.Substring(0, note.Length - 6) : note;
         }
 
         /// <summary>Small pop on a grid tile (x10 reveal): a ring and a few sparks in its colour.</summary>
