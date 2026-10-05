@@ -37,6 +37,22 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 | Q4 | #68 Dọn thư mục | xoá Screenshots 118 MB, VATEnemy 170 MB, DuNguyn 59 MB, Monsters, _Recovery? | xoá Screenshots, _Recovery; giữ cái còn dùng |
 | Q5 | Build sớm | build 1 lần sau Đợt 2 (toàn UI) / giữ "không build tới lab bot" | build sau Đợt 2 |
 
+## Rà soát tổng 05/10 tối
+Lỗi lớn:
+- B1 Bộ Daily Ops đổi giữa ngày khi mua súng mới hoặc lên cấp tài khoản → tiến độ đang làm biến mất. Sửa: chốt bộ nhiệm vụ của ngày vào profile.
+- B2 Rương ngày chưa có nút nhận → làm xong 4 nhiệm vụ cũng không mở được.
+- B3 Thông thạo, tiến hoá, thành tựu chưa có màn hình → người chơi không thấy; tiến hoá chưa có nút bấm nên chưa ai tiến hoá được.
+- B4 Profile: ảnh đại diện và khung xem trước là ô xanh cyan đặc (mất chân dung).
+Lỗi nhỏ:
+- m1 Mỗi kill tạo một danh sách súng mới để tra nhóm súng (rác bộ nhớ). Sửa: nhớ nhóm súng của trận.
+- m2 Lời thoại và nhạc màn Result vẫn mừng kỷ lục thời gian, trong khi pill đã tính kỷ lục điểm.
+- m3 Phụ đề chat bộ đàm che tiêu đề ở Arsenal, Gacha, Settings.
+- m4 Icon "Pistol" là hình giống SMG.
+- m5 Toast thành tựu không hiện trong trận (chỉ có câu thoại).
+- m6 Quà điểm danh "mảnh súng" mất nếu chưa có súng đang trang bị (hồ sơ mới tinh).
+- m7 Vé từ thông thạo cộng thẳng, không báo ví → số vé trên màn có thể chậm cập nhật.
+- m8 Vào trận mất 13 giây trong Editor (đo lại trên máy).
+
 ## Hàng chạy không cần owner (05/10)
 Nhãn: **A** tự làm, tự kiểm bằng test/số đo · **B** tự làm, tự chụp so mockup; owner xem lại sau, không chặn · **C** cần owner (quyết định, duyệt, cảm giác trên máy).
 
