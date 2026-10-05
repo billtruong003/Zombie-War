@@ -55,13 +55,12 @@ namespace ZombieWar.UI
 
         // U4 · First Studio visit (owner-approved 05/10): Tiger, corners + hand on the TOP hotspot.
         // The card sits low over the piece strip so the HEAD and FACE hotspots stay visible; the chip
-        // goes above the corners, clear of the hand. Text only until the owner picks how the new Tiger
-        // line is voiced (backlog Q1).
+        // goes above the corners, clear of the hand. Voiced 05/10 (owner pick, backlog 1b).
         public static void Studio(RectTransform hotspot)
         {
             if (hotspot == null || Ftue.Done(Ftue.Studio)) return;
-            var c = Card("studio", null, "mai", null, "TAP A PART TO CHANGE IT",
-                "Hat, face, top, back, pants, shoes. Try anything on for free.", FtueRadio.Size.Normal, 452);
+            var c = Card("studio", "vo_mai_ftue_studio", "mai", null, "TAP A PART TO CHANGE IT",
+                "Hat, face, top, back, pants, shoes. Try anything on, it's free.", FtueRadio.Size.Normal, 452);
             c.Chip = "TAP THE TOP";
             c.ChipAbove = true;
             c.Target = () => FtueRadio.ScreenRect(hotspot);
@@ -77,8 +76,8 @@ namespace ZombieWar.UI
         {
             if (tile == null) return;
             string name = string.IsNullOrEmpty(slotName) ? "PIECE" : slotName.ToUpperInvariant();
-            var c = Card("wear", null, "mai", null, $"NEW {name}! WEAR IT",
-                $"It opened on the {name.ToLowerInvariant()} slot. Tap it to put it on.", FtueRadio.Size.Small, 52);
+            var c = Card("wear", "vo_mai_meta_wear_new", "mai", null, $"NEW {name}! WEAR IT",
+                "Ooh, it's new! Tap it to put it on.", FtueRadio.Size.Small, 52);
             c.Chip = "NEW · TAP TO WEAR";
             c.Target = () => FtueRadio.ScreenRect(tile);
             c.Hand = () => FtueRadio.TapPoint(tile);
@@ -102,8 +101,9 @@ namespace ZombieWar.UI
         // the 3-2-1. Not an FTUE step, so it never waits on Ftue flags; it ends itself.
         public static void HordeCall(string side, float seconds)
         {
-            var c = Card("horde", null, "lukas", null, "HORDE CALL",
-                $"A wall of them, from the {side}. Hold your ground.", FtueRadio.Size.Normal, 196);
+            // One recorded line per side (vo_lukas_run_horde_north/east/south/west).
+            var c = Card("horde", $"vo_lukas_run_horde_{side}", "lukas", null, "HORDE CALL",
+                $"Achtung! A wall of them, from the {side}. Hold your ground!", FtueRadio.Size.Normal, 196);
             c.Seconds = seconds;
             FtueRadio.Show(c);
         }

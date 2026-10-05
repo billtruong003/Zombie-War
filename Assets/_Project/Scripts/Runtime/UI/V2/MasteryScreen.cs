@@ -122,6 +122,7 @@ namespace ZombieWar.UI
             if (block != GunEvolution.Block.None) { UIFeedback.Error(); Toast.Show(GunEvolution.BlockText(block)); return; }
             if (!PlayerProfile.TryEvolveGun(_gun.WeaponId)) return;
             UIFeedback.LevelUp();
+            ZombieWar.Audio.RadioDirector.GunEvolved();
             if (evoGun != null) { evoGun.sprite = gunIcon != null ? gunIcon.sprite : null; evoGun.preserveAspect = true; evoGun.enabled = evoGun.sprite != null; }
             Set(evoSheetSub, $"{_gun.weaponName.ToUpperInvariant()} · MASTERY {GunMastery.MaxLevel} · ★★★");
             Set(evoSheetEffect, GunEvolution.TraitText(_gun.weaponClass));

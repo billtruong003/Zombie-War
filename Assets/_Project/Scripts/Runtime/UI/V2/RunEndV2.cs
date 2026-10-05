@@ -386,6 +386,7 @@ namespace ZombieWar.UI
             int opsDone = ops.Count(PlayerProfile.IsMissionComplete), opsReady = ops.Count(m => PlayerProfile.IsMissionComplete(m) && !PlayerProfile.IsMissionClaimed(m.id));
             if (opsReady > 0 && row < progressRows.Length) SetRow(row++, $"Daily Ops {opsDone} / {ops.Count} · +{DailyOps.ShardsPerMission * opsReady} shards", "CLAIM ›");
             var gunData = WeaponCatalog.Active?.DataById(PlayerProfile.EquippedWeaponId);
+            ZombieWar.Audio.RadioDirector.MasteryUp(result.MasteryBefore, result.MasteryAfter);
             if (result.MasteryXp > 0 && row < progressRows.Length)
                 SetRow(row++, $"{(gunData != null ? gunData.weaponName : "Gun")} mastery +{result.MasteryXp:N0} XP · level {result.MasteryAfter}",
                        result.MasteryAfter > result.MasteryBefore ? "LV UP ›" : "");

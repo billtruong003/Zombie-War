@@ -308,6 +308,35 @@ namespace ZombieWar.Audio
         void OnDailyChest(PlayerProfile.DailyChestReward r)
         {
             if (r.streak > 0 && r.streak % PlayerProfile.StreakGunEvery == 0) Say("vo_mai_meta_streak7");
+            else if (r.streak == PlayerProfile.StreakDoubleAt) Say("vo_mai_meta_streak3");
+            else Say("vo_mai_meta_chest_open");
+        }
+
+        /// <summary>The run raised the carried gun's mastery: Chen notes it, louder at the family-bonus levels.</summary>
+        public static void MasteryUp(int before, int after)
+        {
+            var d = _instance;
+            if (d == null || FtueActive || after <= before) return;
+            bool bonus = (before < GunMastery.BonusLevel1 && after >= GunMastery.BonusLevel1)
+                      || (before < GunMastery.BonusLevel2 && after >= GunMastery.BonusLevel2);
+            d.Say(bonus ? "vo_chen_meta_mastery_bonus" : "vo_chen_meta_mastery_up", 5f);
+        }
+
+        /// <summary>The player keeps poking a radio portrait.</summary>
+        public static void PortraitTapped(int taps)
+        {
+            var d = _instance;
+            if (d == null || FtueActive) return;
+            // ">=" so a tap that lands while the radio is busy is not lost: the next tap tries again.
+            if (taps >= 10 && d.SayOnce("vo_mai_egg_tap10")) return;
+            if (taps >= 5) d.SayOnce("vo_jiho_egg_tap5");
+        }
+
+        /// <summary>A gun evolved in the mastery screen (not the in-run skill evolution).</summary>
+        public static void GunEvolved()
+        {
+            var d = _instance;
+            if (d != null) d.Say("vo_lukas_meta_gun_evolve");
         }
 
         /// <summary>Home after three or more days away: Riley's welcome back (once per return).</summary>

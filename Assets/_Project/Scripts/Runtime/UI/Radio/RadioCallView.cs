@@ -40,6 +40,12 @@ namespace ZombieWar.UI
 
         void OnEnable()
         {
+            // Poking the portrait is an easter egg (Ji-ho at 5 taps, Mai at 10).
+            if (portrait != null && !portrait.TryGetComponent(out RadioPortraitTaps _))
+            {
+                portrait.raycastTarget = true;
+                portrait.gameObject.AddComponent<RadioPortraitTaps>();
+            }
             // An own instance, so two cards on screen do not share one "speaking" state.
             if (waveform != null && waveformMaterial != null)
             {
