@@ -182,6 +182,76 @@ namespace ZombieWar.Threat
             return Mathf.Min(length, every) - (t % every);
         }
 
+        // ── Horde Call telegraph (mockup U2, owner-approved 05/10) ──────────────────────────────
+        /// <summary>Seconds of warning before a Horde Call lands: radio card, arrows, red edge.</summary>
+        public const float HordeWarnSeconds = 10f;
+        /// <summary>Half-width of the arc a Horde Call arrives through (radians, about 50 degrees).</summary>
+        public const float HordeArcHalfWidth = 0.87f;
+
+        /// <summary>
+        /// Which surge is running or comes next: surge k starts k*every seconds after the opening.
+        /// 0 = none scheduled yet (or surges off).
+        /// </summary>
+        public static int SurgeIndexAt(float runSeconds, float openingSeconds, float every, float length)
+        {
+            if (every <= 0f || length <= 0f) return 0;
+            float t = runSeconds - Mathf.Max(0f, openingSeconds);
+            if (t < every) return 1;
+            int k = Mathf.FloorToInt(t / every);
+            return IsSurgeAt(runSeconds, openingSeconds, every, length) ? k : k + 1;
+        }
+
+        /// <summary>The screen side surge <paramref name="index"/> comes from: 0 top, 1 right,
+        /// 2 bottom, 3 left. Never the same side twice in a row.</summary>
+        public static int SideFor(int index, int seed)
+        {
+            if (index <= 1) return Mathf.Abs(seed) % 4;
+            int previous = SideFor(index - 1, seed);
+            uint h = (uint)(index * 73856093) ^ (uint)(seed * 19349663);
+            return (previous + 1 + (int)(h % 3u)) % 4;
+        }
+
+        public static string SideName(int side) => side switch { 0 => "north", 1 => "east", 2 => "south", _ => "west" };
+
+        /// <summary>True in the warning window before a Horde Call (not while it runs).</summary>
+        public bool HordeWarning { get; private set; }
+        /// <summary>Side of the running or next Horde Call (see <see cref="SideFor"/>), -1 when none.</summary>
+        public int HordeSide { get; private set; } = -1;
+        /// <summary>World direction (flat, unit) from the player toward where the horde comes from.</summary>
+        public Vector3 HordeDirection { get; private set; }
+        public float HordeSecondsUntil { get; private set; } = float.PositiveInfinity;
+        /// <summary>The surge the telegraph is about (see <see cref="SurgeIndexAt"/>), -1 before the first.</summary>
+        public int HordeIndex => _hordeIndex;
+
+        int _hordeSeed, _hordeIndex = -1;
+        bool _surgeRanFull;
+
+        void UpdateHordeCall(float runSeconds)
+        {
+            float until = SecondsUntilSurge(runSeconds, openingSeconds, surgeEverySeconds, surgeSeconds);
+            HordeSecondsUntil = until;
+            HordeWarning = !Resting && until > 0f && until <= HordeWarnSeconds;
+            if (!HordeWarning && !Surging) return;
+            int index = SurgeIndexAt(runSeconds, openingSeconds, surgeEverySeconds, surgeSeconds);
+            if (index == _hordeIndex) return;
+            // Rolled once per surge, against the camera as it is at the warning, so "from the north"
+            // and the arrows mean the top of the screen.
+            _hordeIndex = index;
+            HordeSide = SideFor(index, _hordeSeed);
+            HordeDirection = ScreenSideToWorld(HordeSide);
+        }
+
+        static Vector3 ScreenSideToWorld(int side)
+        {
+            var cam = Camera.main;
+            Vector3 up = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up) : Vector3.forward;
+            if (up.sqrMagnitude < 1e-4f && cam != null) up = Vector3.ProjectOnPlane(cam.transform.up, Vector3.up);
+            if (up.sqrMagnitude < 1e-4f) up = Vector3.forward;
+            up.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, up);
+            return side switch { 0 => up, 1 => right, 2 => -up, _ => -right };
+        }
+
         public float SecondsUntilSurgeNow(float runSeconds) =>
             SecondsUntilSurge(runSeconds, openingSeconds, surgeEverySeconds, surgeSeconds);
 
@@ -191,6 +261,7 @@ namespace ZombieWar.Threat
         void Awake()
         {
             Instance = this;
+            _hordeSeed = Random.Range(0, 1 << 20);
             // Reset is owned by RunScope's explicit list, NOT registered from here: the state is a
             // static and must reset even in a run where no director component exists.
         }
@@ -350,7 +421,18 @@ namespace ZombieWar.Threat
             {
                 Surging = surging;
                 if (Bill.IsReady) Bill.Events.Fire(new HordeSurgeEvent(surging));
+                // Survived to its scheduled end (a rest window cutting it short is no win): the
+                // Horde Call pays a chest (mockup U2 "HORDE CLEARED").
+                if (surging) _surgeRanFull = true;
+                else if (_surgeRanFull && !Resting && !run.IsOver)
+                {
+                    _surgeRanFull = false;
+                    PickupManager.Instance?.SpawnChest(p + HordeDirection * 2.5f);
+                    if (Bill.IsReady) Bill.Events.Fire(new HordeClearedEvent(_hordeIndex));
+                }
+                else _surgeRanFull = false;
             }
+            UpdateHordeCall(run.Duration);
 
             if (_spawner == null) return;
 
@@ -397,6 +479,9 @@ namespace ZombieWar.Threat
             // Spawn a small burst per tick: one enemy every 2.2 s cannot build a crowd against a
             // player who is also killing them. Measured alive count was 5-7 with single spawns.
             int burst = Mathf.Min(spawnBurst, target - ZombieManager.AliveCount);
+            // A Horde Call arrives from its one side, not all round.
+            _spawner.ArcCenter = surging && HordeSide >= 0 ? Mathf.Atan2(HordeDirection.z, HordeDirection.x) : (float?)null;
+            _spawner.ArcHalfWidth = HordeArcHalfWidth;
             for (int i = 0; i < burst; i++)
             {
                 // Vary the lead per spawn so two arrivals in the same tick start at different
@@ -408,6 +493,7 @@ namespace ZombieWar.Threat
             }
 
             _spawner.SpawnFocusOverride = null;   // never leak the override into other spawners
+            _spawner.ArcCenter = null;
         }
 
         public float SpawnIntervalFor(int tier) =>
@@ -564,6 +650,13 @@ namespace ZombieWar.Threat
             for (int i = 0; i <= Mathf.Min(tier, 3); i++) AppendTier(Pool, i);
             return Pool.Count;
         }
+    }
+
+    /// <summary>A Horde Call ran its full length with the player alive: "HORDE CLEARED", a chest.</summary>
+    public readonly struct HordeClearedEvent : IEvent
+    {
+        public readonly int Index;
+        public HordeClearedEvent(int index) { Index = index; }
     }
 
     /// <summary>A horde surge started (<see cref="Started"/> true) or ended.</summary>

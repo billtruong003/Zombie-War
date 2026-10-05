@@ -137,6 +137,14 @@ namespace ZombieWar
         /// </summary>
         public Vector3? SpawnFocusOverride { get; set; }
 
+        /// <summary>
+        /// Horde Call (mockup U2 05/10): while set, arrivals come only from this arc - a world angle
+        /// in radians around +X (the same convention as the sector walk) plus/minus
+        /// <see cref="ArcHalfWidth"/> - so the wall reads as coming from one side. Null = all round.
+        /// </summary>
+        public float? ArcCenter { get; set; }
+        public float ArcHalfWidth { get; set; } = 0.9f;
+
         public ZombieBase Spawn(ZombieData data) => Spawn(data, SpawnBand.Normal);
 
         public ZombieBase Spawn(ZombieData data, SpawnBand band)
@@ -256,6 +264,11 @@ namespace ZombieWar
         {
             int sectors = Mathf.Max(2, sectorCount);
             _sectorCursor = (_sectorCursor + _sectorStride) % sectors;
+            if (ArcCenter.HasValue)
+            {
+                float f = (_sectorCursor + Random.value) / sectors;   // the same walk, squeezed into the arc
+                return ArcCenter.Value + (f * 2f - 1f) * ArcHalfWidth;
+            }
             float sectorSize = Mathf.PI * 2f / sectors;
             return (_sectorCursor + Random.value) * sectorSize;
         }

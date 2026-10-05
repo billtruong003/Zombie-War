@@ -53,6 +53,16 @@ namespace ZombieWar.UI
             FtueRadio.Show(c);
         }
 
+        // Horde Call telegraph (mockup U2 05/10): Raptor calls the side, the HUD draws the arrows and
+        // the 3-2-1. Not an FTUE step, so it never waits on Ftue flags; it ends itself.
+        public static void HordeCall(string side, float seconds)
+        {
+            var c = Card("horde", null, "lukas", null, "HORDE CALL",
+                $"A wall of them, from the {side}. Hold your ground.", FtueRadio.Size.Normal, 196);
+            c.Seconds = seconds;
+            FtueRadio.Show(c);
+        }
+
         // FR_02b · First kill: corners on the XP bar.
         public static void Xp(RectTransform xpBar)
         {

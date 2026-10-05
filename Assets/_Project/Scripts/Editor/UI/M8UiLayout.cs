@@ -312,7 +312,7 @@ namespace ZombieWar.EditorTools
                 var title = Rect(ch, "Title", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -250), new Vector2(1000, 130));
                 Label(title, "Label", "TREASURE CHEST", 96, UITheme.M8Ink);
                 var sub = Rect(ch, "Sub", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -385), new Vector2(1000, 50));
-                Label(sub, "Label", "Bosses always drop one · elites and Supply Drops can too", 30, new Color(1f, 0.91f, 0.65f));
+                Label(sub, "Label", "Bosses and Horde Calls drop one · elites and Supply Drops can too", 30, new Color(1f, 0.91f, 0.65f));
 
                 var chest = Rect(ch, "Chest", new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -620), new Vector2(330, 330));
                 IconImg(chest, "ItemIcon_Chest_Gold.Png");
