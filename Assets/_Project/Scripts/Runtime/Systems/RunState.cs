@@ -15,12 +15,14 @@ namespace ZombieWar
         public readonly int Kills, Level, Xp, PeakThreatTier;
         public readonly long Coin, Gem;
         public readonly float Duration;
+        /// <summary>Kill-based score: the run's record and, later, its leaderboard value (owner 27/09).</summary>
+        public readonly long Score;
 
         public RunSummary(RunOutcome outcome, int kills, int level, int xp, int peakThreatTier,
-                          long coin, long gem, float duration)
+                          long coin, long gem, float duration, long score = 0)
         {
             Outcome = outcome; Kills = kills; Level = level; Xp = xp; PeakThreatTier = peakThreatTier;
-            Coin = coin; Gem = gem; Duration = duration;
+            Coin = coin; Gem = gem; Duration = duration; Score = score;
         }
     }
 
@@ -55,6 +57,12 @@ namespace ZombieWar
         private bool _paidOut;
 
         public int Kills { get; private set; }
+        /// <summary>Kill-based score (see <see cref="KillPoints"/>).</summary>
+        public long Score { get; private set; }
+
+        /// <summary>Points for one kill: an elite is worth five ordinary enemies.</summary>
+        public const int KillScore = 10, EliteKillScore = 50;
+        public static int KillPoints(ZombieData data) => data != null && data.isElite ? EliteKillScore : KillScore;
         public int Level { get; private set; } = 1;
         public int PeakThreatTier { get; private set; }
 
@@ -139,6 +147,7 @@ namespace ZombieWar
             if (IsOver || data == null) return;
 
             Kills++;
+            Score += KillPoints(data);
             if (bankCoin) Coin += ScaleCoin(Mathf.Max(0, data.coinReward));
             if (grantXp) AddXp(Mathf.Max(0, data.xpReward));
             Changed?.Invoke();
@@ -207,7 +216,7 @@ namespace ZombieWar
         }
 
         public RunSummary Snapshot() =>
-            new RunSummary(Outcome, Kills, Level, Xp, PeakThreatTier, Coin, Gem, Duration);
+            new RunSummary(Outcome, Kills, Level, Xp, PeakThreatTier, Coin, Gem, Duration, Score);
 
         /// <summary>Coin the payout actually credited, frozen by the first <see cref="Payout"/> call.
         /// It differs from the earned total on every ending - the result screen must show this, not

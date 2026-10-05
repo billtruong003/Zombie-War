@@ -35,9 +35,12 @@ namespace ZombieWar
             /// <summary>Account XP this run paid, and how many account levels it gained (M9).</summary>
             public readonly int AccountXpGained;
             public readonly int AccountLevelsGained;
+            /// <summary>The run beat the best score (the record that counts, owner 27/09).</summary>
+            public readonly bool NewScoreRecord;
 
-            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord, int accountXpGained = 0, int accountLevelsGained = 0)
+            public Result(bool closed, RunSummary summary, long bankedCoin, bool newSurvivalRecord, int accountXpGained = 0, int accountLevelsGained = 0, bool newScoreRecord = false)
             {
+                NewScoreRecord = newScoreRecord;
                 Closed = closed;
                 Summary = summary;
                 BankedCoin = bankedCoin;
@@ -61,17 +64,18 @@ namespace ZombieWar
 
             // One write for the whole closing (payout, record, stats, XP and the run's pending
             // mission/voice flags), not four, and the change events after it.
-            bool record = false;
+            bool record = false, scoreRecord = false;
             int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills), levels = 0;
             PlayerProfile.Batch(() =>
             {
                 run.Payout(CoinFractionFor(summary.Outcome));
                 record = PlayerProfile.RecordSurvival(summary.Duration);
+                scoreRecord = PlayerProfile.RecordScore(summary.Score);
                 PlayerProfile.RecordRunStats(summary.Kills, summary.PeakThreatTier, summary.Duration);
                 levels = PlayerProfile.AddAccountXp(xp);
             });
             PlayerProfile.FlushIfDirty();
-            return new Result(true, summary, run.BankedCoin, record, xp, levels);
+            return new Result(true, summary, run.BankedCoin, record, xp, levels, scoreRecord);
         }
     }
 }

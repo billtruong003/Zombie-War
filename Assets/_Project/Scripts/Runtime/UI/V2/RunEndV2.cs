@@ -356,10 +356,17 @@ namespace ZombieWar.UI
             {
                 newBest.SetActive(true);
                 var img = newBest.GetComponent<Image>();
-                ThemeTint.Set(img, result.NewSurvivalRecord ? ThemeRole.Primary : ThemeRole.Card);
-                ThemeTint.Set(bestLabel, result.NewSurvivalRecord ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
+                ThemeTint.Set(img, result.NewScoreRecord ? ThemeRole.Primary : ThemeRole.Card);
+                ThemeTint.Set(bestLabel, result.NewScoreRecord ? ThemeRole.PrimaryOn : ThemeRole.TextOnSurface);
             }
-            Set(bestLabel, gift > 0 ? "FIRST RUN" : result.NewSurvivalRecord ? "NEW BEST" : "BEST " + HudController.FormatClock(Mathf.FloorToInt(PlayerProfile.BestSurvivalSeconds)));
+            // The record is the kill score (owner 27/09), not the time survived.
+            Set(bestLabel, ScoreLine(s.Score, PlayerProfile.BestScore, result.NewScoreRecord, gift > 0));
+            // The pill grows with its line ("SCORE 450 · BEST 5,000" is wider than "NEW BEST").
+            if (newBest != null && bestLabel != null)
+            {
+                var pill = (RectTransform)newBest.transform;
+                pill.sizeDelta = new Vector2(bestLabel.GetPreferredValues(bestLabel.text).x + 56f, pill.sizeDelta.y);
+            }
             UIFx.CountUp(kills, s.Kills, 0.6f, v => $"{v:N0}", 0.25f);
             Set(level, s.Level.ToString());
             Set(threat, s.PeakThreatTier.ToString());
@@ -385,6 +392,12 @@ namespace ZombieWar.UI
             Time.timeScale = 0f;
             QueueUnlocks(result.AccountLevelsGained);
         }
+
+        /// <summary>The pill under the time: the run's score, against the best one.</summary>
+        public static string ScoreLine(long score, long best, bool newRecord, bool firstRun) =>
+            firstRun ? $"FIRST RUN · SCORE {score:N0}"
+            : newRecord ? $"NEW BEST · {score:N0}"
+            : $"SCORE {score:N0} · BEST {best:N0}";
 
         /// FTUE v2: the first run tops the coins it kept up to the price of the cheapest gun
         /// ("Newcomer gift", owner 01/10), so the first visit to the Arsenal can buy one. Once only.

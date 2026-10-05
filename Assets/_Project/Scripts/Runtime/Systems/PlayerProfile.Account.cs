@@ -24,6 +24,18 @@ namespace ZombieWar
             return true;
         }
 
+        /// <summary>Best kill-based score of any run: the record the result screen celebrates.</summary>
+        public static long BestScore => Data.bestScore;
+
+        /// <summary>Keeps the higher score. True when it set a new record (a zero never does).</summary>
+        public static bool RecordScore(long score)
+        {
+            if (score <= 0 || score <= Data.bestScore) return false;
+            Data.bestScore = score;
+            MarkDirty();
+            return true;
+        }
+
         // ===== Account level (M9) =====
 
         public static event Action AccountChanged;

@@ -100,6 +100,7 @@ namespace ZombieWar
             // Best kills in one run (2026-10-01): the kill score's record, shown once the result
             // screen mockup is approved.
             public int bestKills;
+            public long bestScore;
             // First-time-user steps already done (Ftue.Move, Ftue.Reveal, ...).
             public List<string> ftueSteps = new List<string>();
             // Radio lines already used once, conversations and yearly eggs (v3; were "vo.*" FTUE steps).
