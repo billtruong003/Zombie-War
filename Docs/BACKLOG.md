@@ -37,17 +37,38 @@ Một danh sách duy nhất, làm từ trên xuống. Gom từ: các yêu cầu 
 | Q4 | #68 Dọn thư mục | xoá Screenshots 118 MB, VATEnemy 170 MB, DuNguyn 59 MB, Monsters, _Recovery? | xoá Screenshots, _Recovery; giữ cái còn dùng |
 | Q5 | Build sớm | build 1 lần sau Đợt 2 (toàn UI) / giữ "không build tới lab bot" | build sau Đợt 2 |
 
-## Làm tiếp theo (thứ tự)
-1. #11 Studio lần đầu: thẻ bộ đàm + góc ngắm (giọng theo Q1)
-2. #12 Màn mở gacha bằng shader, bỏ vòng sáng dưới chân, tự chụp kiểm
-3. #13 WEAR NOW sau mọi lần tặng đồ
-4. #14 Result: 3 dòng tiến độ + điểm theo kill
-5. #15 Thẻ Daily Ops ở Home
-6. #16 Arsenal đổi phần dư súng full (theo Q2)
-7. #6 Lỗi bố cục 30/09
-8. #17 Kiểm 16:9 / 19.5:9 / 20:9 / tablet
-9. (Q5) build + đo trên máy: giật 300 ms, icon, bloom, viền Studio, log, bộ nhớ
-10. Đợt 3 → Đợt 4 → lab bot (#28)
+## Hàng chạy không cần owner (05/10)
+Nhãn: **A** tự làm, tự kiểm bằng test/số đo · **B** tự làm, tự chụp so mockup; owner xem lại sau, không chặn · **C** cần owner (quyết định, duyệt, cảm giác trên máy).
+
+Thứ tự chạy (A/B):
+1. #11 Studio lần đầu (B; giọng Tiger tạm chữ đến khi có Q1)
+2. #12 Màn mở gacha bằng shader (B)
+3. #13 WEAR NOW (B)
+4. #14a Điểm theo kill + kỷ lục (A)
+5. #18 Ghi súng đã dùng, thống kê theo súng (A)
+6. #19 Daily Ops (A logic, B UI)
+7. #20 Rương ngày, chuỗi 3/7, điểm danh 28 ngày (A/B)
+8. #21 Thông thạo súng (A/B)
+9. #22 Thành tựu + báo bộ đàm (A/B)
+10. #25 Nối 29 câu thoại chưa dùng (A)
+11. #23 Tiến hoá súng (B)
+12. #15 Thẻ Daily Ops ở Home (B) · #14b 3 dòng tiến độ ở Result (B)
+13. #26a 50/50 banner thường, kiểm giá gói 2 vé (A)
+14. #6 Lỗi bố cục 30/09 (B)
+15. #17 Kiểm 16:9 / 19.5:9 / 20:9 / tablet (A)
+16. #29 #30 #31 #34 #35 #36 cân bằng đầu trận, elite, thang thưởng, tỉ lệ rơi, nhịp thẻ, đổi thẻ (A)
+17. #33 econ_sim, công thức coin (A; giá chốt = Q3)
+18. #32 cảm giác thưởng (B) · #37 rương máy đánh bạc (B)
+19. #28 Lab bot: bot tự chơi, số liệu sống 6–8 phút / ai cũng chết (A)
+
+Cần owner (C), để riêng:
+- Q1–Q5 ở trên; #16 Arsenal đổi phần dư (Q2); #26b giá Legendary (Q3); #68 dọn thư mục (Q4); build (Q5)
+- #24 chế độ thử súng: duyệt plan trước khi code
+- #27 skin súng mùa 1: chọn style shader
+- #38 quái mới phút 10–12: chọn con hoặc mua asset
+- #28b plan nội dung chế độ chơi (sau bot)
+- cảm giác tay trên máy thật: rung/giật, độ khó, Horde Call, HUD mới
+- Đợt 7 VFX/shader/AO (luôn đưa option), Đợt 5 lab boss, Đợt 8 SDK/store (tài khoản, khoá), duyệt bản dịch ja/ko
 
 ## Đợt 1 · Lên máy và sửa lỗi
 1. *(Để sau, chưa build)* Build Android có mọi bản sửa 05/10, cài lên máy, ghi log. Kiểm tra:
