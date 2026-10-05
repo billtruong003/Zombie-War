@@ -27,12 +27,16 @@ Nhãn: **A** tự làm + tự đo · **B** tự làm + tự chụp · **C** cầ
    - #33 econ_sim + công thức coin (giá Legendary = Q3) — A/C
    - #32 cảm giác thưởng, #37 rương máy đánh bạc — B
    - #38 quái mới tới phút 10–12 (chọn trong 17 Blob hoặc mua asset) — C
+1b. **HOLD · Lồng tiếng** (owner 05/10: phải có giọng cho hướng dẫn Studio; gom làm một đợt):
+   - 3 thẻ bộ đàm mới đang chỉ có chữ: Studio lần đầu (Tiger/Mai), WEAR NOW (Mai), Horde Call (Lukas) — viết câu, gen đúng giọng đã chọn, chuẩn hoá + lọc radio, sinh envelope (`Tools/vo_envelopes.py`), owner nghe duyệt — B/C
+   - câu cho các khoảnh khắc mới chưa có giọng: mở rương ngày, chuỗi ngày 7, lên cấp thông thạo, tiến hoá súng — viết kịch bản cho owner duyệt trước — C
+   - nối các câu đã thu nhưng chưa có chỗ gọi (đếm 7 câu); rà 35 clip không thấy tên trong code (một phần được ghép tên lúc chạy) — A
+   - giọng theo thị trường khi bản địa hoá (6 đặc vụ theo thị trường; phụ đề vi/en/ja/ko) — C, làm cùng mục 8
 2. **Plan nội dung chế độ chơi** (#28b, sau bot) — C duyệt: #24 chế độ thử súng, #46 mode 2 (Thử thách ngày).
 3. **Meta còn sót**:
    - #16 Arsenal đổi phần dư khi súng full (Q2) — C rồi B
    - #26b món featured 50/50 cho banner Outfits/Shards — C
    - #27 skin súng mùa 1 (chọn style shader) — C rồi B
-   - Q1 giọng Tiger cho Studio; nối 7 câu thoại còn lại — A
    - Q6 súng Pistol (model Tec-9) — C
    - tiến hoá cần 3 sao: dẫn từ màn thông thạo sang nâng sao ở Arsenal — B
    - quà trang phục từ Pass/Daily/thành tựu gọi WEAR NOW (`StudioScreen.OpenFor`) khi có loại quà này — B
