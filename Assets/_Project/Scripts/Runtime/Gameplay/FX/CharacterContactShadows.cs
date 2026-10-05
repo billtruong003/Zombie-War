@@ -29,7 +29,7 @@ namespace ZombieWar
         [SerializeField] private Material shadowMaterial;
 
         [Tooltip("Số bóng tối đa. Vượt quá là báo lỗi to, không âm thầm bỏ bóng của ai.")]
-        [SerializeField] private int capacity = 160;
+        [SerializeField] private int capacity = 256;   // surge crowd 200 + player, elites, drones (160 ran out on device 05/10)
 
         [Tooltip("Độ dịch của vệt bóng ngược hướng đèn giả, mét. Giữ nhỏ để bóng không rời khỏi chân.")]
         [SerializeField] private float lightOffsetDistance = 0.12f;

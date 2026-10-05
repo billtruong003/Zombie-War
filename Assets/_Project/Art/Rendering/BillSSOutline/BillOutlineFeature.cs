@@ -164,7 +164,12 @@ namespace ZombieWar.Rendering.BillSSOutline
                     if (passData.drawVat) builder.UseRendererList(passData.vatRendererList);
                     builder.SetRenderAttachment(passData.maskDest, 0, AccessFlags.Write);
 
-                    if (depthTexture.IsValid()) builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.Read);
+                    // The mask is single-sampled; a multisampled depth (High tier MSAA, or a preview
+                    // camera drawing into an MSAA RenderTexture such as the gun turntable) cannot be
+                    // bound with it - Render Graph threw on every such frame (device log 05/10). Those
+                    // cameras draw the mask without depth occlusion instead.
+                    if (depthTexture.IsValid() && renderGraph.GetTextureDesc(depthTexture).msaaSamples == MSAASamples.None)
+                        builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.Read);
 
                     // Copy LayerMask to local variable to avoid closure capture issues
                     uint currentMask = renderingLayerMask;

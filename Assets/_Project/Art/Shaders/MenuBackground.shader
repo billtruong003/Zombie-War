@@ -13,6 +13,7 @@ Shader "ZombieWar/MenuBackground"
 {
     Properties
     {
+        [HideInInspector] _MainTex ("Texture", 2D) = "white" {}   // RawImage asks for it (device log 05/10)
         [Header(Gradient)]
         _TopColor ("Top", Color) = (0.62, 0.86, 1, 1)
         _BotColor ("Bottom", Color) = (0.25, 0.53, 0.88, 1)
