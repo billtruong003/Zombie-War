@@ -61,7 +61,11 @@ Thứ tự chạy (A/B):
 18. #32 cảm giác thưởng (B) · #37 rương máy đánh bạc (B)
 19. #28 Lab bot: bot tự chơi, số liệu sống 6–8 phút / ai cũng chết (A)
 
+**Đã xong trong lượt chạy dài 05/10 (chiều):** #11 Studio lần đầu (Tiger, chữ) · #12 màn mở gacha bằng shader · #13 WEAR NOW · #14a điểm theo kill + kỷ lục · #18 thống kê theo súng · #19 Daily Ops + rương ngày + chuỗi · #20 điểm danh 28 ngày tăng dần · #21 thông thạo súng (logic + bonus toàn tài khoản) · #22 thành tựu (logic + câu thoại) · #23 tiến hoá súng (logic + thuộc tính) · #25 nối 13 câu thoại · #26a giá gói 2 vé hợp lý (25 gem/lượt < 27).
+Còn lại của hàng A/B: phần UI cho #15/#14b/#19-#23 (thẻ Daily Ops, rương ngày, màn thông thạo U7, tab thành tựu U8, màn tiến hoá F3, toast thành tựu trong trận F4), #6, #17, Đợt 4, #28.
+
 Cần owner (C), để riêng:
+- #26b 50/50 cho banner thường: banner Outfits/Shards chưa có món "featured" — owner chọn món featured cho mỗi mùa.
 - Q1–Q5 ở trên; #16 Arsenal đổi phần dư (Q2); #26b giá Legendary (Q3); #68 dọn thư mục (Q4); build (Q5)
 - #24 chế độ thử súng: duyệt plan trước khi code
 - #27 skin súng mùa 1: chọn style shader
