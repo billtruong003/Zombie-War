@@ -81,6 +81,44 @@ namespace ZombieWar.Dev
             }
         }
 
+        /// <summary>Labs and captures: answer level-ups and chests at once (the bot's card pick) without
+        /// steering, until <see cref="StopAnswering"/>.</summary>
+        public static void AnswerOverlays()
+        {
+            if (Instance == null)
+            {
+                var go = new GameObject("[BotLab]");
+                DontDestroyOnLoad(go);
+                Instance = go.AddComponent<BotLab>();
+            }
+            Instance.StopCoroutine(nameof(AnswerLoop));
+            Instance.StartCoroutine(nameof(AnswerLoop));
+        }
+
+        public static void StopAnswering() { if (Instance != null) Instance.StopCoroutine(nameof(AnswerLoop)); }
+
+        IEnumerator AnswerLoop()
+        {
+            var oType = typeof(RunOverlays);
+            var pick = oType.GetMethod("PickPerk", F);
+            var claim = oType.GetMethod("ClaimChest", F);
+            var offerField = oType.GetField("_skillOffer", F);
+            var chestOpen = oType.GetProperty("ChestOpen", F);
+            var levelRoot = oType.GetField("levelUpRoot", F);
+            while (true)
+            {
+                var overlays = FindFirstObjectByType<RunOverlays>(FindObjectsInactive.Include);
+                if (overlays != null)
+                {
+                    var root = levelRoot?.GetValue(overlays) as GameObject;
+                    if (root != null && root.activeSelf && offerField?.GetValue(overlays) is List<SkillDef> offer && offer.Count > 0)
+                        pick?.Invoke(overlays, new object[] { ChooseCard(offer) });
+                    if (chestOpen != null && (bool)chestOpen.GetValue(overlays)) claim?.Invoke(overlays, null);
+                }
+                yield return null;
+            }
+        }
+
         // ------------------------------------------------------------------ meta profile
 
         static void SetupProfile(Profile profile)
