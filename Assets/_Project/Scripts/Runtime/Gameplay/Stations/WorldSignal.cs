@@ -265,12 +265,28 @@ namespace ZombieWar.Stations
             if (state == SignalState.Completed) SetProgress(1f);
         }
 
+        int _quarter;
+
+        /// <summary>
+        /// Standing in a station is heard as well as seen: a tick at each quarter of the charge, each
+        /// one higher than the last, so the player knows it is working without watching the ring.
+        /// </summary>
+        void ChargeTick()
+        {
+            int q = Mathf.FloorToInt(_progress01 * 4f);
+            if (q <= _quarter || _state != SignalState.Active) { if (q < _quarter) _quarter = q; return; }
+            _quarter = q;
+            if (q >= 4 || !BillGameCore.Bill.IsReady) return;   // the full charge has its own completion cue
+            BillGameCore.Bill.Audio?.PlayPitched("sfx.ui.tap", 0.85f + 0.2f * q, 0.6f);
+        }
+
         static void Tint(LineRenderer lr, Color c) { if (lr != null) lr.startColor = lr.endColor = c; }
 
         /// <summary>World-space progress: the inner ring closes as the objective completes.</summary>
         public void SetProgress(float t)
         {
             _progress01 = Mathf.Clamp01(t);
+            ChargeTick();
             if (_visual != null) _visual.SetFill(_progress01);
             if (_progress == null) return;
 

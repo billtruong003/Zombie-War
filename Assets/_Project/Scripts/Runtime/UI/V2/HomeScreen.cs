@@ -276,7 +276,8 @@ namespace ZombieWar.UI
             if (stripDaily != null) stripDaily.transform.parent.gameObject.SetActive(!firstRun);
             // First launch: only Daily stays on the rails; starter offer and gated rails wait.
             if (starter?.button != null) starter.button.gameObject.SetActive(!firstRun);
-            if (events?.button != null) events.button.gameObject.SetActive(!firstRun);
+            // No Events screen yet (the rail used to open Gacha): hidden until one exists (backlog #5).
+            if (events?.button != null) events.button.gameObject.SetActive(false);
             nav?.Refresh();
             Set(playSub, firstRun ? "Your first run" : best > 0 ? $"Beat your best {HudController.FormatClock(best)}" : "Survive as long as you can");
             if (nav != null) nav.SetDot(4, claimable + PassRewards.ClaimableCount() > 0 && AccountProgress.IsUnlocked(AccountProgress.Feature.Pass));
