@@ -20,6 +20,7 @@ namespace ZombieWar
             _entered = true;
             Online.AnalyticsHooks.Install();
             GameSettings.Apply();
+            RunInterruption.Recover();   // a run Android closed in the background still pays
 #if UNITY_EDITOR
             // ZombieWar/Dev/Play Skill Sandbox sets this for one play session.
             if (UnityEditor.SessionState.GetBool("zw.sandbox", false))

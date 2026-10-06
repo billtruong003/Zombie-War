@@ -263,5 +263,13 @@ namespace ZombieWar
         }
 
         public bool HasPaidOut => _paidOut;
+
+        /// <summary>The profile transaction that held the payout was rolled back: the coin never
+        /// arrived, so the next <see cref="Payout"/> must pay it.</summary>
+        internal void PayoutRolledBack()
+        {
+            _paidOut = false;
+            BankedCoin = 0;
+        }
     }
 }

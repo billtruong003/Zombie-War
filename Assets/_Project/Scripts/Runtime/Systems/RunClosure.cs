@@ -71,7 +71,7 @@ namespace ZombieWar
             bool record = false, scoreRecord = false;
             int masteryXp = 0, masteryBefore = 0, masteryAfter = 0;
             int xp = AccountProgress.XpForRun(summary.Duration, summary.Kills), levels = 0;
-            PlayerProfile.Batch(() =>
+            bool closed = PlayerProfile.Batch(() =>
             {
                 run.Payout(CoinFractionFor(summary.Outcome));
                 record = PlayerProfile.RecordSurvival(summary.Duration);
@@ -84,7 +84,16 @@ namespace ZombieWar
                 (masteryBefore, masteryAfter) = PlayerProfile.AddMasteryXp(PlayerProfile.EquippedWeaponId, masteryXp);
                 levels = PlayerProfile.AddAccountXp(xp);
             });
+            if (!closed)
+            {
+                // Something after the payout threw or the save failed and the profile rolled back:
+                // the coin at least must still arrive (07/10, it was lost with the rest).
+                run.PayoutRolledBack();
+                record = scoreRecord = false; masteryXp = masteryBefore = masteryAfter = levels = 0;
+                PlayerProfile.Batch(() => run.Payout(CoinFractionFor(summary.Outcome)));
+            }
             PlayerProfile.FlushIfDirty();
+            RunInterruption.Clear();
             return new Result(true, summary, run.BankedCoin, record, xp, levels, scoreRecord, masteryXp, masteryBefore, masteryAfter);
         }
 
