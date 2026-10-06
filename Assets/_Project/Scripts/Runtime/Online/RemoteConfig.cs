@@ -8,7 +8,8 @@ namespace ZombieWar.Online
     /// /etc/hordecall/config/game-config.json on the VPS): turn ads, interstitials, the gacha or cloud
     /// saving off, put the online side in maintenance, or ask old versions to update. Fetched once per
     /// launch and kept, so an offline launch uses the last answer; anything missing means "on".
-    /// The update / maintenance screens wait for their mockup (S3); until then they show as a toast.
+    /// An outdated build gets Google Play's own update screen (PlayServices); the maintenance screen
+    /// waits for its mockup (S3) and shows as a toast until then.
     /// </summary>
     public static class RemoteConfig
     {
@@ -81,7 +82,11 @@ namespace ZombieWar.Online
         static void TellPlayerOnce()
         {
             if (_toldPlayer) return;
-            if (UpdateRequired) { _toldPlayer = true; UI.Toast.Show("A new version is out - please update HordeCall", 5f); }
+            if (UpdateRequired)
+            {
+                _toldPlayer = true;
+                PlayServices.TryImmediateUpdate(started => { if (!started) UI.Toast.Show("A new version is out - please update HordeCall", 5f); });
+            }
             else if (Maintenance) { _toldPlayer = true; UI.Toast.Show(MaintenanceMessage.Length > 0 ? MaintenanceMessage : "Online features are under maintenance", 5f); }
         }
     }

@@ -66,6 +66,38 @@
         "com.google.firebase.app": "13.17.0"
       }
     },
+    "com.google.play.appupdate": {
+      "version": "file:GooglePackages/com.google.play.appupdate-1.8.3.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.play.common": "1.9.2",
+        "com.google.play.core": "1.8.5"
+      }
+    },
+    "com.google.play.common": {
+      "version": "file:GooglePackages/com.google.play.common-1.9.2.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {}
+    },
+    "com.google.play.core": {
+      "version": "file:GooglePackages/com.google.play.core-1.8.5.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.172"
+      }
+    },
+    "com.google.play.review": {
+      "version": "file:GooglePackages/com.google.play.review-1.8.3.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.play.common": "1.9.2",
+        "com.google.play.core": "1.8.5"
+      }
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -199,6 +231,15 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.mobile.notifications": {
+      "version": "2.5.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.androidjni": "1.0.0"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.multiplayer.center": {
