@@ -85,7 +85,12 @@ namespace ZombieWar.Online
                 bool cloudAhead = cloud.Value.runs > local.runs || (cloud.Value.runs == local.runs && cloud.Value.xp > local.xp);
                 if (!cloudAhead) { KnownVersion = version; Linked = true; return; }
                 if (!_bootOpen) return;   // never swap a profile under a running menu: next boot loads it
-                if (PlayerProfile.ImportJson(data))
+                AnalyticsHooks.Muted = true;
+                bool imported;
+                try { imported = PlayerProfile.ImportJson(data); }
+                finally { AnalyticsHooks.Muted = false; }
+                AnalyticsHooks.TakeSnapshot();
+                if (imported)
                 {
                     KnownVersion = version;
                     PlayerPrefs.SetString(HashKey, Hash(PlayerProfile.ExportJson()));

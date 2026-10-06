@@ -12,13 +12,21 @@ namespace ZombieWar
     {
         public static void Show(string placement, Action onReward)
         {
-            void Rewarded() { Online.Interstitials.NoteRewardedWatched(); onReward?.Invoke(); }
+            void Rewarded()
+            {
+                Online.Interstitials.NoteRewardedWatched();
+                Online.GameAnalytics.Log("ad_rewarded_reward", ("placement", placement));
+                onReward?.Invoke();
+            }
 #if UNITY_EDITOR
             Debug.Log($"[RewardedAds] DEV: simulated ad for {placement}");
             Rewarded();
 #elif UNITY_ANDROID || UNITY_IOS
             if (!Online.AdService.ShowRewarded(placement, Rewarded))
+            {
+                Online.GameAnalytics.Log("ad_rewarded_unavailable", ("placement", placement));
                 UI.Toast.Show("No ad right now - try again in a moment");
+            }
 #elif DEVELOPMENT_BUILD
             Debug.Log($"[RewardedAds] DEV: simulated ad for {placement}");
             Rewarded();

@@ -133,6 +133,10 @@ namespace ZombieWar
             // to save ~13 times and fire ~11 refreshes), and a failure leaves the profile untouched.
             List<Result> results = null;
             if (!PlayerProfile.Batch(() => results = PullUnbatched(b, count, pay, today, econ, guns, rng))) return null;
+            if (results != null && results.Count > 0)
+                Online.GameAnalytics.Log("gacha_pull", ("banner", b.kind.ToString().ToLowerInvariant()), ("count", count),
+                    ("pay", pay.ToString().ToLowerInvariant()), ("best_rarity", results.Max(r => r.tier).ToString().ToLowerInvariant()),
+                    ("new_items", results.Count(r => r.isNew)));
             return results;
         }
 

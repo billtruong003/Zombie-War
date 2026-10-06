@@ -23,6 +23,10 @@ namespace ZombieWar.Online
     {
         public static bool Verbose = false;
 
+        /// <summary>Web builds stay silent (06/10): a web page would need its own consent banner
+        /// before sending usage data. Flip this once the web build has one.</summary>
+        public const bool SendWebEventsToServer = false;
+
         static bool _ready;
         static readonly List<(string name, (string key, object value)[] args)> Pending = new();
         static readonly List<string> ServerBatch = new();
@@ -42,7 +46,7 @@ namespace ZombieWar.Online
             if (!_ready) { if (Pending.Count < 200) Pending.Add((name, args)); return; }
             FirebaseAnalytics.LogEvent(name, ToParameters(args));
 #else
-            QueueForServer(name, args);
+            if (SendWebEventsToServer) QueueForServer(name, args);
 #endif
         }
 

@@ -156,6 +156,7 @@ namespace ZombieWar.Skills
             if (current >= def.maxRank) return false;
             _ranks[skillId] = current + 1;
             OnTaken(def, current + 1);
+            Online.GameAnalytics.Log("skill_pick", ("skill", skillId), ("rank", current + 1), ("evolution", def.IsEvolution));
             return true;
         }
 

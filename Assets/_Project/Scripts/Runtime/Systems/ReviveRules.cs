@@ -37,19 +37,24 @@ namespace ZombieWar
 
         public static long NextCoinCost { get { Sync(); return CoinCost(Carried, _coinUsed); } }
 
-        public static void UseAd() { Sync(); _adUsed = true; _used++; }
+        public static void UseAd() { Sync(); _adUsed = true; _used++; Logged("ad"); }
 
         /// <summary>FTUE v2: the first revive ever is free. It counts toward the three revives of the
         /// run but leaves the ad revive available.</summary>
-        public static void UseFree() { Sync(); _used++; }
+        public static void UseFree() { Sync(); _used++; Logged("free"); }
 
         public static bool TryPayCoin()
         {
             Sync();
             if (!PlayerProfile.TrySpend(PlayerProfile.CurrencyKind.Coin, NextCoinCost)) return false;
             _coinUsed++; _used++;
+            Logged("coin");
             return true;
         }
+
+        static void Logged(string method) =>
+            Online.GameAnalytics.Log("run_revive", ("method", method), ("revive_index", _used),
+                ("seconds", Mathf.FloorToInt(_run?.Duration ?? 0f)));
 
         /// <summary>Test seam: forget the per-run counters.</summary>
         internal static void ResetForTests() { _run = null; _used = 0; _coinUsed = 0; _adUsed = false; }
