@@ -2,6 +2,11 @@
   "dependencies": {
     "com.billtruong.stylized-toon-world-kit": "https://github.com/billtruong003/stylized-toon-world-kit.git?path=/Assets/StylizedToonWorldKit",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
+    "com.google.ads.mobile": "11.5.0",
+    "com.google.external-dependency-manager": "1.2.190",
+    "com.google.firebase.analytics": "file:GooglePackages/com.google.firebase.analytics-13.17.0.tgz",
+    "com.google.firebase.app": "file:GooglePackages/com.google.firebase.app-13.17.0.tgz",
+    "com.google.firebase.crashlytics": "file:GooglePackages/com.google.firebase.crashlytics-13.17.0.tgz",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.addressables": "2.7.6",
     "com.unity.ai.navigation": "2.0.10",
@@ -56,5 +61,15 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.google.ads.mobile",
+        "com.google.external-dependency-manager"
+      ]
+    }
+  ]
 }
