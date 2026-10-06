@@ -10,7 +10,9 @@ namespace ZombieWar
     /// </summary>
     public static class RewardedAds
     {
-        public static void Show(string placement, Action onReward)
+        /// <summary>True when an ad started (or the editor simulated one). False when none could play;
+        /// <paramref name="noReward"/> runs when a started ad closes without earning.</summary>
+        public static bool Show(string placement, Action onReward, Action noReward = null)
         {
             void Rewarded()
             {
@@ -21,17 +23,19 @@ namespace ZombieWar
 #if UNITY_EDITOR
             Debug.Log($"[RewardedAds] DEV: simulated ad for {placement}");
             Rewarded();
+            return true;
 #elif UNITY_ANDROID || UNITY_IOS
-            if (!Online.AdService.ShowRewarded(placement, Rewarded))
-            {
-                Online.GameAnalytics.Log("ad_rewarded_unavailable", ("placement", placement));
-                UI.Toast.Show("No ad right now - try again in a moment");
-            }
+            if (Online.AdService.ShowRewarded(placement, Rewarded, noReward)) return true;
+            Online.GameAnalytics.Log("ad_rewarded_unavailable", ("placement", placement));
+            UI.Toast.Show("No ad right now - try again in a moment");
+            return false;
 #elif DEVELOPMENT_BUILD
             Debug.Log($"[RewardedAds] DEV: simulated ad for {placement}");
             Rewarded();
+            return true;
 #else
             UI.Toast.Show("Ads are not ready yet");
+            return false;
 #endif
         }
     }

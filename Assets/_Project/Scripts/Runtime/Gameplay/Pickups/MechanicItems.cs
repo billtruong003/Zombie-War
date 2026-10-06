@@ -134,6 +134,9 @@ namespace ZombieWar
                 if (i >= alive.Count) continue;
                 var e = alive[i];
                 if (e == null || e.IsDead) continue;
+                // Bosses stay: dying next to a beacon boss and taking the free revive paid its full
+                // reward without a fight (07/10).
+                if (e.IsBeaconOwned || e is ZombieBoss) continue;
                 var hp = e.Life;
                 PowerKit.Hit(e, (hp != null ? hp.Max : 100f) * 10f + 1f, 1.2f, ReviveSource);
                 if (budget-- > 0 && a?.bombHitFx != null && host != null && host.OnScreen(e.transform.position))

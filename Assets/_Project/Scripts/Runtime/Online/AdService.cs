@@ -106,7 +106,9 @@ namespace ZombieWar.Online
 
         /// <summary>Shows the placement's rewarded ad; <paramref name="onReward"/> runs after the ad
         /// closes, and only when it was watched to the reward. False when no ad is loaded.</summary>
-        public static bool ShowRewarded(string placement, Action onReward)
+        /// <summary>False when no ad can play now. <paramref name="noReward"/> runs when the ad closes
+        /// or fails without earning, so a screen waiting on it can carry on.</summary>
+        public static bool ShowRewarded(string placement, Action onReward, Action noReward = null)
         {
             string unit = RewardedUnitFor(placement);
             if (!RemoteConfig.AdsOn) return false;
@@ -121,9 +123,9 @@ namespace ZombieWar.Online
             {
                 ad.Destroy();
                 LoadRewarded(unit);
-                if (earned) onReward?.Invoke();
+                if (earned) onReward?.Invoke(); else noReward?.Invoke();
             };
-            ad.OnAdFullScreenContentFailed += _ => { ad.Destroy(); LoadRewarded(unit); };
+            ad.OnAdFullScreenContentFailed += _ => { ad.Destroy(); LoadRewarded(unit); noReward?.Invoke(); };
             ad.Show(_ => earned = true);
             GameAnalytics.Log("ad_rewarded_show", ("placement", placement));
             return true;
@@ -143,7 +145,7 @@ namespace ZombieWar.Online
 #else
         public static bool PrivacyOptionsRequired => false;
         public static void ShowPrivacyOptions(Action closed = null) => closed?.Invoke();
-        public static bool ShowRewarded(string placement, Action onReward) => false;
+        public static bool ShowRewarded(string placement, Action onReward, Action noReward = null) => false;
         public static bool ShowInterstitial(Action closed) => false;
 #endif
     }

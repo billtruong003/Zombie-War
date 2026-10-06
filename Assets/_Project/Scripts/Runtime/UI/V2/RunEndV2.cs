@@ -115,7 +115,15 @@ namespace ZombieWar.UI
             {
                 // FTUE v2: the first revive ever needs no ad.
                 if (_freeRevive) { _freeRevive = false; ReviveRules.UseFree(); Ftue.Complete(Ftue.Revive); GetUp(); return; }
-                RewardedAds.Show("revive", () => { ReviveRules.UseAd(); GetUp(); });
+                // The offer waits while the ad plays: the countdown ending under it confirmed the
+                // death, and a coin tap before the ad opened paid twice (07/10).
+                HoldOffer(true);
+                if (!RewardedAds.Show("revive", () => { ReviveRules.UseAd(); GetUp(); }, () => HoldOffer(false)))
+                {
+                    HoldOffer(false);
+                    Set(adLabel, "NO AD RIGHT NOW");   // the menu's toast is off during a run
+                    UIFeedback.Error();
+                }
             });
             On(coinButton, () =>
             {
@@ -123,7 +131,12 @@ namespace ZombieWar.UI
                 else { UIFeedback.Error(); Toast.Show("Not enough coins"); }
             });
             On(noButton, GiveUp);
-            On(doubleButton, () => RewardedAds.Show("double_coins", DoubleCoins));
+            On(doubleButton, () =>
+            {
+                if (RewardedAds.Show("double_coins", DoubleCoins)) return;
+                Set(doubleLabel, "NO AD RIGHT NOW");   // the menu's toast is off during a run
+                UIFeedback.Error();
+            });
             // FTUE v2: guns are bought in the Arsenal now, so the affordable-gun row goes there.
             On(shopLink, () => { MenuIntent.Next = MenuIntent.Arsenal; Leave(GameFlow.ReturnToMenu); });
             On(playAgain, () => Leave(GameFlow.RestartGameplay));
@@ -210,6 +223,8 @@ namespace ZombieWar.UI
                 if (_freeRevive) FtueV3.Revive(adButton.transform as RectTransform);
             }
             if (coinButton != null) coinButton.interactable = PlayerProfile.Coin >= cost;
+            if (adButton != null) adButton.interactable = true;    // a revive ad held them last time
+            if (noButton != null) noButton.interactable = true;
             if (_count != null) StopCoroutine(_count);
             _count = StartCoroutine(Countdown());
             return true;
@@ -241,8 +256,21 @@ namespace ZombieWar.UI
             GiveUp();
         }
 
+        /// While a revive ad plays: the clock stops and the other revive buttons wait. Released
+        /// (clock restarted) when no ad could play or it closed without the reward.
+        void HoldOffer(bool hold)
+        {
+            if (reviveRoot == null || !reviveRoot.activeSelf) return;
+            if (_count != null) { StopCoroutine(_count); _count = null; }
+            if (adButton != null) adButton.interactable = !hold;
+            if (noButton != null) noButton.interactable = !hold;
+            if (coinButton != null) coinButton.interactable = !hold && PlayerProfile.Coin >= ReviveRules.NextCoinCost;
+            if (!hold) _count = StartCoroutine(Countdown());
+        }
+
         void GetUp()
         {
+            if (reviveRoot != null && !reviveRoot.activeSelf) return;   // the death was already confirmed
             if (_count != null) StopCoroutine(_count);
             reviveRoot.SetActive(false);
             ReleaseStills();
