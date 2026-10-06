@@ -210,6 +210,8 @@ namespace ZombieWar
             CostumeChanged = null;
             AccountChanged = null;
             MissionsChanged = null;
+            MissionClaimed = null;
+            DailyChestClaimed = null;
         }
 
         internal static void ResetCacheForTests()

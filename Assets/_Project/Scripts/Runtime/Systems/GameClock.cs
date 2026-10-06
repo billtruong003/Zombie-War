@@ -27,6 +27,7 @@ namespace ZombieWar
 
         static readonly DateTime Epoch = new DateTime(2000, 1, 1, ResetHourUtc, 0, 0, DateTimeKind.Utc);
         static readonly TimeSpan PersistStep = TimeSpan.FromMinutes(1);
+        static readonly TimeSpan ServerTolerance = TimeSpan.FromMinutes(10);
 
         /// <summary>Tests and QA can pin the clock; null = the device clock.</summary>
         internal static Func<DateTime> SourceOverride;
@@ -41,6 +42,8 @@ namespace ZombieWar
             _anchorRealtime = Time.realtimeSinceStartupAsDouble;
         }
 
+        internal static void ClearServerTime() => _serverAnchor = null;
+
         static DateTime SourceNow =>
             SourceOverride != null ? SourceOverride()
             : _serverAnchor is DateTime a ? a.AddSeconds(Time.realtimeSinceStartupAsDouble - _anchorRealtime)
@@ -54,6 +57,14 @@ namespace ZombieWar
                 var now = SourceNow;
                 now = DateTime.SpecifyKind(now, DateTimeKind.Utc);
                 var seen = PlayerProfile.LastSeenUtc;
+                // The server's time is the truth: a "latest seen" ahead of it came from a device clock
+                // once set forward, and holding it froze every new game day until real time caught
+                // up, even online (07/10). Offline, time still never runs backwards.
+                if (_serverAnchor.HasValue && SourceOverride == null && seen - now > ServerTolerance)
+                {
+                    PlayerProfile.LastSeenUtc = now;
+                    return now;
+                }
                 if (now < seen) return seen;
                 if (now - seen >= PersistStep) PlayerProfile.LastSeenUtc = now;
                 return now;

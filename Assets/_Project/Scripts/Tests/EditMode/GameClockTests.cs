@@ -25,6 +25,7 @@ namespace ZombieWar.Tests
         public void TearDown()
         {
             GameClock.SourceOverride = null;
+            GameClock.ClearServerTime();
             PlayerProfile.StorageOverride = null;
             PlayerProfile.ResetCacheForTests();
         }
@@ -44,6 +45,18 @@ namespace ZombieWar.Tests
             int today = GameClock.Today;
             _now = _now.AddDays(-3);
             Assert.AreEqual(today, GameClock.Today, "the clock holds at the latest time seen");
+        }
+
+        [Test]
+        public void ServerTime_UndoesADeviceClockOnceSetForward()
+        {
+            int today = GameClock.Today;
+            _now = _now.AddDays(7);              // the device clock was set a week ahead once
+            Assert.AreEqual(today + 7, GameClock.Today);
+
+            GameClock.SourceOverride = null;     // back online: the server says it is still today
+            GameClock.SetServerTime(new DateTime(2026, 10, 4, 10, 5, 0, DateTimeKind.Utc));
+            Assert.AreEqual(today, GameClock.Today, "the server's day wins over the stale high-water mark");
         }
 
         [Test]

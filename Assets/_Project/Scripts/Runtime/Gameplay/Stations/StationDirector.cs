@@ -90,6 +90,7 @@ namespace ZombieWar.Stations
         {
             if (Instance == this) Instance = null;
             RunScope.Unregister(ReleaseAllStations);
+            RunScope.Unregister(ResetPassTracking);   // or every finished run kept its dead director alive
         }
 
         void Start()

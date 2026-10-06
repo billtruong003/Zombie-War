@@ -432,6 +432,9 @@ namespace ZombieWar.Audio
                 Bill.Events.Unsubscribe<PickupCollectedEvent>(OnPickup);
                 Bill.Events.Unsubscribe<RunAbandonRequestedEvent>(OnAbandon);
             }
+            // Static events: a destroyed director left on them spoke every line twice (07/10).
+            PlayerProfile.MissionClaimed -= OnMissionClaimed;
+            PlayerProfile.DailyChestClaimed -= OnDailyChest;
             if (_instance == this) _instance = null;
         }
 
