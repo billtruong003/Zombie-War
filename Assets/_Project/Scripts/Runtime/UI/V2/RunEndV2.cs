@@ -345,6 +345,8 @@ namespace ZombieWar.UI
             if (resultRoot == null) return;
             var s = result.Summary;
             _banked = result.BankedCoin; _doubled = false;
+            Online.Interstitials.NoteRunEnded(s.Duration);
+            Online.CloudSave.Push();
             long gift = NewcomerGift(_banked);
             ZombieWar.Audio.FtueVoice.ResultShown(gift, result);
             if (gift > 0 && shopLink != null) FtueV3.Result(shopLink.transform as RectTransform);
@@ -572,7 +574,7 @@ namespace ZombieWar.UI
             Toast.Show($"+{_banked:N0} coins");
         }
 
-        static void Leave(Action go) { Time.timeScale = 1f; go(); }
+        static void Leave(Action go) { Time.timeScale = 1f; Online.Interstitials.ThenGo(go); }
 #if UNITY_EDITOR
         /// G12.8: wires the widgets the screen used to find by path; returns the paths not found.
         public System.Collections.Generic.List<string> EditorWire()

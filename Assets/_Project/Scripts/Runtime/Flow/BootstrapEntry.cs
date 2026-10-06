@@ -9,10 +9,14 @@ namespace ZombieWar
     public class BootstrapEntry : MonoBehaviour
     {
         private bool _entered;
+        private bool _cloudAsked, _cloudDone;
 
         private void Update()
         {
             if (_entered || !Bill.IsReady) return;
+            // A reinstall gets its cloud profile back before the menu reads the local one.
+            if (!_cloudAsked) { _cloudAsked = true; Online.CloudSave.RestoreAtBoot(() => _cloudDone = true); }
+            if (!_cloudDone) return;
             _entered = true;
             GameSettings.Apply();
 #if UNITY_EDITOR
