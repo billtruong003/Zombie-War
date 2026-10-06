@@ -8,8 +8,8 @@ namespace ZombieWar.Online
     public static class BackendConfig
     {
         public const string DevUrl = "http://14.225.255.73:8088";
-        // TODO(domain): https://api.<domain> once the domain and certificate exist.
-        public const string ReleaseUrl = DevUrl;
+        // HTTPS once the DNS record and the certificate exist (certbot on the VPS, 06/10).
+        public const string ReleaseUrl = "https://api.billthedevstudio.com";
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public static string BaseUrl => DevUrl;
