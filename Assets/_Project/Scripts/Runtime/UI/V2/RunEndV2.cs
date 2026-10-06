@@ -118,7 +118,11 @@ namespace ZombieWar.UI
                 // The offer waits while the ad plays: the countdown ending under it confirmed the
                 // death, and a coin tap before the ad opened paid twice (07/10).
                 HoldOffer(true);
-                if (!RewardedAds.Show("revive", () => { ReviveRules.UseAd(); GetUp(); }, () => HoldOffer(false)))
+                if (!RewardedAds.Show("revive", () =>
+                    {
+                        if (reviveRoot != null && !reviveRoot.activeSelf) return;   // nothing left to revive: keep the ad revive
+                        ReviveRules.UseAd(); GetUp();
+                    }, () => HoldOffer(false)))
                 {
                     HoldOffer(false);
                     Set(adLabel, "NO AD RIGHT NOW");   // the menu's toast is off during a run
