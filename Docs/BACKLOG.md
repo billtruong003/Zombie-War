@@ -356,3 +356,21 @@ Icebox: Facebook Login, bạn bè (owner 06/10: để sau), đăng nhập email 
     - giảm SetParent trong pool
     - giới hạn thời gian giải flow-field
     - ngân sách khung hình và bộ nhớ trên một máy tầm trung tham chiếu
+
+## Rà soát tổng 07/10 (máy thật + 3 agent dò code)
+Đo trên máy owner (Snapdragon 8 Gen 3, 11 GB): chơi thường 56–59 FPS; Horde Call rơi 30–35 FPS ~40 s, luồng chính 93–100% (CPU, không phải GPU); RAM ~1,35 GB; pin 33→43°C sau 30 phút.
+Đã sửa (commit 07/10):
+- Viền render văng lỗi mỗi khung trên camera MSAA (turntable Arsenal/Gacha) — `b709f3763`.
+- Mastery súng + đặc tính súng tiến hoá bị xoá đầu MỖI trận (chưa từng có tác dụng) — `ce4f25759`.
+- Pause trong lúc 3-2-1, nút Back Android trong trận/Home, đồng hồ thẻ lên cấp khi app ở nền, bấm đúp chọn nhầm thẻ — `fa869644b`.
+- Hồi sinh bằng quảng cáo đua với đồng hồ 7 s, hồi sinh giết luôn boss trạm (khai thác) — `d88b18ea7`, `dbc5b702f`.
+- Coin của trận bị Android tắt khi ở nền nay được trả lần mở sau; giao dịch đóng trận rollback không còn mất coin — `f015f55d0`.
+- Rò rỉ listener radio/trạm, đồng hồ máy từng chỉnh nhanh làm kẹt ngày mới — `5d86ef8da`.
+- Flow field chia nhiều khung (hết giật 0,2 s) — `c0c75c91e`. Horde: 150 quái trong editor 14,4→11,2 ms, rác 10,4→0,7 KB/khung — `ce2b17f2a`.
+- Menu: camera nhân vật/turntable/thẻ radio nghỉ khi không ai xem; IAP bấm đúp, Gacha Back giữa lúc mở thẻ, nút Star/Daily bấm đúp, màn không đổi khi qua ngày, số theo culture máy — `db4ead557`, `2315a0f41`.
+Còn mở (cần owner):
+- Mockup: thẻ Daily Ops ở Home — thanh tiến độ đè lên chữ "Survive 3 minutes with the Pistol".
+- Quyết: nút Back ở Home hiện đưa app xuống nền; có muốn hộp hỏi "Thoát game?" (cần mockup) không.
+- Quyết: `SafeArea` chạy cả trong edit mode (`[ExecuteAlways]`), có thể làm bẩn prefab khi xem bằng Device Simulator có tai thỏ — giữ hay chỉ chạy lúc Play.
+- Đo lại Horde trên máy thật sau bản build 07/10 (cắm USB, tôi bắt Profiler).
+Còn mở (kỹ thuật, ưu tiên thấp): quét vị trí quái 1 lần/khung cho TargetQuery (~0,15 ms ở 150 quái, chạm 46 chỗ + test), coroutine tan biến khi chết (~150 B/con), `NavBarV2` gọi Home.OnShow thừa mỗi lần đổi tab, culling mask của Menu Camera.
