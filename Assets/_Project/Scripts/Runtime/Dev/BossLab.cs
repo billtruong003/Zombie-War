@@ -49,10 +49,15 @@ namespace ZombieWar.Dev
             if (prefab == null) { Debug.LogError("[BossLab] missing Resources/" + TitanPath + " (run ZombieWar/Dev/Build Boss Lab)"); return null; }
             // Up the screen from the player (the camera looks north), so the entrance is in view.
             Vector3 at = c + Vector3.forward * Mathf.Min(8f, radius * 0.55f);
-            var go = Object.Instantiate(prefab, new Vector3(at.x, 0f, at.z), Quaternion.LookRotation(c - at, Vector3.up));
+            // Spawned under an inactive holder, so OnEnable runs once, with the lab health already set
+            // (switching it off and on fired TitanBoss.Spawned twice: analytics counted two bosses).
+            var holder = new GameObject("TitanSpawn");
+            holder.SetActive(false);
+            var go = Object.Instantiate(prefab, new Vector3(at.x, 0f, at.z), Quaternion.LookRotation(c - at, Vector3.up), holder.transform);
             Titan = go.GetComponent<TitanBoss>();
             Titan.maxHealth = health;
-            go.SetActive(false); go.SetActive(true);   // re-run OnEnable with the lab health
+            go.transform.SetParent(null, true);
+            Object.Destroy(holder);
             BossBarView.Show(Titan, "TITAN");
             TitanBoss.Died += OnDied;
             return Titan;
