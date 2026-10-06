@@ -58,12 +58,20 @@ namespace ZombieWar.Editor.Build
         [MenuItem("HordeCall/Build/Android Release (store)")]
         public static void AndroidRelease() => Build(BuildOptions.None, "Builds/Android/HordeCall.aab", true);
 
+        /// <summary>A development bundle laid out like the store one, to measure the base module and the
+        /// asset packs before a real upload (it cannot be uploaded: development, debug-signed).</summary>
+        [MenuItem("HordeCall/Build/Android Size Check (dev .aab)")]
+        public static void AndroidSizeCheck() => Build(BuildOptions.Development, "Builds/Android/HordeCall-sizecheck.aab", true);
+
         static void Build(BuildOptions options, string path, bool appBundle)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android &&
                 !EditorUtility.DisplayDialog("HordeCall build", "The active platform is not Android. Switching reimports assets and can take a long time. Continue?", "Switch and build", "Cancel"))
                 return;
             EditorUserBuildSettings.buildAppBundle = appBundle;
+            // A store bundle keeps code and libraries in the base module and moves the game data into
+            // an install-time asset pack (06/10): Google Play caps the base module's download size.
+            PlayerSettings.Android.splitApplicationBinary = appBundle;
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {

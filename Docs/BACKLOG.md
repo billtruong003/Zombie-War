@@ -323,22 +323,22 @@ Trạng thái 06/10: backend C# trên VPS (https://api.billthedevstudio.com), Fi
 57. Unity IAP 8 sản phẩm, xác thực hóa đơn trên server (`/v1/iap/verify`, Google Play Developer API).
 58. ~~Firebase Analytics, Crashlytics, funnel FTUE~~ (06/10). Remote Config: dùng `/v1/config` hoặc Firebase Remote Config.
 59. ~~Lưu đám mây, xóa tài khoản phía server~~ (06/10). Còn: nút Xóa tài khoản trong Settings (mockup S1).
-59b. Đăng nhập chuẩn trên backend C# (đề xuất 06/10, owner: "tạm được", làm cùng #57): liên kết Google Play Games, access token ngắn + refresh token xoay vòng, thu hồi token, mã bí mật theo máy, khóa ký có `kid`.
-60. ~~UMP consent, quảng cáo 13+~~ (06/10). Còn: gacha ở Bỉ.
+59b. ~~Đăng nhập chuẩn trên backend C#~~ (06/10): access token 1 giờ có `kid` + phiên bản token, refresh token dùng một lần xoay vòng (dùng lại = khoá mọi phiên), logout-all, liên kết nhà cung cấp (`/v1/auth/provider`, `/v1/auth/link`). Còn: bật Google Play Games khi có Play Console (HC_GOOGLE_CLIENT_ID/SECRET) + plugin GPGS trong game.
+60. ~~UMP consent, quảng cáo 13+~~ (06/10). Bỉ: owner chặn Bỉ trong Play Console (06/10).
 61. Các dòng Settings: Language, Help, Ad privacy, Privacy policy, Restore purchases, Player ID, Xóa tài khoản (mockup S1). Bảng tỉ lệ rơi (mockup S2).
 62. Bản dịch vi, en, ja, ko, chọn ngôn ngữ mặc định theo quốc gia (làm sau SDK và store).
-63. Mã hóa file lưu, chống chỉnh giờ máy.
+63. ~~Mã hóa file lưu, chống chỉnh giờ máy~~ (06/10): ProtectedSave (AES theo máy), GameClock theo giờ server khi có mạng.
 64. Build release:
     - keystore
     - tắt ZW_CHEATS
     - ReleaseGuard
     - icon app
-    - kiểm dung lượng: APK dev ~675 MB, Play giới hạn 150 MB phần cài chính → Play Asset Delivery hoặc nội dung trên VPS/CDN (bắt buộc)
+    - ~~kiểm dung lượng~~ (06/10): AAB + tách dữ liệu + Addressables for Android (install-time) + giới hạn texture Android → bản store 359 MB (base 89 MB; Play cho base 500 MB). Tuỳ chọn sau: map ngoài meadow sang fast-follow để lần tải đầu nhẹ hơn.
 65. Trang store, link chính sách riêng tư (www.billthedev.com/hordecall/privacy/), ảnh bìa, quyết định tên súng thật hay tự đặt.
-66. Kiểm build WebGL với bundle Addressables.
+66. ~~Kiểm build WebGL với bundle Addressables~~ — bỏ (owner 06/10).
 67. Soft launch PH/ID/VN.
-68. Vận hành: công tắc từ xa (bắt cập nhật, bảo trì), backup ra ngoài VPS, theo dõi /health báo Telegram, track Internal testing + Pre-launch report.
-69. Giữ chân: thông báo trên máy (rương ngày, Daily Ops), hỏi đánh giá trong game.
+68. ~~Vận hành~~ (06/10): công tắc từ xa (/etc/hordecall/config), backup mã hoá sang repo private hordecall-backups (khoá ở VPS + máy dev), watchdog tự khởi động lại API. Còn: báo Telegram (cần bot riêng), Internal testing + Pre-launch report (owner lo Play Console).
+69. ~~Giữ chân~~ (06/10): nhắc ngày mới + nhắc sau 48 giờ, xin quyền thông báo sau trận 2, thẻ đánh giá của Play sau kỷ lục, cập nhật bắt buộc qua Play.
 Icebox: Facebook Login, bạn bè (owner 06/10: để sau), đăng nhập email bằng link, mediation quảng cáo, server tự tính gem/gacha.
 
 ## Đợt 9 · Dọn dẹp và hiệu năng
