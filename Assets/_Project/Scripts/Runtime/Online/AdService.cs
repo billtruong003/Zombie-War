@@ -109,6 +109,7 @@ namespace ZombieWar.Online
         public static bool ShowRewarded(string placement, Action onReward)
         {
             string unit = RewardedUnitFor(placement);
+            if (!RemoteConfig.AdsOn) return false;
             if (!Ready || !Rewarded.TryGetValue(unit, out var ad) || ad == null || !ad.CanShowAd())
             {
                 if (Ready) LoadRewarded(unit);
@@ -184,6 +185,7 @@ namespace ZombieWar.Online
         public static void ThenGo(Action go)
         {
             float now = Time.realtimeSinceStartup;
+            if (!RemoteConfig.AdsOn || !RemoteConfig.InterstitialOn) { go(); return; }
             if (!Due(now, PlayerPrefs.GetInt(RunsKey, 0))) { go(); return; }
             _lastRunSeconds = 0f;
             if (AdService.ShowInterstitial(go)) _lastShownAt = now;

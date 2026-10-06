@@ -131,6 +131,7 @@ namespace ZombieWar
         {
             // One transaction: the payment, every box grant and the pity are written once (a x10 used
             // to save ~13 times and fire ~11 refreshes), and a failure leaves the profile untouched.
+            if (!Online.RemoteConfig.GachaOn) return null;   // switched off on the server
             List<Result> results = null;
             if (!PlayerProfile.Batch(() => results = PullUnbatched(b, count, pay, today, econ, guns, rng))) return null;
             if (results != null && results.Count > 0)

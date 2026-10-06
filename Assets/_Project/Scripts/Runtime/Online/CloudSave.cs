@@ -47,7 +47,7 @@ namespace ZombieWar.Online
         /// install, otherwise after the comparison with the server or the wait, whichever is first.</summary>
         public static void RestoreAtBoot(Action done)
         {
-            if (!BackendConfig.Enabled || Linked) { done(); return; }
+            if (!BackendConfig.Enabled || !RemoteConfig.CloudSaveOn || Linked) { done(); return; }
             bool finished = false;
             _bootOpen = true;
             void Finish() { if (finished) return; finished = true; _bootOpen = false; done(); }
@@ -117,7 +117,7 @@ namespace ZombieWar.Online
         /// <summary>Uploads the profile when it changed since the last upload (linked installs only).</summary>
         public static async void Push()
         {
-            if (!BackendConfig.Enabled || _busy || !PlayerProfile.HasProfile) return;
+            if (!BackendConfig.Enabled || !RemoteConfig.CloudSaveOn || _busy || !PlayerProfile.HasProfile) return;
             if (!Linked) { await Link(); if (!Linked) return; }
             string json = PlayerProfile.ExportJson();
             if (string.IsNullOrEmpty(json)) return;

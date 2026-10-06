@@ -16,3 +16,4 @@ below is built (or will be) without touching layout; each screen waits for its m
 | U1 | HUD | milestone bar (chest 2:00 / 4:00, Horde Call, Titan) — already approved 05/10, built with Titan in Đợt 5 | Đợt 5 |
 | S1 | Settings | **Privacy options** (only when `AdService.PrivacyOptionsRequired`), **Privacy policy** link, **Delete account** with a confirm step, **Player ID** with copy; later **Link account** (Google Play Games / Facebook) | logic ready: `AdService.ShowPrivacyOptions`, `DELETE /v1/account`; store-safety items in ANALYTICS_EVENTS.md |
 | S2 | Gacha / crate | **Drop rates** sheet before opening any crate (Google Play rule for paid random items): rarity %, pity counter, shard targets | rates already in GunCrates / GachaBanners data |
+| S3 | Boot | **Update required** (button → store) and **Maintenance** (message) screens over the menu | logic ready: `RemoteConfig.UpdateRequired / Maintenance / StoreUrl`; shows as a toast until then |
