@@ -317,13 +317,15 @@ Cần owner (C), để riêng:
     - giảm poly súng nặng
 
 ## Đợt 8 · SDK và lên store
-55. Chọn AdMob hay ironSource.
-56. Quảng cáo có thưởng (hồi sinh, x2 coin, deal) và interstitial đúng luật đã chốt.
-57. Unity IAP 8 sản phẩm, xác thực hóa đơn.
-58. Firebase Analytics, Crashlytics, Remote Config, kèm funnel FTUE.
-59. Firebase Auth, xóa tài khoản trong game, lưu đám mây (để sau).
-60. UMP consent, cấu hình quảng cáo 13+, gacha ở Bỉ.
-61. Các dòng Settings: Language, Help, Ad privacy, Privacy policy, Restore purchases.
+Trạng thái 06/10: backend C# trên VPS (https://api.billthedevstudio.com), Firebase Analytics + Crashlytics, AdMob + UMP, lưu đám mây, sự kiện analytics đã xong và nối AdMob ↔ Firebase.
+55. ~~Chọn AdMob hay ironSource~~ → AdMob (06/10).
+56. ~~Quảng cáo có thưởng và interstitial~~ → AdService + Interstitials (06/10), cần test trên máy thật.
+57. Unity IAP 8 sản phẩm, xác thực hóa đơn trên server (`/v1/iap/verify`, Google Play Developer API).
+58. ~~Firebase Analytics, Crashlytics, funnel FTUE~~ (06/10). Remote Config: dùng `/v1/config` hoặc Firebase Remote Config.
+59. ~~Lưu đám mây, xóa tài khoản phía server~~ (06/10). Còn: nút Xóa tài khoản trong Settings (mockup S1).
+59b. Đăng nhập chuẩn trên backend C# (đề xuất 06/10, owner: "tạm được", làm cùng #57): liên kết Google Play Games, access token ngắn + refresh token xoay vòng, thu hồi token, mã bí mật theo máy, khóa ký có `kid`.
+60. ~~UMP consent, quảng cáo 13+~~ (06/10). Còn: gacha ở Bỉ.
+61. Các dòng Settings: Language, Help, Ad privacy, Privacy policy, Restore purchases, Player ID, Xóa tài khoản (mockup S1). Bảng tỉ lệ rơi (mockup S2).
 62. Bản dịch vi, en, ja, ko, chọn ngôn ngữ mặc định theo quốc gia (làm sau SDK và store).
 63. Mã hóa file lưu, chống chỉnh giờ máy.
 64. Build release:
@@ -331,10 +333,13 @@ Cần owner (C), để riêng:
     - tắt ZW_CHEATS
     - ReleaseGuard
     - icon app
-    - kiểm dung lượng
-65. Trang store, link chính sách riêng tư và domain, ảnh bìa, quyết định tên súng thật hay tự đặt.
+    - kiểm dung lượng: APK dev ~675 MB, Play giới hạn 150 MB phần cài chính → Play Asset Delivery hoặc nội dung trên VPS/CDN (bắt buộc)
+65. Trang store, link chính sách riêng tư (www.billthedev.com/hordecall/privacy/), ảnh bìa, quyết định tên súng thật hay tự đặt.
 66. Kiểm build WebGL với bundle Addressables.
 67. Soft launch PH/ID/VN.
+68. Vận hành: công tắc từ xa (bắt cập nhật, bảo trì), backup ra ngoài VPS, theo dõi /health báo Telegram, track Internal testing + Pre-launch report.
+69. Giữ chân: thông báo trên máy (rương ngày, Daily Ops), hỏi đánh giá trong game.
+Icebox: Facebook Login, bạn bè (owner 06/10: để sau), đăng nhập email bằng link, mediation quảng cáo, server tự tính gem/gacha.
 
 ## Đợt 9 · Dọn dẹp và hiệu năng
 68. Dọn thư mục (chờ owner quyết):
