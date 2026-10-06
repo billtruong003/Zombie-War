@@ -72,7 +72,7 @@ namespace ZombieWar
             BindBuildStrip(skills);
             _shownAutoPickSeconds = -1;
 
-            _levelUpShownAtRealtime = Time.realtimeSinceStartup;
+            _levelUpShownAtRealtime = Time.unscaledTime;   // not realtime: a player back from the background must not find a card picked (07/10)
             Time.timeScale = 0f;
             Show(levelUpRoot, true);
             // M8: the world dims, the title pops, the cards deal in one after another.
@@ -87,6 +87,7 @@ namespace ZombieWar
         /// a frozen screen.
         private void Update()
         {
+            HandleBack();
             // The level-up sheet shows the build itself; the HUD skill bar underneath overlapped it.
             bool picking = levelUpRoot != null && levelUpRoot.activeSelf;
             if (skillBar != null && skillBar.activeSelf == picking) skillBar.SetActive(!picking);
@@ -95,7 +96,7 @@ namespace ZombieWar
             if (levelUpRoot == null || !levelUpRoot.activeSelf) return;
             if (_skillOffer == null || _skillOffer.Count == 0) return;
             if (_ftueCard) return;   // the first level-up ever waits for the player
-            float waited = Time.realtimeSinceStartup - _levelUpShownAtRealtime;
+            float waited = Time.unscaledTime - _levelUpShownAtRealtime;
             int left = Mathf.CeilToInt(LevelUpTimeoutSeconds - waited);
             if (left != _shownAutoPickSeconds)
             {

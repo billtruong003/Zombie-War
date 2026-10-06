@@ -74,7 +74,9 @@ namespace ZombieWar
                 for (int i = 0; i < perkButtons.Length; i++)
                 {
                     int slot = i;
-                    Wire(perkButtons[i], () => PickPerk(slot));
+                    // A tap that lands as the next queued offer appears in the same place would pick a
+                    // card the player never saw (07/10): taps in its first moment are ignored.
+                    Wire(perkButtons[i], () => { if (Time.unscaledTime - _levelUpShownAtRealtime >= 0.35f) PickPerk(slot); });
                 }
 
             if (soundToggle != null)

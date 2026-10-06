@@ -11,6 +11,12 @@ namespace ZombieWar
         public void ShowPause()
         {
             if (TerminalOverlayActive) return;
+            // A card or chest choice already holds the game; Resume from a pause over it would set
+            // the time running under the open choice.
+            if ((levelUpRoot != null && levelUpRoot.activeSelf) || ChestOpen) return;
+            // Paused again during the 3-2-1: that countdown must not unpause under the menu (07/10).
+            Restart(null);
+            if (resumeCountText != null) resumeCountText.gameObject.SetActive(false);
             Time.timeScale = 0f;
             Show(pauseRoot, true);
             UIFx.ModalIn(pauseRoot != null ? pauseRoot.transform : null);
@@ -20,8 +26,20 @@ namespace ZombieWar
         // instead of playing on unseen. A choice screen that already holds the game stays as it is.
         private void OnAppPause(AppPauseEvent e)
         {
+            RunInterruption.NotePause(e.IsPaused, RunState.Current);
             if (!e.IsPaused || RunState.Current == null || Time.timeScale == 0f) return;
             ShowPause();
+        }
+
+        // Android Back in a run (07/10: it did nothing - the menu's UIManager is off during a run):
+        // closes settings or the end-run confirm, resumes from the pause menu, otherwise pauses.
+        private void HandleBack()
+        {
+            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            if (settingsRoot != null && settingsRoot.activeSelf) { Show(settingsRoot, false); return; }
+            if (confirmRoot != null && confirmRoot.activeSelf) { Show(confirmRoot, false); Show(pauseRoot, true); return; }
+            if (pauseRoot != null && pauseRoot.activeSelf) { ResumeWithCountdown(); return; }
+            if (RunState.Current != null && !RunState.Current.IsOver) ShowPause();   // guards choices and the end screens
         }
 
         private void ResumeWithCountdown()

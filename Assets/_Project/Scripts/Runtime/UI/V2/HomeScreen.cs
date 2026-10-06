@@ -199,7 +199,18 @@ namespace ZombieWar.UI
         protected override void OnFocus() => Refresh();
         public override bool OnEscape()
         {
-            return true;   // root screen
+            // Root screen: Back sends the game to the background like any Android home screen
+            // (07/10: it was swallowed and did nothing).
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                activity?.Call<bool>("moveTaskToBack", true);
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Home] Back: " + e.Message); }
+#endif
+            return true;
         }
 
         void Play()

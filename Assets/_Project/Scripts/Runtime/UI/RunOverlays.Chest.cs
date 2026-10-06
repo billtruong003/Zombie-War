@@ -42,7 +42,7 @@ namespace ZombieWar
             _pendingChests--;
             _chest = skills.OpenChest(run.Seed * 31 + ++_chestsOpened);
             BindChest(_chest, skills);
-            _chestShownAt = Time.realtimeSinceStartup;
+            _chestShownAt = Time.unscaledTime;   // not realtime: it runs on in the background (07/10)
             _chestShownLeft = -1;
             // FTUE v2: the first chest ever has no timer and says how evolutions come about.
             _ftueChest = !Ftue.Done(Ftue.Chest);
@@ -142,7 +142,7 @@ namespace ZombieWar
         void TickChest()
         {
             if (!ChestOpen || _ftueChest) return;
-            float waited = Time.realtimeSinceStartup - _chestShownAt;
+            float waited = Time.unscaledTime - _chestShownAt;
             int left = Mathf.CeilToInt(ChestTimeoutSeconds - waited);
             if (left != _chestShownLeft)
             {
