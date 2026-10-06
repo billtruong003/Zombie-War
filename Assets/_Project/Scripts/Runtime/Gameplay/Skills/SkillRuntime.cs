@@ -379,16 +379,18 @@ namespace ZombieWar.Skills
 
         // ══════════════════════════════════════════════════════════ STAT (P8 soft caps)
 
-        /// <summary>Account-wide gun mastery bonuses (backlog #21), set when the gun is equipped.</summary>
+        /// <summary>Account-wide gun mastery bonuses (backlog #21), set when the gun is equipped.
+        /// Equip-derived like the innate card, so <see cref="Reset"/> keeps them: the map's player
+        /// equips in Start, before the run begins and resets (07/10: every run lost them).</summary>
         public GunMastery.Bonuses Account;
-        bool _accountHealthApplied;
+        Health _accountHealthOn;
 
-        /// <summary>Takes the account bonuses; the max-health one is applied once per run.</summary>
+        /// <summary>Takes the account bonuses; the max-health one is applied once to each player.</summary>
         public void ApplyAccount(GunMastery.Bonuses bonuses, Health health)
         {
             Account = bonuses;
-            if (_accountHealthApplied || health == null) return;
-            _accountHealthApplied = true;
+            if (health == null || health == _accountHealthOn) return;
+            _accountHealthOn = health;
             if (bonuses.maxHealth > 0f) health.IncreaseMax(1f + bonuses.maxHealth);
         }
 
@@ -489,8 +491,7 @@ namespace ZombieWar.Skills
             _shotsSinceBreach = _shotsSinceShockwave = _shotsSinceSplit = _siphonKills = 0;
             _siphonTriggered = _guardianUsed = false;
             PendingMaxHealthBonus = 0f;
-            Account = default; _accountHealthApplied = false;
-            _innateCard = null; _innateRank = 0;
+            // Account and the innate card stay: they belong to the gun in hand (see Account).
             PendingHealFraction = 0f;
             PendingCoin = 0;
             PendingMagnet = false;

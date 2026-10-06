@@ -41,7 +41,10 @@ namespace ZombieWar.Tests
             Assert.IsTrue(run.Has(card));
             Assert.AreEqual(slots, run.SlotsUsed(SkillSlot.Skill), "a built-in card takes no skill slot");
             run.Reset();
-            Assert.AreEqual(0, run.RankOf(card), "the next run starts clean until the gun is equipped");
+            // The gun is equipped before the run begins and resets (07/10): the trait belongs to it.
+            Assert.AreEqual(rank, run.RankOf(card), "the run reset keeps the equipped gun's trait");
+            run.SetInnate(null, 0);   // equipping a gun that is not evolved
+            Assert.AreEqual(0, run.RankOf(card));
         }
     }
 }

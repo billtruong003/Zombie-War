@@ -107,7 +107,30 @@ namespace ZombieWar.Tests
             Assert.AreEqual(dmg * 1.05f, run.DamageMultiplier, 1e-4f);
             Assert.AreEqual(area + 0.1f, run.AreaMultiplier, 1e-4f);
             run.Reset();
-            Assert.AreEqual(dmg, run.DamageMultiplier, 1e-4f, "a new run starts without last run's bonuses until the gun is equipped");
+            // The map's player equips in Start, before RunState.Begin resets the build (07/10: a reset
+            // that cleared them left every run without mastery).
+            Assert.AreEqual(dmg * 1.05f, run.DamageMultiplier, 1e-4f, "the bonuses belong to the equipped gun and survive the run reset");
+        }
+
+        [Test]
+        public void AccountMaxHealth_IsAppliedOncePerPlayer()
+        {
+            var run = new SkillRuntime { UnlockLevel = int.MaxValue };
+            var b = new GunMastery.Bonuses(); b.maxHealth = 0.1f;
+            var first = new GameObject("p1").AddComponent<Health>();
+            var second = new GameObject("p2").AddComponent<Health>();
+            first.Configure(100f); second.Configure(100f);
+            try
+            {
+                float baseMax = first.Max;
+                run.ApplyAccount(b, first);
+                run.ApplyAccount(b, first);   // a gun swap re-applies the account
+                Assert.AreEqual(baseMax * 1.1f, first.Max, 1e-3f, "once per player");
+                run.Reset();
+                run.ApplyAccount(b, second);  // next run, new player
+                Assert.AreEqual(second.Max > baseMax, true, "the next run's player gets it too");
+            }
+            finally { Object.DestroyImmediate(first.gameObject); Object.DestroyImmediate(second.gameObject); }
         }
     }
 }
