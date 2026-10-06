@@ -19,6 +19,7 @@ public class VAT_Animator : MonoBehaviour
 
     private Renderer _renderer;
     private MaterialPropertyBlock _propertyBlock;
+    private int _textureHeight;   // cached: Texture.height is a native call, read several times a frame
 
     private VAT_AnimationData.ClipInfo _currentClip;
     private VAT_AnimationData.ClipInfo _previousClip;
@@ -76,6 +77,9 @@ public class VAT_Animator : MonoBehaviour
     {
         if (_currentClip == null || animationData == null) return;
         UpdateTimers(deltaTime * playbackSpeed);
+        // Off screen nothing samples the block; the timers above keep the pose right for when it
+        // comes back. Every enemy wrote it every frame, seen or not (07/10 horde audit).
+        if (Application.isPlaying && _renderer != null && !_renderer.isVisible) return;
         UpdateShaderProperties();
     }
 
@@ -98,6 +102,7 @@ public class VAT_Animator : MonoBehaviour
     private bool ApplyAnimationDataToMaterial()
     {
         if (animationData == null || !animationData.IsValid()) return false;
+        _textureHeight = animationData.positionTexture != null ? animationData.positionTexture.height : 0;
 
         // Cần đảm bảo MeshFilter cũng được gán mesh đã bake
         var meshFilter = GetComponent<MeshFilter>();
@@ -288,7 +293,8 @@ public class VAT_Animator : MonoBehaviour
     // Tính toán tọa độ V chuẩn hóa (0-1) cho shader
     private float CalculateNormalizedVCoordinate(VAT_AnimationData.ClipInfo clip, float timeSeconds)
     {
-        if (clip == null || animationData.positionTexture.height <= 1) return 0f;
+        if (_textureHeight <= 0 && animationData.positionTexture != null) _textureHeight = animationData.positionTexture.height;
+        if (clip == null || _textureHeight <= 1) return 0f;
 
         float progress = 0;
         // Xử lý các WrapMode khác nhau
@@ -313,7 +319,7 @@ public class VAT_Animator : MonoBehaviour
         float absoluteFrame = clip.startFrame + frameIndexInClip;
 
         // Thêm 0.5 để sample vào giữa texel theo chiều dọc, tận dụng bilinear filtering
-        return (absoluteFrame + 0.5f) / animationData.positionTexture.height;
+        return (absoluteFrame + 0.5f) / _textureHeight;
     }
 
 #if UNITY_EDITOR

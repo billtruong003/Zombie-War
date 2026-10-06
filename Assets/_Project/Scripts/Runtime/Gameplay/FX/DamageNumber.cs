@@ -44,8 +44,17 @@ namespace ZombieWar
         private float _elapsed;
         private float _targetScale;
         private Vector3 _velocity;
+        private byte _alpha = 255;
+
+        /// <summary>Numbers on screen now; the spawner caps it.</summary>
+        public static int Live { get; private set; }
 
         private void Awake() => CacheRefs();
+        private void OnEnable() => Live++;
+        private void OnDisable() => Live--;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Live = 0;
 
         private void CacheRefs()
         {
@@ -65,6 +74,7 @@ namespace ZombieWar
             _text.SetText("{0}", Mathf.Max(1, Mathf.RoundToInt(amount)));   // no string per hit
             _text.color = crit ? critColor : normalColor;
             _text.alpha = 1f;
+            _alpha = 255;
 
             _targetScale = crit ? critScale : baseScale;
 
@@ -84,6 +94,7 @@ namespace ZombieWar
             _text.SetText(label);
             _text.color = color;
             _text.alpha = 1f;
+            _alpha = 255;
             _targetScale = critScale * 1.15f;
             _velocity = new Vector3(0f, riseSpeed * 0.8f, 0f);
             _tf.localScale = Vector3.zero;
@@ -105,12 +116,32 @@ namespace ZombieWar
             _tf.localScale = new Vector3(s, s, s);
 
             // Full opacity for the first half of life, then linearly fade to zero.
-            _text.alpha = Mathf.Clamp01(Mathf.InverseLerp(lifetime, lifetime * 0.5f, _elapsed));
+            FadeTo(Mathf.Clamp01(Mathf.InverseLerp(lifetime, lifetime * 0.5f, _elapsed)));
 
             FaceCamera();
 
             if (_elapsed >= lifetime)
                 ReturnToPool();
+        }
+
+        // The fade rewrites the alpha of the vertex colours already built. Setting TMP_Text.alpha
+        // re-parsed and rebuilt the whole text mesh every frame of the fade - hundreds of numbers at
+        // once in a horde (07/10 audit).
+        private void FadeTo(float a)
+        {
+            byte b = (byte)(a * 255f + 0.5f);
+            if (b == _alpha) return;
+            _alpha = b;
+            var info = _text.textInfo;
+            if (info == null || info.meshInfo == null) return;
+            for (int m = 0; m < info.meshInfo.Length; m++)
+            {
+                var colors = info.meshInfo[m].colors32;
+                if (colors == null) continue;
+                int n = Mathf.Min(info.meshInfo[m].vertexCount, colors.Length);
+                for (int i = 0; i < n; i++) colors[i].a = b;
+            }
+            _text.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
         }
 
         private void FaceCamera()

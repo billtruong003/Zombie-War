@@ -42,6 +42,10 @@ namespace ZombieWar
 
         // Cached shown values - setting TMP text every frame is the HUD's main source of GC.
         private long _shownRunCoin = long.MinValue;
+        // Kills and coin change on most frames of a horde; each text change rebuilds its mesh and
+        // re-batches the HUD canvas. Ten updates a second read the same (07/10 audit).
+        private const float CounterInterval = 0.1f, PunchInterval = 0.3f;
+        private float _nextCounterAt, _nextPunchAt;
         private int _shownSeconds = -1, _shownTier = -1, _shownLevel = -1, _shownKills = -1, _shownBanner = -2;
         private bool _shownSurge;
         private float _shownXp = -1f;
@@ -82,7 +86,13 @@ namespace ZombieWar
 
         // Duration ticks every frame without raising RunState.Changed, so the clock polls - but only
         // rebuilds the string when the whole second, tier or level actually changes.
-        private void Update() => RefreshRunPill();
+        private void Update()
+        {
+            RefreshRunPill();
+            if (Time.unscaledTime < _nextCounterAt) return;
+            _nextCounterAt = Time.unscaledTime + CounterInterval;
+            RefreshCounters();
+        }
 
         private void RefreshRunPill()
         {
@@ -93,7 +103,6 @@ namespace ZombieWar
             int tier = director != null ? director.CurrentTier : 0;
             bool surge = director != null && director.Surging;
             int level = run?.Level ?? 1;
-            int kills = run?.Kills ?? 0;
 
             // XP bar: continuous, cheap (a RectTransform anchor), only touched when it moves.
             float xp = run != null && run.XpForNextLevel > 0 ? Mathf.Clamp01((float)run.Xp / run.XpForNextLevel) : 0f;
@@ -103,7 +112,6 @@ namespace ZombieWar
                 xpFillRect.anchorMax = new Vector2(xp, 1f);
             }
 
-            if (kills != _shownKills && killLabel != null) { _shownKills = kills; killLabel.text = kills.ToString(); }
 
             RefreshHordeBanner(director, duration);
 
@@ -153,16 +161,22 @@ namespace ZombieWar
                 ? $"<color=#FF4A3D>{FormatClock(seconds)} · HORDE · Lv {level}</color>"
                 : $"{FormatClock(seconds)} · Threat {tier} · Lv {level}";
 
-        // Coin pill binds the live ledger: a pickup, a crate or a kill moves the number at once.
-        private void OnRunChanged()
+        // The ledger moved (a pickup, a crate, a kill): show it on the next counter tick.
+        private void OnRunChanged() => _nextCounterAt = Mathf.Min(_nextCounterAt, Time.unscaledTime + CounterInterval);
+
+        private void RefreshCounters()
         {
-            RefreshRunPill();
+            var run = RunState.Current;
+            int kills = run?.Kills ?? 0;
+            if (kills != _shownKills && killLabel != null) { _shownKills = kills; killLabel.SetText("{0}", kills); }
 
             if (coinPill == null) return;
-            long coin = RunState.Current?.Coin ?? 0;
+            long coin = run?.Coin ?? 0;
             if (coin == _shownRunCoin) return;
             _shownRunCoin = coin;
             coinPill.text = ZombieWar.UI.CurrencyClusterWidget.Format(coin);
+            if (Time.unscaledTime < _nextPunchAt) return;
+            _nextPunchAt = Time.unscaledTime + PunchInterval;
             ZombieWar.UI.UIFx.Punch(coinPill.transform);
         }
 

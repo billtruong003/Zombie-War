@@ -42,6 +42,12 @@ namespace ZombieWar.UI
                 _arrowImg[i] = _arrow[i] != null ? _arrow[i].GetComponent<Image>() : null;
             }
             _count = transform.Find("Count")?.GetComponent<TMP_Text>();
+            // Its own canvas: the tint and arrows change every frame of a warning and a surge, and in
+            // the HUD's single canvas that re-batched every HUD graphic with them (07/10 audit).
+            if (!TryGetComponent<Canvas>(out _)) gameObject.AddComponent<Canvas>();
+            // Colours are set once; the pulse goes through the renderer alpha, which rebuilds no mesh.
+            if (_tint != null) _tint.color = Red;
+            for (int i = 0; i < 3; i++) if (_arrowImg[i] != null) _arrowImg[i].color = Red;
             Hide();
         }
 
@@ -96,7 +102,7 @@ namespace ZombieWar.UI
             {
                 float a = _tintAlpha * (0.8f + 0.2f * Mathf.Sin(now * 6f));
                 _tint.enabled = a > 0.01f;
-                var c = Red; c.a = a; _tint.color = c;
+                _tint.canvasRenderer.SetAlpha(a);
             }
 
             // Big 3-2-1 for the last three seconds; HORDE CLEARED owns the label while it shows.
@@ -132,7 +138,7 @@ namespace ZombieWar.UI
                 float bob = Mathf.Sin(now * 7f - i * 0.9f) * 12f;
                 _arrow[i].anchoredPosition = centre + along * ((i - 1) * arrowSpacing) + outward * bob;
                 _arrow[i].localEulerAngles = new Vector3(0f, 0f, rot);
-                if (_arrowImg[i] != null) { var c = Red; c.a = 0.75f + 0.25f * Mathf.Sin(now * 7f - i * 0.9f); _arrowImg[i].color = c; }
+                if (_arrowImg[i] != null) _arrowImg[i].canvasRenderer.SetAlpha(0.75f + 0.25f * Mathf.Sin(now * 7f - i * 0.9f));
             }
         }
     }

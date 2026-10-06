@@ -19,6 +19,13 @@ namespace ZombieWar
 
         private int _activeDay = int.MinValue;
 
+        // Kills are counted here and written to the profile every few seconds: each write decodes the
+        // mission ids and searches the saved progress, and a horde kills several enemies a frame
+        // (07/10 audit: ~1 KB of garbage per kill per kill mission).
+        private const float FlushSeconds = 2f;
+        private readonly int[] _pendingKills = new int[(int)MissionMetric.KillElite + 1];
+        private float _flushAt;
+
         // The active set belongs to one game day: a run that crosses the reset credits the new
         // day's missions (it used to keep feeding yesterday's set cached at OnEnable).
         private void EnsureActiveSet()
@@ -44,6 +51,7 @@ namespace ZombieWar
 
         private void OnDisable()
         {
+            FlushKills();
             Bill.Events?.Unsubscribe<ZombieKilledEvent>(OnZombieKilled);
             Bill.Events?.Unsubscribe<StationCompletedEvent>(OnStationCompleted);
             Bill.Events?.Unsubscribe<RunFinishedEvent>(OnRunFinished);
@@ -54,16 +62,33 @@ namespace ZombieWar
             var data = e.Data;
             if (data == null) return;
 
-            Report(MissionMetric.KillAny, 1);
+            _pendingKills[(int)MissionMetric.KillAny]++;
 
             switch (data.archetype)
             {
-                case ZombieArchetype.Runner:   Report(MissionMetric.KillRunner, 1); break;
-                case ZombieArchetype.Ranged:   Report(MissionMetric.KillRanged, 1); break;
-                case ZombieArchetype.Burrower: Report(MissionMetric.KillBurrower, 1); break;
+                case ZombieArchetype.Runner:   _pendingKills[(int)MissionMetric.KillRunner]++; break;
+                case ZombieArchetype.Ranged:   _pendingKills[(int)MissionMetric.KillRanged]++; break;
+                case ZombieArchetype.Burrower: _pendingKills[(int)MissionMetric.KillBurrower]++; break;
             }
 
-            if (data.isElite) Report(MissionMetric.KillElite, 1);
+            if (data.isElite) _pendingKills[(int)MissionMetric.KillElite]++;
+        }
+
+        private void Update()
+        {
+            if (Time.unscaledTime >= _flushAt) FlushKills();
+        }
+
+        private void FlushKills()
+        {
+            _flushAt = Time.unscaledTime + FlushSeconds;
+            for (int i = 0; i < _pendingKills.Length; i++)
+            {
+                int n = _pendingKills[i];
+                if (n <= 0) continue;
+                _pendingKills[i] = 0;
+                Report((MissionMetric)i, n);
+            }
         }
 
         private void OnStationCompleted(StationCompletedEvent e)
@@ -79,6 +104,7 @@ namespace ZombieWar
         private void OnRunFinished(RunFinishedEvent e)
         {
             var s = e.Summary;
+            FlushKills();
             Report(MissionMetric.FinishRun, 1);
 
             // Coin missions count what the run actually earned, matching the ledger the player saw.

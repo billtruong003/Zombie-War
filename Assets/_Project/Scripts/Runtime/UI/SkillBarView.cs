@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -36,13 +37,18 @@ namespace ZombieWar
             Refresh(SkillRuntime.Active);
         }
 
+        static readonly Comparison<SkillDef> ByCatalog = PauseBuildView.CatalogOrder;
+        static readonly Comparison<SkillDef> StatsFirst = (a, b) => (a.layer == SkillLayer.Stat ? 0 : 1).CompareTo(b.layer == SkillLayer.Stat ? 0 : 1);
+
         public void Refresh(SkillRuntime run)
         {
             _powers.Clear();
             _passives.Clear();
             if (run != null)
             {
-                foreach (var kv in run.Ranks)
+                // Through the concrete dictionary: a foreach over the IReadOnlyDictionary boxed its
+                // enumerator ten times a second.
+                foreach (var kv in (Dictionary<string, int>)run.Ranks)
                 {
                     var def = SkillCatalogDefs.ById(kv.Key);
                     if (def == null || kv.Value <= 0 || def.IsEvolution) continue;
@@ -50,9 +56,9 @@ namespace ZombieWar
                     // four stats live in the pause build panel.
                     (def.Slot == SkillSlot.Skill ? _powers : _passives).Add(def);
                 }
-                _powers.Sort(PauseBuildView.CatalogOrder);
+                _powers.Sort(ByCatalog);
                 // Stats first: they are the four fixed slots. Gun cards follow.
-                _passives.Sort((a, b) => (a.layer == SkillLayer.Stat ? 0 : 1).CompareTo(b.layer == SkillLayer.Stat ? 0 : 1));
+                _passives.Sort(StatsFirst);
             }
 
             if (slots != null)

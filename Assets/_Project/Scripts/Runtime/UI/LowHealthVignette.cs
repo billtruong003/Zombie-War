@@ -23,6 +23,10 @@ namespace ZombieWar.UI
         {
             _image = GetComponent<Image>();
             _image.raycastTarget = false;
+            // Its own canvas, and the beat through the renderer alpha: a colour write every frame
+            // rebuilt the HUD's single canvas for as long as health was low (07/10 audit).
+            if (!TryGetComponent<Canvas>(out _)) gameObject.AddComponent<Canvas>();
+            var c = _image.color; c.a = 1f; _image.color = c;
             Apply(0f);
         }
 
@@ -47,7 +51,7 @@ namespace ZombieWar.UI
         {
             if (_image == null) return;
             _image.enabled = alpha > 0.001f;
-            var c = _image.color; c.a = alpha; _image.color = c;
+            _image.canvasRenderer.SetAlpha(alpha);
         }
 
         /// <summary>Beats per minute: 70 at the threshold, 130 at the edge of death.</summary>

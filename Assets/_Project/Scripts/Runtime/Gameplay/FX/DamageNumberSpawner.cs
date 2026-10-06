@@ -28,7 +28,10 @@ namespace ZombieWar
 
         // At most this many new numbers per frame (crits always show): a damage-over-time tick over a
         // crowd used to pop a hundred numbers in one frame, each its own text mesh.
-        public const int MaxPerFrame = 12;
+        // And at most this many on screen (07/10 audit: a horde kept 300-580 alive, each its own
+        // renderer and Update). Past it the crowd reads as a blur anyway.
+        public const int MaxPerFrame = 6;
+        public const int MaxLive = 40;
         public const int WarmCount = 32;
         private static int _frame = -1, _spawnedThisFrame;
 
@@ -37,7 +40,7 @@ namespace ZombieWar
         public static void Spawn(float amount, Vector3 position, bool crit = false)
         {
             if (_frame != Time.frameCount) { _frame = Time.frameCount; _spawnedThisFrame = 0; }
-            if (!crit && _spawnedThisFrame >= MaxPerFrame) return;
+            if (!crit && (_spawnedThisFrame >= MaxPerFrame || DamageNumber.Live >= MaxLive)) return;
             var prefab = ResolvePrefab();
             if (prefab == null) return;
             _spawnedThisFrame++;

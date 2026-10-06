@@ -55,6 +55,7 @@ namespace ZombieWar
 
         [Header("Smoke (optional, spawned at muzzle)")]
         [SerializeField] private ParticleSystem muzzleSmokePrefab;
+        private static int _smokeFrame = -1;
 
         private MeshRenderer _renderer;
         private MaterialPropertyBlock _mpb;
@@ -115,8 +116,13 @@ namespace ZombieWar
             _renderer.SetPropertyBlock(_mpb);
             _renderer.enabled = true;
 
-            if (muzzleSmokePrefab != null)
+            // One puff per frame: every pellet of a spread shot left its own at the same muzzle
+            // (07/10 audit), each a pooled particle system on top of the others.
+            if (muzzleSmokePrefab != null && Time.frameCount != _smokeFrame)
+            {
+                _smokeFrame = Time.frameCount;
                 FxPool.Play(muzzleSmokePrefab, start, look);
+            }
 
             _timer = 0f;
             _playing = true;

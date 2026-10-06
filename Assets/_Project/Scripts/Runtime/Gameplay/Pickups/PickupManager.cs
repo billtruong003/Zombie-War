@@ -100,8 +100,9 @@ namespace ZombieWar
 
             // Iterate a copy: collecting returns the pickup to the pool, which unregisters it and
             // would otherwise mutate the list mid-loop.
+            // (Copied by hand: Mono's AddRange(list) allocates a temporary array every frame.)
             Scratch.Clear();
-            Scratch.AddRange(Live);
+            for (int i = 0; i < Live.Count; i++) Scratch.Add(Live[i]);
             // A4 Pickup Range grows the pull radius.
             float range = ZombieWar.Skills.SkillRuntime.Active?.PickupRangeMultiplier ?? 1f;
             float pull = magnetRadius * range, xpPull = xpPullRadius * range;

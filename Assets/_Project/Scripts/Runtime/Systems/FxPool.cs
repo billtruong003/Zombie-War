@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using BillGameCore;
 
@@ -105,6 +106,7 @@ namespace ZombieWar
 
             go = pool.Spawn(key, position, rotation);
             if (go == null) return null;
+            TuneOnce(go);
             go.transform.localScale = Vector3.one * scale;
 
             var ps = go.GetComponent<ParticleSystem>();
@@ -114,6 +116,30 @@ namespace ZombieWar
                 ps.Play(true);
             }
             return ps;
+        }
+
+        // Impact effects (blood, dust, dirt) collide their particles with the world at High quality
+        // and with every moving collider - a physics query per particle per frame, against a horde's
+        // capsules too (07/10 audit). Each pooled instance is tuned once: cached static collision
+        // (the flat ground is all it needs), no dynamic colliders.
+        private static readonly HashSet<int> Tuned = new();
+        private static readonly List<ParticleSystem> Systems = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => Tuned.Clear();
+
+        private static void TuneOnce(GameObject go)
+        {
+            if (!Tuned.Add(go.GetInstanceID())) return;
+            go.GetComponentsInChildren(true, Systems);
+            for (int i = 0; i < Systems.Count; i++)
+            {
+                var collision = Systems[i].collision;
+                if (!collision.enabled || collision.type != ParticleSystemCollisionType.World) continue;
+                if (collision.quality == ParticleSystemCollisionQuality.High) collision.quality = ParticleSystemCollisionQuality.Medium;
+                collision.enableDynamicColliders = false;
+            }
+            Systems.Clear();
         }
 
         private static float Lifetime(ParticleSystem ps)
