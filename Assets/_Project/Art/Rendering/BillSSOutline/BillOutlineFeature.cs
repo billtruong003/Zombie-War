@@ -303,10 +303,14 @@ namespace ZombieWar.Rendering.BillSSOutline
 
                 RenderTextureDescriptor desc = cameraData.cameraTargetDescriptor;
                 desc.depthBufferBits = 0;
-                desc.msaaSamples = 1;
                 TextureDesc texDesc = new TextureDesc(desc);
                 texDesc.name = "OutlineTemp";
                 texDesc.clearBuffer = false;
+                // The result becomes the camera colour that transparents then draw into next to the
+                // camera depth, so it keeps the camera's sample count: a single-sampled copy under an
+                // MSAA camera (High tier, the gun turntable's 4x texture) threw in DrawTransparentObjects
+                // on every frame (device log 07/10).
+                texDesc.msaaSamples = renderGraph.GetTextureDesc(source).msaaSamples;
 
                 TextureHandle tempTexture = renderGraph.CreateTexture(texDesc);
 
