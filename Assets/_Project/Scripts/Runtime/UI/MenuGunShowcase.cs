@@ -78,8 +78,31 @@ namespace ZombieWar.UI
             return _home != null && _home.IsShown && _homeGroup != null && _homeGroup.interactable;
         }
 
+        // The camera renders only while a screen shows its picture (Home, Studio, Profile, the outfit
+        // banner): it drew the character and its outline every frame under the Shop, Arsenal and
+        // Gacha too (07/10 audit).
+        readonly System.Collections.Generic.List<RawImage> _viewers = new();
+        float _rescanAt;
+
+        void UpdateCameraOn()
+        {
+            if (_cam == null || _baseRT == null) return;
+            if (Time.unscaledTime >= _rescanAt)
+            {
+                _rescanAt = Time.unscaledTime + 5f;   // screens added after the menu loaded
+                _viewers.Clear();
+                foreach (var ri in FindObjectsByType<RawImage>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    if (ri.texture == _baseRT || (_wideRT != null && ri.texture == _wideRT)) _viewers.Add(ri);
+            }
+            bool seen = _viewers.Count == 0;   // nothing found: keep rendering rather than go blank
+            for (int i = 0; i < _viewers.Count && !seen; i++)
+                seen = _viewers[i] != null && _viewers[i].isActiveAndEnabled;
+            if (_cam.enabled != seen) _cam.enabled = seen;
+        }
+
         void Update()
         {
+            UpdateCameraOn();
             SetWide(HomeOnTop());
             if (_busy || _ik == null) return;
             if (!HomeOnTop()) { _next = Mathf.Max(_next, Time.unscaledTime + 3f); return; }

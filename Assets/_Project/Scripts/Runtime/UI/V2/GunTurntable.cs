@@ -30,9 +30,16 @@ namespace ZombieWar.UI
         float _spin, _frame = 1f, _zoom = 1f;
         bool _held;
 
+        WeaponData _shownData;
+        Skins.WeaponSkins.Set _shownSkin;
+
         public void Show(WeaponData data, Skins.WeaponSkins.Set skin)
         {
             Ensure();
+            // Same gun, same skin: keep it. Screens call this on every wallet or loadout change - an
+            // Arsenal buy rebuilt the gun three times and reset the player's zoom (07/10 audit).
+            if (_gun != null && data == _shownData && skin == _shownSkin) return;
+            _shownData = data; _shownSkin = skin;
             if (_gun != null) Destroy(_gun);
             if (data == null || data.weaponPrefab == null) return;
             _gun = Instantiate(data.weaponPrefab, _root.transform);
@@ -133,7 +140,9 @@ namespace ZombieWar.UI
         }
 
         void OnEnable() { if (_root != null) _root.SetActive(true); }
-        void OnDisable() { if (_root != null) _root.SetActive(false); }
+        // Hidden, the 768² 4x MSAA texture (~9 MB of GPU memory each) is let go; Unity re-creates a
+        // released render texture the next time the camera draws into it.
+        void OnDisable() { if (_root != null) _root.SetActive(false); if (Texture != null) Texture.Release(); }
 
         void OnDestroy()
         {

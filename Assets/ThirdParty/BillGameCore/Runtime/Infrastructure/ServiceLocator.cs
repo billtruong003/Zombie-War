@@ -44,6 +44,7 @@ namespace BillGameCore
             }
 
             _services[key] = service;
+            _shutDown = false;
             if (service is ITickable t) _tickables.Add(t);
             if (service is ILateTickable lt) _lateTickables.Add(lt);
 
@@ -67,6 +68,7 @@ namespace BillGameCore
             }
 
             _services[key] = service;
+            _shutDown = false;
             if (service is ITickable t) _tickables.Add(t);
             if (service is ILateTickable lt) _lateTickables.Add(lt);
 
@@ -172,6 +174,7 @@ namespace BillGameCore
                     try { d.Cleanup(); } catch (Exception e) { Debug.LogException(e); }
 
             _services.Clear();
+            _shutDown = true;
             _tickables.Clear();
             _lateTickables.Clear();
             _traces.Clear();
@@ -180,6 +183,8 @@ namespace BillGameCore
         }
 
         public static bool IsInitialized => _initialized;
+        /// <summary>True after <see cref="Reset"/> until a service registers again (app quit, end of Play).</summary>
+        public static bool IsShutDown => _shutDown;
         internal static void MarkInitialized() => _initialized = true;
         public static int ServiceCount => _services.Count;
 
@@ -263,8 +268,14 @@ namespace BillGameCore
 #endif
         }
 
+        // Set by Reset (app quit, end of Play). Components still unsubscribing in OnDisable after it
+        // asked for a service that is gone on purpose; that logged a "SERVICE NOT FOUND" error for
+        // each of them at every quit.
+        private static bool _shutDown;
+
         private static void ReportMissing(Type key)
         {
+            if (_shutDown) return;
             var registered = new List<string>();
             foreach (var k in _services.Keys) registered.Add(k.Name);
 

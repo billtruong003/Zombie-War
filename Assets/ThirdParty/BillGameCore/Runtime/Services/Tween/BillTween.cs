@@ -161,7 +161,7 @@ namespace BillGameCore
             get
             {
                 if (ServiceLocator.TryGet<ITweenService>(out var s)) return s;
-                Debug.LogError("[BillTween] TweenService not registered. Is BillBootstrap running?");
+                if (!ServiceLocator.IsShutDown) Debug.LogError("[BillTween] TweenService not registered. Is BillBootstrap running?");
                 return null;
             }
         }

@@ -238,6 +238,15 @@ namespace ZombieWar.UI
             if (_instance == this) _instance = null;
         }
 
+        // A faded-out card is switched off: at alpha 0 its masks, stencils and Update still ran every
+        // frame of the session, in the menu and in runs (07/10 audit).
+        static void Fade(CanvasGroup g, float to, float dt)
+        {
+            if (g.alpha != to) g.alpha = Mathf.MoveTowards(g.alpha, to, dt);
+            bool on = to > 0f || g.alpha > 0f;
+            if (g.gameObject.activeSelf != on) g.gameObject.SetActive(on);
+        }
+
         static CanvasGroup Group(Component c)
         {
             var g = c.GetComponent<CanvasGroup>();
@@ -369,14 +378,9 @@ namespace ZombieWar.UI
             {
                 var g = _stepGroups[i];
                 if (g == null) continue;
-                float to = _call != null && _stepViews[i] == _card ? 1f : 0f;
-                if (g.alpha != to) g.alpha = Mathf.MoveTowards(g.alpha, to, dt);
+                Fade(g, _call != null && _stepViews[i] == _card ? 1f : 0f, dt);
             }
-            if (_subGroup != null)
-            {
-                float to = Time.unscaledTime < _subUntil && !AnyModalOpen() ? 1f : 0f;
-                if (_subGroup.alpha != to) _subGroup.alpha = Mathf.MoveTowards(_subGroup.alpha, to, dt);
-            }
+            if (_subGroup != null) Fade(_subGroup, Time.unscaledTime < _subUntil && !AnyModalOpen() ? 1f : 0f, dt);
             if (_call != null) { ReleaseWaitingCard(); Track(_call); }
 
             bool blocked = AnyBlockerOpen(_call != null && _call.Modal);
