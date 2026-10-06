@@ -12,12 +12,18 @@ namespace ZombieWar.WorldNav
     public sealed class MapNavigator : MonoBehaviour
     {
         const float Window = 72f, CellSize = 0.5f, SolveInterval = 0.2f, RecentreDistance = 10f;
+        // A solve is spread over a few frames (about 3500 of the 20736 cells each): one solve in a
+        // single frame cost ~20 ms in the editor, a hitch every 0.2 s on a phone (07/10).
+        const int CellsPerFrame = 3500;
+        // Enemies further than 2.5 m follow the field toward where the player was; re-solving for a
+        // player standing within one metre of it changes nothing they would notice.
+        const float ResolveDistance = 1f;
 
         public static MapNavigator Instance { get; private set; }
         public static bool Active => Instance != null && Instance._field.HasSolution;
 
-        /// The point the field leads to (the player).
-        public static Vector3 Target { get; private set; }
+        /// The point the published field leads to (the player, a moment ago).
+        public static Vector3 Target => Instance != null ? Instance._field.SolvedTarget : Vector3.zero;
 
         FlowField _field;
         Vector3 _windowCentre;
@@ -57,12 +63,18 @@ namespace ZombieWar.WorldNav
                 _field.Rasterize(p);
                 _windowCentre = p;
                 _dirty = false;
-                _nextSolve = 0f;
-            }
-            if (Time.time >= _nextSolve)
-            {
-                Target = p;
+                // The moved grid has no answer yet: solve it now, or every enemy goes straight
+                // (into the river) for the frames a sliced solve takes.
                 _field.Solve(p);
+                _nextSolve = Time.time + SolveInterval;
+                return;
+            }
+            if (_field.Solving) { _field.StepSolve(CellsPerFrame); return; }
+            if (Time.time >= _nextSolve
+                && (!_field.HasSolution || (p - _field.SolvedTarget).sqrMagnitude > ResolveDistance * ResolveDistance))
+            {
+                _field.BeginSolve(p);
+                _field.StepSolve(CellsPerFrame);
                 _nextSolve = Time.time + SolveInterval;
             }
         }

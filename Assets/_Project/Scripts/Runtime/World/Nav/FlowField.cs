@@ -14,6 +14,9 @@ namespace ZombieWar.WorldNav
     ///  - <see cref="Rasterize"/> marks obstacle cells from the colliders inside the window. Call it
     ///    when the window moves (the world streams), not every frame.
     ///  - <see cref="Solve"/> refreshes the distances; a few times a second is enough.
+    ///    <see cref="BeginSolve"/> + <see cref="StepSolve"/> do the same over several frames into a
+    ///    second buffer, published when complete: one full solve of the 144x144 window was a
+    ///    ~20 ms frame in the editor every 0.2 s (07/10 horde profile).
     ///  - <see cref="Direction"/> is the per-enemy query: a table lookup, no physics.
     /// Cells next to an obstacle cost a little more, so paths keep off the banks and cross a bridge
     /// down its middle. Everything is allocated once.
@@ -24,11 +27,16 @@ namespace ZombieWar.WorldNav
         public readonly float CellSize;
         public Vector3 Origin { get; private set; }   // world position of cell (0,0)'s corner
         public bool HasSolution { get; private set; }
+        /// The target of the published solution.
+        public Vector3 SolvedTarget { get; private set; }
+        public bool Solving { get; private set; }
 
         readonly LayerMask _mask;
         readonly bool[] _blocked;
         readonly float[] _extra;              // bank cost
-        readonly float[] _cost;               // path distance to the target, metres
+        float[] _cost;                        // published path distance to the target, metres
+        float[] _work;                        // the solve in progress
+        Vector3 _workTarget;
         readonly int[] _heap;
         readonly int[] _heapPos;
         int _heapCount;
@@ -48,6 +56,7 @@ namespace ZombieWar.WorldNav
             _blocked = new bool[n];
             _extra = new float[n];
             _cost = new float[n];
+            _work = new float[n];
             _heap = new int[n];
             _heapPos = new int[n];
             _hits = new Collider[maxColliders];
@@ -61,6 +70,7 @@ namespace ZombieWar.WorldNav
             System.Array.Clear(_blocked, 0, _blocked.Length);
             System.Array.Clear(_extra, 0, _extra.Length);
             HasSolution = false;
+            Solving = false;                  // the grid moved under it
 
             var boxCentre = new Vector3(Origin.x + half, 0f, Origin.z + half);
             int count = Physics.OverlapBoxNonAlloc(boxCentre, new Vector3(half, 50f, half), _hits, Quaternion.identity, _mask, QueryTriggerInteraction.Ignore);
@@ -126,21 +136,39 @@ namespace ZombieWar.WorldNav
 
         public bool IsBlocked(Vector3 p) => Contains(p) && _blocked[CellOf(p)];
 
-        /// Path distances from every cell to <paramref name="target"/>.
+        /// Path distances from every cell to <paramref name="target"/>, in one go.
         public void Solve(Vector3 target)
         {
-            for (int k = 0; k < _cost.Length; k++) _cost[k] = Unreached;
+            BeginSolve(target);
+            while (Solving && !StepSolve(int.MaxValue)) { }
+        }
+
+        /// Starts a solve toward <paramref name="target"/>; <see cref="StepSolve"/> finishes it. The
+        /// published solution keeps answering <see cref="Direction"/> until then.
+        public void BeginSolve(Vector3 target)
+        {
+            for (int k = 0; k < _work.Length; k++) _work[k] = Unreached;
             _heapCount = 0;
+            Solving = false;
             int start = CellOf(target);
             if (_blocked[start]) start = NearestFree(start);
             if (start < 0) { HasSolution = false; return; }
-            _cost[start] = 0f;
+            _workTarget = target;
+            _work[start] = 0f;
             Push(start);
-            while (_heapCount > 0)
+            Solving = true;
+        }
+
+        /// Settles up to <paramref name="budget"/> cells. True when the solve is complete and published.
+        public bool StepSolve(int budget)
+        {
+            if (!Solving) return false;
+            var cost = _work;
+            while (_heapCount > 0 && budget-- > 0)
             {
                 int k = Pop();
                 int i = k % Size, j = k / Size;
-                float c = _cost[k];
+                float c = cost[k];
                 for (int d = 0; d < 8; d++)
                 {
                     int ni = i + DX[d], nj = j + DZ[d];
@@ -150,13 +178,18 @@ namespace ZombieWar.WorldNav
                     // No corner cutting: a diagonal step needs both side cells open.
                     if (d >= 4 && (_blocked[j * Size + ni] || _blocked[nj * Size + i])) continue;
                     float nc = c + (Step[d] + _extra[nk]) * CellSize;
-                    if (nc >= _cost[nk]) continue;
-                    bool queued = _cost[nk] != Unreached;
-                    _cost[nk] = nc;
+                    if (nc >= cost[nk]) continue;
+                    bool queued = cost[nk] != Unreached;
+                    cost[nk] = nc;
                     if (queued) Up(_heapPos[nk]); else Push(nk);
                 }
             }
+            if (_heapCount > 0) return false;
+            (_cost, _work) = (_work, _cost);
+            SolvedTarget = _workTarget;
             HasSolution = true;
+            Solving = false;
+            return true;
         }
 
         /// Which way to walk from <paramref name="p"/>: toward the cheapest neighbour cell. Zero when
@@ -199,7 +232,7 @@ namespace ZombieWar.WorldNav
             return -1;
         }
 
-        // ── binary min-heap on _cost
+        // ── binary min-heap on _work (the solve in progress)
 
         void Push(int k) { _heap[_heapCount] = k; _heapPos[k] = _heapCount; _heapCount++; Up(_heapCount - 1); }
 
@@ -216,7 +249,7 @@ namespace ZombieWar.WorldNav
             while (i > 0)
             {
                 int p = (i - 1) >> 1;
-                if (_cost[_heap[p]] <= _cost[_heap[i]]) break;
+                if (_work[_heap[p]] <= _work[_heap[i]]) break;
                 Swap(i, p); i = p;
             }
         }
@@ -226,8 +259,8 @@ namespace ZombieWar.WorldNav
             while (true)
             {
                 int l = i * 2 + 1, r = l + 1, m = i;
-                if (l < _heapCount && _cost[_heap[l]] < _cost[_heap[m]]) m = l;
-                if (r < _heapCount && _cost[_heap[r]] < _cost[_heap[m]]) m = r;
+                if (l < _heapCount && _work[_heap[l]] < _work[_heap[m]]) m = l;
+                if (r < _heapCount && _work[_heap[r]] < _work[_heap[m]]) m = r;
                 if (m == i) break;
                 Swap(i, m); i = m;
             }
