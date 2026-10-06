@@ -19,6 +19,7 @@ namespace ZombieWar
     public sealed class ProtectedSave : ISaveService
     {
         public const string Prefix = "hc1:";
+        const string EncryptedMarker = "zw.profile.enc";
         readonly ISaveService _inner;
         readonly byte[] _key;
         readonly Func<string, bool> _isProtected;
@@ -38,6 +39,7 @@ namespace ZombieWar
         {
             if (!_isProtected(key)) { _inner.Set(key, value); return; }
             _inner.Set(key, value == null ? "" : Protect(JsonUtility.ToJson(value)));
+            if (!_inner.Has(EncryptedMarker)) _inner.Set(EncryptedMarker, 1);
         }
 
         public T Get<T>(string key) where T : class
@@ -45,7 +47,10 @@ namespace ZombieWar
             if (!_isProtected(key)) return _inner.Get<T>(key);
             string raw = _inner.GetString(key);
             if (string.IsNullOrEmpty(raw)) return null;
-            if (!raw.StartsWith(Prefix, StringComparison.Ordinal)) return _inner.Get<T>(key);   // written before encryption
+            if (!raw.StartsWith(Prefix, StringComparison.Ordinal))
+                // Written before encryption existed; once this device has saved encrypted, a plain value
+                // can only be an edit, and reads as damaged.
+                return _inner.Has(EncryptedMarker) ? null : _inner.Get<T>(key);
             string json = Unprotect(raw);
             if (json == null) return null;
             try { return JsonUtility.FromJson<T>(json); } catch (Exception) { return null; }

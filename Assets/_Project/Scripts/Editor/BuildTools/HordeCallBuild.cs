@@ -39,6 +39,8 @@ namespace ZombieWar.Editor.Build
             {
                 if (!PlayerSettings.Android.useCustomKeystore || string.IsNullOrEmpty(PlayerSettings.Android.keystoreName))
                     problems.Add("No upload keystore: the bundle would be signed with the debug key, which Google Play refuses.");
+                else if (!File.Exists(PlayerSettings.Android.keystoreName))
+                    problems.Add($"Upload keystore '{PlayerSettings.Android.keystoreName}' is not on this machine (it lives in ~/.hordecall, outside the repo).");
                 var icons = PlayerSettings.GetIcons(target, IconKind.Any);
                 if (icons == null || icons.Length == 0 || icons.All(i => i == null))
                     problems.Add("No app icon is set in Player Settings.");

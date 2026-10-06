@@ -74,6 +74,14 @@ namespace ZombieWar.Tests
         }
 
         [Test]
+        public void APlainValueAfterEncryption_ReadsAsDamaged()
+        {
+            _save.Set("profile", new Wallet { gem = 5 });
+            _raw.Set("profile", new Wallet { gem = 99999 });   // hand-edited back to plain JSON
+            Assert.IsNull(_save.Get<Wallet>("profile"));
+        }
+
+        [Test]
         public void AnotherDevice_CannotRead()
         {
             _save.Set("profile", new Wallet { gem = 9 });

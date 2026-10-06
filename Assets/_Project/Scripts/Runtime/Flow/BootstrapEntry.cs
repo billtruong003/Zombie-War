@@ -18,6 +18,7 @@ namespace ZombieWar
             if (!_cloudAsked) { _cloudAsked = true; Online.CloudSave.RestoreAtBoot(() => _cloudDone = true); }
             if (!_cloudDone) return;
             _entered = true;
+            Online.AnalyticsHooks.Install();
             GameSettings.Apply();
 #if UNITY_EDITOR
             // ZombieWar/Dev/Play Skill Sandbox sets this for one play session.

@@ -10,13 +10,19 @@ namespace ZombieWar.EditorTools
     /// file, so an agent without the Test Runner window can read the result.</summary>
     public static class EditModeTestDump
     {
-        public static void Run(string outPath)
+        public static void Run(string outPath) => Run(outPath, TestMode.EditMode);
+
+        /// <summary>The PlayMode suite, same output format (domain reload is off in this project, so
+        /// the callbacks survive entering Play).</summary>
+        public static void RunPlayMode(string outPath) => Run(outPath, TestMode.PlayMode);
+
+        static void Run(string outPath, TestMode mode)
         {
             System.IO.File.WriteAllText(outPath, "running");
             string note = SaveScenesThatOnlyLookDirty();
             var api = ScriptableObject.CreateInstance<TestRunnerApi>();
             api.RegisterCallbacks(new Callbacks(outPath, note));
-            api.Execute(new ExecutionSettings(new Filter { testMode = TestMode.EditMode }));
+            api.Execute(new ExecutionSettings(new Filter { testMode = mode }));
         }
 
         /// <summary>

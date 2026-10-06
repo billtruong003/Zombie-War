@@ -49,20 +49,22 @@ namespace ZombieWar.Online
                 ChannelId, "Daily rewards", "New daily chest and Daily Ops", Importance.Default));
 #endif
             SceneManager.activeSceneChanged += OnSceneChanged;
-            if (Bill.IsReady) Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
-            else Bill.Events.Subscribe<GameReadyEvent>(OnReady);
         }
 
-        void OnReady(GameReadyEvent _)
+        bool _subscribed;
+
+        // Bill boots in the same frame phase as this object: wait for it rather than guess the order.
+        void Update()
         {
-            Bill.Events.Unsubscribe<GameReadyEvent>(OnReady);
+            if (_subscribed || !Bill.IsReady) return;
+            _subscribed = true;
             Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
         }
 
         void OnDestroy()
         {
             SceneManager.activeSceneChanged -= OnSceneChanged;
-            if (Bill.IsReady) Bill.Events.Unsubscribe<RunFinishedEvent>(OnRunFinished);
+            if (_subscribed && Bill.IsReady) Bill.Events.Unsubscribe<RunFinishedEvent>(OnRunFinished);
             if (_instance == this) _instance = null;
         }
 

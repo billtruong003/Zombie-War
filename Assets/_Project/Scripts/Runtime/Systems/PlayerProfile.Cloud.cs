@@ -31,6 +31,7 @@ namespace ZombieWar
             try { loaded = JsonUtility.FromJson<ProfileData>(json); }
             catch (Exception e) { Debug.LogWarning("[PlayerProfile] Cloud copy unreadable: " + e.Message); return false; }
             if (loaded == null || loaded.version > SchemaVersion) return false;
+            _newerSchema = false;
             _data = Normalize(loaded);
             InvalidateLookups();
             SaveNow();

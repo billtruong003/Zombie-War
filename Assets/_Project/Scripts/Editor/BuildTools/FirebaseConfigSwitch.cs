@@ -12,7 +12,7 @@ namespace ZombieWar.EditorTools
     /// Android build the right one is copied to <see cref="Target"/>, where the Firebase editor
     /// plugin turns it into the Android resources. The editor itself keeps the dev copy.
     /// </summary>
-    public sealed class FirebaseConfigSwitch : IPreprocessBuildWithReport
+    public sealed class FirebaseConfigSwitch : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         public const string Target = "Assets/_Project/Settings/Firebase/google-services.json";
         public int callbackOrder => -100;
@@ -24,6 +24,15 @@ namespace ZombieWar.EditorTools
         {
             if (report.summary.platform != BuildTarget.Android && report.summary.platform != BuildTarget.iOS) return;
             Use((report.summary.options & BuildOptions.Development) != 0);
+        }
+
+        /// <summary>The editor goes back to the dev project after a release build, so Play mode and the
+        /// next development build never report into production.</summary>
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            if ((report.summary.options & BuildOptions.Development) == 0 &&
+                (report.summary.platform == BuildTarget.Android || report.summary.platform == BuildTarget.iOS))
+                Use(true);
         }
 
         [MenuItem("ZombieWar/Build/Firebase - use dev config")]

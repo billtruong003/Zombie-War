@@ -26,37 +26,40 @@ namespace ZombieWar.Online
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { _installed = false; _snapshot = false; Muted = false; Owned.Clear(); Levels.Clear(); Evolved.Clear(); }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Boot()
-        {
-            if (Bill.IsReady) Install();
-            else Bill.Events.Subscribe<GameReadyEvent>(OnReady);
-        }
-
-        static void OnReady(GameReadyEvent _) { Bill.Events.Unsubscribe<GameReadyEvent>(OnReady); Install(); }
-
-        static void Install()
+        /// <summary>Called by BootstrapEntry once Bill is ready. Every handler is a named method removed
+        /// before it is added, so a second Play session in the editor (domain reload off, some of these
+        /// events are not reset) never subscribes twice.</summary>
+        public static void Install()
         {
             if (_installed) return;
             _installed = true;
             TakeSnapshot();
 
             RunScope.Register(OnRunStart);
-            Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
-            Bill.Events.Subscribe<FtueStepEvent>(e => GameAnalytics.Log("ftue_step", ("step", e.Step)));
-            Bill.Events.Subscribe<Stations.StationCompletedEvent>(e =>
-                GameAnalytics.Log("station_complete", ("kind", e.Kind.ToString()), ("seconds", RunSeconds())));
-            RunState.LevelsGained += _ => GameAnalytics.Log("level_up", ("level", RunState.Current?.Level ?? 0), ("seconds", RunSeconds()));
-            Bosses.TitanBoss.Spawned += _ => GameAnalytics.Log("boss_spawn", ("boss", "titan"), ("seconds", RunSeconds()));
-            Bosses.TitanBoss.Died += _ => GameAnalytics.Log("boss_kill", ("boss", "titan"), ("seconds", RunSeconds()));
-            Achievements.Unlocked += d => GameAnalytics.Log("achievement_unlock", ("achievement", d.id));
-            PlayerProfile.DailyChestClaimed += r => GameAnalytics.Log("daily_claim", ("streak", r.streak), ("gems", r.gems));
-            PlayerProfile.MissionClaimed += m => GameAnalytics.Log("mission_claim", ("mission", Short(m.id)), ("scope", m.scope.ToString()));
-            PlayerProfile.WalletChanged += OnProfileChanged;
-            PlayerProfile.LoadoutChanged += OnProfileChanged;
-            GraphicsTier.Changed += l => GameAnalytics.SetUserProperty("graphics_tier", l.ToString());
+            Bill.Events.Unsubscribe<RunFinishedEvent>(OnRunFinished); Bill.Events.Subscribe<RunFinishedEvent>(OnRunFinished);
+            Bill.Events.Unsubscribe<FtueStepEvent>(OnFtueStep); Bill.Events.Subscribe<FtueStepEvent>(OnFtueStep);
+            Bill.Events.Unsubscribe<Stations.StationCompletedEvent>(OnStation); Bill.Events.Subscribe<Stations.StationCompletedEvent>(OnStation);
+            RunState.LevelsGained -= OnLevels; RunState.LevelsGained += OnLevels;
+            Bosses.TitanBoss.Spawned -= OnBossSpawn; Bosses.TitanBoss.Spawned += OnBossSpawn;
+            Bosses.TitanBoss.Died -= OnBossDied; Bosses.TitanBoss.Died += OnBossDied;
+            Achievements.Unlocked -= OnAchievement; Achievements.Unlocked += OnAchievement;
+            PlayerProfile.DailyChestClaimed -= OnDailyChest; PlayerProfile.DailyChestClaimed += OnDailyChest;
+            PlayerProfile.MissionClaimed -= OnMission; PlayerProfile.MissionClaimed += OnMission;
+            PlayerProfile.WalletChanged -= OnProfileChanged; PlayerProfile.WalletChanged += OnProfileChanged;
+            PlayerProfile.LoadoutChanged -= OnProfileChanged; PlayerProfile.LoadoutChanged += OnProfileChanged;
+            GraphicsTier.Changed -= OnTier; GraphicsTier.Changed += OnTier;
             GameAnalytics.SetUserProperty("graphics_tier", GraphicsTier.Current.ToString());
         }
+
+        static void OnFtueStep(FtueStepEvent e) => GameAnalytics.Log("ftue_step", ("step", e.Step));
+        static void OnStation(Stations.StationCompletedEvent e) => GameAnalytics.Log("station_complete", ("kind", e.Kind.ToString()), ("seconds", RunSeconds()));
+        static void OnLevels(int _) => GameAnalytics.Log("level_up", ("level", RunState.Current?.Level ?? 0), ("seconds", RunSeconds()));
+        static void OnBossSpawn(Bosses.TitanBoss _) => GameAnalytics.Log("boss_spawn", ("boss", "titan"), ("seconds", RunSeconds()));
+        static void OnBossDied(Bosses.TitanBoss _) => GameAnalytics.Log("boss_kill", ("boss", "titan"), ("seconds", RunSeconds()));
+        static void OnAchievement(Achievements.Def d) => GameAnalytics.Log("achievement_unlock", ("achievement", d.id));
+        static void OnDailyChest(PlayerProfile.DailyChestReward r) => GameAnalytics.Log("daily_claim", ("streak", r.streak), ("gems", r.gems));
+        static void OnMission(PassMission m) => GameAnalytics.Log("mission_claim", ("mission", Short(m.id)), ("scope", m.scope.ToString()));
+        static void OnTier(GraphicsTier.Level l) => GameAnalytics.SetUserProperty("graphics_tier", l.ToString());
 
         static int RunSeconds() => Mathf.FloorToInt(RunState.Current?.Duration ?? 0f);
 

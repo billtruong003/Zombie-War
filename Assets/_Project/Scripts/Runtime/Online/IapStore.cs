@@ -25,7 +25,7 @@ namespace ZombieWar.Online
         /// <summary>Product ids and whether each is used up when granted (gems) or owned for good.</summary>
         public static readonly (string id, bool consumable)[] Catalog =
         {
-            (PassRewards.PremiumProductId, false),
+            (PassRewards.PremiumProductId, true),   // one season at a time: bought again every season
             ("pack.starter", false),
             ("pack.gems80", true),
             ("pack.gems440", true),
@@ -131,8 +131,9 @@ namespace ZombieWar.Online
             switch (verdict)
             {
                 case Verdict.Grant:
-                    Purchases.Grant(productId);
-                    MarkGranted(token);
+                    MarkGranted(token);   // first: a throwing UI handler must not lead to a second grant
+                    try { Purchases.Grant(productId); }
+                    catch (Exception e) { Debug.LogException(e); }
                     GameAnalytics.Log("purchase", ("product", productId));
                     _store.ConfirmPurchase(order);
                     Finish(productId, true);
@@ -173,8 +174,9 @@ namespace ZombieWar.Online
                 if (productId == null || string.IsNullOrEmpty(token) || granted.Contains(token)) continue;
                 if (Array.Exists(Catalog, c => c.id == productId && !c.consumable))
                 {
-                    Purchases.Grant(productId);
                     MarkGranted(token);
+                    try { Purchases.Grant(productId); }
+                    catch (Exception e) { Debug.LogException(e); }
                 }
             }
         }

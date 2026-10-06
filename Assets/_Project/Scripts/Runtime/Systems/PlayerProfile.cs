@@ -204,6 +204,7 @@ namespace ZombieWar
             _pendingChanges = Change.None;
             _batchSnapshot = null;
             _newerSchema = false;
+            LoadedFromDamage = false;
             WalletChanged = null;
             LoadoutChanged = null;
             CostumeChanged = null;
@@ -249,6 +250,9 @@ namespace ZombieWar
                     var loaded = storage.Get<ProfileData>(SaveKey); // null neu JSON hong (Get<T> catch)
                     if (loaded == null)
                     {
+                        // Also what a phone restored from another phone sees (the save key is per device):
+                        // the cloud copy must be compared again before anything is uploaded over it.
+                        LoadedFromDamage = true;
                         // A damaged save is never overwritten blind: keep its raw text for support,
                         // then fall back to the last profile that loaded cleanly.
                         storage.Set(CorruptKey, storage.GetString(SaveKey));
@@ -294,6 +298,10 @@ namespace ZombieWar
         private static TimerHandle _flushTimer;
 
         public const string BackupKey = "zw.profile.bak", CorruptKey = "zw.profile.corrupt";
+
+        /// <summary>The stored profile could not be read this launch (damaged, or encrypted on another
+        /// device and restored here by Android backup). CloudSave then compares with the server again.</summary>
+        public static bool LoadedFromDamage { get; private set; }
         private static bool _newerSchema;
 
         // ===== Write path =====

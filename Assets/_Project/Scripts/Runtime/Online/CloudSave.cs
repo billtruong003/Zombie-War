@@ -47,7 +47,10 @@ namespace ZombieWar.Online
         /// install, otherwise after the comparison with the server or the wait, whichever is first.</summary>
         public static void RestoreAtBoot(Action done)
         {
-            if (!BackendConfig.Enabled || !RemoteConfig.CloudSaveOn || Linked) { done(); return; }
+            if (!BackendConfig.Enabled || !RemoteConfig.CloudSaveOn) { done(); return; }
+            _ = PlayerProfile.Progress;                     // loads the local profile now, so a damaged one is known
+            if (PlayerProfile.LoadedFromDamage) Linked = false;
+            if (Linked) { done(); return; }
             bool finished = false;
             _bootOpen = true;
             void Finish() { if (finished) return; finished = true; _bootOpen = false; done(); }
@@ -78,8 +81,10 @@ namespace ZombieWar.Online
                 if (!r.Ok) return;
                 long version = JsonUtility.FromJson<VersionReply>(r.Body)?.version ?? 0;
                 string data = version > 0 ? DataOf(r.Body) : null;
+                if (version == 0) { KnownVersion = 0; Linked = true; return; }   // nothing in the cloud yet
                 var cloud = data != null ? PlayerProfile.ProgressOf(data) : null;
-                if (cloud == null) { KnownVersion = version; Linked = true; return; }
+                // A cloud copy this build cannot read (newer build, unexpected reply) is never overwritten.
+                if (cloud == null) { Debug.LogWarning("[CloudSave] Cloud copy unreadable here - not linking."); return; }
 
                 var local = PlayerProfile.Progress;
                 bool cloudAhead = cloud.Value.runs > local.runs || (cloud.Value.runs == local.runs && cloud.Value.xp > local.xp);
@@ -118,6 +123,7 @@ namespace ZombieWar.Online
         public static async void Push()
         {
             if (!BackendConfig.Enabled || !RemoteConfig.CloudSaveOn || _busy || !PlayerProfile.HasProfile) return;
+            if (PlayerProfile.LoadedFromDamage) return;   // wait for the next boot's comparison
             if (!Linked) { await Link(); if (!Linked) return; }
             string json = PlayerProfile.ExportJson();
             if (string.IsNullOrEmpty(json)) return;

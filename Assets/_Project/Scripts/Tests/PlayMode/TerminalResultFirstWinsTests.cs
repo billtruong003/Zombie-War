@@ -41,6 +41,13 @@ namespace ZombieWar.Tests
             RunState.Begin();   // zero-coin run: closing pays nothing
         }
 
+        // The stub has no RunEndV2 (the real result screen lives in the HUD prefab), so the terminal
+        // transition logs this exactly once and freezes the world. A second log would fail the test
+        // as unexpected: that is how these tests see a transition run twice. (Since 04/10 the V1
+        // resultRoot is retired and stays hidden; these tests used to check it.)
+        static void ExpectOneTransition() =>
+            LogAssert.Expect(LogType.Error, "[RunOverlays] No result screen (endV2) wired.");
+
         [TearDown]
         public void TearDown()
         {
@@ -54,10 +61,11 @@ namespace ZombieWar.Tests
         [UnityTest]
         public IEnumerator DeathThenWalkAway_KeepsTheDeath()
         {
+            ExpectOneTransition();
             Bill.Events.Fire(new GameOverEvent());
             yield return null;
 
-            Assert.IsTrue(_resultRoot.activeSelf, "the result screen did not show");
+            Assert.AreEqual(0f, Time.timeScale, "the result transition did not run");
             Assert.AreEqual(RunOutcome.Died, RunState.Current.Outcome);
 
             Bill.Events.Fire(new RunAbandonRequestedEvent());
@@ -69,10 +77,10 @@ namespace ZombieWar.Tests
         [UnityTest]
         public IEnumerator WalkAway_ShowsTheResultAndFreezesTheWorld()
         {
+            ExpectOneTransition();
             Bill.Events.Fire(new RunAbandonRequestedEvent());
             yield return null;
 
-            Assert.IsTrue(_resultRoot.activeSelf, "walking away must still show what was forfeited");
             Assert.AreEqual(RunOutcome.Abandoned, RunState.Current.Outcome);
             Assert.AreEqual(0f, Time.timeScale, "nothing may keep hitting a player reading the result");
         }
@@ -80,6 +88,7 @@ namespace ZombieWar.Tests
         [UnityTest]
         public IEnumerator RepeatedTerminalEvents_ProduceExactlyOnePayout()
         {
+            ExpectOneTransition();
             Bill.Events.Fire(new GameOverEvent());
             yield return null;
             Bill.Events.Fire(new GameOverEvent());
@@ -93,15 +102,15 @@ namespace ZombieWar.Tests
         [UnityTest]
         public IEnumerator ReplayedRunFinishedEvent_DoesNotRerunTheTerminalTransition()
         {
+            ExpectOneTransition();   // a replay that re-ran it would log a second, unexpected time
             Bill.Events.Fire(new GameOverEvent());
             yield return null;
-            _resultRoot.SetActive(false);   // prove a replay cannot bring the screen back
 
             var fakeSummary = new RunSummary(RunOutcome.Abandoned, 0, 1, 0, 0, 0, 0, 0f);
             Bill.Events.Fire(new RunFinishedEvent(new RunClosure.Result(true, fakeSummary, 0, false)));
             yield return null;
 
-            Assert.IsFalse(_resultRoot.activeSelf, "a replayed RunFinishedEvent re-ran the transition");
+            Assert.AreEqual(RunOutcome.Died, RunState.Current.Outcome, "the replayed summary must not replace the real one");
         }
     }
 }

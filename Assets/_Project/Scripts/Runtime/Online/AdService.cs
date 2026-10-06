@@ -161,11 +161,11 @@ namespace ZombieWar.Online
         const string RunsKey = "hc.ads.runs";
 
         static float _lastRunSeconds;
-        static bool _rewardedThisResult;
+        static bool _rewardedThisResult, _showing;
         static float _lastShownAt = -9999f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { _lastRunSeconds = 0f; _rewardedThisResult = false; _lastShownAt = -9999f; }
+        static void ResetStatics() { _lastRunSeconds = 0f; _rewardedThisResult = false; _showing = false; _lastShownAt = -9999f; }
 
         public static void NoteRunEnded(float seconds)
         {
@@ -184,12 +184,14 @@ namespace ZombieWar.Online
         /// otherwise straight away.</summary>
         public static void ThenGo(Action go)
         {
+            if (_showing) return;   // a second tap while the ad opens: the first one already leaves
             float now = Time.realtimeSinceStartup;
-            if (!RemoteConfig.AdsOn || !RemoteConfig.InterstitialOn) { go(); return; }
+            if (PlayerProfile.NoAds || !RemoteConfig.AdsOn || !RemoteConfig.InterstitialOn) { go(); return; }
             if (!Due(now, PlayerPrefs.GetInt(RunsKey, 0))) { go(); return; }
             _lastRunSeconds = 0f;
-            if (AdService.ShowInterstitial(go)) _lastShownAt = now;
-            else go();
+            _showing = true;
+            if (AdService.ShowInterstitial(() => { _showing = false; go(); })) _lastShownAt = now;
+            else { _showing = false; go(); }
         }
     }
 }
