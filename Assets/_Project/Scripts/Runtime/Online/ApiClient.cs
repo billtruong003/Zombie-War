@@ -135,6 +135,9 @@ namespace ZombieWar.Online
             try { await req.SendWebRequest(); }
             catch (Exception e) { Debug.LogWarning($"[Api] {method} {path}: {e.Message}"); return default; }
             if (req.result == UnityWebRequest.Result.ConnectionError) return default;
+            if (DateTime.TryParse(req.GetResponseHeader("Date"), System.Globalization.CultureInfo.InvariantCulture,
+                                  System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out var serverNow))
+                GameClock.SetServerTime(serverNow);
             return new Response(req.responseCode, req.downloadHandler?.text);
         }
     }

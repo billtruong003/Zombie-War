@@ -224,8 +224,16 @@ namespace ZombieWar
         // Bill.Save chi ton tai sau bootstrap; fallback dung SaveService cuc bo — vo hai vi
         // SaveService stateless tren PlayerPrefs voi cung format key "s0_*". Neu du an bat dau
         // dung SetSlot (multi-slot save) thi fallback nay phai bo.
-        private static ISaveService Storage =>
-            StorageOverride ?? (Bill.IsReady ? Bill.Save : _fallbackStorage ??= new SaveService());
+        private static ISaveService Storage => StorageOverride ?? Protected(Bill.IsReady ? Bill.Save : _fallbackStorage ??= new SaveService());
+
+        // The profile and its backup are stored encrypted (ProtectedSave); the wrapper follows Bill.Save.
+        private static ProtectedSave _protected;
+        private static ISaveService Protected(ISaveService inner)
+        {
+            if (_protected == null || !ReferenceEquals(_protected.Inner, inner))
+                _protected = new ProtectedSave(inner, key => key == SaveKey || key == BackupKey || key == CorruptKey);
+            return _protected;
+        }
 
         public static bool HasProfile => Storage.Has(SaveKey);
 

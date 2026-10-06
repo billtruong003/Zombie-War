@@ -14,8 +14,10 @@ namespace ZombieWar
     ///    PH/SG/WITA, 23:00 in VN/Jakarta - one moment for the launch markets).
     ///  - Time never runs backwards: the latest time ever seen is kept in the profile and the clock
     ///    returns at least that. Setting the device clock back cannot reopen a day, wipe a stamp
-    ///    cycle or end a season early. (Moving it forward cannot be told apart from real time
-    ///    without a server - see backend-features-deferred.)
+    ///    cycle or end a season early.
+    ///  - Once the server has answered in this session (its Date header, 06/10), "now" is the server's
+    ///    time plus the real time elapsed since, so moving the device clock forward does not open
+    ///    tomorrow's rewards either. Offline the device clock is used, still never backwards.
     /// Callers that need testable rules still take a day number; only the UI and services read
     /// <see cref="Today"/>.
     /// </summary>
@@ -29,12 +31,27 @@ namespace ZombieWar
         /// <summary>Tests and QA can pin the clock; null = the device clock.</summary>
         internal static Func<DateTime> SourceOverride;
 
+        static DateTime? _serverAnchor;
+        static double _anchorRealtime;
+
+        /// <summary>The server's time as of now (from a response); later reads add real elapsed time.</summary>
+        public static void SetServerTime(DateTime utc)
+        {
+            _serverAnchor = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+            _anchorRealtime = Time.realtimeSinceStartupAsDouble;
+        }
+
+        static DateTime SourceNow =>
+            SourceOverride != null ? SourceOverride()
+            : _serverAnchor is DateTime a ? a.AddSeconds(Time.realtimeSinceStartupAsDouble - _anchorRealtime)
+            : DateTime.UtcNow;
+
         /// <summary>UTC now, never earlier than the latest time this profile has seen.</summary>
         public static DateTime UtcNow
         {
             get
             {
-                var now = SourceOverride != null ? SourceOverride() : DateTime.UtcNow;
+                var now = SourceNow;
                 now = DateTime.SpecifyKind(now, DateTimeKind.Utc);
                 var seen = PlayerProfile.LastSeenUtc;
                 if (now < seen) return seen;
@@ -62,6 +79,6 @@ namespace ZombieWar
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() => SourceOverride = null;
+        static void ResetStatics() { SourceOverride = null; _serverAnchor = null; }
     }
 }
