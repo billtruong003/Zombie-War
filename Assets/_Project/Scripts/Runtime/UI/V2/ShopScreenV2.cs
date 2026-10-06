@@ -145,7 +145,7 @@ namespace ZombieWar.UI
         {
             var p = ShopOffers.FindPack(id);
             if (!ShopOffers.CanBuyPack(p)) { Toast.Show("Already bought"); return; }
-            Purchases.Buy(p.id, p.price, () => { if (ShopOffers.GrantPack(p)) { UIFeedback.Purchase(); Refresh(); } });
+            Purchases.Buy(p.id, p.price, () => { UIFeedback.Purchase(); Refresh(); });
         }
 
         void TapSkin(int i)

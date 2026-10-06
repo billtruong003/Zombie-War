@@ -110,7 +110,7 @@ namespace ZombieWar.UI
         void BuyPremium()
         {
             if (PassRewards.IsPremium) { Toast.Show("Premium is active"); return; }
-            Purchases.Buy(PassRewards.PremiumProductId, PassRewards.PremiumPrice, () => { PassRewards.UnlockPremium(); Refresh(); });
+            Purchases.Buy(PassRewards.PremiumProductId, PassRewards.PremiumPrice, Refresh);
         }
 
         void ScrollToLevel()

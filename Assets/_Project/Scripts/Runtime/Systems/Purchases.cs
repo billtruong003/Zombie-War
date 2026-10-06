@@ -37,21 +37,43 @@ namespace ZombieWar
     }
 
     /// <summary>
-    /// M10 hook for real-money products (premium pass, gem packs, starter pack). The store SDK is
-    /// wired in M11; until then a development build simulates a successful purchase so the flows
-    /// can be tested, and a release build says the store is not open yet. Nothing is charged here.
+    /// Real-money products (premium pass, gem packs, starter pack, no ads, legend pack). On Android
+    /// they go through Google Play (<see cref="Online.IapStore"/>): the item is granted by
+    /// <see cref="Grant"/> once the purchase is checked, also when it comes back after a restart or
+    /// a reinstall; <c>onSuccess</c> only refreshes the screen. The editor (and development builds
+    /// without a store) simulate a successful purchase so the flows can be tested.
     /// </summary>
     public static class Purchases
     {
+        public static event Action<string> Granted;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Granted = null;
+
         public static void Buy(string productId, string priceLabel, Action onSuccess)
         {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (Online.IapStore.Buy(productId, ok => { if (ok) onSuccess?.Invoke(); })) return;
+#endif
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Purchases] DEV: simulated purchase of {productId} ({priceLabel})");
+            Grant(productId);
             onSuccess?.Invoke();
             UI.Toast.Show("Dev build: purchase simulated");
 #else
-            UI.Toast.Show("The store opens soon");
+            UI.Toast.Show("The store is not available right now");
 #endif
+        }
+
+        /// <summary>Gives what a product contains. Safe to call twice for owned-for-good items;
+        /// gem packs are guarded by the purchase token upstream.</summary>
+        public static bool Grant(string productId)
+        {
+            bool ok;
+            if (productId == PassRewards.PremiumProductId) { PassRewards.UnlockPremium(); ok = true; }
+            else ok = ShopOffers.GrantPack(ShopOffers.FindPack(productId));
+            if (ok) Granted?.Invoke(productId);
+            return ok;
         }
     }
 }
