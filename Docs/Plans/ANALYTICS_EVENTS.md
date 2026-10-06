@@ -1,7 +1,24 @@
-# Analytics events — draft for owner approval (06/10)
+# Analytics events (06/10)
 
-Status: **DRAFT, not wired yet.** Only `ad_rewarded_show` and `ad_interstitial_show` fire today (from
-`AdService`). The rest is wired after the owner approves this list.
+Status: **approved 06/10 (owner: "pick the most reasonable, store-safe option") and wired.**
+Verified in the editor with a bot run (BotLab): run_start, skill_pick, level_up, station_complete,
+achievement_unlock, earn_virtual_currency, run_end and new_best all fired with the parameters below.
+
+Decisions taken for the owner's three questions:
+1. The list stays as drafted, minus `boss_*` until bosses ship in runs, `perf_low_fps` and
+   `cloud_save` (later, when there is something to act on), and `purchase_*` (Round 8 IAP).
+2. `skill_pick` sends only the card taken (skill, rank, evolution), not the three offered.
+3. The WebGL build sends nothing (`GameAnalytics.SendWebEventsToServer = false`): a web page would
+   need its own consent banner first.
+4. FTUE uses `ftue_step` with the step id; the standard `tutorial_begin/complete` names are not used
+   because the FTUE is a set of independent steps, not one line.
+
+Where each event is logged: `Online/AnalyticsHooks.cs` listens to existing signals (run start/end,
+FTUE steps, stations, level ups, achievements, daily chest, missions, wallet and gun changes);
+`skill_pick` in `SkillRuntime.Take`, `run_revive` in `ReviveRules`, `gacha_pull` in
+`GachaBanners.Pull`, ad events in `AdService` and `RewardedAds`. Currency and gun events are found
+by comparing the profile before and after a change; inside a run they are not logged (run_end
+carries the run's earnings), and a cloud restore is muted.
 
 Where they go: Firebase Analytics on Android/iOS (projects `hordecall-dev` for development builds,
 `hordecall-prod` for release), our own server (`POST /v1/events`) on WebGL, and nowhere in the editor.
@@ -73,7 +90,26 @@ Four questions the first months must answer:
 ## User properties
 `graphics_tier`, `ftue_done` (bool), `vip_level`, `runs_bucket` (0, 1-5, 6-20, 21+), `best_score_bucket`.
 
-## Questions for the owner
-1. Approve the list as is, or add/remove events?
-2. `skill_pick` sends the three offered cards: fine (helps balance), or only the picked one?
-3. Should the WebGL (web) build send events to our server, or stay silent?
+## Store safety: what must be true before release
+The privacy policy is live at https://billtruong003.github.io/billthedev-legal/hordecall.html
+(repo billthedev-legal). It promises these, so each must exist in the release build:
+- [ ] HTTPS for the server (domain + certificate); release builds refuse plain HTTP anyway.
+- [ ] Settings → **Privacy options** button, shown when `AdService.PrivacyOptionsRequired` (UMP rule).
+- [ ] Settings → **Delete account** (calls `DELETE /v1/account`, then wipes the local profile).
+- [ ] Settings → **Privacy policy** link.
+- [ ] Gun crate **drop rates** visible before opening (Google Play rule for paid random items).
+- [ ] Player ID visible on the profile screen (the policy's email deletion route uses it; the
+      server finds it inside the cloud save).
+- [ ] Firebase Analytics data retention set to 14 months or less (default 2 months is fine).
+
+Google Play Data safety form (draft answers, check against Google's current SDK guidance):
+| Data type | Collected | Shared | Why | Optional |
+|---|---|---|---|---|
+| Device or other IDs (hashed Android ID, Firebase app instance ID, advertising ID) | Yes | Advertising ID with Google AdMob | App functionality, analytics, advertising | No |
+| App interactions (gameplay events) | Yes | No | Analytics | No |
+| Crash logs, diagnostics | Yes | No | App functionality (crash fixing) | No |
+| Approximate location (from IP, by Google SDKs) | Yes | With Google AdMob | Advertising, analytics | No |
+| Other user-generated content (leaderboard name) | Yes, once leaderboards ship | No | App functionality | Yes |
+| Purchase history | Yes, once IAP ships | No | App functionality | No |
+Encrypted in transit: yes (HTTPS). Users can request deletion: yes (in app + email, URL above).
+Target audience 13+, not designed for children; ads present; in-app purchases; random items (crates).
