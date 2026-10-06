@@ -214,9 +214,13 @@ namespace ZombieWar.UI
             Toast.Show(on ? "Skin removed" : $"{set.name} on {_selected.weaponName} · +{WeaponSkins.DamageBonus(set) * 100f:0}% damage");
         }
 
+        // The Star button buys an unowned gun and then upgrades it: a double tap did both, spending
+        // shards and coin on a star the player never asked for (07/10). A beat after each success.
+        float _starReadyAt;
+
         void Star()
         {
-            if (_selected == null) return;
+            if (_selected == null || Time.unscaledTime < _starReadyAt) return;
             if (!PlayerProfile.IsWeaponOwned(_selected.WeaponId))
             {
                 // FTUE v2: a gun the player can afford is bought right here.
@@ -224,6 +228,7 @@ namespace ZombieWar.UI
                 {
                     if (PlayerProfile.TryPurchaseWeapon(_selected.WeaponId, _selected.price) == PlayerProfile.PurchaseResult.Purchased)
                     {
+                        _starReadyAt = Time.unscaledTime + 0.4f;
                         PlayerProfile.SetEquippedWeapon(_selected.WeaponId);
                         UIFeedback.Purchase();
                         Toast.Show($"{_selected.weaponName} is yours");
@@ -243,6 +248,7 @@ namespace ZombieWar.UI
             switch (r)
             {
                 case PlayerProfile.WeaponUpgradeResult.Upgraded:
+                    _starReadyAt = Time.unscaledTime + 0.4f;
                     UIFeedback.LevelUp();
                     Toast.Show($"{_selected.weaponName} reached {PlayerProfile.GetWeaponLevel(_selected.WeaponId)} stars");
                     ZombieWar.Audio.FtueVoice.StarUpgraded();

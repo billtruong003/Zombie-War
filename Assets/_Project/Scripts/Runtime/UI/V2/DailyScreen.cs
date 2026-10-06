@@ -62,10 +62,16 @@ namespace ZombieWar.UI
             // then does it stamp. One thing to press at a time.
             if (stampButton != null) stampButton.onClick.AddListener(() =>
             {
+                // A double tap claimed the gift and stamped at once, and the second toast hid the
+                // gift's (07/10): the button rests a beat after each press.
+                if (Time.unscaledTime < _stampReadyAt) return;
+                _stampReadyAt = Time.unscaledTime + 0.4f;
                 if (DailyRewards.CanClaimWelcome(DailyRewards.Today)) ClaimWelcome(); else Stamp();
             });
             if (makeUpButton != null) makeUpButton.onClick.AddListener(MakeUp);
         }
+
+        float _stampReadyAt;
 
         private void OnEnable() { PlayerProfile.AccountChanged += Refresh; PlayerProfile.WalletChanged += Refresh; }
         private void OnDisable() { PlayerProfile.AccountChanged -= Refresh; PlayerProfile.WalletChanged -= Refresh; }

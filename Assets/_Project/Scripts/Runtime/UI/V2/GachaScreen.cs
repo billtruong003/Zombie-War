@@ -113,6 +113,12 @@ namespace ZombieWar.UI
         private void OnEnable() => PlayerProfile.WalletChanged += Refresh;
         private void OnDisable() => PlayerProfile.WalletChanged -= Refresh;
 
+        protected override void OnHide()
+        {
+            if (_reveal != null) { StopCoroutine(_reveal); _reveal = null; }
+            if (spotlight != null) spotlight.ForceHide();
+        }
+
         protected override void OnShow()
         {
             if (resultsSheet != null) resultsSheet.SetActive(false);
@@ -123,10 +129,15 @@ namespace ZombieWar.UI
 
         public override bool OnEscape()
         {
+            // Mid-reveal, Back finishes the reveal: closing the sheet left the reveal waiting for a
+            // tap it could no longer get, and the next pull showed the old prize (07/10).
+            if (_reveal != null) { _skip = true; return true; }
             if (resultsSheet != null && resultsSheet.activeSelf) { resultsSheet.SetActive(false); return true; }
             if (ratesSheet != null && ratesSheet.activeSelf) { ratesSheet.SetActive(false); return true; }
             return false;
         }
+
+        int _day = int.MinValue;
 
         void Update()
         {
@@ -134,6 +145,10 @@ namespace ZombieWar.UI
             if (!_rateIcons && (_rateIconsAt -= Time.unscaledDeltaTime) <= 0f) { _rateIcons = true; RateIcons(); }
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
+            // A new game day while the screen is open: its deals, free pull and missions change now,
+            // not when the screen is next opened (07/10).
+            int today = DailyRewards.Today;
+            if (_day != today) { bool first = _day == int.MinValue; _day = today; if (!first && _reveal == null) Refresh(); }
             if (freeLabel == null) return;
             freeLabel.text = GachaBanners.FreePullReady(DailyRewards.Today) ? "FREE PULL READY" : "FREE PULL IN " + ShopOffers.RefreshIn();
         }
@@ -166,6 +181,7 @@ namespace ZombieWar.UI
             resultsSheet.SetActive(true);
             resultsSheet.transform.SetAsLastSibling();
             if (_reveal != null) StopCoroutine(_reveal);
+            if (spotlight != null) spotlight.ForceHide();
             _reveal = StartCoroutine(Reveal(results));
         }
 
@@ -511,6 +527,7 @@ namespace ZombieWar.UI
             bool gunShow = bn.kind != GachaBanners.Kind.Outfits;
             if (gunArt != null) gunArt.gameObject.SetActive(gunShow);
             if (outfitArt != null) outfitArt.gameObject.SetActive(!gunShow);
+            if (turntable != null) turntable.enabled = gunShow;   // its camera rendered under the outfit art
             if (gunShow && turntable != null)
             {
                 var guns = WeaponCatalog.Active != null ? WeaponCatalog.Active.DisplayData() : new List<WeaponData>();
@@ -549,7 +566,9 @@ namespace ZombieWar.UI
                 if (t.label != null) t.label.text = $"{rates[i].percent:0.#}%";
                 if (t.note != null) t.note.text = TileNote(rates[i].label);
             }
-            _rateIcons = false; _rateIconsAt = 0.5f; _rateTries = 0; _skinShotId = null;
+            // The skin still is keyed by its skin id: clearing it here re-read the turntable from the
+            // GPU (a 2.3 MB copy, up to ten tries) on every refresh and pull (07/10 audit).
+            _rateIcons = false; _rateIconsAt = 0.5f; _rateTries = 0;
             if (note != null) note.text = GachaBanners.DuplicateRule(bn);
             _tick = 0f; Update();
         }

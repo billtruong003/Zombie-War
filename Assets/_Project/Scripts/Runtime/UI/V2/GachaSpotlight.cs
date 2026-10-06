@@ -244,6 +244,17 @@ namespace ZombieWar.UI
             root.SetActive(false);
         }
 
+        /// <summary>Ends a reveal cut short (its coroutine was stopped): nothing stays on screen.</summary>
+        public void ForceHide()
+        {
+            if (root == null || !root.activeSelf) return;
+            ShowWear(false);
+            if (tapArea != null) tapArea.interactable = true;
+            SetGroupAlpha(1f);
+            if (particles != null) particles.Clear();
+            root.SetActive(false);
+        }
+
         void ShowWear(bool on)
         {
             if (wearNow != null) { wearNow.gameObject.SetActive(on); if (on) UIFx.PopIn(wearNow.transform); }

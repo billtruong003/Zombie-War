@@ -99,10 +99,16 @@ namespace ZombieWar.UI
         protected override void OnShow() { Refresh(); Jump(0, false); ZombieWar.Audio.RadioDirector.ShopShown(); }
         protected override void OnFocus() => Refresh();
 
+        int _day = int.MinValue;
+
         void Update()
         {
             if ((_tick -= Time.unscaledDeltaTime) > 0f) return;
             _tick = 1f;
+            // A new game day while the screen is open: its deals, free pull and missions change now,
+            // not when the screen is next opened (07/10).
+            int today = DailyRewards.Today;
+            if (_day != today) { bool first = _day == int.MinValue; _day = today; if (!first) Refresh(); }
             if (dealsTimer != null) dealsTimer.text = "NEW IN " + ShopOffers.RefreshIn();
             var left = ShopOffers.StarterLeft(GameClock.UtcNow);
             if (hero != null && hero.activeSelf != left > TimeSpan.Zero) hero.SetActive(left > TimeSpan.Zero);

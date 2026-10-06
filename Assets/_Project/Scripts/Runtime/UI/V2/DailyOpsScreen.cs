@@ -68,10 +68,16 @@ namespace ZombieWar.UI
             ZombieWar.Audio.RadioDirector.MissionsShown();
         }
 
+        int _day = int.MinValue;
+
         void Update()
         {
             if (Time.unscaledTime < _nextClock) return;
             _nextClock = Time.unscaledTime + 1f;
+            // A new game day while the screen is open: its deals, free pull and missions change now,
+            // not when the screen is next opened (07/10).
+            int today = DailyRewards.Today;
+            if (_day != today) { bool first = _day == int.MinValue; _day = today; if (!first) Refresh(); }
             Set(resetLabel, "RESETS IN " + GameClock.UntilNextResetText());
         }
 

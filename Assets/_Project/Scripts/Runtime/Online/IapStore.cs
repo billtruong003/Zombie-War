@@ -105,6 +105,8 @@ namespace ZombieWar.Online
         public static bool Buy(string productId, Action<bool> done)
         {
             if (!_ready || _store.GetProductById(productId) is not { availableToPurchase: true }) return false;
+            // A second tap while the store sheet opens would start a second purchase (07/10).
+            if (Waiting.ContainsKey(productId)) return true;
             Waiting[productId] = done;
             GameAnalytics.Log("purchase_start", ("product", productId));
             _store.PurchaseProduct(productId);
@@ -184,7 +186,9 @@ namespace ZombieWar.Online
         static void Finish(string productId, bool ok, bool quiet = false)
         {
             if (Waiting.Remove(productId, out var done)) done?.Invoke(ok);
-            else if (!ok && !quiet) UI.Toast.Show("The purchase did not go through");
+            // Screens only refresh on success, so the failure is said here whoever waited (07/10:
+            // a network or server failure was silent).
+            if (!ok && !quiet) UI.Toast.Show("The purchase did not go through");
         }
 #else
         public static string PriceOf(string productId) => null;
