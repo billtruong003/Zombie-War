@@ -2,7 +2,7 @@
 
 Source: `Assets/ThirdParty/BillGameCore/Runtime/Services/Tween/` (`BillTween.cs`, `Tween.cs`, `TweenSequence.cs`, `Ease.cs`, `TweenExtensions.cs`). Namespace `BillGameCore`.
 
-**This is the project's tweener. Do not use DOTween.** Pooled, zero-alloc, float-based, ticked by the framework's `CoroutineRunner` (so it only runs after BillBootstrap is ready). All facade methods return `Tween` (or `TweenSequence`) and may be **null** before bootstrap - always call fluent methods with `?.`.
+**This is the project's tweener. Do not use DOTween.** Pooled (each shortcut still allocates one setter closure), float-based, ticked through the ServiceLocator tickables on the framework's root object (so it only runs after BillBootstrap is ready). The in-project copy still has the sequence double-tick bug fixed in package 3.1.0: avoid `TweenSequence`/`Move`/`ScaleTo` until the game moves to `com.bill.gamecore`. All facade methods return `Tween` (or `TweenSequence`) and may be **null** before bootstrap - always call fluent methods with `?.`.
 
 ## `BillTween` static facade
 

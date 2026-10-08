@@ -23,6 +23,32 @@ Doc này mô tả **những gì có sẵn** để không ai viết lại thứ f
 
 **Cấm tuyệt đối:** DOTween. Mọi animation đi qua BillTween / `UITransition`.
 
+### 1.1 Bản package tách riêng (08/10)
+
+Các thành phần trên đã có bản UPM riêng trên GitHub, tài liệu tại
+https://billtruong003.github.io/BillGameCore/. **Game vẫn đang dùng bản copy cũ trong project**,
+chưa chuyển sang package.
+
+| Repo | Package | Thay cho |
+|---|---|---|
+| `billtruong003/BillGameCore` `v3.1.0` | `com.bill.gamecore`, `com.bill.inspector` | `Assets/ThirdParty/BillGameCore` (Runtime, BillInspector) |
+| `billtruong003/BillFav` `v1.0.0` | `com.bill.fav` | `BillGameCore/BillFav` |
+| `billtruong003/BillSceneSwitcher` `v2.0.0` | `com.bill.sceneswitcher` | `BillGameCore/BillSceneSwitcher` |
+| `billtruong003/Bill-SSOutline` `v2.0.0` | `com.bill.ss-outline` | `Assets/_Project/Art/Rendering/BillSSOutline` |
+| `billtruong003/BillVAT` `v1.0.0` | `com.bill.vat` | `Assets/ThirdParty/VAT` |
+| `billtruong003/stylized-toon-world-kit` `v0.7.0` | `com.billtruong.stylized-toon-world-kit` | đã nhận patch `URPCompat`/SSAO của game |
+
+Bản package khác bản trong game ở các điểm sau, cần xử lý khi chuyển game sang:
+
+- **BillTween:** sequence không còn tick tween hai lần, và `Join` chạy song song. Bản trong game vẫn
+  còn lỗi này (§2.5).
+- **Define cheat:** `ZW_CHEATS` đổi thành `BILL_CHEATS`.
+- **Outline:** namespace đổi thành `BillSSOutline`. Bốn chỗ gọi `OutlineLayers`, `OutlineLook`,
+  `OutlineCameraWidth`, `GraphicsTier` chuyển sang `OutlineOverrides`. Biến `_ZWOutlineAlphaLayers`
+  đổi thành `_BillOutlineAlphaLayers`, hàm `ZWOutlineAlpha` đổi thành `BillOutlineAlpha`.
+- GUID của mọi script, shader và asset được giữ nguyên, nên scene, prefab và material không mất tham
+  chiếu.
+
 ---
 
 ## 2. BillGameCore
