@@ -1,0 +1,220 @@
+<title>HordeCall Icon Prompts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a working checklist — style block pinned first, then one copyable card per icon, grouped by tier. */
+:root{--bg:#EDF0F4;--surface:#fff;--ink:#1B1E27;--muted:#5C6473;--line:#D5DAE2;--code:#F4F6F9;--accent:#6C4BD8;--ok:#1F9D63;
+--display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;--body:"Be Vietnam Pro",system-ui,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13161C;--surface:#1C2029;--ink:#E7EBF1;--muted:#9AA3B2;--line:#2C3240;--code:#151920;--accent:#A88CFF;--ok:#4CC98C;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13161C;--surface:#1C2029;--ink:#E7EBF1;--muted:#9AA3B2;--line:#2C3240;--code:#151920;--accent:#A88CFF;--ok:#4CC98C;color-scheme:dark}
+*{box-sizing:border-box} body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 60px;display:grid;gap:30px}
+h1,h2{font-family:var(--display);margin:0;line-height:1.1;text-wrap:balance} h1{font-size:clamp(30px,5vw,44px)} h2{font-size:22px}
+p{margin:0;max-width:72ch} .muted{color:var(--muted)} .n{font:600 13px var(--mono);color:var(--muted)}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.box.style{border-left:4px solid var(--accent)}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:13px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.grp{display:grid;gap:12px} .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:12px}
+.p{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-width:0}
+.h{display:flex;justify-content:space-between;align-items:center;gap:8px} .id{font:600 14px var(--mono);color:var(--accent);overflow-wrap:anywhere}
+.what{font-size:13px;color:var(--muted)} .note{font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}
+.copy{font:600 13px var(--body);border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:4px 14px;cursor:pointer;white-space:nowrap}
+.copy:hover{background:var(--accent);color:var(--surface)} .copy:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.copy.done{border-color:var(--ok);color:var(--ok);background:transparent} .copy.sm{padding:2px 10px;font-size:12px}
+.fix{list-style:none;margin:0;padding:0;display:grid;gap:8px} .fix li{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.fix code{grid-column:1/-1;font:12.5px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+</style>
+<div class="wrap">
+<header style="display:grid;gap:10px"><div class="kicker">HordeCall · icon skill · đợt 2</div><h1>HordeCall Icon Prompts</h1>
+<p class="muted">43 thẻ mới từ phase A (A3–A7) đang hiện chữ viết tắt thay icon. Mỗi thẻ một prompt, bấm Copy rồi dán vào ChatGPT. Style giữ y như 35 icon đợt 1. Bản gốc: <code>Review/M8/skill_icon_prompts_v2.md</code>.</p></header>
+<section class="box"><h2>Cách làm</h2><ol class="steps">
+<li>Mở <b>một</b> cuộc chat ChatGPT mới cho cả 43 icon.</li>
+<li>Tin nhắn đầu: đính kèm 5 icon đã duyệt trong <code>Assets/_Project/UI/Icons/Skills/</code> (<code>auto.drone</code>, <code>stat.maxhealth</code>, <code>evo.carpetbomb</code>, <code>uni.kinetic</code>, <code>sidearm.rungun</code>) và <code>Review/M8/icon_style/levelup_context.png</code>, dán Style block bên dưới, rồi dán prompt <code>auto.toxic</code>. Vẽ lại đến khi ưng: đó là icon neo.</li>
+<li>Các icon sau: dán từng prompt. Cứ khoảng 8 icon đính kèm lại icon neo để style không trôi.</li>
+<li>PNG phải có nền trong suốt (thấy nền caro). Lưu tên <code>&lt;id&gt;.png</code>.</li>
+<li>Chép file vào <code>Assets/_Project/UI/Icons/Skills/</code> rồi báo tôi: tôi chạy lệnh ghép icon và chụp contact sheet để duyệt.</li></ol></section>
+<section class="box style"><div class="h"><h2>Style block (tin nhắn đầu)</h2><button type="button" class="copy" data-t="You are drawing skill icons for HordeCall, a cute cartoon zombie-survival mobile shooter
+(auto-aim, level-up cards). I will ask for 35 icons one by one; keep them one consistent set.
+
+Style rules for EVERY icon:
+- Minimal toon icon: ONE bold central object, chunky rounded shapes, slight 3/4 view.
+- Thick dark outline #1F2330, about 6% of the icon width, on the whole silhouette.
+- Flat colours: one base colour, ONE soft cel-shade band, ONE small white highlight.
+  No gradients, no texture, no noise, no realistic rendering.
+- The object fills about 80% of the square canvas, centred, nothing touching the edges.
+- Must read clearly at 48 x 48 pixels on a dark tile (#2F3544): high contrast, few details.
+- Fully transparent background (PNG with alpha). No backdrop, no circle, no square tile,
+  no frame, no floor shadow.
+- No text, no letters, no numbers, no logos.
+- Friendly and cute, not gory: no blood.
+- Square 1024 x 1024.
+The attached samples show the rules only (outline, flat colour, one shade band, one highlight,
+transparent); draw more polished and cuter than them, do not copy them.
+The attached level-up screenshot shows where the icon sits (the small square on the left of each card).
+The attached icons are the approved set: match their outline, colours and finish exactly.">Copy</button></div><pre>You are drawing skill icons for HordeCall, a cute cartoon zombie-survival mobile shooter
+(auto-aim, level-up cards). I will ask for 35 icons one by one; keep them one consistent set.
+
+Style rules for EVERY icon:
+- Minimal toon icon: ONE bold central object, chunky rounded shapes, slight 3/4 view.
+- Thick dark outline #1F2330, about 6% of the icon width, on the whole silhouette.
+- Flat colours: one base colour, ONE soft cel-shade band, ONE small white highlight.
+  No gradients, no texture, no noise, no realistic rendering.
+- The object fills about 80% of the square canvas, centred, nothing touching the edges.
+- Must read clearly at 48 x 48 pixels on a dark tile (#2F3544): high contrast, few details.
+- Fully transparent background (PNG with alpha). No backdrop, no circle, no square tile,
+  no frame, no floor shadow.
+- No text, no letters, no numbers, no logos.
+- Friendly and cute, not gory: no blood.
+- Square 1024 x 1024.
+The attached samples show the rules only (outline, flat colour, one shade band, one highlight,
+transparent); draw more polished and cuter than them, do not copy them.
+The attached level-up screenshot shows where the icon sits (the small square on the left of each card).
+The attached icons are the approved set: match their outline, colours and finish exactly.</pre></section>
+<section class="grp"><h2>2.1 Stat (#9EA8B8) <span class="n">5</span></h2><div class="list"><article class="p"><div class="h"><code class="id">stat.cooldown</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;stat.cooldown&quot;: a chunky round stopwatch with a curved
+arrow looping around it clockwise, as if spinning faster. Main colour steel grey-blue #9EA8B8,
+the arrow pale cyan.">Copy</button></div><p class="what">Cooldown. Skill làm gì: power hồi chiêu nhanh hơn 35%.</p><pre>Same style as the approved icons. Icon &quot;stat.cooldown&quot;: a chunky round stopwatch with a curved
+arrow looping around it clockwise, as if spinning faster. Main colour steel grey-blue #9EA8B8,
+the arrow pale cyan.</pre></article><article class="p"><div class="h"><code class="id">stat.area</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;stat.area&quot;: a small round target dot with three
+concentric rings spreading outward and four short arrows pointing out from it. Main colour
+steel grey-blue #9EA8B8.">Copy</button></div><p class="what">Area. Skill làm gì: vùng tác dụng của power to hơn 40%.</p><pre>Same style as the approved icons. Icon &quot;stat.area&quot;: a small round target dot with three
+concentric rings spreading outward and four short arrows pointing out from it. Main colour
+steel grey-blue #9EA8B8.</pre></article><article class="p"><div class="h"><code class="id">stat.pickup</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;stat.pickup&quot;: a big cartoon hand, palm open, with two
+small gold coins and a green gem flying toward it along curved lines. Main colour steel grey-blue
+#9EA8B8 for the hand.">Copy</button></div><p class="what">Pickup Range. Skill làm gì: vật phẩm bay về từ xa hơn 125%.</p><pre>Same style as the approved icons. Icon &quot;stat.pickup&quot;: a big cartoon hand, palm open, with two
+small gold coins and a green gem flying toward it along curved lines. Main colour steel grey-blue
+#9EA8B8 for the hand.</pre><p class="note">Khác `stat.coingain` (nam châm + chồng coin): ở đây là bàn tay đón đồ bay tới.</p></article><article class="p"><div class="h"><code class="id">stat.regen</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;stat.regen&quot;: a plump heart with a small green leaf
+sprouting from its top and two tiny rising plus signs beside it. Main colour steel grey-blue
+#9EA8B8, soft green leaf and plus signs.">Copy</button></div><p class="what">Regeneration. Skill làm gì: hồi 2% máu tối đa mỗi giây.</p><pre>Same style as the approved icons. Icon &quot;stat.regen&quot;: a plump heart with a small green leaf
+sprouting from its top and two tiny rising plus signs beside it. Main colour steel grey-blue
+#9EA8B8, soft green leaf and plus signs.</pre><p class="note">Khác `stat.maxhealth` (tim có dấu cộng trắng ở giữa): ở đây là lá non và dấu cộng bay lên.</p></article><article class="p"><div class="h"><code class="id">stat.luck</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;stat.luck&quot;: a four-leaf clover with a tiny sparkle on
+one leaf. Leaves steel grey-blue #9EA8B8 with a soft green shade band.">Copy</button></div><p class="what">Luck. Skill làm gì: vật phẩm và rương rơi nhiều hơn 50%.</p><pre>Same style as the approved icons. Icon &quot;stat.luck&quot;: a four-leaf clover with a tiny sparkle on
+one leaf. Leaves steel grey-blue #9EA8B8 with a soft green shade band.</pre></article></div></section><section class="grp"><h2>2.2 Signature, súng phóng lựu (#FF9E3D) <span class="n">2</span></h2><div class="list"><article class="p"><div class="h"><code class="id">rocket.cluster</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;rocket.cluster&quot;: one round grenade at the centre breaking
+open with four small bomblets flying out in a cross. Main colour warm orange #FF9E3D, dark grey
+bomblets.">Copy</button></div><p class="what">Cluster Charge. Skill làm gì: mỗi vụ nổ ném ra 4 bom con (45% sát thương).</p><pre>Same style as the approved icons. Icon &quot;rocket.cluster&quot;: one round grenade at the centre breaking
+open with four small bomblets flying out in a cross. Main colour warm orange #FF9E3D, dark grey
+bomblets.</pre></article><article class="p"><div class="h"><code class="id">rocket.napalm</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;rocket.napalm&quot;: a chunky grenade shell lying on its side
+with a puddle of cartoon flames spreading under it. Main colour warm orange #FF9E3D, red-orange
+flames.">Copy</button></div><p class="what">Napalm Shell. Skill làm gì: vụ nổ để lại lửa 4 giây.</p><pre>Same style as the approved icons. Icon &quot;rocket.napalm&quot;: a chunky grenade shell lying on its side
+with a puddle of cartoon flames spreading under it. Main colour warm orange #FF9E3D, red-orange
+flames.</pre></article></div></section><section class="grp"><h2>2.3 Universal (#42D1C2) <span class="n">10</span></h2><div class="list"><article class="p"><div class="h"><code class="id">uni.pierce</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.pierce&quot;: a sharp bullet flying right and passing
+straight through three thin round targets lined up in a row. Main colour teal #42D1C2.">Copy</button></div><p class="what">Piercing Rounds. Skill làm gì: đạn xuyên thêm 3 quái.</p><pre>Same style as the approved icons. Icon &quot;uni.pierce&quot;: a sharp bullet flying right and passing
+straight through three thin round targets lined up in a row. Main colour teal #42D1C2.</pre><p class="note">Khác `ar.breach` (đạn phá tấm gỗ): ở đây là 3 bia tròn xếp hàng.</p></article><article class="p"><div class="h"><code class="id">uni.ricochet</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.ricochet&quot;: a bullet bouncing in a zigzag path, with
+small spark bursts at each of its two bounce points. Main colour teal #42D1C2, yellow sparks.">Copy</button></div><p class="what">Ricochet. Skill làm gì: đạn nảy sang thêm 3 quái (70% sát thương).</p><pre>Same style as the approved icons. Icon &quot;uni.ricochet&quot;: a bullet bouncing in a zigzag path, with
+small spark bursts at each of its two bounce points. Main colour teal #42D1C2, yellow sparks.</pre></article><article class="p"><div class="h"><code class="id">uni.split</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.split&quot;: one bullet on the left splitting into a fan
+of four smaller bullets spreading to the right. Main colour teal #42D1C2.">Copy</button></div><p class="what">Split Shot. Skill làm gì: cứ 3 phát, 4 viên đạn phụ toả ra.</p><pre>Same style as the approved icons. Icon &quot;uni.split&quot;: one bullet on the left splitting into a fan
+of four smaller bullets spreading to the right. Main colour teal #42D1C2.</pre><p class="note">Khác `smg.bullethose` (chùm đạn cam dày): ở đây một viên tách thành 4.</p></article><article class="p"><div class="h"><code class="id">uni.crit</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.crit&quot;: a bullet striking a big jagged yellow impact
+star, with a second smaller star popping behind it, like a double hit. Main colour teal #42D1C2
+bullet, bright yellow stars.">Copy</button></div><p class="what">Critical Rounds. Skill làm gì: 20% cơ hội gây x2 sát thương.</p><pre>Same style as the approved icons. Icon &quot;uni.crit&quot;: a bullet striking a big jagged yellow impact
+star, with a second smaller star popping behind it, like a double hit. Main colour teal #42D1C2
+bullet, bright yellow stars.</pre><p class="note">Khác `marksman.hunters` (đầu lâu trong tâm ngắm): không có đầu lâu, không có tâm ngắm.</p></article><article class="p"><div class="h"><code class="id">uni.siphon</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.siphon&quot;: a small heart being filled through a curved
+glass tube from a floating red soul wisp. Main colour teal #42D1C2 tube, red heart and wisp.
+No blood drops.">Copy</button></div><p class="what">Blood Siphon. Skill làm gì: cứ 12 kill hồi 3% máu.</p><pre>Same style as the approved icons. Icon &quot;uni.siphon&quot;: a small heart being filled through a curved
+glass tube from a floating red soul wisp. Main colour teal #42D1C2 tube, red heart and wisp.
+No blood drops.</pre></article><article class="p"><div class="h"><code class="id">uni.acid</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.acid&quot;: a bullet dripping bright green acid, with two
+small bubbling drops falling from it. Main colour teal #42D1C2 bullet, toxic green acid.">Copy</button></div><p class="what">Acid Rounds. Skill làm gì: đạn gây độc cộng dồn (tối đa 5 lớp).</p><pre>Same style as the approved icons. Icon &quot;uni.acid&quot;: a bullet dripping bright green acid, with two
+small bubbling drops falling from it. Main colour teal #42D1C2 bullet, toxic green acid.</pre></article><article class="p"><div class="h"><code class="id">uni.explosive</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.explosive&quot;: a bullet with a lit fuse on its back and a
+small round explosion puff at its tip. Main colour teal #42D1C2 bullet, orange-yellow explosion.">Copy</button></div><p class="what">Explosive Rounds. Skill làm gì: 40% phát trúng nổ lan sang quái gần.</p><pre>Same style as the approved icons. Icon &quot;uni.explosive&quot;: a bullet with a lit fuse on its back and a
+small round explosion puff at its tip. Main colour teal #42D1C2 bullet, orange-yellow explosion.</pre></article><article class="p"><div class="h"><code class="id">uni.doubletap</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.doubletap&quot;: two identical bullets flying side by side,
+the second one slightly behind and outlined with a faint glow. Main colour teal #42D1C2.">Copy</button></div><p class="what">Double Tap. Skill làm gì: 30% cơ hội bắn thêm 1 viên miễn phí.</p><pre>Same style as the approved icons. Icon &quot;uni.doubletap&quot;: two identical bullets flying side by side,
+the second one slightly behind and outlined with a faint glow. Main colour teal #42D1C2.</pre></article><article class="p"><div class="h"><code class="id">uni.guardian</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.guardian&quot;: a small heart with a pair of white angel
+wings and a golden halo floating above it. Main colour teal #42D1C2 heart, white wings, gold halo.">Copy</button></div><p class="what">Guardian Angel. Skill làm gì: một lần mỗi trận, đòn chí mạng hồi 70% máu thay vì chết.</p><pre>Same style as the approved icons. Icon &quot;uni.guardian&quot;: a small heart with a pair of white angel
+wings and a golden halo floating above it. Main colour teal #42D1C2 heart, white wings, gold halo.</pre></article><article class="p"><div class="h"><code class="id">uni.greed</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;uni.greed&quot;: an overflowing sack of gold coins with a small
+red horned devil tail curling out from behind it. Main colour teal #42D1C2 sack, gold coins.">Copy</button></div><p class="what">Greed. Skill làm gì: coin +60%, nhưng quái mới có thêm 30% máu.</p><pre>Same style as the approved icons. Icon &quot;uni.greed&quot;: an overflowing sack of gold coins with a small
+red horned devil tail curling out from behind it. Main colour teal #42D1C2 sack, gold coins.</pre></article></div></section><section class="grp"><h2>2.4 Autonomous power (#A86CFF) <span class="n">13</span></h2><div class="list"><article class="p"><div class="h"><code class="id">auto.toxic</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.toxic&quot;: a gas canister falling nose-down into a puffy
+green poison cloud with a small skull-shaped wisp in the cloud. Main colour purple #A86CFF
+canister, toxic green cloud.">Copy</button></div><p class="what">Toxic Cloud. Skill làm gì: mỗi 5 giây, một đám mây độc rơi vào đám quái đông nhất.</p><pre>Same style as the approved icons. Icon &quot;auto.toxic&quot;: a gas canister falling nose-down into a puffy
+green poison cloud with a small skull-shaped wisp in the cloud. Main colour purple #A86CFF
+canister, toxic green cloud.</pre></article><article class="p"><div class="h"><code class="id">auto.gravity</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.gravity&quot;: a swirling spiral vortex with a dark centre
+and three small rocks being pulled into it along curved lines. Main colour purple #A86CFF.">Copy</button></div><p class="what">Gravity Well. Skill làm gì: mỗi 7 giây, một xoáy hút quái trong 5 m lại rồi nổ.</p><pre>Same style as the approved icons. Icon &quot;auto.gravity&quot;: a swirling spiral vortex with a dark centre
+and three small rocks being pulled into it along curved lines. Main colour purple #A86CFF.</pre></article><article class="p"><div class="h"><code class="id">auto.thorns</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.thorns&quot;: a round ring of sharp pink-purple thorns
+spikes pointing outward, like a spiky crown lying flat. Main colour purple #A86CFF, pink tips.">Copy</button></div><p class="what">Thorn Aura. Skill làm gì: quái chạm vào bạn bị đâm và bật lùi.</p><pre>Same style as the approved icons. Icon &quot;auto.thorns&quot;: a round ring of sharp pink-purple thorns
+spikes pointing outward, like a spiky crown lying flat. Main colour purple #A86CFF, pink tips.</pre></article><article class="p"><div class="h"><code class="id">auto.turret</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.turret&quot;: a small squat automatic gun turret on a
+tripod, barrel pointing right with a tiny muzzle flash. Main colour purple #A86CFF, grey barrel.">Copy</button></div><p class="what">Sentry Turret. Skill làm gì: thả tháp súng tự bắn trong 6 giây.</p><pre>Same style as the approved icons. Icon &quot;auto.turret&quot;: a small squat automatic gun turret on a
+tripod, barrel pointing right with a tiny muzzle flash. Main colour purple #A86CFF, grey barrel.</pre></article><article class="p"><div class="h"><code class="id">auto.meteor</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.meteor&quot;: a round rocky meteor diving down to the
+left with a fiery orange tail behind it. Main colour purple #A86CFF rock, orange fire tail.">Copy</button></div><p class="what">Meteor. Skill làm gì: thiên thạch rơi nghiền đám quái và để lại lửa.</p><pre>Same style as the approved icons. Icon &quot;auto.meteor&quot;: a round rocky meteor diving down to the
+left with a fiery orange tail behind it. Main colour purple #A86CFF rock, orange fire tail.</pre></article><article class="p"><div class="h"><code class="id">auto.stormcloud</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.stormcloud&quot;: a small dark purple rain cloud with one
+bright zigzag lightning bolt striking down from it. Main colour purple #A86CFF cloud, yellow bolt.">Copy</button></div><p class="what">Storm Cloud. Skill làm gì: đám mây giông theo bạn và đánh sét vào quái.</p><pre>Same style as the approved icons. Icon &quot;auto.stormcloud&quot;: a small dark purple rain cloud with one
+bright zigzag lightning bolt striking down from it. Main colour purple #A86CFF cloud, yellow bolt.</pre><p class="note">Khác `evo.thunderstorm` (mây đen to + tia sét vàng, có chùm sáng): ở đây mây nhỏ, tím, không chùm sáng.</p></article><article class="p"><div class="h"><code class="id">auto.iceshards</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.iceshards&quot;: five sharp ice crystal shards bursting
+outward in a star pattern from a small centre. Main colour purple #A86CFF outline glow, pale ice
+blue shards.">Copy</button></div><p class="what">Ice Shards. Skill làm gì: mỗi 3 giây, 10 mảnh băng bắn toả ra, xuyên và làm chậm.</p><pre>Same style as the approved icons. Icon &quot;auto.iceshards&quot;: five sharp ice crystal shards bursting
+outward in a star pattern from a small centre. Main colour purple #A86CFF outline glow, pale ice
+blue shards.</pre><p class="note">Khác `auto.frostnova` (bông tuyết): ở đây là mảnh băng nhọn bắn ra.</p></article><article class="p"><div class="h"><code class="id">auto.flameburst</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.flameburst&quot;: a short nozzle shooting a wide cone of
+cartoon fire to the right. Main colour purple #A86CFF nozzle, orange-yellow flames.">Copy</button></div><p class="what">Flame Burst. Skill làm gì: mỗi 4 giây, một luồng lửa hình nón đốt đám quái gần nhất.</p><pre>Same style as the approved icons. Icon &quot;auto.flameburst&quot;: a short nozzle shooting a wide cone of
+cartoon fire to the right. Main colour purple #A86CFF nozzle, orange-yellow flames.</pre></article><article class="p"><div class="h"><code class="id">auto.landmine</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.landmine&quot;: a flat round landmine with a red blinking
+light on top and four little prongs. Main colour purple #A86CFF, red light.">Copy</button></div><p class="what">Landmines. Skill làm gì: đi đủ quãng thì thả mìn, quái dẫm lên là nổ.</p><pre>Same style as the approved icons. Icon &quot;auto.landmine&quot;: a flat round landmine with a red blinking
+light on top and four little prongs. Main colour purple #A86CFF, red light.</pre></article><article class="p"><div class="h"><code class="id">auto.axe</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.axe&quot;: a chunky double-bitted axe spinning, with
+curved motion arcs around it. Main colour purple #A86CFF handle, steel blade.">Copy</button></div><p class="what">Spinning Axe. Skill làm gì: ném 3 rìu xoay xuyên qua đám quái.</p><pre>Same style as the approved icons. Icon &quot;auto.axe&quot;: a chunky double-bitted axe spinning, with
+curved motion arcs around it. Main colour purple #A86CFF handle, steel blade.</pre></article><article class="p"><div class="h"><code class="id">auto.wardog</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.wardog&quot;: a cute determined cartoon dog head with a
+spiked collar and a small tactical ear piece. Main colour purple #A86CFF collar, steel-blue fur.">Copy</button></div><p class="what">War Dog. Skill làm gì: hai chó chiến cắn quái gần nhất.</p><pre>Same style as the approved icons. Icon &quot;auto.wardog&quot;: a cute determined cartoon dog head with a
+spiked collar and a small tactical ear piece. Main colour purple #A86CFF collar, steel-blue fur.</pre></article><article class="p"><div class="h"><code class="id">auto.stomp</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.stomp&quot;: a big boot slamming down on cracked ground,
+with a round dust shockwave ring spreading out. Main colour purple #A86CFF boot, tan dust.">Copy</button></div><p class="what">Ground Stomp. Skill làm gì: mỗi 4 giây, dậm đất hất lùi mọi quái trong 5 m.</p><pre>Same style as the approved icons. Icon &quot;auto.stomp&quot;: a big boot slamming down on cracked ground,
+with a round dust shockwave ring spreading out. Main colour purple #A86CFF boot, tan dust.</pre></article><article class="p"><div class="h"><code class="id">auto.timewarp</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;auto.timewarp&quot;: an hourglass tilted slightly with its sand
+swirling in a spiral, and a small clock hand ring around it. Main colour purple #A86CFF, pale
+blue sand.">Copy</button></div><p class="what">Time Warp. Skill làm gì: mỗi 16 giây, mọi quái đi chậm một nửa trong 4 giây.</p><pre>Same style as the approved icons. Icon &quot;auto.timewarp&quot;: an hourglass tilted slightly with its sand
+swirling in a spiral, and a small clock hand ring around it. Main colour purple #A86CFF, pale
+blue sand.</pre><p class="note">Khác `stat.cooldown` (đồng hồ bấm giờ + mũi tên): ở đây là đồng hồ cát.</p></article></div></section><section class="grp"><h2>2.5 Evolution (#FFCC33, thêm chùm sáng lấp lánh nhỏ phía sau mỗi icon) <span class="n">13</span></h2><div class="list"><article class="p"><div class="h"><code class="id">evo.plague</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.plague&quot;: a big bubbling green poison cloud with a
+cute plague-doctor beak mask peeking out of it, a small sparkle burst behind. Main colour gold
+#FFCC33 sparkles and mask trim, toxic green cloud.">Copy</button></div><p class="what">Plague (Toxic Cloud + Area). Skill làm gì: mây độc bám theo đám quái; quái chết vì độc lây độc sang con khác.</p><pre>Same style as the approved icons. Icon &quot;evo.plague&quot;: a big bubbling green poison cloud with a
+cute plague-doctor beak mask peeking out of it, a small sparkle burst behind. Main colour gold
+#FFCC33 sparkles and mask trim, toxic green cloud.</pre></article><article class="p"><div class="h"><code class="id">evo.singularity</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.singularity&quot;: a glowing black hole with a bright
+golden accretion ring tilted around it, a small sparkle burst behind. Main colour gold #FFCC33,
+deep purple core.">Copy</button></div><p class="what">Singularity (Gravity Well + Cooldown). Skill làm gì: một xoáy không bao giờ đóng trôi qua đám quái.</p><pre>Same style as the approved icons. Icon &quot;evo.singularity&quot;: a glowing black hole with a bright
+golden accretion ring tilted around it, a small sparkle burst behind. Main colour gold #FFCC33,
+deep purple core.</pre></article><article class="p"><div class="h"><code class="id">evo.fortress</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.fortress&quot;: a sturdy armoured turret with twin rocket
+pods, one small rocket launching with a smoke puff, a small sparkle burst behind. Main colour
+gold #FFCC33.">Copy</button></div><p class="what">Fortress (Sentry Turret + Max Health Up). Skill làm gì: hai tháp súng bắn tên lửa.</p><pre>Same style as the approved icons. Icon &quot;evo.fortress&quot;: a sturdy armoured turret with twin rocket
+pods, one small rocket launching with a smoke puff, a small sparkle burst behind. Main colour
+gold #FFCC33.</pre></article><article class="p"><div class="h"><code class="id">evo.meteorstorm</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.meteorstorm&quot;: three fiery meteors of different sizes
+diving down in a diagonal line, a small sparkle burst behind. Main colour gold #FFCC33 rocks,
+orange fire tails.">Copy</button></div><p class="what">Meteor Storm (Meteor + Damage Up). Skill làm gì: năm thiên thạch rơi thành một hàng.</p><pre>Same style as the approved icons. Icon &quot;evo.meteorstorm&quot;: three fiery meteors of different sizes
+diving down in a diagonal line, a small sparkle burst behind. Main colour gold #FFCC33 rocks,
+orange fire tails.</pre></article><article class="p"><div class="h"><code class="id">evo.ironmaiden</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.ironmaiden&quot;: a round shield covered in sharp metal
+spikes pointing outward, a small sparkle burst behind. Main colour gold #FFCC33 shield, steel
+spikes with pink tips.">Copy</button></div><p class="what">Iron Maiden (Thorn Aura + Kinetic Shield). Skill làm gì: gai đâm mạnh gấp đôi; khiên vỡ thì bắn ra sóng gai.</p><pre>Same style as the approved icons. Icon &quot;evo.ironmaiden&quot;: a round shield covered in sharp metal
+spikes pointing outward, a small sparkle burst behind. Main colour gold #FFCC33 shield, steel
+spikes with pink tips.</pre></article><article class="p"><div class="h"><code class="id">evo.supercell</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.supercell&quot;: a tall towering storm cloud with three
+forked lightning bolts shooting out of it, a small sparkle burst behind. Main colour gold #FFCC33
+bolts, dark grey-purple cloud.">Copy</button></div><p class="what">Supercell (Storm Cloud + Critical Rounds). Skill làm gì: đám mây giông lớn hơn, mọi tia sét đều chí mạng và nảy sang 3 quái.</p><pre>Same style as the approved icons. Icon &quot;evo.supercell&quot;: a tall towering storm cloud with three
+forked lightning bolts shooting out of it, a small sparkle burst behind. Main colour gold #FFCC33
+bolts, dark grey-purple cloud.</pre></article><article class="p"><div class="h"><code class="id">evo.blizzard</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.blizzard&quot;: a whirling ring of ice shards and snowflakes
+circling around a small empty centre, a small sparkle burst behind. Main colour gold #FFCC33
+sparkles, pale ice blue shards.">Copy</button></div><p class="what">Blizzard (Ice Shards + Area). Skill làm gì: mảnh băng xoay quanh bạn liên tục và đóng băng quái chạm phải.</p><pre>Same style as the approved icons. Icon &quot;evo.blizzard&quot;: a whirling ring of ice shards and snowflakes
+circling around a small empty centre, a small sparkle burst behind. Main colour gold #FFCC33
+sparkles, pale ice blue shards.</pre></article><article class="p"><div class="h"><code class="id">evo.dragonbreath</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.dragonbreath&quot;: a cute cartoon dragon head in profile
+breathing a curling stream of fire, a small sparkle burst behind. Main colour gold #FFCC33
+dragon, orange-red flames.">Copy</button></div><p class="what">Dragon Breath (Flame Burst + Fire Rate Up). Skill làm gì: luồng lửa quét vòng quanh bạn không ngừng.</p><pre>Same style as the approved icons. Icon &quot;evo.dragonbreath&quot;: a cute cartoon dragon head in profile
+breathing a curling stream of fire, a small sparkle burst behind. Main colour gold #FFCC33
+dragon, orange-red flames.</pre></article><article class="p"><div class="h"><code class="id">evo.minefield</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.minefield&quot;: three landmines in a triangle, the front
+one exploding in a round orange blast, a small sparkle burst behind. Main colour gold #FFCC33
+mines, orange blast.">Copy</button></div><p class="what">Minefield (Landmines + Move Speed Up). Skill làm gì: mìn chùm, mỗi vụ nổ kích nổ các mìn xung quanh.</p><pre>Same style as the approved icons. Icon &quot;evo.minefield&quot;: three landmines in a triangle, the front
+one exploding in a round orange blast, a small sparkle burst behind. Main colour gold #FFCC33
+mines, orange blast.</pre></article><article class="p"><div class="h"><code class="id">evo.axestorm</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.axestorm&quot;: four small axes arranged in a spinning
+pinwheel around a centre, with a swirl of wind, a small sparkle burst behind. Main colour gold
+#FFCC33.">Copy</button></div><p class="what">Axe Storm (Spinning Axe + Luck). Skill làm gì: bốn rìu xoay quanh bạn rồi bay ra xuyên đám quái.</p><pre>Same style as the approved icons. Icon &quot;evo.axestorm&quot;: four small axes arranged in a spinning
+pinwheel around a centre, with a swirl of wind, a small sparkle burst behind. Main colour gold
+#FFCC33.</pre></article><article class="p"><div class="h"><code class="id">evo.alphapack</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.alphapack&quot;: a bold cartoon wolf-dog head with a small
+crown and a tiny green plus sign by its ear, a small sparkle burst behind. Main colour gold
+#FFCC33 crown and collar, steel-blue fur.">Copy</button></div><p class="what">Alpha Pack (War Dog + Regeneration). Skill làm gì: ba chó chiến, mỗi cú cắn hồi máu cho bạn.</p><pre>Same style as the approved icons. Icon &quot;evo.alphapack&quot;: a bold cartoon wolf-dog head with a small
+crown and a tiny green plus sign by its ear, a small sparkle burst behind. Main colour gold
+#FFCC33 crown and collar, steel-blue fur.</pre></article><article class="p"><div class="h"><code class="id">evo.earthquake</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.earthquake&quot;: a chunk of ground splitting apart along
+a glowing zigzag crack, with two small rocks jumping up, a small sparkle burst behind. Main
+colour gold #FFCC33 crack glow, brown earth.">Copy</button></div><p class="what">Earthquake (Ground Stomp + Max Health Up). Skill làm gì: cú dậm làm nứt đất và làm choáng mọi thứ trong vùng.</p><pre>Same style as the approved icons. Icon &quot;evo.earthquake&quot;: a chunk of ground splitting apart along
+a glowing zigzag crack, with two small rocks jumping up, a small sparkle burst behind. Main
+colour gold #FFCC33 crack glow, brown earth.</pre></article><article class="p"><div class="h"><code class="id">evo.timestop</code><button type="button" class="copy" data-t="Same style as the approved icons. Icon &quot;evo.timestop&quot;: a pocket watch frozen inside a block of
+clear ice, its hands stopped, a small sparkle burst behind. Main colour gold #FFCC33 watch, ice
+blue block.">Copy</button></div><p class="what">Time Stop (Time Warp + Cooldown). Skill làm gì: mọi quái đóng băng hoàn toàn trong 2 giây.</p><pre>Same style as the approved icons. Icon &quot;evo.timestop&quot;: a pocket watch frozen inside a block of
+clear ice, its hands stopped, a small sparkle burst behind. Main colour gold #FFCC33 watch, ice
+blue block.</pre><p class="note">Khác `evo.absolutezero` (đầu zombie trong khối băng): ở đây là đồng hồ quả quýt trong khối băng.</p></article></div></section>
+<section class="box"><h2>Câu sửa nhanh</h2><ul class="fix"><li><span>Rối ở cỡ nhỏ</span><button type="button" class="copy sm" data-t="Bolder and simpler: fewer details, thicker outline, bigger shapes, readable at 48 px.">Copy</button><code>Bolder and simpler: fewer details, thicker outline, bigger shapes, readable at 48 px.</code></li><li><span>Lệch style</span><button type="button" class="copy sm" data-t="Match the approved icons exactly: same outline width, same flat colours, one shade band, one highlight.">Copy</button><code>Match the approved icons exactly: same outline width, same flat colours, one shade band, one highlight.</code></li><li><span>Có nền</span><button type="button" class="copy sm" data-t="Fully transparent background, alpha 0, no backdrop or tile.">Copy</button><code>Fully transparent background, alpha 0, no backdrop or tile.</code></li><li><span>Có chữ hoặc số</span><button type="button" class="copy sm" data-t="Remove all text, letters and numbers.">Copy</button><code>Remove all text, letters and numbers.</code></li><li><span>Quá nhỏ trong khung</span><button type="button" class="copy sm" data-t="Make the object fill 80% of the canvas, centred.">Copy</button><code>Make the object fill 80% of the canvas, centred.</code></li><li><span>Trùng icon đã có</span><button type="button" class="copy sm" data-t="Make it clearly different from the &lt;id&gt; icon: &lt;mô tả khác biệt&gt;.">Copy</button><code>Make it clearly different from the &lt;id&gt; icon: &lt;mô tả khác biệt&gt;.</code></li></ul></section>
+</div>
+<script>
+document.addEventListener("click", async e => {
+  const b = e.target.closest(".copy"); if (!b) return;
+  const t = b.dataset.t;
+  try { await navigator.clipboard.writeText(t); }
+  catch { const pre = b.closest(".p,.box")?.querySelector("pre,code"); if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } }
+  b.classList.add("done"); b.textContent = "Copied"; setTimeout(() => { b.classList.remove("done"); b.textContent = "Copy"; }, 1600);
+});
+</script>

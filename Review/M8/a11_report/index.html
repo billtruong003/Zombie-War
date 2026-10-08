@@ -1,0 +1,214 @@
+<title>HordeCall Phase A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a field report — status strip, then evidence sections, the skill reel as the centrepiece. */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --ink:#1B1E27; --muted:#5C6473; --line:#D5DAE2;
+  --power:#2F7FD6; --evo:#C98A00; --hot:#D6453D; --ok:#1F9D63; --cta:#FFC93C;
+  --display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13161C; --surface:#1C2029; --ink:#E7EBF1; --muted:#9AA3B2; --line:#2C3240;
+  --power:#6AAEF5; --evo:#F0B830; --hot:#F0706A; --ok:#4CC98C; --cta:#FFC93C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13161C; --surface:#1C2029; --ink:#E7EBF1; --muted:#9AA3B2; --line:#2C3240;
+  --power:#6AAEF5; --evo:#F0B830; --hot:#F0706A; --ok:#4CC98C; --cta:#FFC93C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,6vw,54px);font-weight:800;letter-spacing:.2px}
+h2{font-size:28px;font-weight:800}
+h3{font-size:18px;font-weight:600}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:14px}
+.strip{display:flex;flex-wrap:wrap;gap:10px 28px;border-top:3px solid var(--ink);padding-top:14px}
+.strip div{display:grid;gap:2px;min-width:0}
+.strip b{font:800 30px/1 var(--display)}
+.strip span{font-size:13px;color:var(--muted)}
+section{display:grid;gap:16px}
+.lead{display:grid;gap:6px}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{font:600 14px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button:focus-visible{outline:3px solid var(--cta);outline-offset:2px}
+.reel{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;min-width:0}
+.card img{display:block;width:100%;aspect-ratio:200/228;object-fit:cover;background:#b69a72}
+.card .body{padding:10px 12px 12px;display:grid;gap:6px;align-content:start}
+.card .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.tag{font:600 11px/1 var(--mono);letter-spacing:.05em;padding:4px 7px;border-radius:5px;white-space:nowrap}
+.tag.p{color:var(--power);border:1px solid var(--power)}
+.tag.e{color:var(--evo);border:1px solid var(--evo)}
+.card .desc{font-size:13px;color:var(--muted)}
+.card .stats{display:flex;gap:12px;font:12px/1.3 var(--mono);color:var(--muted);flex-wrap:wrap}
+.card .stats b{color:var(--ink);font-weight:600}
+.bars td.bar{width:55%;min-width:220px}
+.bar .t{position:relative;height:18px}
+.bar i{position:absolute;left:0;height:8px;border-radius:4px}
+.bar i.b{top:0;background:var(--line)}
+.bar i.a{top:9px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:12px;height:8px;border-radius:3px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:520px;height:auto}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:16px}
+.note{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--hot);border-radius:8px;padding:12px 14px;display:grid;gap:4px;min-width:0;overflow-wrap:anywhere}
+.note.ok{border-left-color:var(--ok)}
+.note.todo{border-left-color:var(--cta)}
+ul{margin:0;padding-left:20px;display:grid;gap:6px}
+@media (prefers-reduced-motion: reduce){.card img{content-visibility:auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="kicker">HordeCall · M8 · 30/09/2026 · nhánh m8/ship-quality</div>
+  <h1>HordeCall Phase A</h1>
+  <p class="muted">Skill, rương và tiến hoá, vật phẩm trong trận, trạm sci-fi, cân bằng và stress test. Mọi số đo trong trang lấy từ Skill Sandbox (Review/M8/bench), không phải ước lượng.</p>
+  <div class="strip" id="strip"></div>
+</header>
+
+<section>
+  <div class="lead"><h2>Đã làm, theo từng bước</h2><p class="muted">Mỗi bước là một commit riêng, chưa push.</p></div>
+  <div class="scroll"><table id="steps"><thead><tr><th>Bước</th><th>Nội dung</th><th>Commit</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section>
+  <div class="lead"><h2>42 skill trong trận</h2><p class="muted">Mỗi GIF là skill đó chạy một mình ở rank 5 trên cùng một đàn quái vây người chơi. DPS đo bằng crowd bench (30 quái bất tử, 16 giây). Draw call đo trong đàn 200 quái (nền không skill: 139).</p></div>
+  <div class="tabs" role="group" aria-label="Lọc skill">
+    <button type="button" id="f-all" aria-pressed="true" data-f="all">Tất cả</button>
+    <button type="button" id="f-p" aria-pressed="false" data-f="p">Power (23)</button>
+    <button type="button" id="f-e" aria-pressed="false" data-f="e">Tiến hoá (19)</button>
+  </div>
+  <div class="reel" id="reel"></div>
+</section>
+
+<section>
+  <div class="lead"><h2>Cân bằng sức mạnh</h2><p class="muted">Trước: power 23–544 DPS, tiến hoá 103–2446, có cái vượt cả súng (~900 trên cùng đàn quái). Sau khi áp bảng PowerBudget (đo lần cuối): power 147–393 DPS, mục tiêu 150–270; tiến hoá 267–515, mục tiêu 400–470. Skill khống chế (Frost, Gravity, Time Warp) cố ý thấp hơn. Thang đo logarit.</p></div>
+  <div class="legend"><span style="--c:var(--line)">Trước</span><span style="--c:var(--power)">Sau · power</span><span style="--c:var(--evo)">Sau · tiến hoá</span></div>
+  <div class="scroll"><table class="bars" id="bars"><thead><tr><th>Skill</th><th>DPS trước → sau</th><th></th></tr></thead><tbody></tbody></table></div>
+  <p class="muted">DPS = 0: skill khống chế (Time Warp, Time Stop) hoặc cần điều kiện riêng (Emergency kích hoạt khi máu dưới 30%, bench bật bất tử). Skill tiếp xúc (Boomerang, Mìn, Rìu, Dậm đất) dao động 2–4 lần giữa các lần đo tuỳ chỗ đàn quái đứng; hệ số nhắm vào mức trung bình.</p>
+</section>
+
+<section>
+  <div class="lead"><h2>Nhịp build</h2><p class="muted">Trận thật (ThreatDirector bật), bất tử, tự đi vòng, mọi lần lên cấp chọn ngay thẻ đầu tiên. Đường cũ cho thẻ mới mỗi 6–11 giây và build đầy 10 ô rank 5 ở phút 6:32, sau đó 8 phút chỉ còn thẻ BONUS. Đường mới giữ thẻ đầu ở giây ~12, giãn giữa trận còn 15–20 giây một thẻ, build đầy ở phút 11:46.</p></div>
+  <div class="chart" id="pace"></div>
+  <div class="legend"><span style="--c:var(--muted)">XP cũ 14 + 5·(L−1)^1.05</span><span style="--c:var(--power)">XP mới 14 + 6.5·(L−1)^1.2</span></div>
+</section>
+
+<section>
+  <div class="lead"><h2>Stress test</h2><p class="muted">200 quái vây người chơi, Editor trên PC. Máy Android thật chưa đo: lúc chạy không có máy nào cắm.</p></div>
+  <div class="cols">
+    <div class="note ok"><h3>CPU của game ổn</h3><p>Build 6 tiến hoá nặng nhất + 200 quái: PlayerLoop trung vị 4,0 ms, p90 12,8 ms. Các cú đứng hình 1–4 giây trong Editor nằm ở EditorLoop (profiler), không phải code game.</p></div>
+    <div class="note ok"><h3>Hai thủ phạm đã sửa</h3><p>Blizzard nổ tuyết trên mọi con nó chạm (650 draw call, p95 513 ms) → tối đa 2 lần mỗi lượt quét. Singularity quét cụm quái mỗi frame → 4 lần/giây. FxPool giới hạn 24 bản sống cho mỗi hiệu ứng.</p></div>
+    <div class="note todo"><h3>Draw call còn cao</h3><p>Nền 139; build đầy ~660. Nặng nhất: Blizzard 429, Meteor Storm 412, Fortress 355, Meteor 316, Plague 303. Đưa vào đề xuất tối ưu phase C, cần số trên máy thật để quyết.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="lead"><h2>Còn lại và cần owner quyết</h2></div>
+  <div class="cols">
+    <div class="note todo"><h3>Cần owner</h3><ul>
+      <li>Đo trên máy Android thật: cắm máy, bản Development, lệnh console <span class="mono">zw.horde.stress</span>.</li>
+      <li>Điểm theo số kill (luật đã chốt) chưa có: cần mockup màn kết quả trước, phần lưu kỷ lục làm cùng lúc.</li>
+      <li>43 trên 78 thẻ chưa có icon (các thẻ mới A3–A7), đang hiện chữ tắt → danh sách gen icon ở phase C.</li>
+      <li>Carpet Bomb và Meteor Storm phủ màn khá gắt ở khoảnh khắc nổ; giữ hay dịu lại?</li>
+      <li>Relay đổi màu tín hiệu từ xanh ngọc sang xanh trời (tránh lẫn với vùng hồi máu).</li>
+    </ul></div>
+    <div class="note"><h3>Lưu ý kỹ thuật</h3><ul>
+      <li>Một số material Epic Toon FX và HealField.prefab bị Unity tự sửa trong working tree; chưa commit, theo quy tắc.</li>
+      <li>Audio builder luôn ghi đè 52 asset súng và âm Launcher; đã revert, cần xem lại builder.</li>
+      <li>UIBarClip (ExecuteAlways) làm scene Bootstrap bị đánh dấu thay đổi; không lưu.</li>
+      <li>Review/M8/skill_design_img là thư mục tạm, xoá được.</li>
+      <li>Boomerang chỉ cắt theo 3 đường hẹp nên DPS phụ thuộc vị trí đàn quái; đã bù hệ số, thiết kế có thể xem lại.</li>
+    </ul></div>
+  </div>
+</section>
+</div>
+
+<script>
+const DATA = {"skills": [{"id": "auto.chainlightning", "name": "Chain Lightning", "lv": 1, "recipe": "", "desc": "Every 4s, lightning chains through 5 enemies", "evo": false, "before": 43.7, "after": 172.2, "draws": 145}, {"id": "auto.ordnance", "name": "Ordnance Core", "lv": 14, "recipe": "", "desc": "Every 5s, a shell hits the biggest crowd (4.7 m)", "evo": false, "before": 473.0, "after": 272.2, "draws": 144}, {"id": "auto.soulburst", "name": "Soul Burst", "lv": 17, "recipe": "", "desc": "Every 12 kills, a burst around you (5.6 m)", "evo": false, "before": 291.0, "after": 271.1, "draws": 129}, {"id": "auto.emergency", "name": "Emergency Detonation", "lv": 26, "recipe": "", "desc": "Below 30% health, blast enemies away (every 20s)", "evo": false, "before": 0.0, "after": 0.0, "draws": 135}, {"id": "auto.orbit", "name": "Orbit Blades", "lv": 1, "recipe": "", "desc": "4 blades spin around you, cutting what they touch", "evo": false, "before": 317.2, "after": 247.7, "draws": 295}, {"id": "auto.drone", "name": "Drone Buddy", "lv": 1, "recipe": "", "desc": "A drone shoots the nearest enemy 4 times a second", "evo": false, "before": 23.1, "after": 168.9, "draws": 161}, {"id": "auto.frostnova", "name": "Frost Nova", "lv": 1, "recipe": "", "desc": "Every 5s, a frost ring (6 m) slows enemies 55%", "evo": false, "before": 142.4, "after": 164.9, "draws": 154}, {"id": "auto.firetrail", "name": "Fire Trail", "lv": 2, "recipe": "", "desc": "Walking leaves fire that burns 28 damage a second", "evo": false, "before": 162.3, "after": 211.0, "draws": 196}, {"id": "auto.boomerang", "name": "Boomerang", "lv": 1, "recipe": "", "desc": "3 boomerangs cut out and back through every enemy", "evo": false, "before": 178.4, "after": 225.7, "draws": 194}, {"id": "auto.airstrike", "name": "Airstrike", "lv": 5, "recipe": "", "desc": "Every 7s, 5 bombs fall on enemies on screen", "evo": false, "before": 543.9, "after": 392.7, "draws": 190}, {"id": "auto.toxic", "name": "Toxic Cloud", "lv": 7, "recipe": "", "desc": "Every 5s, a poison cloud (3.4 m) lands on the biggest crowd", "evo": false, "before": 322.8, "after": 240.5, "draws": 289}, {"id": "auto.gravity", "name": "Gravity Well", "lv": 10, "recipe": "", "desc": "Every 7s, a vortex pulls enemies in 5 m together, then bursts", "evo": false, "before": 234.9, "after": 200.4, "draws": 174}, {"id": "auto.thorns", "name": "Thorn Aura", "lv": 12, "recipe": "", "desc": "Enemies touching you take 22 damage a second and are knocked back", "evo": false, "before": 214.3, "after": 166.8, "draws": 212}, {"id": "auto.turret", "name": "Sentry Turret", "lv": 20, "recipe": "", "desc": "Every 10s, drop 2 turrets that fire 4.6 shots a second for 6s", "evo": false, "before": 32.6, "after": 194.3, "draws": 173}, {"id": "auto.meteor", "name": "Meteor", "lv": 25, "recipe": "", "desc": "Every 11s, a meteor (3.8 m) crushes the biggest crowd and leaves fire", "evo": false, "before": 288.8, "after": 259.3, "draws": 316}, {"id": "auto.stormcloud", "name": "Storm Cloud", "lv": 18, "recipe": "", "desc": "A storm cloud follows you and strikes an enemy every 0.6s", "evo": false, "before": 28.5, "after": 169.4, "draws": 148}, {"id": "auto.iceshards", "name": "Ice Shards", "lv": 16, "recipe": "", "desc": "Every 3s, 10 ice shards burst out, piercing and slowing", "evo": false, "before": 178.5, "after": 148.6, "draws": 176}, {"id": "auto.flameburst", "name": "Flame Burst", "lv": 22, "recipe": "", "desc": "Every 4s, a fire cone (6.2 m) burns the nearest crowd", "evo": false, "before": 29.7, "after": 186.8, "draws": 163}, {"id": "auto.landmine", "name": "Landmines", "lv": 28, "recipe": "", "desc": "Every 2.2 m walked, drop a mine that blows up under enemies", "evo": false, "before": 215.8, "after": 147.4, "draws": 155}, {"id": "auto.axe", "name": "Spinning Axe", "lv": 30, "recipe": "", "desc": "Every 2.2s, hurl 3 spinning axes through the crowd", "evo": false, "before": 431.7, "after": 206.9, "draws": 227}, {"id": "auto.wardog", "name": "War Dog", "lv": 33, "recipe": "", "desc": "Two war dogs bite the nearest enemy 1.8 times a second", "evo": false, "before": 53.9, "after": 168.2, "draws": 140}, {"id": "auto.stomp", "name": "Ground Stomp", "lv": 24, "recipe": "", "desc": "Every 4s, a stomp throws back every enemy within 5 m", "evo": false, "before": 109.6, "after": 235.1, "draws": 148}, {"id": "auto.timewarp", "name": "Time Warp", "lv": 32, "recipe": "", "desc": "Every 16s, every enemy moves at half speed for 4s", "evo": false, "before": 0.0, "after": 0.0, "draws": 148}, {"id": "evo.thunderstorm", "name": "Thunderstorm", "lv": 1, "recipe": "Chain Lightning + Fire Rate Up", "desc": "Chain Lightning every 2s through 6 enemies, harder", "evo": true, "before": 135.5, "after": 512.1, "draws": 164}, {"id": "evo.carpetbomb", "name": "Carpet Bomb", "lv": 1, "recipe": "Ordnance Core + Damage Up", "desc": "Ordnance drops a line of 3 shells", "evo": true, "before": 2446.1, "after": 468.5, "draws": 184}, {"id": "evo.buzzsaw", "name": "Buzzsaw Halo", "lv": 1, "recipe": "Orbit Blades + Move Speed Up", "desc": "6 bigger, faster blades", "evo": true, "before": 237.5, "after": 403.3, "draws": 253}, {"id": "evo.absolutezero", "name": "Absolute Zero", "lv": 1, "recipe": "Frost Nova + Max Health Up", "desc": "Frost Nova freezes enemies solid; frozen take +50%", "evo": true, "before": 274.2, "after": 385.7, "draws": 116}, {"id": "evo.squadron", "name": "Drone Squadron", "lv": 1, "recipe": "Drone Buddy + Coin Gain Up", "desc": "3 drones; their kills can drop coins", "evo": true, "before": 102.8, "after": 497.7, "draws": 181}, {"id": "evo.reaper", "name": "Reaper", "lv": 1, "recipe": "Soul Burst + Execution Round", "desc": "Kills can release a soul burst", "evo": true, "before": 460.7, "after": 415.5, "draws": 152}, {"id": "evo.plague", "name": "Plague", "lv": 1, "recipe": "Toxic Cloud + Area", "desc": "Clouds follow the crowd; poisoned kills spread poison", "evo": true, "before": 675.7, "after": 407.6, "draws": 303}, {"id": "evo.singularity", "name": "Singularity", "lv": 1, "recipe": "Gravity Well + Cooldown", "desc": "A vortex that never closes drifts through the horde", "evo": true, "before": 803.6, "after": 414.0, "draws": 173}, {"id": "evo.fortress", "name": "Fortress", "lv": 1, "recipe": "Sentry Turret + Max Health Up", "desc": "Two turrets that fire rockets", "evo": true, "before": 422.0, "after": 377.5, "draws": 355}, {"id": "evo.meteorstorm", "name": "Meteor Storm", "lv": 1, "recipe": "Meteor + Damage Up", "desc": "Five meteors fall in a line", "evo": true, "before": 1164.9, "after": 514.9, "draws": 412}, {"id": "evo.ironmaiden", "name": "Iron Maiden", "lv": 1, "recipe": "Thorn Aura + Kinetic Shield", "desc": "Thorns hit twice as hard; a broken shield throws a spike wave", "evo": true, "before": 400.7, "after": 398.9, "draws": 201}, {"id": "evo.supercell", "name": "Supercell", "lv": 1, "recipe": "Storm Cloud + Critical Rounds", "desc": "A bigger storm: every strike is critical and chains to 3", "evo": true, "before": 246.6, "after": 358.5, "draws": 141}, {"id": "evo.blizzard", "name": "Blizzard", "lv": 1, "recipe": "Ice Shards + Area", "desc": "Ice shards circle you nonstop and freeze what they cut", "evo": true, "before": 118.7, "after": 267.0, "draws": 429}, {"id": "evo.dragonbreath", "name": "Dragon Breath", "lv": 1, "recipe": "Flame Burst + Fire Rate Up", "desc": "A fire jet sweeps around you without stopping", "evo": true, "before": 151.6, "after": 508.4, "draws": 269}, {"id": "evo.minefield", "name": "Minefield", "lv": 1, "recipe": "Landmines + Move Speed Up", "desc": "Cluster mines: every blast sets off the mines around it", "evo": true, "before": 918.0, "after": 374.7, "draws": 225}, {"id": "evo.axestorm", "name": "Axe Storm", "lv": 1, "recipe": "Spinning Axe + Luck", "desc": "Four axes circle you, then fly out through the crowd", "evo": true, "before": 1661.2, "after": 445.7, "draws": 239}, {"id": "evo.alphapack", "name": "Alpha Pack", "lv": 1, "recipe": "War Dog + Regeneration", "desc": "Three war dogs; every bite heals you", "evo": true, "before": 126.6, "after": 464.3, "draws": 172}, {"id": "evo.earthquake", "name": "Earthquake", "lv": 1, "recipe": "Ground Stomp + Max Health Up", "desc": "The stomp cracks the ground and stuns everything in it", "evo": true, "before": 266.4, "after": 429.9, "draws": 149}, {"id": "evo.timestop", "name": "Time Stop", "lv": 1, "recipe": "Time Warp + Cooldown", "desc": "Every enemy freezes solid for 2 seconds", "evo": true, "before": 0.0, "after": 0.0, "draws": 122}], "pacingBefore": [[4, 9], [5, 13], [6, 14], [7, 21], [8, 26], [9, 31], [10, 36], [11, 40], [12, 45], [13, 54], [14, 59], [15, 60], [16, 63], [17, 66], [18, 75], [19, 84], [20, 88], [21, 91], [22, 98], [23, 107], [24, 114], [25, 121], [26, 129], [27, 134], [28, 145], [29, 152], [30, 162], [31, 171], [32, 180], [33, 188], [34, 198], [35, 206], [36, 215], [37, 225], [38, 238], [39, 250], [40, 261], [41, 270], [42, 282], [43, 294], [44, 304], [45, 316], [46, 329], [47, 342], [48, 354], [49, 365], [50, 373], [51, 382], [52, 392], [53, 398], [54, 406], [55, 416], [56, 428], [57, 444], [58, 451], [59, 461], [60, 470], [61, 482], [62, 497], [63, 510], [64, 521], [65, 529], [66, 543], [67, 559], [68, 571], [69, 580], [70, 592], [71, 603], [72, 611], [73, 621], [74, 639], [75, 655], [76, 666], [77, 680], [78, 694], [79, 712], [80, 733], [81, 744], [82, 759], [83, 773], [84, 787], [85, 807], [86, 828], [87, 854], [88, 871], [89, 891]], "pacingAfter": [[2, 12], [3, 22], [4, 34], [5, 45], [6, 63], [7, 82], [8, 104], [9, 119], [10, 135], [11, 158], [12, 180], [13, 191], [14, 210], [15, 235], [16, 254], [17, 273], [18, 285], [19, 300], [20, 311], [21, 322], [22, 330], [23, 345], [24, 357], [25, 373], [26, 388], [27, 401], [28, 420], [29, 437], [30, 452], [31, 468], [32, 491], [33, 507], [34, 528], [35, 544], [36, 559], [37, 575], [38, 589], [39, 611], [40, 633], [41, 649], [42, 666], [43, 684], [44, 706], [45, 724], [46, 738], [47, 757], [48, 774], [49, 797], [50, 819], [51, 837]]};
+const STEPS = [
+  ["A0","Skill Sandbox (bàn dev) + sửa lỗi gameplay tồn","eaaccef6e"],
+  ["A1","Rank 5, 6 ô skill + 4 ô chỉ số, thẻ BONUS, mở khoá theo cấp","8add2ed58"],
+  ["A2","Tách SkillArsenal thành 11 module power; quy tắc FX toon, shader ToonErode","2fa38c927 · cda6995e8"],
+  ["A3","10 thẻ đổi đạn và đa năng, 2 thẻ Launcher","5d9c7fd1f"],
+  ["A4","5 chỉ số mới: Hồi chiêu, Phạm vi, Tầm nhặt, Tự hồi máu, May mắn","e7fa0f922"],
+  ["A5","5 power v2: Mây độc, Hố hút, Hào quang gai, Tháp súng, Thiên thạch","0f8bda678"],
+  ["A6","8 power v3 + model mìn, rìu, mây giông","8946bcc04"],
+  ["A7","Rương + 13 tiến hoá mới, tiến hoá chỉ đến từ rương","0c70124a7"],
+  ["A8","Nam châm, Bom, Đồng hồ băng; tối đa 1 món trên map","06ea8b880"],
+  ["A9","Trạm sci-fi mới, Supply Drop, vùng hồi máu","943b077a9"],
+  ["A10","PowerBudget, đường XP mới, bảo hiểm rương, giới hạn FX, stress","998ff1c96"],
+];
+const $ = s => document.querySelector(s);
+const fmt = v => v == null ? "—" : Math.round(v).toLocaleString("vi-VN");
+
+$("#strip").innerHTML = [
+  ["42","skill (23 power, 19 tiến hoá)"],["11","bước A0–A10, mỗi bước 1 commit"],
+  ["780/780","EditMode test pass"],["11:46","build đầy (trước 6:32)"],["4,0 ms","CPU game trung vị, 200 quái"]
+].map(([b,s])=>`<div><b class="mono">${b}</b><span>${s}</span></div>`).join("");
+
+$("#steps tbody").innerHTML = STEPS.map(([s,c,h])=>`<tr><td class="num">${s}</td><td>${c}</td><td class="num">${h}</td></tr>`).join("");
+
+const skills = DATA.skills;
+function renderReel(f){
+  const list = skills.filter(s => f==="all" || (f==="e") === s.evo);
+  $("#reel").innerHTML = list.map(s => `
+    <article class="card">
+      <img src="gif/${s.id}.gif" alt="${s.name} chạy trong sandbox" loading="lazy" width="200" height="228">
+      <div class="body">
+        <div class="top"><h3>${s.name}</h3><span class="tag ${s.evo?"e":"p"}">${s.evo?"TIẾN HOÁ":"LV "+s.lv}</span></div>
+        <div class="desc">${s.evo ? s.recipe + " · " : ""}${s.desc}</div>
+        <div class="stats"><span>DPS <b>${fmt(s.before)} → ${fmt(s.after)}</b></span><span>draw <b>${s.draws ?? "—"}</b></span></div>
+      </div>
+    </article>`).join("");
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  renderReel(b.dataset.f);
+}));
+renderReel("all");
+
+// Bars on a log scale: 10 .. 3000 DPS.
+const lo = Math.log10(10), hi = Math.log10(3000);
+const pct = v => v > 0 ? Math.max(1, (Math.log10(Math.max(10, v)) - lo) / (hi - lo) * 100) : 0;
+const sorted = [...skills].sort((a,b) => (a.evo - b.evo) || ((b.after||0) - (a.after||0)));
+$("#bars tbody").innerHTML = sorted.map(s => `<tr>
+  <td>${s.name}</td><td class="num">${fmt(s.before)} → <b>${fmt(s.after)}</b></td>
+  <td class="bar"><div class="t"><i class="b" style="width:${pct(s.before)}%"></i><i class="a" style="width:${pct(s.after)}%;background:var(${s.evo?"--evo":"--power"})"></i></div></td></tr>`).join("");
+
+// Pacing chart: level against seconds, both runs.
+(function(){
+  const W = 760, H = 300, L = 46, B = 34, T = 14, R = 16;
+  const maxX = 840, maxY = 90;
+  const x = s => L + s / maxX * (W - L - R), y = l => H - B - l / maxY * (H - B - T);
+  const path = pts => pts.map((p,i)=>`${i?"L":"M"}${x(p[1]).toFixed(1)},${y(p[0]).toFixed(1)}`).join("");
+  let g = "";
+  for (let s = 0; s <= maxX; s += 120) g += `<line x1="${x(s)}" y1="${T}" x2="${x(s)}" y2="${H-B}" stroke="var(--line)"/><text x="${x(s)}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${s/60}:00</text>`;
+  for (let l = 0; l <= maxY; l += 15) g += `<line x1="${L}" y1="${y(l)}" x2="${W-R}" y2="${y(l)}" stroke="var(--line)"/><text x="${L-8}" y="${y(l)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--mono)">${l}</text>`;
+  const pb = DATA.pacingBefore.filter(p => p[1] <= maxX), pa = DATA.pacingAfter.filter(p => p[1] <= maxX);
+  const mark = (s, lvl, c, label, dy) => `<circle cx="${x(s)}" cy="${y(lvl)}" r="5" fill="${c}"/><text x="${x(s)+8}" y="${y(lvl)+dy}" font-size="12" fill="${c}" font-family="var(--body)">${label}</text>`;
+  const lvlAt = (pts, s) => { let l = 0; for (const p of pts) if (p[1] <= s) l = p[0]; return l; };
+  $("#pace").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Level theo thời gian, trước và sau khi đổi đường XP">
+    ${g}<text x="${L}" y="${T-2}" font-size="12" fill="var(--muted)" font-family="var(--mono)">level</text>
+    <path d="${path(pb)}" fill="none" stroke="var(--muted)" stroke-width="2.5"/>
+    <path d="${path(pa)}" fill="none" stroke="var(--power)" stroke-width="3"/>
+    ${mark(392, lvlAt(pb,392), "var(--muted)", "build đầy 6:32", -8)}
+    ${mark(706, lvlAt(pa,706), "var(--power)", "build đầy 11:46", 16)}
+  </svg>`;
+})();
+</script>

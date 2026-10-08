@@ -1,0 +1,480 @@
+<title>Map Dressing Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~70ch) with full-width figure plates for map diagrams; survey-sheet feel (grid paper, metre scales). */
+:root {
+  --bg: #f3f4ee; --paper: #fbfcf8; --ink: #1d2320; --muted: #5d6660; --line: #d6dbd1;
+  --grass: #5f9a4c; --grass-2: #9cc86f; --water: #3f8fd0; --lava: #e0602a; --bridge: #d9a94a;
+  --station: #7b5cd6; --warn: #c2412d; --ok: #2f7d4f; --accent: #2f6b4f;
+  --f-display: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151916; --paper: #1c211d; --ink: #e6ebe4; --muted: #9aa59c; --line: #2f3831;
+  --grass: #6fae5a; --grass-2: #a9d57c; --water: #5aa6e6; --lava: #f0763e; --bridge: #e2b65c;
+  --station: #9c82ec; --warn: #ec6a55; --ok: #5cbf86; --accent: #7cc59d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151916; --paper: #1c211d; --ink: #e6ebe4; --muted: #9aa59c; --line: #2f3831;
+  --grass: #6fae5a; --grass-2: #a9d57c; --water: #5aa6e6; --lava: #f0763e; --bridge: #e2b65c;
+  --station: #9c82ec; --warn: #ec6a55; --ok: #5cbf86; --accent: #7cc59d; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.65 var(--f-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; }
+.col { max-width: 70ch; }
+h1 { font: 700 2rem/1.2 var(--f-display); margin: 0 0 .4rem; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font: 700 1.3rem/1.3 var(--f-display); margin: 2.6rem 0 .6rem; text-wrap: balance; }
+h3 { font: 600 1.02rem/1.4 var(--f-display); margin: 1.4rem 0 .3rem; }
+p { margin: .5rem 0; }
+.lede { color: var(--muted); font-size: 1.02rem; }
+.eyebrow { font: 500 .72rem/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.mono, code { font-family: var(--f-mono); font-size: .86em; }
+ul, ol { padding-left: 1.2rem; margin: .4rem 0; }
+li { margin: .25rem 0; }
+.plate { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 1rem 0; }
+.plate figcaption { color: var(--muted); font-size: .86rem; margin-top: .5rem; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
+td.num { text-align: right; font-family: var(--f-mono); }
+.bad { color: var(--warn); font-weight: 600; }
+.good { color: var(--ok); font-weight: 600; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.grid2 > * { min-width: 0; }
+.decision { border-left: 3px solid var(--station); padding: 4px 0 4px 14px; margin: .9rem 0; }
+.decision b { display: block; }
+.pill { display: inline-block; font: 500 .72rem/1 var(--f-mono); padding: 4px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); margin-right: 4px; }
+.phase { display: grid; grid-template-columns: 5.5rem 1fr; gap: 6px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.phase .tag { font: 600 .8rem/1.4 var(--f-mono); color: var(--accent); }
+.phase > div { min-width: 0; }
+svg text { font-family: var(--f-body); }
+</style>
+
+<div class="wrap">
+<header class="col">
+  <div class="eyebrow">HordeCall · Env Sandbox · bản 5 · trạng thái 01/10</div>
+  <h1>Map Dressing Plan</h1>
+  <p class="lede">Cách đặt cây, cỏ, đồ trang trí và trạm (relay) trên map 192 m để không chồng lấn, cỏ phủ đều và tương tác được, mà vẫn nhẹ cho mobile. Đây là layout và ý tưởng; chưa code gì cho tới khi anh duyệt.</p>
+  <p class="lede"><b>Bản 5:</b> trạng thái mới nhất ở bảng ngay dưới. Quái: chỉ dùng 17 con dòng Blob, các con khác bỏ (cần thì mua thêm asset).</p>
+  <p class="lede" style="font-size:.9rem"><b>Bản 4:</b> <a href="#round1">kết quả đợt 1</a>.</p>
+  <p class="lede" style="font-size:.9rem"><b>Bản 3 (01/10):</b> anh đã chọn phạm vi (a), cách làm bảng màu theo ý anh (mục 9), cỏ tương tác A trước, mật độ cỏ tuỳ map, thêm <a href="#monsters">mục 11: bộ quái low poly</a>.</p>
+  <p class="lede" style="font-size:.9rem"><b>Bản 2:</b> đã ghi 3 quyết định của anh (mục 8), sửa mục 5 (trạm sinh lúc chơi) và mục 6 (dùng mesh cỏ Lux), thêm <a href="#one-texture">mục 9: dồn về một texture gradient</a> để anh xét.</p>
+</header>
+
+
+<section class="col" id="status">
+  <h2>Trạng thái</h2>
+</section>
+<div class="scroll plate">
+<table>
+  <thead><tr><th>Phần</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Bảng màu gradient KayKit (đồ cứng + thân cây)</td><td class="good">Xong</td><td>142 prefab, ΔE trung bình 4,8; chỉnh màu qua <span class="mono">palette_overrides.json</span>. Chờ anh duyệt ảnh trước/sau.</td></tr>
+    <tr><td>Atlas foliage + shader gió / cỏ tương tác</td><td class="good">Xong</td><td>Toàn bộ trang trí còn 2 material.</td></tr>
+    <tr><td>Biến thể cỏ model trong Blender</td><td class="bad">Chờ</td><td>Blender MCP (cổng 9876) không trả lời lệnh; cần khởi động lại server trong add-on.</td></tr>
+    <tr><td>Đặt đồ theo lớp, chống chồng lấn</td><td class="good">Xong</td><td>Rừng 8 447 → 68 cặp, nông trại 2 623 → 15. Còn sót ở mép chunk, sẽ dọn.</td></tr>
+    <tr><td>Rặng cây, cụm đồ dựng sẵn, đồ to chặn đường</td><td class="good">Xong</td><td>180–290 vật chặn / map, không vật nào cắt đường.</td></tr>
+    <tr><td>Trạm tự dọn chỗ</td><td class="good">Xong</td><td>300/300 trạm thử có vòng trống. Có sửa nhỏ trong game (<span class="mono">StationDirector.Spawn</span>).</td></tr>
+    <tr><td>Cỏ gộp ô 8 m + tương tác kiểu A</td><td class="good">Xong</td><td>16 điểm đè: người chơi, quái, trạm.</td></tr>
+    <tr><td>Đo hiệu năng</td><td>Một phần</td><td>Camera game 18–147 batch, 12–18 setpass. Static batching bị loại (hết RAM). Còn kiểm tra tam giác bị nhân bởi pass depth + bóng đổ.</td></tr>
+    <tr><td>Quái: kiểm kê 50 model</td><td class="good">Xong</td><td>Chốt: chỉ 17 con dòng Blob.</td></tr>
+    <tr><td>Quái: 17 Blob vào game</td><td><b>Tiếp theo</b></td><td>Mục 11.</td></tr>
+    <tr><td>Lát cắt map trong game</td><td>Sau</td><td>Streaming dùng chunk bake, flow field cho quái, đạn bay qua vùng lõm, quái không sinh trong vùng lõm.</td></tr>
+    <tr><td>Cỏ tương tác kiểu B, 33 quái còn lại</td><td>Bỏ / để sau</td><td>Chỉ làm khi có bằng chứng cần; quái thiếu thì mua asset.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<section class="col" id="round1">
+  <div class="eyebrow">Kết quả đợt 1 · 01/10 · commit 4d88ff2c8</div>
+  <h2 style="margin-top:.6rem">Đã làm (sandbox) và cần anh xem</h2>
+  <ul>
+    <li><b>Bước 0 · Bảng màu:</b> 142 prefab, 161 mesh đổi UV sang texture gradient KayKit; 7 ô trống được tô 7 màu thiếu; sai lệch màu trung bình ΔE 4,8 (mắt khó thấy). Lá/cỏ gộp vào một atlas foliage 2048² (11 ô). Toàn bộ trang trí còn <b>2 material</b>.</li>
+    <li><b>Bước 1–2 · Chống chồng lấn:</b> đặt theo lớp với footprint đo từ mesh, rặng cây, cụm đồ dựng sẵn. Cặp gốc chồng gốc: rừng 8 447 → 68, nông trại 2 623 → 15 (phần còn lại nằm ở mép chunk, sẽ xử lý). Tam giác nông trại 16,7 triệu → 1,9 triệu mỗi map. Đồ to có collider; không món nào phải gỡ vì cắt đường.</li>
+    <li><b>Bước 3 · Trạm tự dọn chỗ</b> (có sửa nhỏ trong game: <span class="mono">StationDirector.Spawn</span> gọi <span class="mono">StationClearance</span>): thử 300 trạm ngẫu nhiên trên 5 map, <b>300/300</b> có vòng trống, dời trung bình 2,7–4,5 m. Đồ nhỏ trên vòng bị ẩn và hiện lại khi trạm đi; cỏ trong vòng nằm rạp.</li>
+    <li><b>Bước 4 · Cỏ:</b> lớp phủ gộp thành mesh theo ô 8 m (tối đa 16 renderer / chunk); cỏ tương tác kiểu A đã chạy (người chơi + quái + trạm, 16 điểm).</li>
+    <li><b>Bước 5 · Đo:</b> camera game 18–147 batch, 12–18 setpass. Thử static batching lúc nạp chunk làm Unity hết RAM (nhân đôi dữ liệu mesh) nên đã bỏ; hướng giữ nguyên là 2 material + SRP batcher.</li>
+    <li><b>Bước 6 · Quái:</b> kiểm kê xong (bảng bên dưới). Chưa đổi màu hay bake VAT, chờ anh duyệt.</li>
+    <li><b>Chưa làm được:</b> biến thể cỏ Blender. Blender mở cổng 9876 nhưng không trả lời lệnh nào (có vẻ server MCP trong add-on bị kẹt); anh bấm khởi động lại server trong panel BlenderMCP giúp mình.</li>
+  </ul>
+</section>
+<div class="grid2" style="margin-top:.6rem">
+  <figure class="plate" style="margin:0"><img src="img/palette.png" alt="Texture bảng màu" width="256" height="256" style="width:100%;height:auto;image-rendering:pixelated"><figcaption>Texture gradient: 25 ô KayKit gốc + 7 ô thêm.</figcaption></figure>
+  <figure class="plate" style="margin:0"><img src="img/foliage.png" alt="Atlas foliage" width="256" height="256" style="width:100%;height:auto"><figcaption>Atlas foliage: lá cây, bụi, cỏ, hoa Lux.</figcaption></figure>
+</div>
+<figure class="plate">
+  <div style="display:grid;gap:6px">
+    <img src="img/pal_SG.jpg" alt="Synty Generic trước và sau" width="750" height="150" style="width:100%;height:auto">
+    <img src="img/pal_DF.jpg" alt="Synty DarkFantasy trước và sau" width="750" height="150" style="width:100%;height:auto">
+    <img src="img/pal_TT.jpg" alt="Tiny Teacup trước và sau" width="750" height="150" style="width:100%;height:auto">
+    <img src="img/pal_PG.jpg" alt="Playground trước và sau" width="750" height="150" style="width:100%;height:auto">
+  </div>
+  <figcaption>Mỗi dải: hàng trên là bản gốc của vendor, hàng dưới là bản đã đổi về texture gradient.</figcaption>
+</figure>
+<figure class="plate"><img src="img/seam.jpg" alt="Camera game ở mép map" width="1260" height="560" style="width:100%;height:auto"><figcaption>Camera game ngay mép map (chỗ map nối vòng): nông trại, rừng, núi lửa, đầm độc.</figcaption></figure>
+<section class="col">
+  <h3>Kiểm kê bộ quái</h3>
+  <ul>
+    <li><b>17 con đủ clip</b> (toàn bộ dòng <i>Blob</i> + Mushnub Evolved): di chuyển (Jump), cắn, trúng đòn, chết. 1 000–4 900 tam giác. Dùng được làm quái đông ngay.</li>
+    <li><b>17 con dáng người</b> (Orc, Demon, Yeti, Mushroom, Ninja, Tribal…): chỉ có Punch và nhiều Idle, <b>không có clip đi, trúng đòn, chết</b>. 5 400–8 300 tam giác. Cần thêm animation (Blender) hoặc chỉ dùng làm boss đứng yên / có hiệu ứng thay animation.</li>
+    <li><b>16 con bay</b> (Armabee, Dragon, Ghost, Pigeon, Glub…): có clip bay, phần lớn thiếu đánh / trúng đòn / chết.</li>
+    <li>Cao 1,2–4,3 m: cần chuẩn hoá về cỡ quái hiện tại. Glub Evolved không có clip nào.</li>
+  </ul>
+  <p>Đề xuất: đợt đầu chỉ đưa <b>dòng Blob</b> vào (đổi màu + VAT + xếp theme), các con khác chờ anh quyết hướng animation. Bảng đầy đủ: <span class="mono">Review/M8/monsters/inventory.csv</span>.</p>
+</section>
+<figure class="plate"><img src="img/monsters.jpg" alt="50 model quái" width="1200" height="600" style="width:100%;height:auto"><figcaption>50 model trong Assets/Monsters, theo thứ tự tên (Alien Blob → Yeti).</figcaption></figure>
+
+<section class="col">
+  <h2>1. Hiện trạng đo được</h2>
+  <p>Đo trên 36 chunk đã bake của mỗi map (props đặt ngẫu nhiên, không kiểm tra khoảng cách):</p>
+</section>
+<div class="scroll plate">
+<table>
+  <thead><tr><th>Map 192 m</th><th>Object</th><th>Cặp chồng lấn</th><th>Vật to chồng vật to</th><th>Tam giác</th><th>Renderer</th></tr></thead>
+  <tbody>
+    <tr><td>Nông trại</td><td class="num">6 134</td><td class="num bad">2 623</td><td class="num bad">1 231</td><td class="num bad">16,7 M</td><td class="num">7 104</td></tr>
+    <tr><td>Rừng sâu</td><td class="num">7 244</td><td class="num bad">8 447</td><td class="num bad">6 306</td><td class="num bad">13,6 M</td><td class="num">9 374</td></tr>
+    <tr><td>Núi lửa</td><td class="num">1 301</td><td class="num">254</td><td class="num">254</td><td class="num">0,46 M</td><td class="num">1 301</td></tr>
+    <tr><td>Đầm độc</td><td class="num">1 780</td><td class="num">226</td><td class="num">147</td><td class="num">1,8 M</td><td class="num">1 780</td></tr>
+    <tr><td>Băng nguyên</td><td class="num">1 434</td><td class="num">251</td><td class="num">142</td><td class="num">0,82 M</td><td class="num">1 434</td></tr>
+  </tbody>
+</table>
+</div>
+<section class="col">
+  <ul>
+    <li><b>Cỏ và hoa là thủ phạm chính về tam giác.</b> Một cụm hoa Lux (<span class="mono">S_Flowers_A/C</span>) nặng ~9 900 tam giác, cỏ ba lá 3 300, trong khi cỏ Synty chỉ 66. Nông trại có ~3 000 cụm như vậy.</li>
+    <li><b>Mỗi món là một renderer riêng</b> (7–9 nghìn / map): culling theo từng món, draw call nhiều.</li>
+    <li><b>Cây Lux 5,7–8,2 nghìn tam giác</b>, tán rộng 3–5,8 m; đặt theo lưới 4 m nên tán đè lên nhau liên tục ở rừng.</li>
+    <li><b>Trạm không có vùng trống:</b> <span class="mono">StationAnchors</span> chọn vị trí theo lưới 28 m băm ngẫu nhiên (40% ô có trạm), không kiểm tra vật cản; cây có thể mọc trùm lên relay.</li>
+    <li>Camera game (cao 12 m, nghiêng 60°, FOV 60, dọc) chỉ thấy khoảng <b>21 m sâu × 6–13 m ngang ≈ 200 m²</b>. Mọi ngân sách bên dưới tính trên khung này.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>2. Nguyên tắc</h2>
+  <ol>
+    <li><b>Đặt theo thứ tự, to trước nhỏ sau, trên một lưới chiếm chỗ 0,5 m.</b> Mỗi món đặt xuống sẽ "giữ đất" theo footprint thật của nó; món sau chỉ được đặt ở ô còn trống. Không bao giờ có hai gốc chồng nhau.</li>
+    <li><b>Footprint đo từ mesh, không đoán.</b> Mỗi món trong kit có 3 số: bán kính gốc (phần mesh thấp hơn 0,5 m), bán kính tán, chiều cao. Đo một lần lúc bake, lưu vào bảng kit.</li>
+    <li><b>Đất dành trước cho gameplay</b>: bờ vùng lõm, lối lên cầu, và <b>ổ trạm</b> được khoá trước khi đặt bất cứ thứ gì.</li>
+    <li><b>Trang trí theo cụm có chủ đích</b> (bụi cây, rặng cây, góc đồ nông trại), không rải đều: có chỗ trống để đánh nhau và chỗ dày để nhìn đẹp.</li>
+    <li><b>Cỏ không phải prefab.</b> Cỏ là lớp phủ riêng, sinh thành mesh gộp theo ô 8 m để culling, uốn theo người chơi và quái.</li>
+  </ol>
+</section>
+
+<h2 class="col">3. Layout một chunk 32 m</h2>
+<figure class="plate">
+<div class="scroll">
+<svg viewBox="0 0 760 470" width="100%" style="min-width:560px" role="img" aria-label="Sơ đồ các lớp đặt đồ trong một chunk 32 m">
+  <defs>
+    <pattern id="g" width="11.25" height="11.25" patternUnits="userSpaceOnUse"><path d="M11.25 0H0V11.25" fill="none" stroke="var(--line)" stroke-width=".6"/></pattern>
+    <pattern id="grassP" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M2 7 L3 2 M5 7 L6 3" stroke="var(--grass)" stroke-width="1"/></pattern>
+  </defs>
+  <!-- chunk 32 m = 360 px, scale 11.25 px/m -->
+  <rect x="20" y="20" width="360" height="360" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.2"/>
+  <rect x="20" y="20" width="360" height="360" fill="url(#g)"/>
+  <!-- grass patches -->
+  <path d="M40 60 C 90 40, 150 70, 140 120 C 130 170, 60 160, 45 120 Z" fill="var(--grass-2)" opacity=".45"/>
+  <path d="M40 60 C 90 40, 150 70, 140 120 C 130 170, 60 160, 45 120 Z" fill="url(#grassP)"/>
+  <path d="M230 250 C 300 230, 360 270, 350 330 C 330 370, 250 360, 235 320 Z" fill="var(--grass-2)" opacity=".45"/>
+  <path d="M230 250 C 300 230, 360 270, 350 330 C 330 370, 250 360, 235 320 Z" fill="url(#grassP)"/>
+  <!-- river -->
+  <path d="M20 205 C 120 185, 200 235, 380 210" fill="none" stroke="var(--water)" stroke-width="30" stroke-linecap="butt" opacity=".85"/>
+  <path d="M20 205 C 120 185, 200 235, 380 210" fill="none" stroke="var(--warn)" stroke-width="52" opacity=".12"/>
+  <!-- bridge + approach corridor -->
+  <rect x="148" y="170" width="30" height="80" fill="var(--bridge)" transform="rotate(-6 163 210)"/>
+  <rect x="140" y="140" width="46" height="140" fill="none" stroke="var(--bridge)" stroke-dasharray="4 3" transform="rotate(-6 163 210)"/>
+  <!-- station socket -->
+  <circle cx="290" cy="95" r="33" fill="var(--station)" opacity=".22"/>
+  <circle cx="290" cy="95" r="49.5" fill="none" stroke="var(--station)" stroke-dasharray="5 4"/>
+  <circle cx="290" cy="95" r="78.8" fill="none" stroke="var(--station)" stroke-opacity=".5" stroke-dasharray="2 5"/>
+  <circle cx="290" cy="95" r="5" fill="var(--station)"/>
+  <!-- grove of trees (canopy circles) -->
+  <g fill="var(--grass)" fill-opacity=".28" stroke="var(--grass)">
+    <circle cx="70" cy="300" r="34"/><circle cx="125" cy="330" r="30"/><circle cx="60" cy="355" r="22"/><circle cx="120" cy="275" r="20"/>
+  </g>
+  <g fill="var(--ink)"><circle cx="70" cy="300" r="3"/><circle cx="125" cy="330" r="3"/><circle cx="60" cy="355" r="3"/><circle cx="120" cy="275" r="3"/></g>
+  <!-- vignette -->
+  <g stroke="var(--ink)" stroke-width=".8" fill="var(--bridge)" fill-opacity=".5">
+    <rect x="200" y="300" width="12" height="12"/><circle cx="222" cy="318" r="7"/><rect x="206" y="322" width="10" height="9"/>
+  </g>
+  <circle cx="212" cy="314" r="24" fill="none" stroke="var(--ink)" stroke-opacity=".5" stroke-dasharray="3 3"/>
+  <!-- singles -->
+  <g fill="var(--muted)"><circle cx="210" cy="60" r="6"/><circle cx="60" cy="170" r="5"/><circle cx="330" cy="160" r="5"/></g>
+  <!-- scale bar -->
+  <line x1="20" y1="400" x2="132.5" y2="400" stroke="var(--ink)"/><line x1="20" y1="395" x2="20" y2="405" stroke="var(--ink)"/><line x1="132.5" y1="395" x2="132.5" y2="405" stroke="var(--ink)"/>
+  <text x="76" y="420" font-size="12" fill="var(--ink)" text-anchor="middle">10 m</text>
+  <text x="200" y="445" font-size="12" fill="var(--muted)" text-anchor="middle">chunk 32 × 32 m (đúng tỉ lệ)</text>
+  <!-- legend -->
+  <g font-size="12.5" fill="var(--ink)">
+    <rect x="410" y="30" width="16" height="12" fill="var(--water)"/><text x="436" y="41">Vùng lõm (vật cản)</text>
+    <rect x="410" y="54" width="16" height="12" fill="var(--warn)" opacity=".25"/><text x="436" y="65">Dải bờ 1,5 m: chỉ cỏ thấp, lau sậy</text>
+    <rect x="410" y="78" width="16" height="12" fill="var(--bridge)"/><text x="436" y="89">Cầu + hành lang lên cầu (3 m mỗi đầu)</text>
+    <circle cx="418" cy="110" r="7" fill="var(--station)" opacity=".4"/><text x="436" y="114">Ổ trạm: vòng 2,9 m + lối đi 1,5 m trống hẳn</text>
+    <circle cx="418" cy="134" r="7" fill="none" stroke="var(--station)" stroke-dasharray="2 3"/><text x="436" y="138">7 m: không cây cao (không che cột, icon)</text>
+    <circle cx="418" cy="158" r="7" fill="var(--grass)" fill-opacity=".3" stroke="var(--grass)"/><text x="436" y="162">Rặng cây: tán chạm nhẹ, gốc không chồng</text>
+    <circle cx="418" cy="182" r="7" fill="none" stroke="var(--ink)" stroke-dasharray="3 3"/><text x="436" y="186">Cụm đồ dựng sẵn (vignette), 1 footprint</text>
+    <circle cx="418" cy="206" r="5" fill="var(--muted)"/><text x="436" y="210">Đồ lẻ: đá, gốc cây, khoảng cách tối thiểu</text>
+    <rect x="410" y="224" width="16" height="12" fill="var(--grass-2)" opacity=".6"/><text x="436" y="235">Mảng cỏ theo noise, tránh gốc và ổ trạm</text>
+  </g>
+  <g font-size="12" fill="var(--muted)">
+    <text x="410" y="275">Thứ tự đặt (mỗi bước khoá đất cho bước sau):</text>
+    <text x="410" y="297">1 · vùng lõm, bờ, cầu, ổ trạm</text>
+    <text x="410" y="317">2 · mốc nhận diện (1 cái / 2–3 chunk)</text>
+    <text x="410" y="337">3 · rặng cây, vách đá</text>
+    <text x="410" y="357">4 · cụm đồ dựng sẵn</text>
+    <text x="410" y="377">5 · đồ lẻ</text>
+    <text x="410" y="397">6 · cỏ, hoa, lá rụng (lớp phủ)</text>
+  </g>
+</svg>
+</div>
+<figcaption>Mọi khoảng cách tính bằng footprint đo từ mesh. Lưới chiếm chỗ 0,5 m là cùng lưới với bản đồ đi lại, nên cầu, bờ và ổ trạm dùng chung một nguồn sự thật.</figcaption>
+</figure>
+
+<section class="col">
+  <h2>4. Chống chồng lấn</h2>
+  <h3>Luật khoảng cách</h3>
+</section>
+<div class="scroll plate">
+<table>
+  <thead><tr><th>Cặp</th><th>Luật</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Gốc – gốc (mọi món)</td><td class="mono">d ≥ r1 + r2 + 0,3 m</td><td>Không bao giờ chồng. Đây là lỗi nhìn thấy rõ nhất hiện nay.</td></tr>
+    <tr><td>Tán cây – tán cây</td><td class="mono">d ≥ 0,75 × (R1 + R2)</td><td>Rừng: tán chạm nhẹ tạo mái liền. Nông trại: 1,0 × (cây đứng thưa).</td></tr>
+    <tr><td>Đồ thấp dưới tán</td><td>được phép</td><td>Nấm, dương xỉ, lá rụng nằm dưới tán là tự nhiên; thùng, xe thì không.</td></tr>
+    <tr><td>Cỏ – gốc</td><td class="mono">không mọc trong r gốc</td><td>Cỏ đâm xuyên thùng gỗ là lỗi hiện tại thứ hai.</td></tr>
+    <tr><td>Mọi thứ – ổ trạm</td><td class="mono">≥ 4,4 m; cây cao ≥ 7 m</td><td>Vòng trạm 2,9 m + 1,5 m lối đi. Cỏ thấp vẫn được mọc tới mép vòng.</td></tr>
+    <tr><td>Mọi thứ – cầu</td><td class="mono">hành lang 3 m mỗi đầu</td><td>Như hiện tại, giữ nguyên.</td></tr>
+  </tbody>
+</table>
+</div>
+<section class="col">
+  <h3>Rặng cây thay vì rải đều</h3>
+  <p>Noise tần số thấp chọn "tâm rặng" (rừng: dày, nông trại: vài rặng + cây đứng lẻ). Trong mỗi rặng, cây đặt bằng Poisson-disk theo luật tán ở trên, cây to ở giữa, cây nhỏ/bụi ở rìa. Ngoài rặng gần như không có cây cao, tạo khoảng trống để đánh nhau và để thấy quái.</p>
+  <h3>Cụm đồ dựng sẵn (vignette)</h3>
+  <p>Mỗi theme có 6–10 cụm nhỏ được sắp tay trong editor, ví dụ nông trại: <i>thùng táo + giỏ + thùng rỗng</i>, <i>đống rơm + hàng rào gãy</i>; rừng: <i>khúc gỗ + gốc cây + nấm + dương xỉ</i>; đầm: <i>thùng hoá chất đổ + rễ cây</i>. Cụm được đặt như một món với footprint chung, xoay ngẫu nhiên. Nhìn có chủ đích hơn nhiều so với rải từng món, và không thể tự chồng lên nhau.</p>
+  <h3>Kiểm chứng</h3>
+  <p>Sau mỗi lần bake: báo cáo số cặp gốc chồng gốc (phải bằng 0), % tán chồng, số món bị loại vì hết chỗ, và ảnh chụp camera game ở vài điểm dày nhất.</p>
+</section>
+
+<section class="col">
+  <h2>5. Trạm (relay, cache, beacon, drop, heal)</h2>
+  <p><b>Theo quyết định của anh:</b> trạm vẫn sinh lúc chơi như hiện tại (<span class="mono">StationAnchors</span> băm lưới 28 m, <span class="mono">StationDirector</span> quét quanh người chơi). Map bake chỉ là các cụm object; streaming vẫn bật/tắt cụm để culling. Việc cần thêm là trạm phải tự "dọn chỗ" khi xuất hiện:</p>
+  <ol>
+    <li><b>Né vật cản lúc chọn vị trí.</b> Điểm băm ra chỉ là gợi ý; trạm dò trong bán kính ~6 m tìm chỗ mà vòng 4,4 m không chạm vùng lõm, cầu, hay đồ to có collider (đá, thân cây, thùng lớn, đúng quyết định 1). Dùng <span class="mono">Physics.CheckSphere</span> trên layer vật cản, vài lần thử, gần như không tốn gì. Vẫn tất định: cùng ô luôn ra cùng chỗ.</li>
+    <li><b>Ẩn đồ nhỏ đè lên trạm.</b> Mỗi chunk lưu danh sách cụm đồ nhỏ kèm bounds (cụm đồ dựng sẵn, bụi, đồ lẻ). Khi trạm xuất hiện, các cụm có bounds chạm vòng trạm bị tắt; khi trạm bị nhả thì bật lại.</li>
+    <li><b>Cỏ rạp dưới trạm</b> bằng chính cơ chế cỏ tương tác ở mục 7: trạm là một "điểm đè" cố định bán kính 3 m, nên cỏ trong vòng nằm rạp xuống thay vì bị cắt thành mảng trọc.</li>
+    <li><b>Không cây cao che cột và icon:</b> khi dò vị trí ở bước 1, ưu tiên chỗ không có thân cây trong 7 m.</li>
+  </ol>
+  <p>Chỉ đụng tới phần chọn vị trí của <span class="mono">StationAnchors</span> và một bước bật/tắt cụm trong <span class="mono">StationDirector</span>; logic trạm giữ nguyên.</p>
+</section>
+
+<section class="col">
+  <h2>6. Cỏ: phủ rộng, tương tác, gộp theo cụm</h2>
+</section>
+<div class="grid2">
+<figure class="plate" style="margin:0">
+<svg viewBox="0 0 360 300" width="100%" role="img" aria-label="Chunk 32 m chia thành 16 ô cỏ 8 m, ô ngoài khung camera bị culling">
+  <rect x="20" y="20" width="256" height="256" fill="var(--paper)" stroke="var(--ink)"/>
+  <g stroke="var(--line)">
+    <line x1="84" y1="20" x2="84" y2="276"/><line x1="148" y1="20" x2="148" y2="276"/><line x1="212" y1="20" x2="212" y2="276"/>
+    <line x1="20" y1="84" x2="276" y2="84"/><line x1="20" y1="148" x2="276" y2="148"/><line x1="20" y1="212" x2="276" y2="212"/>
+  </g>
+  <g fill="var(--grass-2)" opacity=".75">
+    <rect x="85" y="85" width="62" height="62"/><rect x="149" y="85" width="62" height="62"/><rect x="85" y="149" width="62" height="62"/><rect x="149" y="149" width="62" height="62"/><rect x="149" y="21" width="62" height="62"/><rect x="85" y="21" width="62" height="62"/>
+  </g>
+  <g fill="var(--grass-2)" opacity=".22">
+    <rect x="21" y="21" width="62" height="62"/><rect x="213" y="21" width="62" height="62"/><rect x="21" y="85" width="62" height="62"/><rect x="213" y="85" width="62" height="62"/><rect x="21" y="149" width="62" height="62"/><rect x="213" y="149" width="62" height="62"/><rect x="21" y="213" width="62" height="62"/><rect x="85" y="213" width="62" height="62"/><rect x="149" y="213" width="62" height="62"/><rect x="213" y="213" width="62" height="62"/>
+  </g>
+  <path d="M110 250 L 188 250 L 232 30 L 66 30 Z" fill="none" stroke="var(--station)" stroke-width="2"/>
+  <circle cx="148" cy="232" r="5" fill="var(--water)"/>
+  <text x="290" y="60" font-size="11.5" fill="var(--ink)">ô 8 m =</text>
+  <text x="290" y="75" font-size="11.5" fill="var(--ink)">1 mesh cỏ</text>
+  <text x="290" y="120" font-size="11.5" fill="var(--station)">khung</text>
+  <text x="290" y="135" font-size="11.5" fill="var(--station)">camera</text>
+  <text x="290" y="180" font-size="11.5" fill="var(--muted)">ô mờ:</text>
+  <text x="290" y="195" font-size="11.5" fill="var(--muted)">bị cull</text>
+</svg>
+<figcaption>Cỏ gộp thành 16 mesh / chunk (ô 8 m). Camera dọc chỉ chạm ~6 ô cùng lúc; Unity tự cull các ô còn lại theo bounds.</figcaption>
+</figure>
+<figure class="plate" style="margin:0">
+<svg viewBox="0 0 360 300" width="100%" role="img" aria-label="Cỏ bị đẩy nghiêng quanh người chơi và quái">
+  <line x1="10" y1="240" x2="350" y2="240" stroke="var(--ink)"/>
+  <g stroke="var(--grass)" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M30 240 q 2 -30 4 -60"/><path d="M50 240 q 2 -30 3 -62"/><path d="M70 240 q 3 -28 -2 -58"/>
+    <path d="M110 240 q -10 -25 -34 -44"/><path d="M125 240 q -12 -22 -40 -34"/>
+    <path d="M215 240 q 12 -22 40 -34"/><path d="M230 240 q 10 -25 34 -44"/>
+    <path d="M280 240 q 2 -30 4 -60"/><path d="M300 240 q -2 -30 1 -62"/><path d="M320 240 q 3 -28 -1 -58"/>
+  </g>
+  <rect x="152" y="150" width="36" height="90" rx="18" fill="var(--water)"/>
+  <circle cx="170" cy="240" r="62" fill="none" stroke="var(--water)" stroke-dasharray="4 4"/>
+  <text x="170" y="120" font-size="12" text-anchor="middle" fill="var(--ink)">người chơi / quái</text>
+  <text x="170" y="275" font-size="11.5" text-anchor="middle" fill="var(--muted)">bán kính đẩy ~1 m, mềm dần ra ngoài</text>
+</svg>
+<figcaption>Cỏ uốn trong vertex shader: đẩy ra khỏi các "điểm đè" (người chơi + quái gần nhất) cộng gió nhẹ. Không có vật lý, không tốn CPU theo từng ngọn cỏ.</figcaption>
+</figure>
+</div>
+<section class="col">
+  <h3>Hình dạng cỏ</h3>
+  <p><b>Theo quyết định của anh:</b> dùng mesh cỏ Lux (<span class="mono">S_Grass_A</span> ~250 tam giác, <span class="mono">S_Grass_B</span> ~170), một bộ dùng chung cho mọi theme, chỉ đổi màu theo bảng màu đất của theme. Bỏ các cụm hoa Lux nặng (~9 900 tam giác); hoa là vài biến thể cỏ Lux có đốm màu. Cỏ Lux dùng alpha cut-out, nên ngân sách giữ số cụm thấp hơn và gộp chung một material foliage (mục 9) để không tăng draw call.</p>
+  <h3>Mật độ theo theme</h3>
+</section>
+<div class="scroll plate">
+<table>
+  <thead><tr><th>Theme</th><th>Phủ đất</th><th>Kiểu</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Nông trại</td><td class="num">45–55%</td><td>cỏ + hoa đốm</td><td>mảng lớn theo noise, trống quanh lối đi và ổ trạm</td></tr>
+    <tr><td>Rừng sâu</td><td class="num">40%</td><td>cỏ thấp + dương xỉ</td><td>dày ở rìa rặng cây, thưa dưới tán</td></tr>
+    <tr><td>Đầm độc</td><td class="num">30%</td><td>cỏ cao + lau sậy</td><td>dày theo dải bờ vũng độc</td></tr>
+    <tr><td>Núi lửa</td><td class="num">0–5%</td><td>cỏ cháy khô</td><td>chỉ vài búi xa lava</td></tr>
+    <tr><td>Băng nguyên</td><td class="num">0–5%</td><td>búi cỏ khô trồi tuyết</td><td>theo quyết định trước: tuyết không có cỏ</td></tr>
+  </tbody>
+</table>
+</div>
+<section class="col">
+  <h3>Ngân sách trong khung camera (~200 m²)</h3>
+  <ul>
+    <li>Cỏ Lux: ~0,6 cụm/m² trong mảng × 50% phủ × ~210 tam giác ≈ <b>13–25 nghìn tam giác</b> (mỗi cụm Lux phủ ~1 m² nên ít cụm vẫn kín), 6–8 draw call.</li>
+    <li>Cây + đồ: gộp mesh theo ô 16 m và theo material; cây Lux dùng LOD sẵn có. Mục tiêu <b>≤ 80 nghìn tam giác</b>, ≤ 30 draw call.</li>
+    <li>So với hiện tại ở nông trại: ~90–130 nghìn tam giác chỉ riêng đồ trang trí, vài trăm renderer.</li>
+    <li>Đo bằng profiler trong sandbox (camera game, Play mode), vì không test tay trên máy thật.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2>7. Tương tác cỏ: hai cách</h2>
+</section>
+<div class="grid2">
+  <div class="plate" style="margin:0">
+    <span class="pill">đề xuất làm trước</span>
+    <h3 style="margin-top:.6rem">A · Mảng điểm đè toàn cục</h3>
+    <p>Mỗi frame gửi vị trí người chơi + tối đa 15 quái gần nhất vào shader (một mảng 16 phần tử). Cỏ đẩy khỏi các điểm đó và bật lại ngay khi đi qua.</p>
+    <p class="good">Rẻ, chạy mọi máy GLES3, làm trong 1 ngày.</p>
+    <p>Hạn chế: không để lại vệt.</p>
+  </div>
+  <div class="plate" style="margin:0">
+    <span class="pill">nâng cấp sau</span>
+    <h3 style="margin-top:.6rem">B · Texture vệt đi (kiểu MinionsArt)</h3>
+    <p>Một texture 256² phủ 32 m quanh người chơi. Người chơi, quái và vụ nổ "vẽ" vòng tròn mờ vào đó, texture phai dần, cỏ đọc texture để biết đã bị đè bao lâu.</p>
+    <p class="good">Có vệt cỏ rạp sau lưng đám quái, vụ nổ rạp cỏ thành vòng: nhìn "đã" hơn nhiều.</p>
+    <p>Tốn thêm một pass nhỏ mỗi frame; làm sau khi A ổn định.</p>
+  </div>
+</div>
+
+<section class="col">
+  <h2>8. Quyết định</h2>
+  <div class="decision"><b>1 · Đồ to chặn đường: <span class="good">có</span></b>Đá to, thân cây, thùng lớn, vách đá có collider trên layer vật cản; flow field tự tính đường vòng. Đồ nhỏ, cỏ, hoa không chặn.</div>
+  <div class="decision"><b>2 · Trạm: <span class="good">sinh lúc chơi như hiện tại</span></b>Bake chỉ tạo cụm object, streaming vẫn culling khi chơi; trạm tự dọn chỗ khi xuất hiện (mục 5).</div>
+  <div class="decision"><b>3 · Cỏ: <span class="good">mesh cỏ Lux dùng chung</span></b>Một bộ cỏ cho mọi theme, đổi màu theo theme (mục 6).</div>
+  <div class="decision"><b>4 · Cỏ tương tác: <span class="good">A trước</span></b>Làm sau phase chuẩn bị asset. B chỉ làm nếu tìm được cách nhẹ hơn texture vệt 256² mỗi frame (ví dụ: chỉ vẽ vào texture khi có vụ nổ, hoặc ghi vệt ở độ phân giải 64² cập nhật 10 lần/giây).</div>
+  <div class="decision"><b>5 · Mật độ cỏ: <span class="good">tuỳ map</span></b>Cỏ phủ rộng chỉ ở rừng và nông trại; đầm độc có cỏ cao theo bờ; núi lửa và băng nguyên không có lớp cỏ.</div>
+  <div class="decision"><b>7 · Quái: <span class="good">chỉ 17 con dòng Blob</span></b>Các con dáng người và con bay thiếu animation, làm thêm tốn công không đáng; cần thêm loại quái thì mua asset.</div>
+  <div class="decision"><b>6 · Texture chung: <span class="good">(a)</span></b>Đồ cứng + thân cây về texture gradient KayKit; lá, cỏ dùng texture foliage riêng. Thêm vài biến thể cỏ model trong Blender.</div>
+</section>
+
+<section class="col" id="one-texture">
+  <h2>9. Dồn về một texture gradient (KayKit Bits)</h2>
+  <p>Ý tưởng: viết một công cụ đổi UV, để mọi mesh trang trí lấy màu từ texture gradient của KayKit Bits (lưới 8 × 4 ô, mỗi ô là một dải màu dọc). Khi mọi thứ dùng chung một material, cả cụm đồ gộp được thành <b>một mesh duy nhất</b>: draw call giảm từ hàng trăm xuống vài cái mỗi khung hình.</p>
+  <h3>Đo trên toàn bộ mesh trong sandbox</h3>
+  <p>Với mỗi tam giác: lấy màu nó đang dùng, xem trong tam giác màu có phẳng không (texture kiểu bảng màu hay có chi tiết), và bảng KayKit có màu đủ gần không.</p>
+</section>
+<div class="scroll plate">
+<table>
+  <thead><tr><th>Pack / material</th><th>Tam giác</th><th>Màu phẳng</th><th>KayKit có màu gần</th><th>Kết luận</th></tr></thead>
+  <tbody>
+    <tr><td>KayKit (đang dùng)</td><td class="num">16 198</td><td class="num">87%</td><td class="num">100%</td><td class="good">sẵn</td></tr>
+    <tr><td>Synty DarkFantasy</td><td class="num">13 587</td><td class="num">99%</td><td class="num">74%</td><td class="good">đổi được</td></tr>
+    <tr><td>Synty Generic</td><td class="num">5 480</td><td class="num">85%</td><td class="num">54%</td><td class="good">đổi được, cần thêm màu</td></tr>
+    <tr><td>Synty Kaiju</td><td class="num">1 922</td><td class="num">98%</td><td class="num">80%</td><td class="good">đổi được</td></tr>
+    <tr><td>MegaCity</td><td class="num">6 006</td><td class="num">100%</td><td class="num">97%</td><td class="good">đổi được</td></tr>
+    <tr><td>Tiny Teacup</td><td class="num">12 838</td><td class="num">100%</td><td class="num">73–74%</td><td class="good">đổi được, cần thêm màu</td></tr>
+    <tr><td>Playground</td><td class="num">11 965</td><td class="num">100%</td><td class="num">56%</td><td class="good">đổi được, cần thêm màu</td></tr>
+    <tr><td>Lux thân cây (vỏ)</td><td class="num">27 891</td><td class="num">75%</td><td class="num">95%</td><td>đổi được, <b>mất vân vỏ cây</b></td></tr>
+    <tr><td>Lux lá cây, bụi, cỏ, dương xỉ</td><td class="num">~75 000</td><td class="num">17–50%</td><td class="num">(màu có)</td><td class="bad">không đổi được: hình chiếc lá nằm trong alpha của texture</td></tr>
+  </tbody>
+</table>
+</div>
+<section class="col">
+  <h3>Màu KayKit còn thiếu</h3>
+  <p>Các tam giác không có màu gần trong KayKit (~17 nghìn) gom lại được khoảng 12 màu; gộp các màu gần nhau còn khoảng 7–8. Texture KayKit có sẵn ~7 ô trống (chính tác giả để chỗ cho người dùng thêm màu), vừa đủ:</p>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin:.6rem 0">
+    <span title="nâu gỗ đậm, 5 284 tam giác" style="width:44px;height:44px;border-radius:6px;background:#4A3829"></span>
+    <span title="cam, 3 815" style="width:44px;height:44px;border-radius:6px;background:#DA832F"></span>
+    <span title="kem, 1 959" style="width:44px;height:44px;border-radius:6px;background:#F4E5B0"></span>
+    <span title="xanh dương, 1 700" style="width:44px;height:44px;border-radius:6px;background:#186DD2"></span>
+    <span title="xanh lá mạ, 1 042" style="width:44px;height:44px;border-radius:6px;background:#6CA362"></span>
+    <span title="ô liu, 1 446" style="width:44px;height:44px;border-radius:6px;background:#6B7952"></span>
+    <span title="nâu xám, 1 218" style="width:44px;height:44px;border-radius:6px;background:#6B5D4B"></span>
+    <span title="xanh lá tươi, 514" style="width:44px;height:44px;border-radius:6px;background:#26BA26"></span>
+  </div>
+  <p style="color:var(--muted);font-size:.88rem">Nâu gỗ đậm (thùng, hàng rào Synty), cam (bí ngô, xe Tiny Teacup), kem, xanh dương (đồ chơi Playground), các xanh lá ô liu. Mỗi màu thành một ô gradient mới theo đúng kiểu KayKit.</p>
+
+  <h3>Cách làm (theo ý anh: dữ liệu trước, xử lý bằng code, không mở Blender từng món)</h3>
+  <ol>
+    <li><b>Bản đồ bảng màu.</b> Quét texture KayKit một lần: mỗi ô gradient ghi lại vị trí UV, dải màu từ trên xuống dưới, và màu trung bình. Xuất ra một file dữ liệu <span class="mono">palette_map.json</span>: "màu X nằm ở ô nào, đoạn nào".</li>
+    <li><b>Quét toàn bộ object khác.</b> Với từng mesh và từng tam giác: đọc UV hiện tại, lấy màu trên texture gốc (hoặc màu material nếu không có texture, như bộ quái), ghi lại nhóm màu và danh sách tam giác thuộc nhóm đó. Xuất ra <span class="mono">mesh_colors.json</span>: mỗi mesh có bao nhiêu nhóm màu, mỗi nhóm bao nhiêu tam giác, màu gì.</li>
+    <li><b>Ghép màu.</b> Mỗi nhóm màu được gán một ô gradient: ô gần nhất về sắc độ, hoặc một ô mình chọn tay cho đẹp hơn (ví dụ gỗ Synty chuyển sang nâu gỗ KayKit cho đồng bộ, không nhất thiết đúng y màu cũ). Bảng gán này là một file dữ liệu nhỏ, anh chỉnh được, và đây là chỗ duy nhất cần "mắt thẩm mỹ".</li>
+    <li><b>Áp.</b> Code đọc bảng gán, viết lại UV cho từng tam giác vào ô tương ứng (vị trí dọc theo chiều cao để có kiểu đổ bóng KayKit), tách đỉnh khi cần, gộp mọi submesh thành một, lưu mesh mới thành asset riêng. Chạy lại toàn bộ chỉ mất vài giây mỗi khi đổi bảng gán.</li>
+    <li><b>Màu còn thiếu</b> (khoảng 8) được tô vào các ô trống của texture KayKit trước bước 3.</li>
+    <li><b>Ảnh trước / sau</b> từng pack để anh duyệt.</li>
+  </ol>
+  <p>Cách này gần như chỉ tốn công viết code; mọi lần chỉnh màu sau đó chỉ là sửa một file dữ liệu rồi chạy lại.</p>
+  <h3>Cỏ và lá</h3>
+  <p>Texture foliage riêng: gộp texture lá/cỏ Lux vào một atlas. Thêm 3–5 biến thể cỏ model trong Blender (búi thấp, búi cao, búi có hoa, cỏ khô cho đầm): mesh ít tam giác, UV trỏ vào cùng atlas foliage, xuất FBX vào project.</p>
+  <h3>Công sức và rủi ro</h3>
+  <ul>
+    <li><b>Công sức: vừa phải, khoảng 2–3 ngày làm.</b>
+      <ul>
+        <li>Công cụ đổi UV và bảng màu: ~1 ngày.</li>
+        <li>Atlas foliage: ~nửa ngày.</li>
+        <li>Đổi kit và nối vào builder: ~nửa ngày.</li>
+        <li>Ảnh so sánh và chỉnh màu: nửa ngày đến 1 ngày.</li>
+      </ul></li>
+    <li><b>Mất chi tiết:</b> vân vỏ cây Lux, chữ và biển hiệu trên đồ Synty (khoảng 1–15% tam giác có chi tiết) thành màu phẳng. Với style toon hiện tại, việc này gần như không thấy từ camera cao 12 m.</li>
+    <li><b>Màu lệch nhẹ:</b> khoảng 25% tam giác đổi sang màu gần nhất chứ không đúng y màu cũ. Anh xem ảnh trước / sau rồi quyết.</li>
+    <li><b>Lợi ích:</b>
+      <ul>
+        <li>Toàn bộ trang trí còn 2 material, nên gộp mesh không giới hạn và SRP batcher gọn.</li>
+        <li>Mọi món ăn chung một kiểu đổ bóng, nên style đồng bộ hơn giữa các pack.</li>
+      </ul></li>
+  </ul>
+  <div class="decision"><b>Anh chọn phạm vi:</b>(a) đồ cứng + thân cây về texture gradient, lá/cỏ dùng một atlas foliage riêng (đề xuất, 2 material); (b) như (a) nhưng giữ vân vỏ cây Lux (3 material); (c) chưa làm, chỉ gộp mesh theo material hiện có.</div>
+</section>
+
+<section class="col" id="monsters">
+  <h2>11. Quái: 17 con dòng Blob</h2>
+  <p><b>Quyết định của anh:</b> chỉ dùng 17 con có đủ animation (đi bằng Jump, cắn, trúng đòn, chết), 1 000–4 900 tam giác: Alien, Bird, Cactoro, Cat, Chicken, Dog, Fish, Green, Green Spiky, Mushroom, Ninja, Orc, Pigeon, Pink, Wizard, Yeti Blob và Mushnub Evolved. 33 con còn lại không dùng.</p>
+  <h3>Cách đưa vào</h3>
+  <ol>
+    <li><b>Bảng màu:</b> chạy công cụ mục 9 cho mesh có skin (giữ bone weight), mỗi con còn một mesh, một material, texture gradient KayKit; cả đàn khác loài batch chung.</li>
+    <li><b>Chuẩn hoá cỡ:</b> đưa chiều cao về cỡ quái hiện tại (con thường ~1,6–1,8 m, elite lớn hơn).</li>
+    <li><b>Đặt tên clip:</b> map Jump → đi, Bite_Front → đánh, HitRecieve → trúng đòn, Death → chết, Idle → đứng.</li>
+    <li><b>Bake VAT</b> bằng <span class="mono">ZombieVATBaker</span> ra <span class="mono">ENM_&lt;Tên&gt;_VAT</span>, cùng khung 16 con đang có.</li>
+    <li><b>Xếp theo theme</b> (bản nháp để anh sửa):
+      <ul>
+        <li>Nông trại: Chicken, Dog, Cat, Pigeon Blob.</li>
+        <li>Rừng: Mushroom, Orc, Bird Blob; Mushnub Evolved làm elite.</li>
+        <li>Đầm độc: Fish, Green, Pink Blob; Green Spiky làm elite.</li>
+        <li>Sa mạc / núi lửa: Cactoro, Alien, Ninja Blob.</li>
+        <li>Băng nguyên: Yeti Blob; Wizard Blob dùng chung nhiều theme.</li>
+      </ul></li>
+    <li><b>Chạy thử trong sandbox:</b> thay đám quái giả của demo flow field bằng quái VAT thật, 150 con, đo profiler, ảnh để anh duyệt.</li>
+    <li><b>Chỉ số và cân bằng</b> để sang phase cân bằng quái, theo thứ tự phase đã chốt.</li>
+  </ol>
+  <p><i>Đạt khi:</i> 17 prefab VAT chạy đủ 4 trạng thái, 150 con trong khung camera đạt ngân sách profiler, anh duyệt xếp theme.</p>
+</section>
+
+<section class="col">
+  <h2>10. Các bước</h2>
+  <div class="phase"><div class="tag">Bước 0 ✓</div><div><b>Asset: bảng màu + công cụ đổi UV (mục 9), atlas foliage, biến thể cỏ Blender.</b> <i>Đạt khi:</i> ảnh trước/sau từng pack được anh duyệt; toàn bộ trang trí còn 2 material.</div></div>
+  <div class="phase"><div class="tag">Bước 1 ✓</div><div><b>Bảng footprint + lưới chiếm chỗ + luật khoảng cách.</b> Đo toàn bộ kit, đặt theo thứ tự lớp. <i>Đạt khi:</i> 0 cặp gốc chồng gốc trên cả 5 map, ảnh camera game ở điểm dày nhất.</div></div>
+  <div class="phase"><div class="tag">Bước 2 ✓</div><div><b>Rặng cây + cụm đồ dựng sẵn</b> cho từng theme. <i>Đạt khi:</i> anh duyệt ảnh góc rộng và camera game.</div></div>
+  <div class="phase"><div class="tag">Bước 3 ✓</div><div><b>Trạm tự dọn chỗ lúc sinh</b>: dò vị trí né vật cản, tắt cụm đồ nhỏ đè lên, cỏ rạp dưới trạm. Thử trong sandbox với trạm giả. <i>Đạt khi:</i> 50 trạm ngẫu nhiên, không cái nào đè đồ to hay vùng lõm.</div></div>
+  <div class="phase"><div class="tag">Bước 4 ✓</div><div><b>Cỏ sinh sẵn gộp ô 8 m + shader gió + đè kiểu A.</b> Demo đám quái giả rạp cỏ trong sandbox. <i>Đạt khi:</i> ≤ 25 nghìn tam giác cỏ trong khung camera, ảnh trước/sau.</div></div>
+  <div class="phase"><div class="tag">Bước 5 ½</div><div><b>Gộp mesh đồ + LOD + đo profiler</b> trong sandbox. <i>Đạt khi:</i> đạt ngân sách mục 6 ở cả 5 map.</div></div>
+  <div class="phase"><div class="tag">Bước 6 →</div><div><b>17 quái Blob</b> (mục 11): bảng màu, chuẩn hoá cỡ, VAT, xếp theme, chạy thử 150 con. <b>Bước tiếp theo.</b></div></div>
+  <div class="phase"><div class="tag">Bước 7</div><div><b>Lát cắt map trong game</b> (một theme, ví dụ nông trại): streaming dùng chunk bake, flow field cho quái, đạn bay qua vùng lõm, quái không sinh trong vùng lõm. Đo profiler.</div></div>
+  <div class="phase"><div class="tag">Xen kẽ</div><div>Biến thể cỏ Blender (khi MCP chạy lại), dọn chồng lấn ở mép chunk, kiểm tra tam giác do pass depth / bóng đổ.</div></div>
+  <div class="phase"><div class="tag">Để sau</div><div>Vệt cỏ kiểu B nếu có cách nhẹ; 33 quái còn lại bỏ, cần thì mua asset.</div></div>
+</section>
+</div>

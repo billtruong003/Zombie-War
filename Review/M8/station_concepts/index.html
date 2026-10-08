@@ -1,0 +1,77 @@
+<title>HordeCall Station Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a pick sheet — five renders from the game camera, each with what it is and what it suits. */
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --ink:#1B1E27; --muted:#5C6473; --line:#D5DAE2; --glow:#1E9BE0; --cta:#FFC93C;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif; --body:"Be Vietnam Pro",system-ui,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13161C;--surface:#1C2029;--ink:#E7EBF1;--muted:#9AA3B2;--line:#2C3240;--glow:#5CC4FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13161C;--surface:#1C2029;--ink:#E7EBF1;--muted:#9AA3B2;--line:#2C3240;--glow:#5CC4FF;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:grid;gap:28px}
+h1,h2{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800}
+h2{font-size:22px;font-weight:800}
+p{margin:0;max-width:70ch}
+.muted{color:var(--muted)}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;min-width:0}
+.card img{display:block;width:100%;height:auto;aspect-ratio:900/1100;object-fit:cover}
+.card .b{padding:12px 14px 14px;display:grid;gap:6px;align-content:start}
+.code{font:600 12px/1 var(--mono);color:var(--glow);letter-spacing:.06em}
+.fits{font-size:13px;color:var(--muted)}
+.rules{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--glow);border-radius:10px;padding:14px 16px;display:grid;gap:8px}
+ul{margin:0;padding-left:20px;display:grid;gap:6px}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <div class="kicker">HordeCall · Trạm · concept 30/09/2026</div>
+    <h1>HordeCall Station Concepts</h1>
+    <p class="muted">Năm hướng cho trạm/vùng đứng, dựng nhanh bằng Blender và chụp từ góc camera trong game (nghiêng 58°). Hình trụ xanh là người chơi (1,8 m) để so kích thước. Tất cả đều thấp sát đất nên không có gì bị phối cảnh đẩy lên màn hình; không còn icon 2D bay trên đầu.</p>
+  </header>
+
+  <section class="rules">
+    <h2>Chung cho mọi concept khi làm trong Unity</h2>
+    <ul>
+      <li>Line sáng là shader emissive riêng, có xung năng lượng chạy dọc line (energy pulse); khi người chơi đứng trong vùng, xung chạy nhanh hơn và line lấp đầy dần để thể hiện tiến độ, thay cho vòng tiến độ vẽ bằng line.</li>
+      <li>Nhận xong: cả đài dissolve (tan từ dưới lên, viền sáng cùng màu) rồi biến mất, không nằm lại trên map.</li>
+      <li>Màu line theo loại trạm (Relay xanh trời, Cache hổ phách, Beacon đỏ, Supply tím, Hồi máu xanh lá); render này dùng một màu để so hình dáng.</li>
+      <li>Có thể chọn mỗi loại trạm một concept, hoặc một concept cho tất cả rồi đổi màu.</li>
+    </ul>
+  </section>
+
+  <section style="display:grid;gap:14px">
+    <h2>Bản chi tiết đã chọn (30/09)</h2>
+    <p class="muted">Bệ lục giác dùng chung cho Relay, Cache, Beacon (đổi màu line), bệ tinh thể cho vùng hồi máu, khoang thả cho Supply Drop. Đã có trong game: line có xung năng lượng chạy dọc, lấp đầy dần theo tiến độ, trạm hiện dần khi xuất hiện và tan biến khi nhận xong.</p>
+    <div class="grid">
+      <article class="card"><img src="D_ST_HexPad_close.png" alt="Bệ lục giác, góc gần" width="1100" height="800" style="aspect-ratio:1100/800"><div class="b"><div class="code">HEX PAD · ~5,5k tam giác</div><p>Sàn ốp 6 tấm, lỗ thông gió, bu lông, viền sọc cảnh báo, 3 cột góc, rãnh cáp, lõi có kẹp.</p></div></article>
+      <article class="card"><img src="D_ST_Plinth_close.png" alt="Bệ tinh thể, góc gần" width="1100" height="800" style="aspect-ratio:1100/800"><div class="b"><div class="code">CRYSTAL PLINTH · ~1,5k</div><p>Bệ 3 tầng có khe sáng, 4 móng kẹp, tinh thể xoay nhún và 3 mảnh bay quanh.</p></div></article>
+      <article class="card"><img src="D_ST_DropPod_close.png" alt="Khoang thả, góc gần" width="1100" height="800" style="aspect-ratio:1100/800"><div class="b"><div class="code">DROP POD · ~2,7k</div><p>Thân có đai và bu lông, 4 chân có piston, vây, cửa sáng, ramp bậc cam, vết cháy dưới đất.</p></div></article>
+    </div>
+    <div class="grid">
+      <article class="card"><img src="G_colours.png" alt="Trong game: ba bệ lục giác ba màu" width="540" height="960" style="aspect-ratio:540/960"><div class="b"><div class="code">TRONG GAME</div><p>Relay xanh (dưới chân người chơi), Beacon đỏ, Cache hổ phách.</p></div></article>
+      <article class="card"><img src="G_appear.png" alt="Trong game: bệ đang hiện dần" width="540" height="960" style="aspect-ratio:540/960"><div class="b"><div class="code">HIỆN DẦN</div><p>Khoảnh khắc trạm materialise; khi nhận xong thì chạy ngược lại và biến mất.</p></div></article>
+      <article class="card"><img src="G_all.png" alt="Trong game: bệ tinh thể và khoang thả" width="540" height="960" style="aspect-ratio:540/960"><div class="b"><div class="code">TRONG GAME</div><p>Bệ tinh thể (dưới trái) và khoang thả (dưới phải) cạnh hai bệ lục giác.</p></div></article>
+    </div>
+    <h2>Năm concept ban đầu</h2>
+  </section>
+
+  <section class="grid">
+    <article class="card"><img src="C1_HexPad.png" alt="Concept C1: bệ lục giác" width="900" height="1100">
+      <div class="b"><div class="code">C1 · HEX PAD</div><h2>Bệ lục giác</h2><p>Bệ thấp 12 cm, đường nối sáng theo viền và 6 tia từ lõi, 3 cột ngắn ở góc, viền vàng cảnh báo.</p><p class="fits">Hợp: Relay, Beacon. Đọc rõ "đứng vào đây" nhất.</p></div></article>
+    <article class="card"><img src="C2_CaptureRing.png" alt="Concept C2: vòng chiếm giữ" width="900" height="1100">
+      <div class="b"><div class="code">C2 · CAPTURE RING</div><h2>Vòng chiếm giữ</h2><p>12 tấm sàn quanh khoảng trống giữa, khe giữa các tấm sáng, 3 cột phát nhỏ bên ngoài. Tiến độ có thể thắp sáng từng tấm một.</p><p class="fits">Hợp: Relay (giữ vùng lâu), Beacon.</p></div></article>
+    <article class="card"><img src="C3_CrystalPlinth.png" alt="Concept C3: bệ tinh thể" width="900" height="1100">
+      <div class="b"><div class="code">C3 · CRYSTAL PLINTH</div><h2>Bệ tinh thể</h2><p>Bệ tròn thấp, tinh thể lơ lửng xoay, hai vòng vẽ trên đất (một liền, một nét đứt). Ít khối nhất, nhẹ nhất cho máy yếu.</p><p class="fits">Hợp: Vùng hồi máu, Cache.</p></div></article>
+    <article class="card"><img src="C4_UplinkTerminal.png" alt="Concept C4: trạm terminal" width="900" height="1100">
+      <div class="b"><div class="code">C4 · UPLINK TERMINAL</div><h2>Trạm terminal</h2><p>Sàn vuông với góc ngoặc sáng, một bàn điều khiển thấp ở mép có màn hình sáng. Cảm giác "đứng vào khu để kích hoạt máy".</p><p class="fits">Hợp: Cache (mua), Relay.</p></div></article>
+    <article class="card"><img src="C5_DropPod.png" alt="Concept C5: khoang thả" width="900" height="1100">
+      <div class="b"><div class="code">C5 · DROP POD</div><h2>Khoang thả</h2><p>Khoang đáp xuống có 3 chân, cửa sáng, vết cháy dưới đất và vòng sáng quanh. Có thể rơi từ trời xuống khi trạm xuất hiện.</p><p class="fits">Hợp: Supply Drop.</p></div></article>
+  </section>
+</div>
