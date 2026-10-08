@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.anklebreaker.unity-mcp": {
+      "version": "https://github.com/AnkleBreaker-Studio/unity-mcp-plugin.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "0b8e76f7c50ed8c0bd5f359d893653211d0f2abe"
+    },
     "com.billtruong.stylized-toon-world-kit": {
       "version": "file:com.billtruong.stylized-toon-world-kit",
       "depth": 0,
@@ -7,23 +14,6 @@
       "dependencies": {
         "com.unity.render-pipelines.universal": "17.0.0"
       }
-    },
-    "com.coplaydev.unity-mcp": {
-      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.physics2d": "1.0.0",
-        "com.unity.modules.uielements": "1.0.0",
-        "com.unity.modules.screencapture": "1.0.0",
-        "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.nuget.newtonsoft-json": "3.0.2",
-        "com.unity.test-framework": "1.1.31"
-      },
-      "hash": "c14de1e6dc01ab42d2bb358730cff954bce0ce6b"
     },
     "com.google.ads.mobile": {
       "version": "11.5.0",
@@ -208,6 +198,16 @@
       "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.film-internal-utilities": {
+      "version": "0.19.2-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.2.18",
+        "com.unity.modules.uielements": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
       "version": "3.0.39",
@@ -440,6 +440,16 @@
         "com.unity.modules.director": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.toonshader": {
+      "version": "0.11.0-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.render-pipelines.core": "10.0.0",
+        "com.unity.film-internal-utilities": "0.19.2-preview"
       },
       "url": "https://packages.unity.com"
     },
