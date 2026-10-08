@@ -1,0 +1,381 @@
+<title>HordeCall UI Mockups 05/10</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;700;800;900&display=swap">
+<style>
+/* Layout: page = numbered task blocks; each block shows phone frames (in-game look, fixed palette) + notes */
+:root{
+  --bg:#eef1f5; --fg:#1b2230; --muted:#5b6678; --card:#fff; --line:#dbe0e8; --accent:#ff7a1a;
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif; --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141b;--fg:#e8ecf2;--muted:#9aa5b6;--card:#19202a;--line:#2a3240;--accent:#ff8f3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10141b;--fg:#e8ecf2;--muted:#9aa5b6;--card:#19202a;--line:#2a3240;--accent:#ff8f3d;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:26px 60px;display:grid;gap:34px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:32px} h2{font-size:22px}
+p{margin:0;max-width:72ch}
+.lead{color:var(--muted)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+section{display:grid;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.mock{display:grid;gap:6px;justify-items:center}
+.cap{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:center;max-width:260px}
+.notes{flex:1 1 280px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px;align-content:start}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.q{background:var(--card);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+
+/* ===== in-game look (fixed palette, independent of page theme) ===== */
+.phone{width:260px;height:560px;border-radius:30px;background:#0b0e14;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.25);flex:none}
+.scr{position:relative;width:100%;height:100%;border-radius:23px;overflow:hidden;font-family:var(--body);color:#fff}
+.t{font-family:var(--display);color:#fff;letter-spacing:.3px;text-shadow:-1.5px -1.5px 0 #10131a,1.5px -1.5px 0 #10131a,-1.5px 1.5px 0 #10131a,1.5px 1.5px 0 #10131a,0 2px 0 #10131a}
+.grass{background:radial-gradient(circle at 30% 35%,#86c75a 0,#5fa843 55%,#4b9236 100%)}
+.ab{position:absolute}
+/* top HUD (matches the live game) */
+.hp{left:12px;top:14px;width:110px;height:13px;border-radius:7px;background:#1b2a1f;border:2px solid #10131a;overflow:hidden}
+.hp i{display:block;height:100%;background:#4ccb6a}
+.heart{left:6px;top:8px;width:22px;height:22px;background:#ff3c4e;border-radius:50% 50% 45% 45%;border:2px solid #10131a}
+.lv{left:10px;top:33px;padding:1px 9px;border-radius:999px;background:#3b8be8;border:2px solid #10131a;font-size:12px}
+.kill{left:58px;top:33px;padding:1px 9px;border-radius:999px;background:#2b2f3a;border:2px solid #10131a;font-size:12px}
+.timer{left:0;right:0;top:6px;text-align:center;font-size:30px}
+.threat{left:50%;transform:translateX(-50%);top:44px;padding:1px 10px;border-radius:999px;background:#ff8a2b;border:2px solid #10131a;font-size:11px;white-space:nowrap}
+.coin{right:10px;top:12px;padding:2px 10px 2px 22px;border-radius:999px;background:#2b2f3a;border:2px solid #10131a;font-size:12px;color:#ffd34d}
+.coin::before{content:"";position:absolute;left:5px;top:4px;width:12px;height:12px;border-radius:50%;background:#ffc42e;border:1.5px solid #10131a}
+.pause{right:10px;top:40px;width:28px;height:28px;border-radius:8px;background:#2b2f3a;border:2px solid #10131a;display:grid;place-items:center;font-size:13px}
+/* skill slots */
+.slots{display:grid;gap:4px}
+.slot{width:30px;height:30px;border-radius:8px;border:2px solid #10131a;background:#1f3326;position:relative}
+.slot.on{background:#3a2b63;border-color:#b18cff}
+.slot.on::after{content:attr(data-r);position:absolute;right:-4px;bottom:-5px;font-family:var(--display);font-size:9px;background:#fff;color:#10131a;border-radius:6px;padding:0 3px;border:1.5px solid #10131a}
+.slot.stat{width:22px;height:22px;border-radius:6px}
+.slot.stat.on{background:#245a8a;border-color:#7cc6ff}
+.slot i{position:absolute;inset:5px;border-radius:50%;background:rgba(255,255,255,.55)}
+/* joystick */
+.joy{left:50%;bottom:26px;width:96px;height:96px;margin-left:-48px;border-radius:50%;border:3px solid rgba(255,255,255,.6);background:rgba(16,19,26,.18)}
+.joy i{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:rgba(255,255,255,.85);border:2px solid #10131a}
+.joy.old{left:22px;margin-left:0;bottom:40px}
+.player{left:50%;top:52%;width:22px;height:22px;margin:-11px;border-radius:50%;background:#2f80ed;border:3px solid #10131a}
+.en{width:12px;height:12px;border-radius:50%;background:#7b5a3a;border:2px solid #10131a}
+.orb{width:8px;height:8px;border-radius:50%;background:#3fb4ff;border:1.5px solid #0c4f7a}
+.radio{left:8px;right:8px;top:86px;height:64px;border-radius:10px;background:#1e2a1e;border:2px solid #10131a;opacity:.35}
+/* boss */
+.bossbar{left:16px;right:16px;top:72px;display:grid;gap:2px;text-align:center}
+.bossbar .bar{height:11px;border-radius:6px;background:#10131a;border:2px solid #10131a;overflow:hidden}
+.bossbar .bar i{display:block;height:100%;width:72%;background:linear-gradient(#ff6060,#c91f1f)}
+.ring{border-radius:50%;border:4px solid #ff2a2a;box-shadow:0 0 8px #ff2a2a,inset 0 0 6px #ff2a2a;transform:scaleY(.45)}
+.kaiju{width:50px;height:50px;border-radius:44% 44% 40% 40%;background:#4f6d3a;border:3px solid #10131a;box-shadow:0 0 0 3px #ff3b3b}
+.wall{border-radius:50%;border:3px dashed rgba(120,220,255,.9);box-shadow:0 0 14px rgba(80,200,255,.7);transform:scaleY(.6)}
+.mile{left:14px;right:14px;top:66px;height:16px}
+.mile .track{position:absolute;left:0;right:0;top:6px;height:4px;border-radius:2px;background:rgba(16,19,26,.55)}
+.mile .fill{position:absolute;left:0;top:6px;height:4px;width:38%;border-radius:2px;background:#ffd34d}
+.mile .ic{position:absolute;top:0;width:16px;height:16px;border-radius:50%;border:2px solid #10131a;font-size:8px;display:grid;place-items:center;font-family:var(--display)}
+.vign{inset:0;box-shadow:inset 0 0 50px 14px rgba(255,30,30,.5)}
+.edge{left:0;right:0;top:0;height:90px;background:linear-gradient(rgba(170,0,0,.55),rgba(170,0,0,0))}
+.arrow{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid #ff3b3b;filter:drop-shadow(0 2px 0 #10131a)}
+/* menus */
+.menu{background:linear-gradient(#bfe9ff,#e9f8ff 55%,#f6fbff)}
+.panel{background:#fff;border:2px solid #10131a;border-radius:14px;color:#10131a}
+.btn{display:flex;align-items:center;justify-content:center;border:2px solid #10131a;border-radius:12px;box-shadow:0 3px 0 #10131a;font-family:var(--display);color:#fff}
+.dim{inset:0;background:rgba(10,14,24,.72)}
+.bar2{height:10px;border-radius:5px;background:#dfe5ee;border:2px solid #10131a;overflow:hidden}
+.bar2 i{display:block;height:100%;background:#3ccf4e}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;border:2px solid #10131a;font-family:var(--display);font-size:11px;color:#fff}
+.hint{animation:pulse 1.3s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.hint{animation:none}}
+.mini{font-size:11px;font-weight:800;color:#5b6678}
+.gun{width:46px;height:30px;border-radius:8px;border:2px solid #10131a;background:#9aa6b8;position:relative}
+.gun::after{content:"";position:absolute;left:8px;right:8px;top:11px;height:5px;background:#10131a;border-radius:2px}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:8px">
+  <div class="eyebrow">Mockup UI · chờ owner duyệt · 05/10</div>
+  <h1>HordeCall UI Mockups 05/10</h1>
+  <p class="lead">Mockup của mọi việc UI trong danh sách. Phần trong khung điện thoại dùng đúng màu và kiểu chữ của game (chữ trắng viền đen trên nền màu). Mỗi mục có ghi chú: thay đổi gì, vì sao, hoạt động thế nào. Owner duyệt từng mục hoặc ghi chỗ cần sửa. Chưa có mục nào được làm vào prefab.</p>
+</header>
+
+<!-- U1 HUD -->
+<section>
+  <div class="eyebrow">U1 · HUD trong trận</div>
+  <h2>Cần điều khiển ở giữa đáy, ô skill ở góc trên trái</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab heart"></div><div class="ab hp"><i style="width:80%"></i></div>
+      <div class="ab lv t">Lv 4</div><div class="ab kill t">☠ 68</div>
+      <div class="ab timer t">0:33</div><div class="ab threat t">THREAT 0</div>
+      <div class="ab coin t">81</div><div class="ab pause t">II</div>
+      <div class="ab player"></div>
+      <div class="ab en" style="left:190px;top:240px"></div><div class="ab en" style="left:60px;top:330px"></div><div class="ab orb" style="left:110px;top:250px"></div>
+      <div class="ab slots" style="right:12px;bottom:40px;grid-template-columns:repeat(3,30px)"><div class="slot"></div><div class="slot on" data-r="1"><i></i></div><div class="slot on" data-r="2"><i></i></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+      <div class="ab joy old"><i></i></div>
+    </div></div><div class="cap">Hiện tại</div></div>
+
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab heart"></div><div class="ab hp"><i style="width:80%"></i></div>
+      <div class="ab lv t">Lv 4</div><div class="ab kill t">☠ 68</div>
+      <div class="ab timer t">0:33</div><div class="ab threat t">THREAT 0</div>
+      <div class="ab coin t">81</div><div class="ab pause t">II</div>
+      <div class="ab slots" style="left:10px;top:58px;grid-template-columns:repeat(6,22px);gap:3px">
+        <div class="slot stat on" data-r="3" style="width:22px;height:22px;background:#3a2b63;border-color:#b18cff"><i></i></div><div class="slot stat on" data-r="2" style="width:22px;height:22px;background:#3a2b63;border-color:#b18cff"><i></i></div><div class="slot stat on" data-r="1" style="width:22px;height:22px;background:#3a2b63;border-color:#b18cff"><i></i></div><div class="slot stat" style="width:22px;height:22px"></div><div class="slot stat" style="width:22px;height:22px"></div><div class="slot stat" style="width:22px;height:22px"></div>
+      </div>
+      <div class="ab slots" style="left:10px;top:84px;grid-template-columns:repeat(4,16px);gap:3px">
+        <div class="slot stat on" data-r="2" style="width:16px;height:16px"></div><div class="slot stat on" data-r="1" style="width:16px;height:16px"></div><div class="slot stat" style="width:16px;height:16px"></div><div class="slot stat" style="width:16px;height:16px"></div>
+      </div>
+      <div class="ab player"></div>
+      <div class="ab en" style="left:190px;top:240px"></div><div class="ab en" style="left:60px;top:330px"></div><div class="ab orb" style="left:110px;top:250px"></div>
+      <div class="ab joy"><i></i></div>
+    </div></div><div class="cap">Đề xuất</div></div>
+
+    <div class="notes">
+      <ul>
+        <li><b>Cần điều khiển</b> cố định ở giữa đáy màn hình, vòng tròn mờ. Ngón cái tay nào cũng với tới, và hai bên đáy không còn bị che.</li>
+        <li><b>Ô skill</b> lên góc trên trái, ngay dưới thanh máu và số kill: hàng trên 6 ô skill, hàng dưới 4 ô chỉ số nhỏ. Số cấp nằm ở góc ô. Liếc lên là thấy build, nửa dưới màn hình chỉ còn quái và nhân vật.</li>
+        <li>Giữ nguyên thanh máu, Lv, kill, đồng hồ, Threat, coin, nút pause như hiện tại.</li>
+        <li>Thẻ bộ đàm (radio) dời xuống dưới hai hàng ô skill để không đè lên.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- U2 Boss + milestone -->
+<section>
+  <div class="eyebrow">U2 · Boss Titan, thanh mốc, Horde Call</div>
+  <h2>Biết trước chuyện gì sắp đến</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab heart"></div><div class="ab hp"><i style="width:60%"></i></div>
+      <div class="ab lv t">Lv 11</div><div class="ab kill t">☠ 640</div>
+      <div class="ab timer t">4:42</div><div class="ab coin t">520</div><div class="ab pause t">II</div>
+      <div class="ab mile"><div class="track"></div><div class="fill"></div>
+        <div class="ic" style="left:20%;background:#ffd34d;color:#10131a">✓</div><div class="ic" style="left:40%;background:#ff8a2b">!</div><div class="ic" style="left:60%;background:#c53030">T</div><div class="ic" style="left:82%;background:#ffd34d;color:#10131a">▣</div></div>
+      <div class="ab t" style="left:0;right:0;top:86px;text-align:center;font-size:10px">TITAN IN 0:18</div>
+      <div class="ab player"></div>
+      <div class="ab orb" style="left:80px;top:300px"></div><div class="ab orb" style="left:170px;top:340px"></div>
+      <div class="ab joy"><i></i></div>
+    </div></div><div class="cap">Thanh mốc: rương, Horde Call, Titan</div></div>
+
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab heart"></div><div class="ab hp"><i style="width:55%"></i></div>
+      <div class="ab lv t">Lv 12</div><div class="ab kill t">☠ 702</div>
+      <div class="ab timer t">5:12</div><div class="ab coin t">560</div><div class="ab pause t">II</div>
+      <div class="ab bossbar"><div class="t" style="font-size:12px">KAIJU TITAN · BOSS</div><div class="bar"><i></i></div><div class="t" style="font-size:9px">ENRAGE IN 0:52</div></div>
+      <div class="ab wall" style="left:20px;top:150px;width:220px;height:300px"></div>
+      <div class="ab ring" style="left:85px;top:170px;width:90px;height:90px"></div>
+      <div class="ab kaiju" style="left:105px;top:190px"></div>
+      <div class="ab player" style="top:72%"></div>
+      <div class="ab joy"><i></i></div>
+    </div></div><div class="cap">Đánh Titan trong vòng tường</div></div>
+
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab edge"></div>
+      <div class="ab heart"></div><div class="ab hp"><i style="width:22%;background:#ff3b3b"></i></div>
+      <div class="ab lv t">Lv 9</div><div class="ab kill t">☠ 410</div>
+      <div class="ab timer t">2:50</div><div class="ab coin t">300</div><div class="ab pause t">II</div>
+      <div class="ab arrow" style="left:70px;top:96px;transform:rotate(-18deg)"></div><div class="ab arrow" style="left:122px;top:90px"></div><div class="ab arrow" style="left:174px;top:96px;transform:rotate(18deg)"></div>
+      <div class="ab t" style="left:0;right:0;top:170px;text-align:center;font-size:26px;color:#ffdf3a">HORDE CALL</div>
+      <div class="ab t" style="left:0;right:0;top:204px;text-align:center;font-size:52px">3</div>
+      <div class="ab t" style="left:0;right:0;top:268px;text-align:center;font-size:11px">FROM THE NORTH</div>
+      <div class="ab player" style="top:66%"></div>
+      <div class="ab joy"><i></i></div>
+      <div class="ab vign"></div>
+    </div></div><div class="cap">Horde Call và máu thấp</div></div>
+
+    <div class="notes">
+      <ul>
+        <li><b>Thanh mốc</b> nằm ngay dưới đồng hồ. Đi từ trái sang phải theo thời gian, icon là rương, Horde Call (!) và Titan (T). Còn dưới 20 giây thì hiện "TITAN IN 0:18".</li>
+        <li><b>Titan</b>: thanh máu lớn kèm tên, "ENRAGE IN" đếm ngược 90 giây. Tường năng lượng xanh bao một vòng khoảng 14 m, vòng đỏ mảnh dưới chân nở ra trước mỗi cú đập.</li>
+        <li><b>Horde Call</b>: còi báo trước 10 giây, chữ HORDE CALL, đếm ngược 3-2-1, mép màn hình đỏ phía quái tới, mũi tên chỉ hướng. Sống sót qua đợt thì hiện "HORDE CLEARED" và cho rương.</li>
+        <li><b>Máu dưới 25%</b>: viền đỏ đập theo nhịp tim, thanh máu chuyển đỏ.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- U3 Pause -->
+<section>
+  <div class="eyebrow">U3 · Màn Pause</div>
+  <h2>Xem toàn bộ build khi tạm dừng</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr grass">
+      <div class="ab dim"></div>
+      <div class="ab t" style="left:0;right:0;top:40px;text-align:center;font-size:28px">PAUSED</div>
+      <div class="ab panel" style="left:14px;right:14px;top:90px;padding:10px;display:grid;gap:7px">
+        <div class="mini">SKILLS 3/6</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <div style="display:flex;gap:6px;align-items:center"><div class="slot on" data-r="3"><i></i></div><div style="font-size:10px;font-weight:900">Frost Nova</div></div>
+          <div style="display:flex;gap:6px;align-items:center"><div class="slot on" data-r="2"><i></i></div><div style="font-size:10px;font-weight:900">Orbit Blades</div></div>
+          <div style="display:flex;gap:6px;align-items:center"><div class="slot on" data-r="1"><i></i></div><div style="font-size:10px;font-weight:900">Drone</div></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+        </div>
+        <div class="mini">STATS 2/4</div>
+        <div style="display:flex;gap:6px"><div class="slot stat on" data-r="2"></div><div class="slot stat on" data-r="1"></div><div class="slot stat"></div><div class="slot stat"></div></div>
+        <div class="mini">EVOLUTION READY</div>
+        <div style="font-size:11px;font-weight:800">Frost Nova 5 + Area → <b>Absolute Zero</b> (open a chest)</div>
+      </div>
+      <div class="ab btn t" style="left:30px;right:30px;top:372px;height:42px;background:#3ccf4e;font-size:18px">RESUME</div>
+      <div class="ab btn t" style="left:30px;right:30px;top:424px;height:36px;background:#5b6678;font-size:14px">SETTINGS</div>
+      <div class="ab btn t" style="left:30px;right:30px;top:468px;height:36px;background:#d64545;font-size:14px">LEAVE RUN</div>
+    </div></div><div class="cap">Pause có build</div></div>
+    <div class="notes"><ul>
+      <li>Chạm vào một ô thì hiện mô tả ngắn và cấp hiện tại / tối đa.</li>
+      <li>Dòng "EVOLUTION READY" cho biết kỹ năng nào đã đủ điều kiện tiến hoá và cần làm gì để tiến hoá.</li>
+      <li>Ba nút lớn như cũ. Chữ trên nút là chữ trắng viền đen.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- U4 Studio -->
+<section>
+  <div class="eyebrow">U4 · Studio (Outfit)</div>
+  <h2>Cho người chơi biết phải chạm vào đâu</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr menu">
+      <div class="ab t" style="left:12px;top:14px;font-size:20px">STUDIO</div>
+      <div class="ab panel hint" style="left:20px;right:20px;top:48px;padding:6px 10px;text-align:center;font-size:12px;font-weight:900">TAP A PART OF YOUR CHARACTER TO CHANGE IT</div>
+      <div class="ab" style="left:80px;top:100px;width:100px;height:230px;border-radius:40px;background:#f3c9a2;border:3px solid #10131a"></div>
+      <div class="ab chip hint" style="left:28px;top:110px;background:#ff7a1a">HEAD</div>
+      <div class="ab chip hint" style="left:176px;top:150px;background:#ff7a1a">FACE</div>
+      <div class="ab chip hint" style="left:22px;top:190px;background:#2b6cb0">TOP</div>
+      <div class="ab chip hint" style="left:180px;top:220px;background:#2b6cb0">BACK</div>
+      <div class="ab chip hint" style="left:26px;top:268px;background:#2b6cb0">PANTS</div>
+      <div class="ab chip hint" style="left:178px;top:300px;background:#2b6cb0">SHOES</div>
+      <div class="ab" style="left:118px;top:178px;font-size:30px">👆</div>
+      <div class="ab panel" style="left:10px;right:10px;bottom:12px;height:150px;padding:8px;display:grid;gap:6px;align-content:start">
+        <div class="mini">TOP · 6 / 24 OWNED</div>
+        <div style="display:flex;gap:5px">
+          <div class="slot" style="width:40px;height:40px;background:#f2a516;outline:3px solid #ffd34d"></div><div class="slot" style="width:40px;height:40px;background:#9b51e0"></div><div class="slot" style="width:40px;height:40px;background:#2f80ed"></div><div class="slot" style="width:40px;height:40px;background:#3fa34d"></div><div class="slot" style="width:40px;height:40px;background:#8a96a8"></div>
+        </div>
+        <div style="font-size:11px;font-weight:900">WEARING · Hunter Jacket</div>
+      </div>
+    </div></div><div class="cap">Lần đầu vào Studio</div></div>
+    <div class="notes"><ul>
+      <li><b>Lần đầu</b> vào Studio: dải chữ "TAP A PART OF YOUR CHARACTER TO CHANGE IT", các nhãn vùng (HEAD, FACE, TOP…) đập nhẹ, có bàn tay chỉ vào áo. Hết nhắc sau lần thay đồ đầu tiên.</li>
+      <li><b>Các lần sau</b>: nhãn vùng vẫn hiện nhưng đứng yên, để người chơi luôn biết chỗ chạm được.</li>
+      <li>Dòng "WEARING · tên món" dưới dải đồ: món đang mặc có tên rõ ràng.</li>
+      <li>Viền món đang chọn đã sửa trong code: viền liền, không đứt. Phần này không đổi bố cục.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- U5 Gacha -->
+<section>
+  <div class="eyebrow">U5 · Màn mở gacha</div>
+  <h2>Nhân vật nổi bật, đọc được độ hiếm</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr" style="background:radial-gradient(circle at 50% 40%,#ffcf5a 0,#ff8a2b 22%,#7a2bd8 58%,#2a1050 100%)">
+      <div class="ab" style="left:50%;top:225px;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;background:radial-gradient(circle,#fff6c9 0,#ffd34d 40%,rgba(255,180,40,0) 70%)"></div>
+      <div class="ab chip t" style="left:50%;transform:translateX(-50%);top:48px;background:#ffb627;font-size:14px;padding:3px 14px">LEGENDARY</div>
+      <div class="ab" style="left:0;right:0;top:82px;text-align:center;font-size:20px;color:#ffe066;text-shadow:0 2px 0 #10131a">★★★★★</div>
+      <div class="ab chip t" style="right:26px;top:122px;background:#ff3b5c;transform:rotate(12deg)">NEW!</div>
+      <div class="ab" style="left:82px;top:130px;width:96px;height:180px;border-radius:40px 40px 20px 20px;background:linear-gradient(90deg,#fff2b0,#f3c9a2 25%,#e6b48e);border:3px solid #10131a"></div>
+      <div class="ab panel" style="left:16px;right:16px;bottom:74px;padding:8px;text-align:center;background:rgba(16,19,26,.75);border-color:#ffd34d;color:#fff"><div class="t" style="font-size:18px">Hunter Jacket</div><div style="font-size:11px;font-weight:900;color:#ffe9a8">Hunter set · 2/5 pieces</div></div>
+      <div class="ab btn t" style="left:40px;right:40px;bottom:18px;height:44px;background:#3ccf4e;font-size:18px">CLAIM</div>
+    </div></div><div class="cap">Mở gacha</div></div>
+    <div class="notes"><ul>
+      <li>Vầng sáng tròn ngay sau nhân vật, màu theo độ hiếm. Tia sáng xoay chậm phía sau.</li>
+      <li>Nhãn độ hiếm, số sao, nhãn NEW! nếu là món mới, và bảng tên ghi "bộ X · đã có 2/5 món".</li>
+      <li><b>Ảnh icon</b> chụp lại bằng 3 đèn (chính 3/4 trước, phụ thẳng mặt, viền ấm phía sau) và ánh sáng môi trường cố định, nên mặt sáng rõ. Việc chụp làm bằng tool, không phụ thuộc mockup này.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- U6 Daily Ops -->
+<section>
+  <div class="eyebrow">U6 · Daily Ops (nhiệm vụ ngày)</div>
+  <h2>4 nhiệm vụ, rương ngày, chuỗi ngày</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr menu">
+      <div class="ab t" style="left:12px;top:14px;font-size:20px">DAILY OPS</div>
+      <div class="ab mini" style="right:12px;top:20px">RESETS IN 7:42:10</div>
+      <div class="ab panel" style="left:10px;right:10px;top:48px;padding:8px;display:grid;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:900;font-size:12px">DAILY CHEST · 2 / 4</div><div class="chip t" style="background:#ff7a1a">STREAK 3 🔥</div></div>
+        <div class="bar2"><i style="width:50%"></i></div>
+        <div style="display:flex;gap:4px">
+          <div class="chip t" style="background:#3ccf4e">D1</div><div class="chip t" style="background:#3ccf4e">D2</div><div class="chip t" style="background:#3ccf4e">D3</div><div class="chip t" style="background:#9aa6b8">D4</div><div class="chip t" style="background:#9aa6b8">D5</div><div class="chip t" style="background:#9aa6b8">D6</div><div class="chip t" style="background:#8a4bd8">D7 GUN</div>
+        </div>
+      </div>
+      <div class="ab" style="left:10px;right:10px;top:150px;display:grid;gap:6px">
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="gun"></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:900">Defeat 250 monsters with a SHOTGUN</div><div class="bar2" style="margin-top:3px"><i style="width:64%"></i></div></div><div class="mini">160/250</div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="gun" style="background:#c9b27a"></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:900">Survive 4:00 with a PISTOL</div><div class="bar2" style="margin-top:3px"><i style="width:100%"></i></div></div><div class="btn t" style="padding:2px 8px;background:#3ccf4e;font-size:11px">CLAIM</div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="slot on" data-r="5" style="width:30px;height:30px"><i></i></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:900">Evolve 1 skill</div><div class="bar2" style="margin-top:3px"><i style="width:0%"></i></div></div><div class="mini">0/1</div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center;opacity:.6"><div class="slot" style="width:30px;height:30px;background:#3ccf4e"></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:900">Play 2 runs ✓</div></div><div class="mini">DONE</div></div>
+      </div>
+      <div class="ab panel" style="left:10px;right:10px;bottom:12px;padding:8px;display:flex;gap:8px;align-items:center"><div style="width:44px;height:36px;border-radius:8px;background:#ffb627;border:2px solid #10131a"></div><div style="flex:1;font-size:10px;font-weight:900">Daily chest: 40 gems · 1 ticket · 15 gun shards</div></div>
+    </div></div><div class="cap">Daily Ops</div></div>
+    <div class="notes"><ul>
+      <li>Vào từ nút MISSIONS ở Home, có chấm đỏ khi có thưởng chờ nhận.</li>
+      <li>Mỗi nhiệm vụ ghi rõ icon súng, tiến độ và nút CLAIM. Nhiệm vụ súng chỉ chọn các nhóm súng người chơi <b>đã có</b> (không cho mượn).</li>
+      <li>Rương ngày đầy theo số nhiệm vụ xong (x/4). Hàng D1…D7 là chuỗi ngày, D7 tặng một khẩu súng mới.</li>
+      <li>Mỗi nhiệm vụ cũng cho 5 mảnh của súng vừa dùng, hiện ở màn kết quả trận.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- U7 Mastery + Evolution -->
+<section>
+  <div class="eyebrow">U7 · Thông thạo và tiến hoá súng (trong Arsenal)</div>
+  <h2>Mục tiêu dài hạn cho từng khẩu</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr menu">
+      <div class="ab t" style="left:12px;top:14px;font-size:18px">M1911 · PISTOL</div>
+      <div class="ab" style="left:0;right:0;top:46px;text-align:center;font-size:18px;color:#ffc42e;text-shadow:0 2px 0 #10131a">★★★</div>
+      <div class="ab" style="left:60px;top:76px;width:140px;height:60px;border-radius:12px;background:#9aa6b8;border:3px solid #10131a"></div>
+      <div class="ab panel" style="left:10px;right:10px;top:150px;padding:8px;display:grid;gap:6px">
+        <div style="display:flex;justify-content:space-between"><div style="font-weight:900;font-size:12px">MASTERY 6 / 10</div><div class="mini">1,240 / 2,000 XP</div></div>
+        <div class="bar2"><i style="width:62%;background:#ff7a1a"></i></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <div class="chip t" style="background:#3ccf4e">1</div><div class="chip t" style="background:#3ccf4e">2</div><div class="chip t" style="background:#3ccf4e">3</div><div class="chip t" style="background:#3ccf4e">4</div><div class="chip t" style="background:#3ccf4e">5 SKIN</div><div class="chip t" style="background:#3ccf4e">6</div><div class="chip t" style="background:#9aa6b8">7</div><div class="chip t" style="background:#9aa6b8">8</div><div class="chip t" style="background:#9aa6b8">9</div><div class="chip t" style="background:#8a4bd8">10 EVOLVE</div>
+        </div>
+      </div>
+      <div class="ab panel" style="left:10px;right:10px;top:262px;padding:8px;display:grid;gap:4px">
+        <div class="mini">PISTOL FAMILY BONUS · ALL GUNS</div>
+        <div style="font-size:11px;font-weight:900">✓ Mastery 5: +5% crit chance</div>
+        <div style="font-size:11px;font-weight:900;color:#5b6678">🔒 Mastery 10: +5% crit damage</div>
+      </div>
+      <div class="ab panel" style="left:10px;right:10px;top:340px;padding:8px;display:grid;gap:5px;border-color:#8a4bd8">
+        <div class="mini" style="color:#8a4bd8">EVOLUTION · unlocks at account level 8</div>
+        <div style="font-size:11px;font-weight:900">Every 6th shot ricochets to 3 monsters</div>
+        <div style="font-size:10px;font-weight:800">✓ 3 stars · ✗ Mastery 10</div>
+        <div class="btn t" style="height:34px;background:#9aa6b8;font-size:13px">EVOLVE (LOCKED)</div>
+      </div>
+      <div class="ab btn t" style="left:10px;right:10px;bottom:14px;height:42px;background:#2b6cb0;font-size:16px">EQUIP</div>
+    </div></div><div class="cap">Chi tiết súng</div></div>
+    <div class="notes"><ul>
+      <li>Thanh thông thạo 1–10, mỗi mốc ghi phần thưởng (cấp 5: skin, cấp 10: mở tiến hoá).</li>
+      <li><b>Thưởng nhóm súng áp dụng cho mọi súng</b>: thưởng của nhóm súng lục ghi rõ "ALL GUNS".</li>
+      <li>Ô tiến hoá: hiệu ứng riêng của nhóm, điều kiện (3 sao, thông thạo 10) có dấu ✓/✗, nút EVOLVE bị khoá cho đến khi đủ.</li>
+      <li>Khi tiến hoá: một màn ngắn, súng xoay trên bàn xoay, có vệt sáng và hiệu ứng mới.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- U8 Achievements -->
+<section>
+  <div class="eyebrow">U8 · Thành tựu (tab trong Profile)</div>
+  <h2>10 thành tựu đầu, có câu thoại bộ đàm</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr menu">
+      <div class="ab t" style="left:12px;top:14px;font-size:20px">ACHIEVEMENTS</div>
+      <div class="ab mini" style="right:12px;top:20px">4 / 10</div>
+      <div class="ab" style="left:10px;right:10px;top:50px;display:grid;gap:6px">
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="chip t" style="background:#ffb627;width:30px;height:30px;display:grid;place-items:center">🏅</div><div style="flex:1;font-size:11px;font-weight:900">First Alpha · defeat an elite</div><div class="mini">DONE</div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="chip t" style="background:#ffb627;width:30px;height:30px;display:grid;place-items:center">🏅</div><div style="flex:1;font-size:11px;font-weight:900">Survivor · last 10:00</div><div class="btn t" style="padding:2px 8px;background:#8a4bd8;font-size:11px">+50 💎</div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="chip t" style="background:#9aa6b8;width:30px;height:30px;display:grid;place-items:center">🔒</div><div style="flex:1;min-width:0;font-size:11px;font-weight:900">Untouchable · 3:00 without a hit<div class="bar2" style="margin-top:3px"><i style="width:40%"></i></div></div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="chip t" style="background:#9aa6b8;width:30px;height:30px;display:grid;place-items:center">🔒</div><div style="flex:1;min-width:0;font-size:11px;font-weight:900">Collector · own 10 guns<div class="bar2" style="margin-top:3px"><i style="width:30%"></i></div></div></div>
+        <div class="panel" style="padding:7px;display:flex;gap:8px;align-items:center"><div class="chip t" style="background:#9aa6b8;width:30px;height:30px;display:grid;place-items:center">🔒</div><div style="flex:1;min-width:0;font-size:11px;font-weight:900">Exterminator · 1,000 kills in a run<div class="bar2" style="margin-top:3px"><i style="width:70%"></i></div></div></div>
+      </div>
+    </div></div><div class="cap">Thành tựu</div></div>
+    <div class="notes"><ul>
+      <li>10 thành tựu đầu dùng đúng 10 câu thoại đã ghi: First Alpha, Threat 10, 10 guns, Survive 10:00, First evolution, 3:00 no hit, 1,000 kills, Whiteout, All stations, 50k coins.</li>
+      <li>Mở khoá giữa trận: một dải nhỏ trên đầu màn hình kèm câu thoại bộ đàm. Phần thưởng nhận ở đây.</li>
+      <li>Thưởng gem, cộng huy hiệu hiện trong Profile.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Chờ owner duyệt</div>
+  <div class="q">
+    <p>Duyệt từng mục U1–U8, hoặc ghi chỗ cần sửa (ví dụ "U1: ô skill to hơn", "U6: bỏ chuỗi D1–D7"). Mục nào được duyệt thì mình làm vào game theo đúng mockup, chụp ảnh thật ở các tỉ lệ màn hình 16:9, 19.5:9, 20:9 và tablet để owner xem lại.</p>
+  </div>
+</section>
+</div>

@@ -1,0 +1,154 @@
+<title>HordeCall Daily & Mastery</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: one reading column; a problem block, then four systems, each with a table of what it gives and why */
+:root{
+  --bg:#f3f5f8; --fg:#1b2230; --muted:#5b6678; --card:#ffffff; --line:#dde2ea; --accent:#ff7a1a; --good:#1f9d55; --bad:#d64545; --gem:#8a4bd8;
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif; --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--fg:#e8ecf2;--muted:#9aa5b6;--card:#1a2029;--line:#2a3240;--accent:#ff8f3d;--good:#3ccf7d;--bad:#ff6b6b;--gem:#b98cff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11151c;--fg:#e8ecf2;--muted:#9aa5b6;--card:#1a2029;--line:#2a3240;--accent:#ff8f3d;--good:#3ccf7d;--bad:#ff6b6b;--gem:#b98cff;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:28px 60px;display:grid;gap:30px}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.3px;text-wrap:balance;margin:0}
+h1{font-size:32px} h2{font-size:23px} h3{font-size:17px}
+p{margin:0;max-width:70ch}
+.lead{color:var(--muted)}
+section{display:grid;gap:12px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.warn{border-left:4px solid var(--bad)}
+ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.tbl{overflow-x:auto} table{border-collapse:collapse;width:100%;min-width:540px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+code{font-size:13px;background:var(--line);padding:1px 5px;border-radius:4px}
+.gem{color:var(--gem);font-weight:800}
+.q{background:var(--card);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.loop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:800}
+.loop span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.loop i{font-style:normal;color:var(--muted)}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:8px">
+  <div class="eyebrow">Đề xuất thiết kế · 05/10</div>
+  <h1>HordeCall Daily &amp; Mastery</h1>
+  <p class="lead">Owner nhận xét: phần thưởng còn mỏng đến mức chính owner cũng lười chơi, và người chơi sẽ chỉ dùng rifle, không bao giờ quay lại súng lục. Trang này đề xuất 4 hệ thống nối với nhau. Mục tiêu: có lý do vào game mỗi ngày, có lý do đổi súng, và có mục tiêu dài hạn cho từng khẩu.</p>
+</header>
+
+<section>
+  <div class="eyebrow">Hiện tại trong code</div>
+  <div class="box warn">
+    <ul>
+      <li><b>Nhiệm vụ</b> chỉ trả coin và XP Pass. Danh sách cố định 18 nhiệm vụ, xoay vòng theo ngày, và <b>không có nhiệm vụ nào theo súng</b>. Sự kiện giết quái và kết quả trận cũng không ghi lại người chơi dùng súng gì.</li>
+      <li><b>Quà điểm danh 28 ngày</b>: 24 trên 28 ngày chỉ được 100 coin.</li>
+      <li><b>Súng</b> tối đa 3 sao. Mảnh súng chỉ có từ gacha, nên lên sao bị kẹt. Không có thông thạo súng, không có tiến hoá súng, không lưu thống kê theo súng.</li>
+      <li><b>Thành tựu</b> chưa làm. Đã có sẵn 10 câu thoại bộ đàm cho nó.</li>
+      <li>Rifle mạnh hơn súng lục, nên có rifle rồi thì <b>không còn lý do</b> dùng súng lục.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Vòng lặp mục tiêu</div>
+  <div class="loop"><span>Vào game</span><i>→</i><span>4 nhiệm vụ trong ngày, có súng chỉ định</span><i>→</i><span>Rương ngày</span><i>→</i><span>Mảnh súng + gem + vé</span><i>→</i><span>Lên sao, lên thông thạo</span><i>→</i><span>Tiến hoá súng</span><i>→</i><span>Thưởng toàn tài khoản</span></div>
+</section>
+
+<section>
+  <div class="eyebrow">1 · Nhiệm vụ ngày (Daily Ops)</div>
+  <h2>4 nhiệm vụ mỗi ngày, 1 đến 2 nhiệm vụ chỉ định súng</h2>
+  <div class="box">
+    <div class="tbl"><table>
+      <tr><th>Loại</th><th>Ví dụ</th><th>Cách hoạt động trong game</th></tr>
+      <tr><td>Súng chỉ định</td><td>Hạ 250 quái bằng shotgun · Sống 4 phút bằng súng lục</td><td>Nếu chưa có súng thuộc nhóm đó, game <b>cho mượn</b> một khẩu cho trận này. Người chơi thử được súng mình chưa mua, nên đây cũng là cách quảng cáo súng mới.</td></tr>
+      <tr><td>Kỹ năng</td><td>Tiến hoá 1 kỹ năng · Chọn 3 thẻ đặc trưng của súng</td><td>Khuyến khích xây build theo súng đang cầm.</td></tr>
+      <tr><td>Thế giới</td><td>Hoàn thành 2 trạm · Hạ 1 Titan</td><td>Kéo người chơi đi khám phá map, không đứng một chỗ.</td></tr>
+      <tr><td>Nhẹ nhàng</td><td>Chơi 2 trận · Nhặt 5 vật phẩm</td><td>Luôn có 1 nhiệm vụ làm được trong 5 phút.</td></tr>
+    </table></div>
+    <p>Nhiệm vụ được sinh theo cấp tài khoản và các nhóm súng người chơi đã có. Không bao giờ ra 2 nhiệm vụ chỉ định súng giống nhau trong cùng một ngày.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">2 · Phần thưởng đủ lớn để quay lại</div>
+  <h2>Rương ngày và chuỗi ngày</h2>
+  <div class="box">
+    <div class="tbl"><table>
+      <tr><th>Mốc</th><th>Thưởng</th><th>Vì sao</th></tr>
+      <tr><td>Mỗi nhiệm vụ</td><td>Coin, XP Pass, cộng <b>5 mảnh</b> của súng vừa dùng</td><td>Chơi súng nào thì súng đó lên sao. Đây là nguồn mảnh đều đặn, ngoài gacha.</td></tr>
+      <tr><td>Xong 4 nhiệm vụ</td><td><b>Rương ngày</b>: <span class="gem">40 gem</span>, 1 vé gacha, 15 mảnh súng ngẫu nhiên trong số súng đang có</td><td>Phần thưởng lớn nhất trong ngày, đáng để quay lại.</td></tr>
+      <tr><td>Chuỗi 3 ngày</td><td>Rương ngày nhân đôi số mảnh</td><td>Thói quen chơi mỗi ngày.</td></tr>
+      <tr><td>Chuỗi 7 ngày</td><td>Rương ngày có thêm <b>1 khẩu súng</b> người chơi chưa có (Rare trở lên)</td><td>Mục tiêu lớn của cả tuần.</td></tr>
+      <tr><td>Điểm danh 28 ngày</td><td>Bỏ các ngày chỉ có 100 coin. Thay bằng phần thưởng tăng dần: mảnh súng, vé, gem</td><td>Ngày nào cũng có thứ đáng nhận.</td></tr>
+    </table></div>
+    <p class="lead">Tổng gem một tuần chơi đều khoảng 280 + 50 từ điểm danh, đủ khoảng 1 lần quay x10 gacha mỗi tuần. Các con số sẽ chốt ở bước cân bằng kinh tế.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">3 · Thông thạo súng (mở ở cấp tài khoản 4)</div>
+  <h2>Mỗi khẩu súng có 10 cấp thông thạo</h2>
+  <div class="box">
+    <div class="tbl"><table>
+      <tr><th>Cấp</th><th>Thưởng của khẩu đó</th><th>Thưởng toàn tài khoản (theo nhóm súng)</th></tr>
+      <tr><td>1–4</td><td>Mảnh súng, coin</td><td>—</td></tr>
+      <tr><td>5</td><td>Skin màu riêng cho súng</td><td>Súng lục 5: +5% chí mạng cho <b>mọi súng</b> · Shotgun 5: +5% máu · SMG 5: +5% tốc độ chạy …</td></tr>
+      <tr><td>6–9</td><td>Mảnh, gem, vé</td><td>—</td></tr>
+      <tr><td>10</td><td><b>Mở khoá tiến hoá</b></td><td>Thêm một bậc thưởng nữa của nhóm súng đó</td></tr>
+    </table></div>
+    <ul>
+      <li>XP thông thạo chỉ tăng khi cầm đúng khẩu đó: tính theo số quái hạ và thời gian sống sót.</li>
+      <li>Súng lục lên thông thạo nhanh nhất, nên luyện súng lục là cách rẻ nhất để lấy thưởng chí mạng cho mọi súng. Đó là <b>lý do quay lại dùng súng lục</b>.</li>
+      <li>Muốn có đủ thưởng toàn tài khoản thì phải chơi đủ các nhóm súng.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">4 · Tiến hoá súng (mở ở cấp tài khoản 8)</div>
+  <h2>3 sao + thông thạo 10 thì súng tiến hoá</h2>
+  <div class="box">
+    <p>Khẩu súng đổi hình (vệt sáng, đầu nòng phát quang) và có thêm <b>một hiệu ứng riêng theo nhóm</b>. Đây là mục tiêu dài hạn cho từng khẩu:</p>
+    <div class="tbl"><table>
+      <tr><th>Nhóm</th><th>Hiệu ứng khi tiến hoá</th></tr>
+      <tr><td>Súng lục</td><td>Cứ phát thứ 6 nảy sang 3 quái gần đó</td></tr>
+      <tr><td>Rifle</td><td>Hạ quái thì nổ một vòng nhỏ</td></tr>
+      <tr><td>Shotgun</td><td>Bắn gần thì đẩy lùi cả đám, quái bị choáng</td></tr>
+      <tr><td>SMG</td><td>Bắn liên tục thì tốc độ bắn tăng dần</td></tr>
+      <tr><td>Bắn tỉa</td><td>Mỗi phát xuyên qua tất cả quái trên đường đạn</td></tr>
+      <tr><td>Súng máy / Rocket</td><td>Một hiệu ứng riêng cho mỗi nhóm</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">5 · Thành tựu</div>
+  <div class="box">
+    <p>Làm hệ thống thành tựu cho 10 câu thoại bộ đàm đã ghi sẵn: Alpha đầu tiên, Mức đe doạ 10, Sở hữu 10 súng, Sống 10 phút, Lần tiến hoá đầu, 3 phút không trúng đòn, 1000 quái một trận, Bão tuyết, Đủ mọi trạm, 50 nghìn coin. Mỗi thành tựu thưởng <span class="gem">gem</span>, có huy hiệu trong Profile và một câu thoại khi mở khoá.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Thứ tự làm đề xuất</div>
+  <div class="box">
+    <ul>
+      <li><b>B1.</b> Ghi lại súng đã dùng vào sự kiện giết quái và kết quả trận, kèm thống kê theo súng. Đây là nền cho mọi phần còn lại.</li>
+      <li><b>B2.</b> Nhiệm vụ ngày có súng chỉ định, súng cho mượn, rương ngày, chuỗi ngày.</li>
+      <li><b>B3.</b> Thông thạo súng: 10 cấp, thưởng toàn tài khoản.</li>
+      <li><b>B4.</b> Thành tựu.</li>
+      <li><b>B5.</b> Tiến hoá súng.</li>
+      <li>Các màn hình mới (Daily Ops, thông thạo, tiến hoá) đều <b>làm mockup để owner duyệt trước</b>.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Chờ owner duyệt</div>
+  <div class="q">
+    <p><b>A.</b> Duyệt 4 hệ thống trên, hoặc chọn bớt.</p>
+    <p><b>B.</b> Có cho mượn súng khi nhiệm vụ chỉ định một nhóm súng người chơi chưa có không?</p>
+    <p><b>C.</b> Thưởng toàn tài khoản theo nhóm súng (ví dụ súng lục 5 → +5% chí mạng) có ổn không, hay chỉ thưởng cho riêng khẩu đó?</p>
+  </div>
+</section>
+</div>

@@ -1,0 +1,390 @@
+<title>HordeCall Playtest 05/10</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Layout: one reading column of findings, with phone-sized mockups side by side (current vs proposed) */
+:root{
+  --bg:#f3f5f8; --fg:#1b2230; --muted:#5b6678; --card:#ffffff; --line:#dde2ea; --accent:#ff7a1a; --good:#1f9d55; --bad:#d64545;
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif; --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--fg:#e8ecf2;--muted:#9aa5b6;--card:#1a2029;--line:#2a3240;--accent:#ff8f3d;--good:#3ccf7d;--bad:#ff6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11151c;--fg:#e8ecf2;--muted:#9aa5b6;--card:#1a2029;--line:#2a3240;--accent:#ff8f3d;--good:#3ccf7d;--bad:#ff6b6b;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1060px;margin:0 auto;padding-inline:16px;padding-block:28px 60px;display:grid;gap:34px}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.3px;text-wrap:balance;margin:0}
+h1{font-size:34px} h2{font-size:24px} h3{font-size:17px}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted)}
+section{display:grid;gap:14px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.done{border-left:4px solid var(--good)}
+ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.tbl{overflow-x:auto} table{border-collapse:collapse;width:100%;min-width:560px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+td.new{color:var(--good);font-weight:800} td.old{color:var(--bad);font-weight:800}
+code{font-size:13px;background:var(--line);padding:1px 5px;border-radius:4px}
+.row{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.mock{display:grid;gap:8px;justify-items:center}
+.cap{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.notes{flex:1 1 300px;min-width:0}
+.chart{overflow-x:auto}
+.chart svg{display:block;max-width:100%;height:auto}
+.q{background:var(--card);border:1px dashed var(--accent);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+
+/* ---- in-game mockups: one fixed bright game look (independent of page theme) ---- */
+.phone{width:250px;height:520px;border-radius:30px;background:#0c0f16;padding:9px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.scr{position:relative;width:100%;height:100%;border-radius:22px;overflow:hidden;font-family:var(--body);color:#fff}
+.t{font-family:var(--display);color:#fff;text-shadow:-1.5px -1.5px 0 #10131a,1.5px -1.5px 0 #10131a,-1.5px 1.5px 0 #10131a,1.5px 1.5px 0 #10131a,0 2px 0 #10131a}
+.btn{display:flex;align-items:center;justify-content:center;border-radius:12px;border:2px solid #10131a;box-shadow:0 3px 0 #10131a;font-family:var(--display)}
+
+/* gacha current */
+.g-old{background:#1b1430}
+.g-old .card{position:absolute;left:32px;right:32px;top:120px;height:250px;border-radius:16px;background:#3b2a5c;display:grid;place-items:center}
+.g-old .icon{width:130px;height:130px;opacity:.75;filter:brightness(.55)}
+/* gacha new */
+.g-new{background:radial-gradient(circle at 50% 38%,#ffcf5a 0,#ff8a2b 22%,#7a2bd8 55%,#2a1050 100%)}
+.rays{position:absolute;inset:-40%;background:repeating-conic-gradient(from 0deg at 50% 45%,rgba(255,255,255,.18) 0 8deg,transparent 8deg 20deg);animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rays{animation:none}}
+.halo{position:absolute;left:50%;top:205px;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;background:radial-gradient(circle,#fff6c9 0,#ffd34d 40%,rgba(255,180,40,0) 70%)}
+.disc{position:absolute;left:50%;bottom:150px;width:170px;height:34px;margin-left:-85px;border-radius:50%;background:radial-gradient(ellipse,#fff7cf 0,#ffc93a 45%,rgba(255,170,0,0) 75%)}
+.char{position:absolute;left:50%;top:110px;width:150px;margin-left:-75px}
+.tag{position:absolute;left:50%;transform:translateX(-50%);top:46px;padding:4px 14px;border-radius:999px;background:#ffb627;border:2px solid #10131a;font-size:14px;white-space:nowrap}
+.stars{position:absolute;top:80px;left:0;right:0;text-align:center;font-size:20px;letter-spacing:2px;color:#ffe066;text-shadow:0 2px 0 #10131a}
+.new{position:absolute;top:118px;right:30px;transform:rotate(12deg);background:#ff3b5c;border:2px solid #10131a;border-radius:8px;padding:2px 8px;font-size:13px}
+.plate{position:absolute;left:16px;right:16px;bottom:72px;border-radius:14px;background:rgba(16,19,26,.72);border:2px solid #ffd34d;padding:8px 10px;text-align:center}
+.plate .n{font-size:19px}
+.plate .s{font-size:12px;font-weight:800;color:#ffe9a8}
+.g-new .ok{position:absolute;left:40px;right:40px;bottom:18px;height:44px;background:#3ccf4e;font-size:18px}
+
+/* studio */
+.st{background:linear-gradient(#5ec8ff,#b9ecff 55%,#e9f8ff)}
+.st .top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center}
+.pill{padding:3px 10px;border-radius:999px;border:2px solid #10131a;font-size:12px}
+.st .stage{position:absolute;top:44px;left:0;right:0;height:180px}
+.st .stage svg{position:absolute;left:50%;margin-left:-55px;width:110px;top:4px}
+.st .pos{position:absolute;bottom:8px;left:50%;width:120px;height:20px;margin-left:-60px;border-radius:50%;background:rgba(16,19,26,.18)}
+.slotbar{position:absolute;top:226px;left:8px;right:8px;display:flex;gap:4px}
+.slotbar span{flex:1;text-align:center;font-size:11px;padding:4px 0;border-radius:8px;background:#2b6cb0;border:2px solid #10131a}
+.slotbar span.on{background:#ff7a1a}
+.chips{position:absolute;top:258px;left:8px;right:8px;display:flex;gap:4px;flex-wrap:wrap}
+.chips span{font-size:11px;padding:3px 8px;border-radius:999px;background:#fff;color:#10131a;border:2px solid #10131a;font-weight:800}
+.chips span.on{background:#10131a;color:#fff}
+.grid{position:absolute;top:290px;left:8px;right:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tile{position:relative;aspect-ratio:1;border-radius:9px;border:2px solid #10131a}
+.tile i{position:absolute;inset:18%;border-radius:50%;background:rgba(255,255,255,.55)}
+.r1{background:#8a96a8}.r2{background:#3fa34d}.r3{background:#2f80ed}.r4{background:#9b51e0}.r5{background:#f2a516}
+.tile .b{position:absolute;top:-6px;right:-5px;font-size:9px;padding:0 4px;border-radius:5px;background:#ff3b5c;border:1.5px solid #10131a;font-family:var(--display)}
+.tile .lk{position:absolute;bottom:2px;left:3px;font-size:9px;font-family:var(--display)}
+.tile.sel{outline:3px solid #fff;outline-offset:1px}
+.set{position:absolute;left:8px;right:8px;top:428px;border-radius:10px;background:#fff3c4;border:2px solid #10131a;color:#10131a;padding:5px 8px;font-size:11px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.cart{position:absolute;left:8px;right:8px;bottom:10px;height:42px;background:#3ccf4e;font-size:15px}
+
+.gp{background:radial-gradient(circle at 50% 55%,#8fc46a 0,#6aa84f 60%,#4f8a3a 100%)}
+.gp .hud{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.hp{position:absolute;left:10px;top:30px;width:110px;height:12px;border-radius:6px;background:#10131a;border:2px solid #10131a;overflow:hidden}
+.hp i{display:block;height:100%;background:#3ccf4e}
+.hp.low i{background:#ff3b3b}
+.pl{position:absolute;width:22px;height:22px;border-radius:50%;background:#2f80ed;border:3px solid #10131a}
+.en{position:absolute;width:12px;height:12px;border-radius:50%;background:#7b5a3a;border:2px solid #10131a}
+.dog{background:#c8873f}
+.boss{position:absolute;width:46px;height:46px;border-radius:50%;background:#6b3fa0;border:3px solid #10131a;box-shadow:0 0 0 3px #ff3b3b}
+.ring{position:absolute;border-radius:50%;border:5px solid #ff2a2a;background:transparent;box-shadow:0 0 8px #ff2a2a,inset 0 0 6px #ff2a2a;transform:scaleY(.42);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scaleY(.42) scale(1.06);opacity:.75}}
+.bossbar{position:absolute;top:52px;left:20px;right:20px;display:grid;gap:3px;text-align:center}
+.bossbar .bar{height:12px;border-radius:6px;background:#10131a;border:2px solid #10131a;overflow:hidden}
+.bossbar .bar i{display:block;height:100%;width:78%;background:linear-gradient(#ff5a5a,#c71f1f)}
+.arrow{position:absolute;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid #ff3b3b;filter:drop-shadow(0 2px 0 #10131a)}
+.heal{position:absolute;width:16px;height:16px;border-radius:4px;background:#fff;border:2px solid #10131a}
+.heal::before,.heal::after{content:"";position:absolute;background:#ff3b5c}
+.heal::before{left:5px;top:1px;width:3px;height:11px}.heal::after{left:1px;top:5px;width:11px;height:3px}
+.vign{position:absolute;inset:0;box-shadow:inset 0 0 60px 18px rgba(255,30,30,.55);animation:pulse2 .9s ease-in-out infinite}
+@keyframes pulse2{50%{box-shadow:inset 0 0 40px 10px rgba(255,30,30,.3)}}
+.horde{position:absolute;top:150px;left:0;right:0;text-align:center}
+.horde .big{font-size:30px;color:#ffdf3a}
+.horde .cd{font-size:56px;line-height:1}
+.wall{position:absolute;left:0;right:0;top:0;height:70px;background:linear-gradient(rgba(150,0,0,.55),rgba(150,0,0,0))}
+.toast{position:absolute;left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:999px;font-size:11px;white-space:nowrap;border:2px solid #10131a}
+@media (prefers-reduced-motion:reduce){.ring,.vign{animation:none}}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:8px">
+  <div class="eyebrow">Playtest trên máy thật · 05/10</div>
+  <h1>HordeCall Playtest 05/10</h1>
+  <p class="lead">Tổng hợp 4 lỗi owner báo sau khi chơi bản dev Android: xoay màn hình, độ khó, ảnh nhân vật trong gacha và Studio thay đồ. Mỗi mục ghi nguyên nhân tìm được trong code, đề xuất và bố cục gợi ý. Mục 1 và 5 đã sửa, các mục còn lại chờ owner duyệt.</p>
+</header>
+
+<section>
+  <div class="eyebrow">Bản 4 · thay phần A của bản 3</div>
+  <h2>Đồ rơi "trùng hợp" và so với game cùng thể loại</h2>
+
+  <div class="box">
+    <h3>Vì sao chơi mãi không thấy nam châm hay vật phẩm</h3>
+    <ul>
+      <li>Quái thường chỉ rơi coin (<code>PickupManager.OnZombieKilled</code>).</li>
+      <li>Nam châm, bom và đồng hồ đóng băng chỉ rơi từ <b>elite</b>, tỉ lệ 15%. Rương rơi từ elite chỉ 4%. Elite lại chỉ có từ bậc 3 và chiếm 1/14 số quái, nên thực tế gần như không bao giờ gặp.</li>
+      <li>Hộp máu chỉ rơi từ đồ vật phá được. Các map hiện tại không còn đồ vật phá được nên <b>không có hồi máu</b>.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h3>Đề xuất: bộ chọn đồ rơi theo nhu cầu người chơi</h3>
+    <p>Quái và boss rơi đồ hên xui; quái thường rơi ít. Riêng hệ thống thì <b>biết người chơi đang cần gì</b> và cho món đó rơi ra đúng lúc, nên người chơi cảm thấy "may quá, vừa kịp". Mỗi lần giết quái, game chấm điểm 4 nhu cầu:</p>
+    <div class="tbl"><table>
+      <tr><th>Nhu cầu</th><th>Game đo gì</th><th>Món rơi</th></tr>
+      <tr><td><b>Máu</b></td><td>% máu đã mất, máu mất trong 6 giây gần nhất</td><td>Hộp máu: nhỏ +20, lớn +40</td></tr>
+      <tr><td><b>Bị vây</b></td><td>Số quái trong vòng 4 m</td><td>Bom: nổ quét sạch quanh người chơi</td></tr>
+      <tr><td><b>Bị đuổi</b></td><td>Có elite, boss hoặc quái nhanh đang áp sát</td><td>Đồng hồ đóng băng</td></tr>
+      <tr><td><b>Đồ nằm đất</b></td><td>Số coin chưa nhặt trên bản đồ</td><td>Nam châm hút hết</td></tr>
+    </table></div>
+    <ul>
+      <li><b>Tỉ lệ nền thấp:</b> quái thường có khoảng 0.5% rơi một món. Tỉ lệ đó tăng theo nhu cầu cao nhất lúc ấy, nên món rơi ra hầu như luôn là thứ đang cần.</li>
+      <li><b>Cứu kịp lúc:</b> máu dưới 25% thì trong vòng 6–8 giây chắc chắn rơi 1 hộp máu từ con quái chết gần nhất, ngay trong tầm nhìn. Có tia sáng giả và tiếng "ting" riêng để người chơi chạy tới.</li>
+      <li><b>Không lộ bài:</b> giữa hai lần "cứu" cách nhau ít nhất 15 giây, và mỗi trận tối đa khoảng 4 lần cứu. Hơi ngẫu nhiên một chút để người chơi tưởng mình gặp may chứ không thấy bị sắp đặt.</li>
+      <li><b>Elite và boss</b> luôn rơi 1 món theo nhu cầu, cộng coin. Boss rơi thêm rương và hộp máu lớn.</li>
+      <li>Vẫn giữ luật "mỗi lúc chỉ 1 vật phẩm nằm trên map" như hiện tại. Riêng hộp máu được tính tách ra.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h3>Vòng đỏ của boss: một vòng mảnh như ảnh owner gửi</h3>
+    <p>Một vòng tròn đỏ mảnh, sáng, nằm sát đất dưới chân boss, đi theo boss. Không tô kín bên trong. Khi boss chuẩn bị đập đất, vòng nở ra đúng bán kính cú đập và nhấp nháy. Vòng sáng vàng hiện tại để dành cho elite.</p>
+  </div>
+
+  <div class="box">
+    <h3>So với game endless cùng thể loại: chúng ta đang thiếu gì</h3>
+    <p class="lead" style="font-size:13px">Đối chiếu với Vampire Survivors, Survivor.io, 20 Minutes Till Dawn, Brotato và Magic Survival.</p>
+    <div class="tbl"><table>
+      <tr><th>Thứ các game kia có</th><th>HordeCall hiện tại</th><th>Đề xuất</th></tr>
+      <tr><td><b>Đồ hồi máu rơi trên map</b> (thịt gà trong Vampire Survivors, thịt và thùng tiếp tế trong Survivor.io)</td><td class="old">Không có</td><td>Bộ chọn đồ rơi theo nhu cầu ở trên, cộng thùng tiếp tế</td></tr>
+      <tr><td><b>Ngọc XP rơi ra, đi qua thì hút</b>: vòng lặp "hút ngọc" sướng tay nhất của thể loại</td><td class="old">Giết quái là cộng XP thẳng, không có gì để nhặt (<code>RunState.cs:142</code>)</td><td>Cho XP rơi thành ngọc như coin, nam châm hút được. Đây là thay đổi lớn nhất về cảm giác chơi.</td></tr>
+      <tr><td><b>Mốc thời gian rõ ràng</b>: elite và boss ra ở phút cố định, có thanh tiến trình</td><td class="old">Chỉ có đếm ngược tới đợt dồn quái</td><td>Thanh mốc trên HUD với icon: rương, boss, Horde Call kế tiếp</td></tr>
+      <tr><td><b>Báo boss</b>: banner cảnh báo, có khi nhốt người chơi trong một vòng đấu</td><td class="old">Chỉ có vòng sáng vàng như elite</td><td>Vòng đỏ, thanh máu, màn xuất hiện (bản 3 mục C)</td></tr>
+      <tr><td><b>Mở rương kiểu máy đánh bạc</b>: quay, nhạc dồn, có thể ra 3–5 món</td><td class="old">Lật 1 thẻ</td><td>Rương quay vài vòng rồi dừng; rương hiếm ra nhiều món</td></tr>
+      <tr><td><b>Đổi thẻ / loại thẻ</b> khi lên cấp</td><td class="old">Không có</td><td>1–2 lượt đổi thẻ mỗi trận, xem quảng cáo để thêm</td></tr>
+      <tr><td><b>Thùng tiếp tế / đèn phá được</b> xuất hiện định kỳ quanh người chơi</td><td class="old">Đồ vật phá được đã bị bỏ khỏi map; trạm tiếp tế có nhưng hiếm</td><td>Mỗi 40–60 giây đặt 1 thùng tiếp tế gần người chơi, phá ra món theo nhu cầu</td></tr>
+      <tr><td><b>Đợt quái có hình dạng</b>: vòng vây, bức tường, dòng quái chạy ngang</td><td class="old">Quái rải đều quanh người chơi</td><td>Horde Call đến theo hướng; thêm "vòng vây khép lại" làm sự kiện</td></tr>
+      <tr><td>Thẻ kỹ năng, tiến hoá, hồi sinh, số sát thương, nhiệm vụ</td><td class="new">Đã có</td><td>Giữ nguyên</td></tr>
+    </table></div>
+    <p><b>Ba thứ đáng làm nhất:</b> (1) bộ chọn đồ rơi theo nhu cầu, (2) ngọc XP để nhặt, (3) thanh mốc thời gian có boss và rương. Ba thứ này cùng tạo nhịp "có thứ để mong, có thứ để nhặt, có lúc được cứu".</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Bản 3 · sau buổi chơi thứ hai</div>
+  <h2>Sống sót, chó lao, boss và Horde Call</h2>
+  <p>Owner chơi lại và thấy: không có đồ rơi và không có hồi máu, dính vài đòn là máu xuống ngưỡng nguy hiểm; chó lao vào liên tục; boss trông không giống boss; Horde Call không tạo căng thẳng, chỉ thấy nhịp game rất nhanh và phải chạy liên tục. Bốn mục dưới đây là phần ưu tiên nhất, nên làm trước thuật toán Director ở mục 2.</p>
+
+  <div class="box">
+    <h3>A. Hồi máu và đồ rơi</h3>
+    <p><b>Trong code hiện tại:</b> nguồn hồi máu duy nhất là hộp +25 máu rơi từ đồ vật phá được, tỉ lệ 18%. Giết quái không bao giờ rơi máu. Không có hồi máu tự động, cũng không có lúc miễn sát thương sau khi trúng đòn.</p>
+    <div class="tbl"><table>
+      <tr><th>Cơ chế</th><th>Cách hoạt động trong game</th></tr>
+      <tr><td><b>Máu rơi theo lượng máu đã mất</b></td><td>Đủ máu thì không rơi. Máu càng thấp thì quái chết càng dễ rơi hộp máu (+20). Có cơ chế bù vận: dưới 50% máu mà giết 40 con chưa rơi thì con tiếp theo chắc chắn rơi. Trung bình người bị thương nhặt được 1 hộp mỗi 20–30 giây.</td></tr>
+      <tr><td><b>Elite luôn rơi máu</b></td><td>Elite chết luôn rơi hộp máu lớn (+40), kèm coin và rương như hiện tại. Hạ elite thành một mục tiêu đáng săn.</td></tr>
+      <tr><td><b>Hồi máu khi né tốt</b></td><td>3 giây không trúng đòn thì hồi 2 máu mỗi giây. Đứng ngoài đám đông là có cơ hội hồi.</td></tr>
+      <tr><td><b>Giới hạn sát thương</b></td><td>Sau mỗi đòn có 0.4 giây miễn sát thương. Mỗi giây mất tối đa 25% máu dù bao nhiêu con cùng cắn. Bị vây vẫn nguy hiểm nhưng không chết trong nháy mắt.</td></tr>
+      <tr><td><b>Ngưỡng nguy hiểm (dưới 25% máu)</b></td><td>Viền đỏ nhịp tim và tiếng tim đập. Tỉ lệ rơi máu tăng gấp đôi, và chắc chắn có 1 hộp máu rơi gần người chơi trong 8 giây. Căng thẳng nhưng vẫn có hy vọng, đây chính là khoảnh khắc "suýt chết rồi thoát".</td></tr>
+    </table></div>
+  </div>
+
+  <div class="box">
+    <h3>B. Chó lao vào liên tục</h3>
+    <p><b>Trong code hiện tại:</b> mỗi con chó tự lao theo nhịp riêng mỗi 5 giây, trong tầm 3–8 m. Đàn 10 con thì cứ khoảng nửa giây lại có một cú lao.</p>
+    <ul>
+      <li><b>Giới hạn số cú lao cùng lúc:</b> cả map chỉ được tối đa 1 con lao cùng lúc trong 2 phút đầu, sau đó tối đa 2 con. Con khác phải chờ lượt.</li>
+      <li><b>Báo trước rõ ràng:</b> trước khi lao, chó khựng lại 0.5 giây và hiện một vệt đỏ dưới đất chỉ hướng lao. Né sang ngang là tránh được.</li>
+      <li>Chó con (DogPup) trong đám đông đầu trận chỉ chạy và cắn, không lao.</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr gp">
+      <div class="hud t"><span>2:41</span><span>⚔ 312</span></div>
+      <div class="hp"><i style="width:64%"></i></div>
+      <div class="bossbar"><div class="t" style="font-size:14px">SKELETON GIANT · BOSS</div><div class="bar"><i></i></div></div>
+      <div class="ring" style="left:95px;top:175px;width:110px;height:110px;margin:-20px 0 0 -20px"></div>
+      <div class="boss" style="left:107px;top:187px"></div>
+      <div class="pl" style="left:112px;top:340px"></div>
+      <div class="en" style="left:40px;top:300px"></div><div class="en" style="left:200px;top:320px"></div><div class="en dog" style="left:60px;top:390px"></div><div class="en" style="left:180px;top:420px"></div>
+      <div class="toast t" style="top:300px;background:#ff3b3b">RA KHỎI VÒNG ĐỎ!</div>
+      <div class="heal" style="left:170px;top:380px"></div>
+    </div></div><div class="cap">Boss: vòng đỏ và thanh máu</div></div>
+
+    <div class="mock"><div class="phone"><div class="scr gp">
+      <div class="wall"></div>
+      <div class="hud t"><span>3:58</span><span>⚔ 488</span></div>
+      <div class="hp low"><i style="width:22%"></i></div>
+      <div class="arrow" style="left:60px;top:80px;transform:rotate(-20deg)"></div><div class="arrow" style="left:115px;top:72px"></div><div class="arrow" style="left:170px;top:80px;transform:rotate(20deg)"></div>
+      <div class="horde"><div class="big t">HORDE CALL</div><div class="cd t">3</div><div class="t" style="font-size:13px">Đám đông đến từ phía bắc</div></div>
+      <div class="pl" style="left:112px;top:360px"></div>
+      <div class="heal" style="left:150px;top:400px"></div>
+      <div class="toast t" style="top:430px;background:#3ccf4e">+20 MÁU GẦN BẠN</div>
+      <div class="vign"></div>
+    </div></div><div class="cap">Horde Call và ngưỡng nguy hiểm</div></div>
+
+    <div class="notes box">
+      <h3>C. Boss phải trông giống boss</h3>
+      <p><b>Trong code hiện tại:</b> boss đeo cùng vòng sáng vàng như elite và có bóng đổ thật. Không có thanh máu, không có màn xuất hiện. Cú đập đất có thời gian vung tay nhưng dưới đất không hiện vùng sát thương.</p>
+      <ul>
+        <li><b>Vòng đỏ dưới chân</b> bằng đúng bán kính cú đập (4 m). Bình thường mờ, khi vung tay thì sáng dần và đầy lên. Thông điệp: "ra khỏi vòng đỏ".</li>
+        <li><b>Thanh máu boss</b> trên đầu màn hình, ghi tên và chữ BOSS. Elite thì chỉ có thanh máu nhỏ trên đầu.</li>
+        <li><b>Màn xuất hiện</b> khoảng 1.5 giây: camera kéo ra xa, chậm thời gian một chút, rung đất, tiếng gầm và bộ đàm báo. Nếu boss ngoài màn hình thì có mũi tên đỏ chỉ hướng.</li>
+        <li><b>Hình dáng riêng:</b> to hơn 1.3 lần, đổi vòng sáng thành màu đỏ. Vàng để dành cho elite.</li>
+        <li><b>Hạ boss:</b> chậm thời gian khi hạ, quái nổ ra mưa đồ, có rương và hộp máu lớn.</li>
+      </ul>
+      <h3>D. Horde Call phải tạo căng thẳng</h3>
+      <p><b>Trong code hiện tại:</b> đợt dồn quái chỉ phát tiếng "wave start" và một câu bộ đàm. Quái mới sinh ra rải đều quanh người chơi, nên chỉ thấy đông hơn chứ không thấy "một đợt tấn công".</p>
+      <ul>
+        <li><b>Báo trước 10 giây:</b> còi báo động "HORDE CALL", đếm ngược to 3-2-1, nhạc chuyển sang đoạn dồn dập, mép màn hình đỏ phía quái sẽ tới.</li>
+        <li><b>Đám đông đến từ 1–2 hướng</b> như một bức tường quái, có mũi tên chỉ hướng. Người chơi biết phải lùi về đâu hoặc giữ chỗ nào.</li>
+        <li><b>Sống sót thì được thưởng:</b> chữ "HORDE CLEARED", 1 rương và XP. Căng → xả → thưởng, đó là vòng dopamine.</li>
+        <li><b>Giữa các đợt có lúc nghỉ thật</b> (nhịp nghỉ ở mục 2), quái thường không chạy nhanh hơn người chơi trong màn hình. Không còn cảm giác phải chạy suốt.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">1 · Đã sửa</div>
+  <h2>Game tự lật ngược, thanh tab bị đẩy lên</h2>
+  <div class="box done">
+    <p><b>Nguyên nhân:</b> trong commit <code>1996a7aab</code> hướng màn hình bị đặt thành <code>defaultScreenOrientation: 1</code>. Trong Unity, giá trị 1 nghĩa là <b>dọc lộn ngược</b> chứ không phải dọc. Vì vậy bản build ghi <code>screenOrientation="reversePortrait"</code>: Android luôn mở game lộn ngược, có khoá xoay cũng vậy.</p>
+    <p><b>Thanh tab:</b> code <code>SafeArea</code> chạy đúng. Khi tai thỏ nằm dưới đáy, nó chừa khoảng trống đó nên thanh tab bị nhấc lên.</p>
+    <p><b>Đã sửa:</b> đặt lại thành Portrait cố định. Bản build sau sẽ hết lỗi, cần build lại để kiểm tra trên máy.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">2 · Độ khó · bản 2 theo góp ý owner</div>
+  <h2>Giữ đám đông, đổi cách điều phối</h2>
+  <p>Owner chốt: quái đông tạo áp lực tốt, cần giữ lại. Vấn đề nằm ở hai chỗ: quái bắn xa ra quá sớm, và đầu trận không có phần thưởng nên chán. Vì vậy không giảm số quái. Thay vào đó đổi <b>loại quái được chọn</b> và <b>nhịp căng / nghỉ</b> của trận.</p>
+  <div class="box">
+    <h3>Vì sao quái bắn xa ra sớm (đọc từ code)</h3>
+    <p>Hiện tại <code>ThreatDirector.PickFor</code> bốc <b>đều</b> từ mọi loại quái đã mở. Bậc 1 có 7 loại, trong đó 3 loại bắn xa (Cacti, Cactus, SkeletonMage), nên <b>khoảng 43% quái sinh ra là quái bắn xa</b>. Bậc 1 tới ở phút 1:30, hoặc chỉ sau 18 giây nếu người chơi chạy liên tục 90 m. Bản đồ theo theme còn thêm quái riêng vào các bậc.</p>
+  </div>
+  <div class="box">
+    <h3>Thuật toán đề xuất: "Director" có vai trò, nhịp và độ mạnh người chơi</h3>
+    <div class="tbl"><table>
+      <tr><th>Phần</th><th>Cách hoạt động trong game</th><th>Vì sao</th></tr>
+      <tr><td><b>1. Chia quái theo vai trò</b></td><td>Mỗi loại quái có một vai trò: <b>Lính</b> (DogPup, Skeleton: 1–2 phát là chết), <b>Đấm</b> (Zombie, CatMeow), <b>Bắn xa</b>, <b>Nhanh</b> (CatBolt, DogBark), <b>Nặng</b> (Giant). Mỗi vai trò có tỉ lệ riêng theo phút, không bốc đều nữa.</td><td>Đám đông vẫn 40 con trở lên nhưng phần lớn là lính chết nhanh. Áp lực đến từ số lượng, còn bắn hạ cả đám thì đã tay.</td></tr>
+      <tr><td><b>2. Khoá quái bắn xa theo giờ</b></td><td>Quái bắn xa chỉ xuất hiện từ phút 2:00. Lúc đầu tối đa 2 con cùng lúc, sau đó cứ 45 giây được thêm 1 con, không quá 15% đám đông. Bậc khó không mở khoá quái bắn xa nữa.</td><td>Chạy xa không còn kéo quái bắn xa ra sớm. Lúc chúng tới, người chơi đã có 6–8 thẻ kỹ năng.</td></tr>
+      <tr><td><b>3. Màn ra mắt loại quái mới</b></td><td>Lần đầu một loại quái xuất hiện: chỉ ra 1 con, trong tầm nhìn, có dấu chỉ hướng và một câu bộ đàm cảnh báo ("Có lính bắn tỉa trên đồi!"). 15 giây sau loại đó mới vào đám đông bình thường.</td><td>Người chơi học được mối nguy mới thay vì chết mà không hiểu vì sao.</td></tr>
+      <tr><td><b>4. Nhịp Tăng → Đỉnh → Nghỉ</b></td><td>Game đo <b>độ căng</b> của người chơi: máu mất trong 6 giây gần nhất, % máu còn lại, số quái trong vòng 3 m. Khi căng quá thì vào <b>Nghỉ</b> 8–12 giây: chỉ sinh lính, tốc độ sinh giảm một nửa, rơi 1 hộp máu. Số quái giữ nguyên, chỉ yếu đi. Đợt dồn quái (Đỉnh) chỉ tới khi người chơi đang ổn.</td><td>Vẫn đông, vẫn áp lực, nhưng luôn có lúc thở. Đây là cách AI Director của Left 4 Dead điều phối trận.</td></tr>
+      <tr><td><b>5. Bậc khó theo độ mạnh người chơi</b></td><td>So tốc độ giết với lượng máu quái đang đổ vào. Nếu người chơi bị dồn liên tục 20 giây thì lùi bậc kế tiếp 30 giây. Nếu người chơi càn quét dễ dàng thì đưa bậc kế tiếp tới sớm 20 giây. Chỉ lệch tối đa ±1 bậc.</td><td>Người giỏi không chán, người yếu không bị đè bẹp.</td></tr>
+      <tr><td><b>6. Quãng đường tính nhẹ lại</b></td><td>Bậc khó chủ yếu tăng theo thời gian và nhiệm vụ trạm. Quãng đường chỉ cộng thêm tối đa 1 bậc mỗi 2 phút. Quái chỉ chạy nhanh để đuổi kịp khi đang <b>ngoài màn hình</b>; trong màn hình thì không nhanh hơn người chơi.</td><td>Chạy để né không còn làm game khó vọt lên.</td></tr>
+      <tr><td><b>7. Hỗ trợ ngầm giữa các trận</b></td><td>Nếu 2 trận gần nhất chết trước phút 3, trận tiếp theo lùi quái bắn xa thêm 45 giây và cho thêm 1 hộp máu. Không hiện ra cho người chơi thấy.</td><td>Giữ chân người mới qua giai đoạn đầu dễ bỏ game nhất.</td></tr>
+    </table></div>
+  </div>
+  <div class="box chart">
+    <h3>Một trận 6 phút theo thuật toán mới (minh hoạ)</h3>
+    <svg viewBox="0 0 540 230" role="img" aria-label="Độ căng theo thời gian">
+      <g font-size="11" fill="var(--muted)" font-family="Nunito,sans-serif">
+        <line x1="40" y1="170" x2="530" y2="170" stroke="var(--line)"/>
+        <text x="36" y="186">0:00</text><text x="114" y="186">1:00</text><text x="194" y="186">2:00</text><text x="274" y="186">3:00</text><text x="354" y="186">4:00</text><text x="434" y="186">5:00</text><text x="506" y="186">6:00</text>
+        <text x="2" y="40">căng</text><text x="2" y="164">nhẹ</text>
+      </g>
+      <rect x="196" y="20" width="334" height="150" fill="var(--bad)" opacity=".07"/>
+      <text x="200" y="34" font-size="11" font-weight="800" fill="var(--bad)" font-family="Nunito,sans-serif">từ 2:00 có quái bắn xa (tối đa 2 → 15%)</text>
+      <polyline fill="none" stroke="var(--accent)" stroke-width="3" points="40,150 80,120 120,100 150,80 165,70 175,125 200,110 240,85 270,60 285,45 295,115 330,95 370,70 400,48 415,35 425,110 460,85 500,55 530,40"/>
+      <g font-size="11" font-weight="800" font-family="Nunito,sans-serif" fill="var(--fg)">
+        <text x="56" y="112">lính chết 1 phát</text>
+        <text x="150" y="64">đỉnh 1</text><text x="166" y="140">nghỉ</text>
+        <text x="272" y="40">đỉnh 2</text><text x="290" y="130">nghỉ</text>
+        <text x="398" y="28">Giant</text><text x="420" y="124">nghỉ</text>
+      </g>
+      <g font-size="11" font-weight="800" font-family="Nunito,sans-serif" fill="var(--good)">
+        <text x="48" y="210">0:45 rương</text><text x="118" y="210">1:00 zombie vàng</text><text x="236" y="210">2:00 rương</text><text x="350" y="210">4:00 rương</text><text x="456" y="210">kỷ lục mới</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">3 · Phần thưởng 2 phút đầu</div>
+  <h2>Thang thưởng đầu trận</h2>
+  <p>Người chơi bỏ cuộc vì 2 phút đầu không có gì để mong chờ. Mỗi mốc dưới đây dùng hệ thống đã có: thẻ, rương, coin rơi, bộ đàm.</p>
+  <div class="box">
+    <div class="tbl"><table>
+      <tr><th>Thời điểm</th><th>Thưởng</th><th>Cảm giác</th></tr>
+      <tr><td>0:00–0:45</td><td>Đám đông toàn lính, bắn 1 phát là nổ. Coin văng ra thấy được, bộ đếm hạ gục có mốc 25 / 50 / 100 kèm chữ to và bộ đàm khen.</td><td>Đã tay ngay từ giây đầu</td></tr>
+      <tr><td>0:45</td><td>Thùng tiếp tế đầu tiên chắc chắn rơi, có cột sáng dẫn đường. Mở ra được chọn 1 trong 3 thẻ.</td><td>Có mục tiêu để chạy tới</td></tr>
+      <tr><td>1:00</td><td><b>Zombie vàng</b>: một con lính sáng vàng, bỏ chạy khỏi người chơi. Hạ được thì nổ ra mưa coin và 1 rương.</td><td>Một cuộc săn ngắn, thưởng lớn</td></tr>
+      <tr><td>1:30</td><td>Kỹ năng đầu tiên đủ điều kiện tiến hoá có màn riêng: dừng hình, phóng to icon, rung máy.</td><td>Thấy mình mạnh lên rõ ràng</td></tr>
+      <tr><td>2:00, 4:00</td><td>Rương theo mốc sống sót, ngay trước đợt quái bắn xa và quái Giant.</td><td>Được trang bị trước thử thách</td></tr>
+      <tr><td>Khi vượt kỷ lục</td><td>Banner "KỶ LỤC MỚI" kèm pháo giấy, ngay trong trận.</td><td>Biết mình đang tiến bộ</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">4 · Gacha</div>
+  <h2>Ảnh nhân vật khi mở gacha tối và nhạt</h2>
+  <div class="row">
+    <div class="mock"><div class="phone"><div class="scr g-old">
+      <div class="t" style="position:absolute;top:60px;width:100%;text-align:center;font-size:20px">HIẾM</div>
+      <div class="card"><svg class="icon" viewBox="0 0 100 130"><circle cx="50" cy="28" r="20" fill="#9a8a7a"/><rect x="28" y="50" width="44" height="50" rx="10" fill="#4a5a7a"/><rect x="30" y="98" width="16" height="30" fill="#333"/><rect x="54" y="98" width="16" height="30" fill="#333"/></svg></div>
+      <div class="t" style="position:absolute;bottom:110px;width:100%;text-align:center;font-size:16px">Áo khoác Thợ săn</div>
+    </div></div><div class="cap">Hiện tại</div></div>
+
+    <div class="mock"><div class="phone"><div class="scr g-new">
+      <div class="rays"></div><div class="halo"></div><div class="disc"></div>
+      <div class="tag t">HUYỀN THOẠI</div>
+      <div class="stars">★★★★★</div>
+      <div class="new t">MỚI!</div>
+      <svg class="char" viewBox="0 0 100 150"><defs><linearGradient id="rim" x1="0" x2="1"><stop offset="0" stop-color="#fff2b0"/><stop offset=".25" stop-color="#f3c9a2"/><stop offset="1" stop-color="#e6b48e"/></linearGradient></defs>
+        <circle cx="50" cy="30" r="22" fill="url(#rim)" stroke="#10131a" stroke-width="3"/>
+        <circle cx="42" cy="30" r="3" fill="#10131a"/><circle cx="58" cy="30" r="3" fill="#10131a"/><path d="M42 40 q8 6 16 0" stroke="#10131a" stroke-width="2.5" fill="none"/>
+        <path d="M28 14 q22 -16 44 0 l-3 6 h-38z" fill="#d6452f" stroke="#10131a" stroke-width="3"/>
+        <rect x="26" y="54" width="48" height="52" rx="12" fill="#2f80ed" stroke="#10131a" stroke-width="3"/>
+        <rect x="30" y="104" width="17" height="38" rx="5" fill="#3b3f52" stroke="#10131a" stroke-width="3"/><rect x="53" y="104" width="17" height="38" rx="5" fill="#3b3f52" stroke="#10131a" stroke-width="3"/></svg>
+      <div class="plate"><div class="n t">Áo khoác Thợ săn</div><div class="s">Bộ Thợ săn · 2/5 món</div></div>
+      <div class="btn ok t">NHẬN</div>
+    </div></div><div class="cap">Đề xuất</div></div>
+
+    <div class="notes box">
+      <h3>Nguyên nhân: cách đặt đèn khi chụp icon</h3>
+      <ul>
+        <li>Icon được chụp sẵn bằng 2 tool editor (<code>CasualIconGenerator</code>, <code>CostumeSetIconGenerator</code>), không render trực tiếp lúc mở gacha.</li>
+        <li>Chỉ có 2 đèn. Đèn chính chiếu chéo từ bên hông. Đèn phụ đặt ở góc (15,-20) nên chiếu vào <b>lưng</b> nhân vật, vì vậy mặt chỉ được sáng một bên.</li>
+        <li>Không có đèn viền (rim light) để tách nhân vật khỏi nền. Ánh sáng môi trường (ambient) cũng không được đặt, nên lấy theo scene đang mở.</li>
+        <li>Thẻ phần thưởng chỉ là một tấm nền phẳng được tô màu theo độ hiếm. Hiệu ứng glow nằm sau cả tấm thẻ chứ không nằm sau nhân vật.</li>
+      </ul>
+      <h3>Đề xuất</h3>
+      <ul>
+        <li><b>Chụp lại icon</b> với 3 đèn: đèn chính hướng 3/4 từ phía trước, đèn phụ chiếu thẳng vào mặt, đèn viền phía sau màu ấm. Đặt ambient cố định và tăng nhẹ độ sáng phần mặt.</li>
+        <li><b>Khung hình mới:</b> chụp từ ngực trở lên (bust) cho món đội đầu/mặt, toàn thân cho bộ đồ. Xoay người khoảng 15° cho có chiều sâu.</li>
+        <li><b>Màn mở gacha:</b> thêm vầng sáng tròn ngay sau nhân vật và đĩa sáng dưới chân, màu theo độ hiếm. Thêm tia sáng xoay, số sao, nhãn MỚI và bảng tên ghi "Bộ X · 2/5 món".</li>
+        <li>Chữ trên nền màu dùng chữ trắng viền đen đúng quy tắc UI, không thu nhỏ dòng phụ.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">5 · Studio · đã sửa</div>
+  <h2>Studio giữ nguyên UI, chỉ sắp xếp lại</h2>
+  <div class="box done">
+    <p>Owner chốt: UI Studio đang tốt, không đổi. Chỉ cần sắp xếp thông minh hơn. Đã sửa trong <code>StudioScreen.cs</code>, không đụng prefab. Thứ tự trong dải đồ của mỗi ô bây giờ là:</p>
+    <ul>
+      <li><b>Món đang mặc</b> luôn đứng đầu, nên mở ô ra là thấy ngay.</li>
+      <li>Các món <b>đã có</b>, xếp từ hiếm nhất tới thường.</li>
+      <li>Món <b>mua bằng coin</b>, từ rẻ tới đắt, rồi đến món mua bằng gem.</li>
+      <li>Món <b>chỉ có trong gacha</b> nằm cuối.</li>
+    </ul>
+    <p>Danh sách chỉ sắp xếp một lần khi mở ô, nên vừa mua xong dải đồ không bị nhảy chỗ. Đã biên dịch, 832/832 test đều qua. Chưa kiểm tra trên máy thật.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Chờ owner duyệt</div>
+  <div class="q">
+    <p><b>Đề xuất thứ tự làm:</b> (1) bộ chọn đồ rơi theo nhu cầu, kèm giới hạn sát thương và hồi máu khi né; (2) giới hạn chó lao; (3) boss: vòng đỏ mảnh, thanh máu, màn xuất hiện; (4) Horde Call: báo trước, đến theo hướng, thưởng khi sống sót; (5) ngọc XP để nhặt; (6) thanh mốc thời gian; (7) Director và thang thưởng đầu trận. Xong mỗi bước mình build lại cho owner chơi thử.</p>
+    <p><b>A.</b> Duyệt thứ tự trên? Ngọc XP thay đổi cảm giác chơi nhiều nhất nhưng cũng đụng nhiều hệ thống nhất, nên mình để ở bước 5.</p>
+    <p><b>B.</b> Phần mới trên HUD (thanh máu boss, HORDE CALL, đếm ngược, viền đỏ, thanh mốc): duyệt theo mockup này, hay cần mockup chụp từ game thật trước?</p>
+    <p><b>C.</b> Đổi thẻ khi lên cấp và rương kiểu máy đánh bạc: thêm vào danh sách, làm sau?</p>
+  </div>
+</section>
+</div>
